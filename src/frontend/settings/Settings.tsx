@@ -1,6 +1,6 @@
 import type { CSSProperties, ReactNode } from 'react';
 import { Icon, type IconName } from '../components/Icon';
-import { usePreferences } from '../app/preferences';
+import { updatePreferences, usePreferences, type Preferences } from '../app/preferences';
 
 export type SettingsSection = 'general' | 'appearance' | 'workspace' | 'storage' | 'about';
 
@@ -40,6 +40,31 @@ function Group({ title, children }: { title: ReactNode; children: ReactNode }) {
   return <div className="settings-group"><div className="settings-group-title">{title}</div>{children}</div>;
 }
 
+/* A row of buttons where exactly one is chosen, used for settings that really change the app. */
+function Segmented<T extends string>({ label, options, value, onChange }: {
+  label: string;
+  options: { value: T; label: ReactNode }[];
+  value: T;
+  onChange: (value: T) => void;
+}) {
+  return (
+    <div className="setting-segment" role="radiogroup" aria-label={label}>
+      {options.map(option => (
+        <button
+          key={option.value}
+          type="button"
+          role="radio"
+          aria-checked={value === option.value}
+          className={value === option.value ? 'chosen' : ''}
+          onClick={() => onChange(option.value)}
+        >
+          {option.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 function FakeSelect({ children }: { children: ReactNode }) {
   return <span className="fake-select">{children} <Icon name="chevron-down" size={14} /></span>;
 }
@@ -50,7 +75,8 @@ function FakeSelect({ children }: { children: ReactNode }) {
    ========================= */
 
 function SettingsPanel({ section }: { section: SettingsSection }) {
-  const { theme } = usePreferences();
+  const { theme, contentsScroll } = usePreferences();
+  const set = (changes: Partial<Preferences>) => updatePreferences(changes);
 
   if (section === 'general') {
     return (
@@ -65,6 +91,14 @@ function SettingsPanel({ section }: { section: SettingsSection }) {
         <Group title="Workspace preferences">
           <Row title="Default note view" description="New notes start as continuous documents."><FakeSelect>Continuous</FakeSelect></Row>
           <Row title="Show recent notes" description="Display your recently edited documents on Notespace home."><Toggle /></Row>
+          <Row title="Contents scrolling" description="How the page moves when you choose a heading in Contents.">
+            <Segmented
+              label="Contents scrolling"
+              value={contentsScroll}
+              options={[{ value: 'smooth', label: 'Smooth' }, { value: 'instant', label: 'Instant' }]}
+              onChange={value => set({ contentsScroll: value })}
+            />
+          </Row>
         </Group>
       </>
     );
@@ -76,7 +110,17 @@ function SettingsPanel({ section }: { section: SettingsSection }) {
         <h2>Appearance</h2>
         <p className="settings-panel-subtitle">The little details that make a workspace feel like yours.</p>
         <Group title="Interface">
-          <Row title="Theme" description="Switch between light and dark with the button in the sidebar."><FakeSelect><Icon name={theme === 'dark' ? 'moon' : 'sun'} size={15} /> {theme === 'dark' ? 'Dark' : 'Light'}</FakeSelect></Row>
+          <Row title="Theme" description="Choose a light or dark interface.">
+            <Segmented
+              label="Theme"
+              value={theme}
+              options={[
+                { value: 'light', label: <><Icon name="sun" size={14} /> Light</> },
+                { value: 'dark', label: <><Icon name="moon" size={14} /> Dark</> }
+              ]}
+              onChange={value => set({ theme: value })}
+            />
+          </Row>
           <Row title="Interface density" description="Adjust spacing for a more spacious or compact layout.">
             <div className="fake-segment"><span className="chosen">Comfortable</span><span>Compact</span></div>
           </Row>
@@ -99,7 +143,7 @@ function SettingsPanel({ section }: { section: SettingsSection }) {
       <>
         <h2>Workspace</h2>
         <p className="settings-panel-subtitle">Choose which experiences belong in your application.</p>
-        <Group title={<>Available workspaces <span className="preview-label">DESIGN CONCEPT</span></>}>
+        <Group title="Available workspaces">
           <Row title={<><span className="setting-icon"><Icon name="book-open" size={19} /></span> Notespace</>} description="A dedicated home for documents, notes, and knowledge."><Toggle /></Row>
           <Row title={<><span className="setting-icon"><Icon name="layout-dashboard" size={19} /></span> Workboard</>} description="A separate place for tasks, statuses, and linked note references."><Toggle /></Row>
         </Group>
@@ -113,7 +157,7 @@ function SettingsPanel({ section }: { section: SettingsSection }) {
       <>
         <h2>Storage</h2>
         <p className="settings-panel-subtitle">Where your content may live in a future version.</p>
-        <Group title={<>Local storage <span className="preview-label">PLANNED</span></>}>
+        <Group title="Local storage">
           <Row title="Storage location" description="Local-first storage is a future implementation choice."><span className="future-chip">Not connected</span></Row>
           <Row title="Offline content" description="Saved notes and work items are not available in this prototype."><span className="future-chip">Not available</span></Row>
         </Group>
@@ -154,7 +198,6 @@ export function Settings({ section, onSectionChange }: SettingsProps) {
     <div className="content-pad settings-page">
       <div className="page-intro">
         <div>
-          <div className="eyebrow"><span className="eyebrow-dot" />YOUR APPLICATION</div>
           <h1>Settings</h1>
           <p>Preferences for the way you work, all in one place.</p>
         </div>
@@ -176,7 +219,7 @@ export function Settings({ section, onSectionChange }: SettingsProps) {
         </aside>
         <section className="settings-content" aria-label={`${current.label} preferences`}>
           <SettingsPanel section={section} />
-          <div className="settings-disclaimer"><Icon name="info" size={15} /> UI prototype: these options are illustrative and do not change application behavior.</div>
+          <div className="settings-disclaimer"><Icon name="info" size={15} /> Theme and Contents scrolling are saved. The other options are previews and do not change anything yet.</div>
         </section>
       </div>
     </div>

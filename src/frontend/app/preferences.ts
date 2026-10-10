@@ -2,8 +2,10 @@ import { useSyncExternalStore } from 'react';
 import { readPreferences, writePreferences } from '../../backend/storage/preferencesStorage';
 
 /* App-wide preferences that apply to every note and screen; the backend saves them. */
-
 export type Theme = 'light' | 'dark';
+
+/* How the page moves when a heading is chosen in Contents: a smooth slide, or an instant jump. */
+export type ContentsScroll = 'smooth' | 'instant';
 
 export type Preferences = {
   theme: Theme;
@@ -11,6 +13,7 @@ export type Preferences = {
   /* Note zoom as a multiplier: 1 is 100%. */
   zoom: number;
   sidebarCollapsed: boolean;
+  contentsScroll: ContentsScroll;
 };
 
 export const ZOOM_MIN = 0.5;
@@ -27,12 +30,13 @@ const listeners = new Set<() => void>();
 /* Without a saved choice, the theme follows the system's light or dark setting. */
 function load(): Preferences {
   const systemTheme: Theme = window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-  const defaults: Preferences = { theme: systemTheme, zoom: 1, sidebarCollapsed: false };
+  const defaults: Preferences = { theme: systemTheme, zoom: 1, sidebarCollapsed: false, contentsScroll: 'smooth' };
   const saved = readPreferences();
   return {
     theme: saved.theme === 'dark' || saved.theme === 'light' ? saved.theme : defaults.theme,
     zoom: typeof saved.zoom === 'number' ? clampZoom(saved.zoom) : defaults.zoom,
-    sidebarCollapsed: saved.sidebarCollapsed === true
+    sidebarCollapsed: saved.sidebarCollapsed === true,
+    contentsScroll: saved.contentsScroll === 'instant' ? 'instant' : 'smooth'
   };
 }
 
@@ -53,6 +57,10 @@ export function updatePreferences(changes: Partial<Preferences>) {
 /* The theme is a data-theme attribute on <html>, which the dark stylesheet looks for. */
 export function applyTheme() {
   document.documentElement.dataset.theme = preferences.theme;
+}
+
+export function getPreferences() {
+  return preferences;
 }
 
 export function changeZoom(direction: -1 | 0 | 1) {

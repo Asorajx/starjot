@@ -4,9 +4,9 @@
   "version": "0.5.0",
   "type": "module",
   "scripts": {
-    "predev": "npm run theme",
+    "predev": "node scripts/build-dark-theme.mjs",
     "dev": "vite",
-    "prebuild": "npm run theme",
+    "prebuild": "node scripts/build-dark-theme.mjs",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",

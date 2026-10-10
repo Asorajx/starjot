@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { getPreferences } from '../../app/preferences';
 import { Icon } from '../../components/Icon';
 import type { Note, NoteMode } from '../../../shared/types/note';
 
@@ -14,13 +15,15 @@ type TableOfContentsProps = {
 };
 
 /* Scroll the editor to the top, a heading (by its position in the note), or the end of the note. */
+/* Settings decides whether it slides smoothly or jumps straight there. */
 function jumpTo(target: 'top' | 'bottom' | number) {
+  const behavior: ScrollBehavior = getPreferences().contentsScroll === 'instant' ? 'instant' : 'smooth';
   if (target === 'top') {
-    document.getElementById('main-scroll')?.scrollTo({ top: 0, behavior: 'smooth' });
+    document.getElementById('main-scroll')?.scrollTo({ top: 0, behavior });
   } else if (target === 'bottom') {
-    document.getElementById('note-bottom')?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    document.getElementById('note-bottom')?.scrollIntoView({ behavior, block: 'end' });
   } else {
-    document.querySelectorAll('#note-body :is(h1, h2, h3, h4, h5, h6)')[target]?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    document.querySelectorAll('#note-body :is(h1, h2, h3, h4, h5, h6)')[target]?.scrollIntoView({ behavior, block: 'start' });
   }
 }
 

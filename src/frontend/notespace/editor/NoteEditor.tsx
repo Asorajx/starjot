@@ -2,13 +2,14 @@ import { useEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEven
 import { changeZoom, usePreferences } from '../../app/preferences';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
 import { Icon } from '../../components/Icon';
-import { deleteNote, flushSave, getNote, isStorageAvailable, scheduleSave, updateNote, updatedLabel, useNote, useSaveStatus } from '../store';
+import { categoryName, deleteNote, flushSave, getNote, isStorageAvailable, updateNote, updatedLabel, useCategories, useNote, useSaveStatus } from '../store';
 import type { NoteMode } from '../../../shared/types/note';
 import { CodeLanguagePickers } from './CodeLanguagePickers';
 import { CommentLayer } from './CommentLayer';
 import { ContinuousEditor } from './ContinuousEditor';
 import { PageOptions, TableOfContents } from './EditorPanels';
 import { SelectionToolbar } from './SelectionToolbar';
+import { NoteHeader } from './NoteHeader';
 import { EditorSession, useSessionValue } from './session';
 import { StructuredEditor } from './StructuredEditor';
 
@@ -29,6 +30,9 @@ const SAVE_LABELS = { saved: 'Saved locally', saving: 'Saving…', unsaved: 'Not
 export function NoteEditor({ noteId, onClose }: NoteEditorProps) {
   const note = useNote(noteId);
   const saveStatus = useSaveStatus();
+
+  /* Re-render when categories are renamed, so the breadcrumb stays current. */
+  useCategories();
   const { zoom } = usePreferences();
   const [panel, setPanel] = useState<Panel>(null);
   const [switching, setSwitching] = useState(false);
@@ -138,7 +142,7 @@ export function NoteEditor({ noteId, onClose }: NoteEditorProps) {
         <button className="back-button" type="button" onClick={onClose}><Icon name="arrow-left" size={17} /> All notes</button>
         <nav className="editor-breadcrumb" aria-label="Note breadcrumb">
           <span className="editor-breadcrumb-separator">/</span>
-          <span className="editor-crumb-category">{note.category}</span>
+          <span className="editor-crumb-category">{categoryName(note.category) || 'Notes'}</span>
           <span className="editor-breadcrumb-separator">/</span>
           <span id="editor-crumb-title" className="editor-crumb-current">{note.title || 'Untitled note'}</span>
         </nav>
@@ -200,27 +204,8 @@ export function NoteEditor({ noteId, onClose }: NoteEditorProps) {
               <span className="meta-dot">•</span>
               <span id="note-updated-label">{updatedLabel(note)}</span>
             </div>
-            <input
-              id="note-title"
-              className="note-title-input"
-              type="text"
-              aria-label="Note title"
-              maxLength={160}
-              placeholder="Untitled note"
-              autoComplete="off"
-              readOnly={locked}
-              value={note.title}
-              onChange={event => {
-                updateNote(note.id, { title: event.target.value }, false);
-                scheduleSave();
-              }}
-            />
-            {note.subtitle && <p className="editor-subtitle">{note.subtitle}</p>}
-            <div className="editor-tags"><span className="tag-chip tag-chip--blue">{note.category}</span></div>
+            <NoteHeader note={note} locked={locked} />
             <div className="article-rule" />
-            <p className="markdown-hint">
-              <Icon name="type" size={14} /> Markdown shortcuts: <kbd>#</kbd> heading · <kbd>-</kbd> list · <kbd>```</kbd> code · press Space or Enter · <kbd>Esc</kbd> all notes
-            </p>
 
             {/* The key re-creates the editor after undo/redo or a mode change, so it shows the saved content. */}
             <div

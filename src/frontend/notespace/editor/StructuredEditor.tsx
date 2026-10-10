@@ -2,7 +2,6 @@ import {
   memo, useCallback, useEffect, useLayoutEffect, useRef, useState,
   type ClipboardEvent, type DragEvent, type FormEvent, type KeyboardEvent, type MouseEvent, type ReactNode
 } from 'react';
-import { Icon } from '../../components/Icon';
 import { cleanHtml } from '../sanitize';
 import { BlockRow } from './BlockRow';
 import {
@@ -732,10 +731,6 @@ export const StructuredEditor = memo(function StructuredEditor({ session, conten
       onClick={handleClick}
     >
       {rows}
-      <div className="block-footer-note" contentEditable={false}>
-        <Icon name="info" size={15} /> Hover a block to add a block (+) or drag it to reorder; Alt + click + adds above.
-        Enter creates a block; Shift + Enter makes a line break. Select across blocks, then press Sticky to keep them together.
-      </div>
     </div>
   );
 }, (previous, next) => previous.session === next.session && previous.locked === next.locked);

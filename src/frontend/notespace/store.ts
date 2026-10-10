@@ -1,8 +1,11 @@
 import { useSyncExternalStore } from 'react';
 import { cleanHtml, htmlToText } from './sanitize';
+import { DEFAULT_CATEGORIES, MAX_CATEGORIES } from '../../backend/data/defaultCategories';
 import { SAMPLE_CONTENT, SAMPLE_NOTES } from '../../backend/data/sampleNotes';
+import { readCategories, writeCategories } from '../../backend/storage/categoriesStorage';
 import { readNotes, writeNotes } from '../../backend/storage/notesStorage';
-import type { Note, NoteAccent, NoteChanges, NoteComment, SaveStatus } from '../../shared/types/note';
+import { isEmoji } from '../../shared/emoji';
+import type { Category, Note, NoteAccent, NoteChanges, NoteComment, SaveStatus } from '../../shared/types/note';
 
 /* The frontend's note store: it checks and tidies notes, and tells React when they change. */
 /* Saving and loading are done by the backend (backend/storage/notesStorage.ts). */
@@ -10,12 +13,20 @@ const MAX_NOTES = 1000;
 const SAVE_DELAY = 350;
 const ACCENTS: NoteAccent[] = ['indigo', 'mint', 'amber', 'rose'];
 
+const CATEGORY_NAME_LENGTH = 24;
+
+/* Category names used before categories could be edited, matched to today's default categories. */
+const OLD_CATEGORY_NAMES: Record<string, string> = {
+  personal: 'personal', projects: 'work', meetings: 'work', work: 'work', knowledge: 'school', school: 'school'
+};
+
 type StoreState = {
   notes: Note[];
+  categories: Category[];
   saveStatus: SaveStatus;
 };
 
-let state: StoreState = { notes: [], saveStatus: 'saved' };
+let state: StoreState = { notes: [], categories: [], saveStatus: 'saved' };
 
 /* Ids of deleted sample notes, so they are not added back the next time the app opens. */
 let deletedIds: string[] = [];
@@ -27,6 +38,17 @@ const listeners = new Set<() => void>();
 /* =========================
    Note Records
    ========================= */
+
+/* Find a note's category id; older notes stored a category name instead of an id. */
+function normalizeCategory(value: unknown) {
+  const text = String(value ?? '').trim();
+  if (!text) return '';
+  if (state.categories.some(category => category.id === text)) return text;
+  const byName = state.categories.find(category => category.name.toLowerCase() === text.toLowerCase());
+  if (byName) return byName.id;
+  const oldMatch = OLD_CATEGORY_NAMES[text.toLowerCase()];
+  return state.categories.some(category => category.id === oldMatch) ? oldMatch : '';
+}
 
 /* Convert older or incomplete records into the same shape as newly created notes. */
 function normalizeNote(raw: unknown): Note | null {
@@ -41,20 +63,23 @@ function normalizeNote(raw: unknown): Note | null {
   return {
     id,
     title: text('title', 'Untitled note', 160),
-    subtitle: text('subtitle', 'Notes, context and working ideas.', 250),
+    subtitle: text('subtitle', '', 250),
     preview: text('preview', '', 220),
-    category: text('category', 'Personal', 50),
+    category: normalizeCategory(record.category ?? fallback.category),
     updated: text('updated', '', 60),
     updatedAt: typeof record.updatedAt === 'string' ? record.updatedAt : null,
     createdAt: typeof record.createdAt === 'string' ? record.createdAt : null,
     date: text('date', '', 40),
     pinned: record.pinned === true,
-    icon: text('icon', 'file-text', 35),
+
+    /* Older notes stored an icon name such as "layers"; only emoji icons are kept now. */
+    icon: isEmoji(String(record.icon ?? '')) ? String(record.icon) : '',
     accent: ACCENTS.includes(record.accent as NoteAccent) ? record.accent as NoteAccent : fallback.accent ?? 'indigo',
     read: text('read', '1 min read', 35),
     mode: record.mode === 'blocks' ? 'blocks' : 'continuous',
     stickyIndicator: record.stickyIndicator !== false,
     locked: record.locked === true,
+    detailsHidden: record.detailsHidden === true,
     comments: normalizeComments(record.comments),
     content: cleanHtml(record.content ?? SAMPLE_CONTENT[id] ?? '')
   };
@@ -65,6 +90,19 @@ function normalizeComments(raw: unknown): NoteComment[] {
   return raw
     .filter(item => item && typeof item === 'object' && /^c[a-z0-9]+$/.test(String(item.id)))
     .map(item => ({ id: String(item.id), text: String(item.text ?? '').slice(0, 2000), createdAt: String(item.createdAt ?? '') }));
+}
+
+function normalizeCategories(raw: unknown[] | null): Category[] {
+  if (!raw) return DEFAULT_CATEGORIES.map(category => ({ ...category }));
+  const seen = new Set<string>();
+  return raw.flatMap(item => {
+    const record = (item ?? {}) as Record<string, unknown>;
+    const id = String(record.id ?? '');
+    const name = String(record.name ?? '').trim().slice(0, CATEGORY_NAME_LENGTH);
+    if (!/^[a-z0-9_-]+$/i.test(id) || !name || seen.has(id)) return [];
+    seen.add(id);
+    return [{ id, name }];
+  }).slice(0, MAX_CATEGORIES);
 }
 
 function load(): Note[] {
@@ -99,6 +137,7 @@ export function save() {
   saveTimer = undefined;
   try {
     writeNotes(state.notes, deletedIds);
+    writeCategories(state.categories);
     storageAvailable = true;
   } catch (error) {
     storageAvailable = false;
@@ -124,12 +163,13 @@ export function getNote(id: string) {
   return state.notes.find(note => note.id === id);
 }
 
-export function createNote() {
+/* A new note can start in a category, for example the one being filtered on the home page. */
+export function createNote(category = '') {
   const now = new Date().toISOString();
   const note = normalizeNote({
     id: `note_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`,
-    title: 'Untitled note', subtitle: '', preview: '', category: 'Personal',
-    updatedAt: now, createdAt: now, pinned: false, icon: 'file-text',
+    title: 'Untitled note', subtitle: '', preview: '', category,
+    updatedAt: now, createdAt: now, pinned: false, icon: '',
     accent: 'indigo', mode: 'continuous', content: ''
   }) as Note;
   setState({ notes: [note, ...state.notes] });
@@ -144,6 +184,10 @@ export function updateNote(id: string, changes: NoteChanges, persist = true) {
   const next: Note = { ...current, updatedAt: new Date().toISOString() };
 
   if (changes.title !== undefined) next.title = String(changes.title).slice(0, 160);
+  if (changes.subtitle !== undefined) next.subtitle = String(changes.subtitle).slice(0, 250);
+  if (changes.category !== undefined) next.category = normalizeCategory(changes.category);
+  if (changes.icon !== undefined) next.icon = isEmoji(changes.icon) ? changes.icon : '';
+  if (typeof changes.detailsHidden === 'boolean') next.detailsHidden = changes.detailsHidden;
   if (changes.content !== undefined) {
     next.content = cleanHtml(changes.content);
     next.preview = htmlToText(next.content).trim().slice(0, 180);
@@ -158,12 +202,72 @@ export function updateNote(id: string, changes: NoteChanges, persist = true) {
   return next;
 }
 
+/* Pinning is not an edit, so it does not change the note's "last edited" time. */
+export function setPinned(id: string, pinned: boolean) {
+  setState({ notes: state.notes.map(note => (note.id === id ? { ...note, pinned } : note)) });
+  save();
+}
+
 /* Remove a note permanently from this browser. */
 export function deleteNote(id: string) {
   if (SAMPLE_NOTES.some(note => note.id === id)) deletedIds = [...deletedIds, id];
   setState({ notes: state.notes.filter(note => note.id !== id) });
   save();
 }
+
+
+/* =========================
+   Categories
+   ========================= */
+
+function cleanCategoryName(name: string) {
+  return name.trim().replace(/\s+/g, ' ').slice(0, CATEGORY_NAME_LENGTH);
+}
+
+function nameTaken(name: string, exceptId = '') {
+  return state.categories.some(category => category.id !== exceptId && category.name.toLowerCase() === name.toLowerCase());
+}
+
+export function canAddCategory() {
+  return state.categories.length < MAX_CATEGORIES;
+}
+
+/* Returns the new category, or null when the limit is reached or the name is empty or taken. */
+export function addCategory(name: string) {
+  const clean = cleanCategoryName(name);
+  if (!canAddCategory() || !clean || nameTaken(clean)) return null;
+  const category = { id: `cat_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`, name: clean };
+  setState({ categories: [...state.categories, category] });
+  save();
+  return category;
+}
+
+/* Returns false (and keeps the old name) when the new name is empty or already used. */
+export function renameCategory(id: string, name: string) {
+  const clean = cleanCategoryName(name);
+  if (!clean || nameTaken(clean, id)) return false;
+  setState({ categories: state.categories.map(category => (category.id === id ? { ...category, name: clean } : category)) });
+  save();
+  return true;
+}
+
+/* Notes in a removed category are kept, but no longer have a category. */
+export function removeCategory(id: string) {
+  setState({
+    categories: state.categories.filter(category => category.id !== id),
+    notes: state.notes.map(note => (note.category === id ? { ...note, category: '' } : note))
+  });
+  save();
+}
+
+export function categoryName(id: string) {
+  return state.categories.find(category => category.id === id)?.name ?? '';
+}
+
+
+/* =========================
+   Labels and Status
+   ========================= */
 
 export function updatedLabel(note: Note) {
   if (!note.updatedAt) return note.updated || 'Recently';
@@ -197,10 +301,16 @@ export function useNote(id: string) {
   return useSyncExternalStore(subscribe, () => getNote(id));
 }
 
+export function useCategories() {
+  return useSyncExternalStore(subscribe, () => state.categories);
+}
+
 export function useSaveStatus() {
   return useSyncExternalStore(subscribe, () => state.saveStatus);
 }
 
-/* Load saved notes once, when this module is first imported. */
-state = { notes: load(), saveStatus: 'saved' };
+/* Load saved categories and notes once, when this module is first imported. */
+/* Categories load first, because notes are matched to them. */
+state = { notes: [], categories: normalizeCategories(readCategories()), saveStatus: 'saved' };
+state = { ...state, notes: load() };
 if (!storageAvailable) state.saveStatus = 'unsaved';

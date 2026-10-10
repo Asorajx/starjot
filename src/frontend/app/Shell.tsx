@@ -24,14 +24,13 @@ type SidebarProps = NavigationProps & {
 /* When the sidebar is hidden it can still slide in over the page; its button then keeps it open. */
 export function Sidebar({ workspace, openNoteId, onNavigate, onOpenNote, onMouseEnter, onMouseLeave }: SidebarProps) {
   const pinned = useNotes().filter(note => note.pinned).slice(0, 3);
-  const { theme, sidebarCollapsed } = usePreferences();
+  const { sidebarCollapsed } = usePreferences();
 
   return (
     <aside className="sidebar" aria-label="Main navigation" onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave}>
       <div className="brand">
         <span className="brand-mark"><span /><span /><span /></span>
         <span className="brand-words">starjot<span className="brand-point">.</span></span>
-        <span className="brand-preview">PREVIEW</span>
         <button
           type="button"
           className={`sidebar-toggle ${sidebarCollapsed ? 'is-collapsed' : ''}`}
@@ -80,15 +79,6 @@ export function Sidebar({ workspace, openNoteId, onNavigate, onOpenNote, onMouse
 
       <div className="sidebar-spacer" />
       <div className="sidebar-bottom">
-        <div className="sidebar-bottom-helper"><Icon name="circle-help" size={17} /> <span>Windows-first · Browser preview</span></div>
-        <button
-          className="sidebar-notifications sidebar-theme-toggle"
-          type="button"
-          aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
-          onClick={() => updatePreferences({ theme: theme === 'dark' ? 'light' : 'dark' })}
-        >
-          <Icon name={theme === 'dark' ? 'sun' : 'moon'} size={17} /><span>{theme === 'dark' ? 'Light mode' : 'Dark mode'}</span>
-        </button>
         <button className="sidebar-notifications" type="button" aria-label="Notifications (coming soon)">
           <Icon name="bell" size={17} /><span>Notifications</span><span className="notification-dot" />
         </button>

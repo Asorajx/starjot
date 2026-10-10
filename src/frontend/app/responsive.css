@@ -13,8 +13,8 @@
 
 @media (min-width:1600px) {
   .content-pad {
-    padding-left: 58px;
-    padding-right: 58px;
+    padding-left: 60px;
+    padding-right: 60px;
   }
 
   .editor-layout {
@@ -34,31 +34,19 @@
   }
 
   .brand {
-    padding: 0 9px;
-  }
-
-  .brand-preview {
-    display: none;
+    padding: 0 8px;
   }
 
   .content-pad {
-    padding: 35px 28px;
+    padding: 36px 28px;
   }
 
   .editor-layout {
     grid-template-columns: 144px minmax(0,1fr) 222px;
   }
 
-  .editor-outline {
-    padding: 35px 11px;
-  }
-
-  .editor-side-panel {
-    padding: 25px 12px;
-  }
-
   .editor-canvas {
-    padding: 43px 33px;
+    padding: 44px 32px;
   }
 
   .task-grid {
@@ -66,7 +54,7 @@
   }
 
   .board-tabs {
-    gap: 26px;
+    gap: 28px;
   }
 }
 
@@ -74,7 +62,7 @@
   .sidebar {
     width: 69px;
     min-width: 69px;
-    padding: 0 7px;
+    padding: 0 8px;
   }
 
   .brand {
@@ -82,12 +70,17 @@
     justify-content: center;
   }
 
-  .brand-words,.brand-preview,.sidebar-workspace,.sidebar-section-label,.quick-access,.sidebar-bottom-helper,.profile-info,.profile>svg {
+  .brand-words,
+  .sidebar-workspace,
+  .sidebar-section-label,
+  .quick-access,
+  .profile-info,
+  .profile>svg {
     display: none;
   }
 
   .primary-nav {
-    margin-top: 10px;
+    margin-top: 12px;
   }
 
   .nav-item {
@@ -96,7 +89,8 @@
     height: 50px;
   }
 
-  .nav-item span:nth-child(2),.nav-active-indicator {
+  .nav-item span:nth-child(2),
+  .nav-active-indicator {
     display: none;
   }
 
@@ -112,32 +106,15 @@
   }
 
   .topbar {
-    padding: 0 25px;
+    padding: 0 24px;
   }
 
   .editor-layout {
     grid-template-columns: minmax(0,1fr) 228px;
   }
 
-  .editor-outline {
-    display: none;
-  }
-
   .editor-canvas {
-    padding: 47px 35px;
-  }
-
-  .pinned-grid {
-    gap: 12px;
-  }
-
-  .note-card {
-    padding: 17px;
-    min-height: 215px;
-  }
-
-  .home-feature {
-    height: 214px;
+    padding: 48px 36px;
   }
 }
 
@@ -153,47 +130,15 @@
   .topbar {
     height: 57px;
     min-height: 57px;
-    padding: 0 18px;
-  }
-
-  .topbar-brand {
-    display: inline-flex;
-  }
-
-  .topbar-actions {
-    gap: 10px;
-  }
-
-  .search-shell {
-    width: 34px;
-    height: 34px;
-    display: grid;
-    place-items: center;
-    padding: 0;
-    background: transparent;
-    border: 0;
-  }
-
-  .search-shell input,.search-shortcut,.topbar-vertical-line,.topbar-actions>.icon-button {
-    display: none;
-  }
-
-  .avatar--top {
-    height: 29px;
-    width: 29px;
+    padding: 0 20px;
   }
 
   .breadcrumbs {
-    gap: 9px;
-  }
-
-  .crumb-current {
-    max-width: 130px;
-    font-size: 10px;
+    gap: 8px;
   }
 
   .main-scroll {
-    padding-bottom: 66px;
+    padding-bottom: 68px;
   }
 
   .mobile-nav {
@@ -219,7 +164,7 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 5px;
+    gap: 4px;
     color: #94a1b5;
     font-size: 10px;
     font-weight: 650;
@@ -231,12 +176,12 @@
   }
 
   .content-pad {
-    padding: 26px 18px 30px;
+    padding: 28px 20px 32px;
   }
 
   .page-intro {
     align-items: flex-start;
-    gap: 15px;
+    gap: 16px;
   }
 
   .page-intro h1 {
@@ -249,71 +194,31 @@
 
   .notes-home .page-intro .btn {
     height: 33px;
-    padding: 0 10px;
+    padding: 0 12px;
     font-size: 10px;
-    margin-top: 19px;
-  }
-
-  .home-feature {
-    height: auto;
-    min-height: 226px;
-  }
-
-  .home-feature-left {
-    padding: 25px 23px;
-    width: 100%;
-  }
-
-  .home-feature h2 {
-    font-size: 20px;
-  }
-
-  .home-feature p {
-    max-width: 255px;
-  }
-
-  .document-illustration {
-    display: none;
+    margin-top: 20px;
   }
 
   .section-heading h2 {
     font-size: 15px;
   }
 
-  .pinned-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .note-card {
-    min-height: 157px;
-  }
-
-  .note-card-top {
-    margin-bottom: 9px;
-  }
-
-  .note-card-description {
-    margin-bottom: 14px;
-  }
-
-  .note-card-bottom {
-    margin-top: auto;
-  }
-
-  .recent-columns,.recent-row {
+  .recent-columns,
+  .recent-row {
     grid-template-columns: minmax(0,1fr) 93px;
   }
 
-  .recent-columns>span:nth-child(2),.recent-category {
+  .recent-columns>span:nth-child(2),
+  .recent-category {
     display: none;
   }
 
   .recent-columns {
-    padding: 0 13px;
+    padding: 0 12px;
   }
 
   .recent-row {
-    padding: 10px 13px;
+    padding: 12px 12px;
   }
 
   .recent-time {
@@ -321,30 +226,21 @@
   }
 
   .recent-name {
-    gap: 9px;
+    gap: 8px;
   }
 
   .recent-text small {
     max-width: 210px;
   }
 
-  .mini-footer {
-    display: block;
-    line-height: 1.9;
-  }
-
-  .mini-footer span {
-    display: block;
-  }
-
   .editor-toolbar {
     height: 48px;
     min-height: 48px;
-    padding: 0 13px;
-    gap: 10px;
+    padding: 0 12px;
+    gap: 12px;
   }
 
-  .saved-pill,.toolbar-separator,.editor-toolbar-title {
+  .saved-pill {
     display: none;
   }
 
@@ -355,23 +251,16 @@
   }
 
   .editor-canvas {
-    padding: 35px 23px 28px;
+    padding: 36px 24px 28px;
     order: 1;
-  }
-
-  .editor-side-panel {
-    order: 2;
-    border-left: 0;
-    border-top: 1px solid var(--line);
-    padding: 26px 22px;
-    background: #fafdff;
   }
 
   .editor-width>h1 {
     font-size: 27px;
   }
 
-  .article-body p,.block-content p {
+  .article-body p,
+  .block-content p {
     font-size: 12px;
   }
 
@@ -395,18 +284,14 @@
     align-items: center;
   }
 
-  .board-overview-badge {
-    display: none;
-  }
-
   .board-metrics {
     grid-template-columns: repeat(2,1fr);
-    gap: 10px;
+    gap: 12px;
     margin-bottom: 20px;
   }
 
   .metric {
-    padding: 14px 16px;
+    padding: 16px 16px;
   }
 
   .metric strong {
@@ -414,8 +299,8 @@
   }
 
   .board-tabs {
-    padding: 0 14px;
-    gap: 23px;
+    padding: 0 16px;
+    gap: 24px;
   }
 
   .board-tab {
@@ -424,7 +309,7 @@
   }
 
   .board-panel-content {
-    padding: 20px 15px;
+    padding: 20px 16px;
   }
 
   .board-section-head {
@@ -454,10 +339,6 @@
     min-height: 215px;
   }
 
-  .board-philosophy {
-    padding: 13px;
-  }
-
   .settings-layout {
     grid-template-columns: 1fr;
   }
@@ -465,10 +346,10 @@
   .settings-nav {
     display: flex;
     overflow-x: auto;
-    gap: 6px;
+    gap: 8px;
     border-right: 0;
     border-bottom: 1px solid var(--line);
-    padding: 9px;
+    padding: 8px;
   }
 
   .settings-nav-heading {
@@ -478,11 +359,11 @@
   .settings-nav-item {
     width: auto;
     white-space: nowrap;
-    padding: 0 11px;
+    padding: 0 12px;
     margin: 0;
     height: 37px;
     font-size: 10px;
-    gap: 7px;
+    gap: 8px;
   }
 
   .settings-nav-item svg {
@@ -490,7 +371,7 @@
   }
 
   .settings-content {
-    padding: 25px 17px;
+    padding: 24px 16px;
   }
 
   .settings-content>h2 {
@@ -504,7 +385,7 @@
 
   .setting-row {
     align-items: flex-start;
-    gap: 10px;
+    gap: 12px;
   }
 
   .setting-row-text {
@@ -515,16 +396,17 @@
     min-width: 0;
   }
 
-  .fake-field,.fake-select {
+  .fake-field,
+  .fake-select {
     min-width: 116px;
     max-width: 126px;
     padding: 0 8px;
-    gap: 5px;
+    gap: 4px;
     font-size: 9px;
   }
 
   .fake-segment span {
-    padding: 7px 5px;
+    padding: 8px 4px;
     font-size: 9px;
   }
 }
@@ -533,7 +415,7 @@
   .notes-home .page-intro .btn {
     font-size: 0;
     gap: 0;
-    padding: 0 9px;
+    padding: 0 8px;
   }
 
   .notes-home .page-intro .btn svg {
@@ -551,7 +433,7 @@
   }
 
   .settings-content {
-    padding: 22px 12px;
+    padding: 24px 12px;
   }
 
   .setting-row {
@@ -560,16 +442,19 @@
   }
 
   .setting-value {
-    margin-top: 3px;
+    margin-top: 4px;
   }
 
-  .fake-field,.fake-select {
+  .fake-field,
+  .fake-select {
     min-width: 160px;
   }
 }
 
 @media (prefers-reduced-motion:reduce) {
-  *,*::before,*::after {
+  *,
+  *::before,
+  *::after {
     scroll-behavior: auto !important;
     transition: none !important;
   }
@@ -584,7 +469,7 @@
   .sidebar-search {
     justify-content: center;
     height: 42px;
-    margin: 10px 0 18px;
+    margin: 12px 0 20px;
     padding: 0;
     background: transparent;
     border: 0;
@@ -597,7 +482,7 @@
 
   .sidebar-notifications {
     justify-content: center;
-    padding: 10px 0;
+    padding: 12px 0;
   }
 
   .sidebar-notifications .notification-dot {

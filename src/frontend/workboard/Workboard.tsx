@@ -96,11 +96,9 @@ function TimelineView(props: WorkboardProps) {
     <div className="content-pad board-page board-page--timeline">
       <div className="page-intro board-intro">
         <div>
-          <div className="eyebrow"><span className="eyebrow-dot" />WORK MANAGEMENT</div>
           <h1>Workboard</h1>
           <p>View the schedule across sprints, epics, features, and tasks.</p>
         </div>
-        <span className="board-overview-badge"><Icon name="calendar-days" size={16} /> Project timeline</span>
       </div>
 
       <div className="board-panel">
@@ -137,11 +135,9 @@ export function Workboard(props: WorkboardProps) {
     <div className="content-pad board-page">
       <div className="page-intro board-intro">
         <div>
-          <div className="eyebrow"><span className="eyebrow-dot" />WORK MANAGEMENT</div>
           <h1>Workboard</h1>
           <p>A clear view of the work ahead, the work moving, and the work done.</p>
         </div>
-        <span className="board-overview-badge"><Icon name="layout-dashboard" size={16} /> Team overview</span>
       </div>
 
       <div className="board-metrics">
@@ -166,11 +162,6 @@ export function Workboard(props: WorkboardProps) {
             <Icon name="info" size={15} /> This is a visual-only board. Work items and note links use placeholder content; no creation, movement, or updates are implemented.
           </div>
         </div>
-      </div>
-
-      <div className="board-philosophy">
-        <span className="board-philosophy-icon"><Icon name="book-open" size={18} /></span>
-        <span><strong>Connected, not combined.</strong> Work items can reference Notespace documents in the future, while both workspaces stay independent.</span>
       </div>
     </div>
   );

@@ -2,347 +2,16 @@
    Notespace Home
    ========================= */
 
-.home-feature {
-  height: 222px;
-  border-radius: 14px;
-  overflow: hidden;
-  display: flex;
-  position: relative;
-  background: linear-gradient(111deg,#eaf2ff 0%,#edf5ff 58%,#dceafe 100%);
-  border: 1px solid #e0eafd;
-  margin-bottom: 38px;
-}
-
-.home-feature::after {
-  content: "";
-  width: 410px;
-  height: 410px;
-  border-radius: 50%;
-  border: 1px solid rgba(108,152,230,.13);
-  position: absolute;
-  right: -83px;
-  top: -250px;
-}
-
-.home-feature-left {
-  position: relative;
-  z-index: 1;
-  flex: 1;
-  padding: 28px 34px;
-}
-
-.feature-kicker {
-  font-size: 9px;
-  letter-spacing: 1.25px;
-  color: #6f9bdf;
-  font-weight: 850;
-}
-
-.home-feature h2 {
-  font-size: 23px;
-  line-height: 1.3;
-  letter-spacing: -.72px;
-  margin: 11px 0 11px;
-  color: #234379;
-  font-weight: 760;
-}
-
-.home-feature p {
-  font-size: 11px;
-  line-height: 1.7;
-  color: #7090b8;
-  max-width: 400px;
-  margin-bottom: 14px;
-}
-
-.feature-link {
-  padding: 0;
-  background: transparent;
-  border: 0;
-  color: #336fcf;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 11px;
-  font-weight: 750;
-}
-
-.feature-link:hover {
-  text-decoration: underline;
-}
-
-.document-illustration {
-  width: 37%;
-  height: 100%;
-  position: relative;
-}
-
-.paper-sheet {
-  position: absolute;
-  top: 23px;
-  left: 15%;
-  width: 201px;
-  height: 257px;
-  border: 1px solid #dae7f7;
-  border-radius: 10px;
-  background: #fff;
-  box-shadow: 0 9px 26px rgba(65,104,169,.13);
-  transform: rotate(-5deg);
-  padding: 22px 21px;
-}
-
-.paper-sheet--back {
-  left: 22%;
-  top: 34px;
-  transform: rotate(9deg);
-  background: #f5f9ff;
-  box-shadow: 0 8px 16px rgba(64,102,153,.08);
-}
-
-.paper-topline {
-  display: flex;
-  gap: 4px;
-  margin-bottom: 26px;
-}
-
-.paper-topline span {
-  display: block;
-  height: 5px;
-  width: 5px;
-  border-radius: 50%;
-  background: #e9eef9;
-}
-
-.paper-heading {
-  background: #a5c0ef;
-  height: 11px;
-  border-radius: 3px;
-  width: 107px;
-  margin-bottom: 17px;
-}
-
-.paper-line {
-  height: 6px;
-  background: #dce6f6;
-  border-radius: 4px;
-  margin-bottom: 9px;
-}
-
-.paper-line.long {
-  width: 155px;
-}
-
-.paper-line.medium {
-  width: 134px;
-}
-
-.paper-line.short {
-  width: 90px;
-}
-
-.paper-tag {
-  position: absolute;
-  top: 180px;
-  left: 19px;
-  background: #f0f6ff;
-  border: 1px solid #dce9fb;
-  color: #6a94cf;
-  border-radius: 5px;
-  padding: 6px 7px;
-  font-size: 8px;
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  font-weight: 700;
-}
-
-.paper-tag-dot {
-  display: inline-block;
-  background: #7ab6f9;
-  border-radius: 50%;
-  height: 6px;
-  width: 6px;
-}
-
-.floating-shape {
-  position: absolute;
-  border: 1px solid #b7d1fa;
-  border-radius: 8px;
-  transform: rotate(10deg);
-}
-
-.floating-shape--one {
-  width: 29px;
-  height: 29px;
-  left: 1%;
-  top: 39px;
-}
-
-.floating-shape--two {
-  width: 16px;
-  height: 16px;
-  right: 7%;
-  bottom: 52px;
-  transform: rotate(-15deg);
-}
-
-.content-section {
-  margin-bottom: 34px;
-}
-
-.section-heading {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 20px;
-}
-
-.section-heading h2 {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  font-weight: 750;
-  font-size: 16px;
-  letter-spacing: -.4px;
-  margin: 0 0 7px;
-  color: #2c3d58;
-}
-
-.section-heading h2 svg {
-  color: #7a94c2;
-}
-
-.section-heading p {
-  margin: 0;
-  color: #9aa6b6;
-  font-size: 11px;
-}
-
-.subtle-counter {
-  font-size: 11px;
-  color: #9aa8ba;
-}
-
-.pinned-grid {
-  display: grid;
-  grid-template-columns: repeat(3,minmax(0,1fr));
-  gap: 17px;
-}
-
-.note-card {
-  background: white;
-  border: 1px solid #e9edf4;
-  box-shadow: var(--shadow);
-  border-radius: 12px;
-  min-width: 0;
-  min-height: 196px;
-  padding: 19px 20px 16px;
-  text-align: left;
-  display: flex;
-  flex-direction: column;
-  transition: border-color .15s,transform .15s,box-shadow .15s;
-}
-
-.note-card:hover {
-  border-color: #b9d0fb;
-  transform: translateY(-2px);
-  box-shadow: 0 10px 26px rgba(37,73,131,.08);
-}
-
-.note-card-top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 17px;
-}
-
-.doc-icon {
-  height: 40px;
-  width: 40px;
-  display: inline-grid;
-  place-items: center;
-  border-radius: 10px;
-  flex-shrink: 0;
-  color: #637ddc;
-  background: #edf1ff;
-}
-
-.doc-icon--mint {
-  color: #4eae9a;
-  background: #e5f7f1;
-}
-
-.doc-icon--amber {
-  color: #d8a14b;
-  background: #fff5df;
-}
-
-.doc-icon--rose {
-  color: #d68799;
-  background: #fff0f4;
-}
-
-.doc-icon--small {
-  width: 33px;
-  height: 33px;
-  border-radius: 8px;
-}
-
-.note-card-arrow {
-  color: #a5b5ce;
-}
-
-.note-card strong {
-  font-size: 13px;
-  letter-spacing: -.1px;
-  color: #2e3e58;
-  margin-bottom: 9px;
-}
-
-.note-card-description {
-  font-size: 11px;
-  color: #9aa6b4;
-  line-height: 1.68;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-.note-card-bottom {
-  border-top: 1px solid #f0f2f7;
-  margin-top: auto;
-  padding-top: 16px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 5px;
-  color: #a4aebc;
-  font-size: 10px;
-}
-
-.category-chip {
-  font-size: 10px;
-  color: #7290bd;
-  background: #f2f6fd;
-  border-radius: 5px;
-  padding: 5px 8px;
-  font-weight: 640;
-}
-
-.recent-section {
-  margin-top: 0;
-}
-
 .recent-table {
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: 4px;
   overflow: hidden;
   background: #fff;
   box-shadow: var(--shadow);
 }
 
-.recent-columns,.recent-row {
+.recent-columns,
+.recent-row {
   display: grid;
   grid-template-columns: minmax(0,1fr) 120px 147px;
   align-items: center;
@@ -357,7 +26,7 @@
   font-size: 9px;
   font-weight: 760;
   letter-spacing: .85px;
-  padding: 0 21px;
+  padding: 0 20px;
 }
 
 .recent-row {
@@ -366,7 +35,7 @@
   border: 0;
   border-bottom: 1px solid #f1f2f6;
   background: #fff;
-  padding: 10px 21px;
+  padding: 12px 20px;
   text-align: left;
 }
 
@@ -389,7 +58,7 @@
   display: flex;
   flex-direction: column;
   min-width: 0;
-  gap: 5px;
+  gap: 4px;
 }
 
 .recent-text strong {
@@ -420,20 +89,11 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 7px;
+  gap: 8px;
 }
 
 .recent-time svg {
   color: #c6ceda;
-}
-
-.mini-footer {
-  display: flex;
-  justify-content: space-between;
-  gap: 20px;
-  color: #adb7c5;
-  font-size: 10px;
-  padding: 0 1px 10px;
 }
 
 
@@ -453,38 +113,25 @@
   min-height: 58px;
   display: flex;
   align-items: center;
-  padding: 0 33px;
-  gap: 17px;
+  padding: 0 32px;
+  gap: 16px;
   border-bottom: 1px solid var(--line);
 }
 
 .back-button {
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: 8px;
   background: none;
   border: none;
   color: #5d6f8a;
-  padding: 8px 3px;
+  padding: 8px 4px;
   font-size: 11px;
   font-weight: 700;
 }
 
 .back-button:hover {
   color: var(--blue);
-}
-
-.toolbar-separator {
-  height: 18px;
-  border-left: 1px solid #e9edf4;
-}
-
-.editor-toolbar-title {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 11px;
-  color: #94a0b0;
 }
 
 .editor-toolbar-fill {
@@ -494,17 +141,13 @@
 .saved-pill {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   color: #56a48b;
   background: #f1faf5;
-  padding: 7px 10px;
-  border-radius: 6px;
+  padding: 8px 12px;
+  border-radius: 4px;
   font-size: 10px;
   font-weight: 690;
-}
-
-.editor-dots {
-  margin-left: 2px;
 }
 
 .editor-layout {
@@ -514,26 +157,12 @@
   min-height: calc(100vh - 131px);
 }
 
-.editor-outline {
-  padding: 43px 15px 22px 27px;
-  border-right: 1px solid #f0f2f6;
-  position: relative;
-}
-
-.outline-label {
-  font-size: 9px;
-  font-weight: 830;
-  color: #9ca8b6;
-  letter-spacing: 1.3px;
-  margin-bottom: 23px;
-}
-
 .outline-item {
   display: block;
   font-size: 11px;
   line-height: 1.4;
-  padding: 10px 9px;
-  margin-bottom: 6px;
+  padding: 12px 8px;
+  margin-bottom: 8px;
   border-left: 2px solid transparent;
   color: #98a5b4;
 }
@@ -549,23 +178,9 @@
   background: #f7faff;
 }
 
-.outline-bottom {
-  margin-top: 75px;
-  color: #adb7c4;
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  font-size: 10px;
-  line-height: 1.7;
-}
-
-.outline-bottom svg {
-  margin-top: 2px;
-}
-
 .editor-canvas {
   min-width: 0;
-  padding: 56px clamp(27px,6%,76px) 72px;
+  padding: 56px clamp(28px,6%,76px) 72px;
   background: white;
 }
 
@@ -587,7 +202,7 @@
 .page-type {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   color: #708cc7;
   font-weight: 780;
   letter-spacing: .85px;
@@ -601,39 +216,13 @@
   font-size: clamp(26px,2.5vw,36px);
   letter-spacing: -1.35px;
   line-height: 1.22;
-  margin: 0 0 13px;
+  margin: 0 0 12px;
   color: #1c2c47;
   font-weight: 790;
 }
 
-.editor-subtitle {
-  font-size: 13px;
-  color: #95a0b0;
-  line-height: 1.75;
-  margin: 0 0 18px;
-}
-
-.editor-tags {
-  display: flex;
-  gap: 7px;
-  flex-wrap: wrap;
-}
-
-.tag-chip {
-  font-size: 10px;
-  color: #8f9eb0;
-  border-radius: 5px;
-  background: #f4f6f9;
-  padding: 6px 8px;
-}
-
-.tag-chip--blue {
-  color: #4d7dcc;
-  background: #eaf2ff;
-}
-
 .article-rule {
-  margin: 30px 0 34px;
+  margin: 32px 0 36px;
   border-top: 1px solid #edf0f5;
 }
 
@@ -642,21 +231,23 @@
   color: #56657b;
 }
 
-.document-tagline,.overline {
+.document-tagline,
+.overline {
   font-size: 9px;
   letter-spacing: 1.4px;
   color: #83a1d8;
   font-weight: 800;
-  margin-bottom: 11px;
+  margin-bottom: 12px;
   display: block;
 }
 
-.article-body h2,.block-content h2 {
+.article-body h2,
+.block-content h2 {
   font-size: 20px;
   letter-spacing: -.5px;
   font-weight: 770;
   color: #2b3d59;
-  margin: 20px 0 14px;
+  margin: 20px 0 16px;
   line-height: 1.36;
 }
 
@@ -664,34 +255,39 @@
   margin-top: 8px;
 }
 
-.article-body p,.block-content p {
+.article-body p,
+.block-content p {
   font-size: 12.6px;
   line-height: 1.96;
   color: #65738a;
-  margin: 0 0 17px;
+  margin: 0 0 16px;
 }
 
-.article-body ul,.block-content ul {
-  padding-left: 21px;
-  margin: 5px 0 23px;
+.article-body ul,
+.block-content ul {
+  padding-left: 20px;
+  margin: 4px 0 24px;
   color: #66758c;
   font-size: 12.5px;
   line-height: 1.9;
 }
 
-.article-body li,.block-content li {
-  margin-bottom: 9px;
+.article-body li,
+.block-content li {
+  margin-bottom: 8px;
 }
 
-.article-body strong,.block-content strong {
+.article-body strong,
+.block-content strong {
   color: #41546e;
 }
 
-.article-body blockquote,.block-content blockquote {
+.article-body blockquote,
+.block-content blockquote {
   border-left: 3px solid #bcd1ff;
   background: #f7faff;
-  padding: 13px 19px;
-  margin: 22px 0 27px;
+  padding: 12px 20px;
+  margin: 24px 0 28px;
   font-size: 12px;
   font-style: italic;
   color: #6c84b6;
@@ -702,7 +298,7 @@
 .document-end {
   display: flex;
   align-items: center;
-  gap: 13px;
+  gap: 12px;
   color: #c1c9d5;
   font-size: 9px;
   font-weight: 800;
@@ -717,27 +313,6 @@
   flex: 1;
 }
 
-.editor-side-panel {
-  border-left: 1px solid var(--line);
-  padding: 30px 18px 30px 19px;
-  min-width: 0;
-  background: #fcfdff;
-}
-
-.side-panel-heading {
-  display: flex;
-  justify-content: space-between;
-  font-size: 12px;
-  font-weight: 740;
-  color: #455874;
-  align-items: center;
-  margin-bottom: 30px;
-}
-
-.side-panel-heading span {
-  color: #9daabd;
-}
-
 .side-setting>strong {
   font-size: 11px;
   color: #455775;
@@ -747,7 +322,7 @@
   font-size: 10px;
   line-height: 1.75;
   color: #a1acba;
-  margin: 8px 0 14px;
+  margin: 8px 0 16px;
 }
 
 .editor-mode-options {
@@ -762,8 +337,8 @@
   gap: 8px;
   background: #fff;
   border: 1px solid #e9edf3;
-  border-radius: 8px;
-  padding: 11px 8px;
+  border-radius: 4px;
+  padding: 12px 8px;
   text-align: left;
 }
 
@@ -795,7 +370,7 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 4px;
 }
 
 .mode-option strong {
@@ -837,7 +412,7 @@
 .settings-hint {
   display: flex;
   align-items: flex-start;
-  gap: 6px;
+  gap: 8px;
   color: #a0adbd;
   line-height: 1.6;
   font-size: 9px;
@@ -850,39 +425,19 @@
 
 .side-setting--border {
   border-top: 1px solid #e9edf4;
-  padding-top: 23px;
+  padding-top: 24px;
   margin-top: 24px;
-}
-
-.feature-state {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  background: #f4f7fd;
-  border-radius: 6px;
-  padding: 11px;
-  font-size: 10px;
-  color: #778db4;
-}
-
-.coming-later {
-  font-size: 10px;
-  color: #abb5c3;
-  margin-top: 11px;
-  display: flex;
-  align-items: center;
-  gap: 7px;
 }
 
 .layout-option {
   height: 34px;
   background: #fff;
   border: 1px solid #dfe9fc;
-  border-radius: 6px;
-  padding: 0 10px;
+  border-radius: 4px;
+  padding: 0 12px;
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: 8px;
   color: #5c7db5;
   font-size: 10px;
   margin-bottom: 8px;
@@ -910,9 +465,9 @@
 
 .editable-block {
   position: relative;
-  margin: 6px 0 12px;
-  padding: 3px 4px 3px 21px;
-  border-radius: 5px;
+  margin: 8px 0 12px;
+  padding: 4px 4px 4px 20px;
+  border-radius: 4px;
 }
 
 .editable-block:hover {
@@ -927,7 +482,7 @@
 }
 
 .block-content h2 {
-  margin: 2px 0 5px;
+  margin: 2px 0 4px;
 }
 
 .block-content p {
@@ -942,106 +497,6 @@
   margin: 0;
 }
 
-.block-image-demo {
-  height: 138px;
-  overflow: hidden;
-  position: relative;
-  border-radius: 7px;
-  background: linear-gradient(120deg,#e5effe,#f0f6ff);
-  display: flex;
-  align-items: flex-end;
-  padding: 14px 15px;
-}
-
-.block-image-demo>span {
-  position: relative;
-  z-index: 1;
-  color: #7b98c9;
-  font-size: 10px;
-  font-weight: 750;
-}
-
-.image-demo-orb {
-  position: absolute;
-  background: #d2e4fc;
-  height: 180px;
-  width: 180px;
-  border-radius: 50%;
-  right: -15px;
-  top: -105px;
-}
-
-.image-demo-layer {
-  position: absolute;
-  transform: rotate(-17deg);
-  border: 2px solid #aecafa;
-  height: 65px;
-  width: 65px;
-  top: 32px;
-  left: 44%;
-  border-radius: 14px;
-}
-
-.image-demo-layer.l2 {
-  top: 45px;
-  left: 49%;
-  background: #c9dcfa;
-  border-color: #b2cbf6;
-}
-
-.block-content .image-caption {
-  color: #96a4b8;
-  font-size: 10px;
-}
-
-.preview-table {
-  border-collapse: collapse;
-  width: 100%;
-  font-size: 11px;
-  color: #6b7c92;
-}
-
-.preview-table th {
-  text-align: left;
-  background: #f3f6fc;
-  color: #6f85a9;
-  font-size: 10px;
-}
-
-.preview-table th,.preview-table td {
-  border: 1px solid #e6edf7;
-  padding: 9px;
-}
-
-.status-pill {
-  background: #edf4ff;
-  color: #5f86c8;
-  border-radius: 4px;
-  padding: 4px 6px;
-  font-size: 9px;
-}
-
-.code-preview {
-  margin: 0;
-  border: 1px solid #e4eaf4;
-  background: #f6f8fb;
-  padding: 12px;
-  color: #5778aa;
-  border-radius: 6px;
-  line-height: 1.8;
-  white-space: pre-wrap;
-  font-size: 11px;
-}
-
-.block-footer-note {
-  font-size: 10px;
-  display: flex;
-  gap: 8px;
-  line-height: 1.7;
-  color: #a5b3c3;
-  margin-top: 24px;
-}
-
 
 /* =========================
    Editable Notespace Documents
@@ -1054,7 +509,7 @@
 }
 
 .editor-wrap .editor-canvas {
-  padding: 50px clamp(26px, 5vw, 78px) 85px;
+  padding: 52px clamp(28px, 5vw, 80px) 84px;
 }
 
 .editor-wrap .editor-width {
@@ -1065,15 +520,15 @@
   position: sticky;
   top: 0;
   z-index: 22;
-  gap: 11px;
-  padding: 0 27px;
+  gap: 12px;
+  padding: 0 28px;
   background: #fff;
 }
 
 .note-title-input {
   display: block;
   width: 100%;
-  margin: 0 0 13px;
+  margin: 0 0 12px;
   padding: 0;
   background: transparent;
   color: #1c2c47;
@@ -1096,33 +551,12 @@
   color: #a5b5cb;
 }
 
-.editor-wrap .editor-subtitle:empty {
-  display: none;
-}
-
 .note-editable {
   min-height: 270px;
   padding: 4px 0;
   outline: none;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
-}
-
-/* The editor always holds one empty paragraph, so the placeholder is shown with a class */
-/* (set by the editor) and placed over that first line. */
-.note-editable.is-empty {
-  position: relative;
-}
-
-.note-editable.is-empty::before {
-  content: attr(data-placeholder);
-  position: absolute;
-  top: 4px;
-  left: 0;
-  color: #acb8c9;
-  font-size: 12.6px;
-  line-height: 1.96;
-  pointer-events: none;
 }
 
 .note-editable:focus {
@@ -1140,16 +574,16 @@
 .block-content h3 {
   color: #364a66;
   font-size: 16px;
-  margin: 22px 0 12px;
+  margin: 24px 0 12px;
 }
 
 .note-toolbar-button {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
-  padding: 8px 10px;
+  gap: 8px;
+  padding: 8px 12px;
   border: 1px solid transparent;
-  border-radius: 7px;
+  border-radius: 4px;
   background: transparent;
   color: #71829b;
   white-space: nowrap;
@@ -1207,12 +641,6 @@
   outline-offset: 2px;
 }
 
-.notes-empty {
-  grid-column: 1 / -1;
-  color: #94a2b5;
-  font-size: 12px;
-}
-
 
 /* =========================
    Optional Contents and Preferences Panels
@@ -1230,7 +658,7 @@
   padding: 20px;
   background: #fff;
   border: 1px solid #e0e8f4;
-  border-radius: 12px;
+  border-radius: 4px;
   box-shadow: 0 18px 55px rgba(28, 54, 96, .16);
 }
 
@@ -1239,7 +667,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  margin-bottom: 22px;
+  margin-bottom: 24px;
   color: #344962;
   font-size: 13px;
 }
@@ -1250,7 +678,7 @@
   width: 27px;
   height: 27px;
   border: 0;
-  border-radius: 5px;
+  border-radius: 4px;
   background: transparent;
   color: #95a3b7;
 }
@@ -1263,13 +691,13 @@
 .note-toc-links {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 4px;
 }
 
 .note-toc-links .outline-item {
   width: 100%;
   margin: 0;
-  padding: 10px 12px;
+  padding: 12px 12px;
   border-top: 0;
   border-right: 0;
   border-bottom: 0;
@@ -1285,11 +713,11 @@
 }
 
 .note-toc-links .outline-item--nested {
-  padding-left: 27px;
+  padding-left: 28px;
 }
 
 .toc-empty {
-  margin: 9px 4px;
+  margin: 8px 4px;
   color: #91a0b3;
   font-size: 11px;
   line-height: 1.7;
@@ -1297,8 +725,8 @@
 
 .flyout-footnote {
   display: flex;
-  gap: 7px;
-  margin-top: 23px;
+  gap: 8px;
+  margin-top: 24px;
   padding-top: 16px;
   border-top: 1px solid #edf1f7;
   color: #9aa9bd;
@@ -1307,8 +735,8 @@
 }
 
 .editor-flyout .side-setting--border {
-  margin-top: 22px;
-  padding-top: 21px;
+  margin-top: 24px;
+  padding-top: 20px;
 }
 
 .note-switch-row {
@@ -1316,7 +744,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 10px 0;
+  padding: 12px 0;
   color: #526581;
   font-size: 11px;
   font-weight: 650;
@@ -1349,15 +777,15 @@
 
 @media (max-width: 700px) {
   .editor-wrap .editor-toolbar {
-    gap: 5px;
-    padding: 0 10px;
+    gap: 4px;
+    padding: 0 12px;
   }
 
   .note-toolbar-button {
     width: 34px;
     height: 34px;
     justify-content: center;
-    padding: 6px;
+    padding: 8px;
   }
 
   .note-toolbar-button span {
@@ -1369,7 +797,7 @@
   }
 
   .editor-wrap .editor-canvas {
-    padding: 34px 22px 65px;
+    padding: 36px 24px 64px;
   }
 
   .editor-flyout {
@@ -1391,7 +819,7 @@
 /* The same side padding in both modes keeps text in place when switching modes. It also leaves */
 /* room for the block controls and a gap from the left edge, where a hidden sidebar can be revealed. */
 .editor-wrap .editor-canvas {
-  padding: 27px clamp(72px, 7vw, 104px) 60px;
+  padding: 28px clamp(72px, 7vw, 104px) 60px;
 }
 
 .editor-wrap .editor-width {
@@ -1403,22 +831,22 @@
 }
 
 .editor-wrap .editor-meta {
-  margin-bottom: 13px;
+  margin-bottom: 12px;
 }
 
 .editor-wrap .note-title-input {
-  margin-bottom: 7px;
+  margin-bottom: 8px;
 }
 
 .editor-wrap .article-rule {
-  margin: 21px 0 19px;
+  margin: 20px 0 20px;
 }
 
 /* The breadcrumb occupies the former category label area beside All notes. */
 .editor-breadcrumb {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   min-width: 0;
   max-width: min(48vw, 510px);
   color: #8795a9;
@@ -1443,30 +871,10 @@
   font-weight: 630;
 }
 
-/* A quiet reminder makes discoverable typing shortcuts without a permanent toolbar. */
-.markdown-hint {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex-wrap: wrap;
-  margin-bottom: 14px;
-  color: #98a5b6;
-  font-size: 10px;
-}
-
-.markdown-hint kbd {
-  padding: 1px 5px;
-  border: 1px solid #e3e9f2;
-  border-radius: 4px;
-  background: #f8faff;
-  color: #77869b;
-  font-family: inherit;
-}
-
 /* Markdown-generated headings, lists and code share the same look in both modes. */
 .note-editable h1,
 .block-content h1 {
-  margin: 17px 0 12px;
+  margin: 16px 0 12px;
   color: #22344f;
   font-size: 27px;
   line-height: 1.3;
@@ -1478,15 +886,15 @@
 .block-content h4,
 .block-content h5,
 .block-content h6 {
-  margin: 13px 0 9px;
+  margin: 12px 0 8px;
   color: #394b66;
   font-size: 14px;
 }
 
 .note-editable ol,
 .block-content ol {
-  padding-left: 22px;
-  margin: 6px 0 17px;
+  padding-left: 24px;
+  margin: 8px 0 16px;
   color: #65738a;
   font-size: 12.6px;
   line-height: 1.9;
@@ -1494,11 +902,11 @@
 
 .note-editable pre,
 .block-content pre {
-  margin: 12px 0 19px;
-  padding: 40px 17px 14px;
+  margin: 12px 0 20px;
+  padding: 40px 16px 16px;
   overflow-x: auto;
   border: 1px solid #e2eaf6;
-  border-radius: 8px;
+  border-radius: 4px;
 
   /* The lighter top band holds the language picker without covering any code. */
   background: linear-gradient(#eef2fa, #eef2fa) top / 100% 30px no-repeat, #f6f8fd;
@@ -1522,21 +930,17 @@
 
 @media (max-width: 700px) {
   .editor-wrap .editor-canvas {
-    padding: 23px 17px 55px;
+    padding: 24px 16px 56px;
   }
 
   .editor-breadcrumb {
-    gap: 6px;
+    gap: 8px;
     max-width: 34vw;
   }
 
   .editor-crumb-category,
   .editor-breadcrumb-separator:last-of-type {
     display: none;
-  }
-
-  .markdown-hint {
-    line-height: 1.7;
   }
 }
 
@@ -1549,7 +953,7 @@
 .structured-document .editable-block {
   margin-left: -60px;
   padding: 4px 0 4px 60px;
-  border-radius: 5px;
+  border-radius: 4px;
 }
 
 .structured-document .editable-block:hover {
@@ -1672,7 +1076,7 @@
     top: -25px;
     z-index: 2;
     background: #f8fbff;
-    border-radius: 5px;
+    border-radius: 4px;
   }
 }
 
@@ -1773,9 +1177,9 @@
 .code-lang-select {
   position: absolute;
   height: 22px;
-  padding: 0 6px;
+  padding: 0 8px;
   border: 1px solid #dbe4f2;
-  border-radius: 5px;
+  border-radius: 4px;
   background: #fff;
   color: #5d6f8a;
   font: inherit;
@@ -1890,7 +1294,7 @@
   height: 22px;
   padding: 0;
   border: 1px solid #f1d98a;
-  border-radius: 6px;
+  border-radius: 4px;
   background: #fff8df;
   color: #b0861a;
   cursor: pointer;
@@ -1908,15 +1312,15 @@
   right: 0;
   z-index: 30;
   width: 240px;
-  padding: 12px 14px;
+  padding: 12px 16px;
   border: 1px solid #e0e8f4;
-  border-radius: 10px;
+  border-radius: 4px;
   background: #fff;
   box-shadow: 0 14px 40px rgba(28, 54, 96, .16);
 }
 
 .comment-popover p {
-  margin: 0 0 10px;
+  margin: 0 0 12px;
   color: #3a4b64;
   font-size: 12px;
   line-height: 1.6;
@@ -1936,9 +1340,9 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 4px 6px;
+  padding: 4px 8px;
   border: 0;
-  border-radius: 5px;
+  border-radius: 4px;
   background: transparent;
   color: #d23f3f;
   font: inherit;
@@ -1971,7 +1375,7 @@
   gap: 2px;
   padding: 4px;
   border: 1px solid #dfe7f3;
-  border-radius: 9px;
+  border-radius: 4px;
   background: #fff;
   box-shadow: 0 10px 30px rgba(28, 54, 96, .18);
   transform: translateX(-50%);
@@ -1981,12 +1385,12 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 5px;
+  gap: 4px;
   min-width: 30px;
   height: 30px;
-  padding: 0 7px;
+  padding: 0 8px;
   border: 0;
-  border-radius: 6px;
+  border-radius: 4px;
   background: transparent;
   color: #4f6280;
   font: inherit;
@@ -2004,15 +1408,15 @@
 .selection-divider {
   width: 1px;
   height: 18px;
-  margin: 0 3px;
+  margin: 0 4px;
   background: #e3e9f2;
 }
 
 .selection-input {
   width: 260px;
-  padding: 7px 9px;
+  padding: 8px 8px;
   border: 1px solid #d6e2f5;
-  border-radius: 6px;
+  border-radius: 4px;
   background: #fff;
   color: #2b3d59;
   font: inherit;
@@ -2028,13 +1432,13 @@
 .selection-comment {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
 }
 
 .selection-comment-actions {
   display: flex;
   justify-content: flex-end;
-  gap: 6px;
+  gap: 8px;
 }
 
 
@@ -2047,7 +1451,7 @@
   align-items: center;
   margin-top: 4px;
   border: 1px solid #e0e8f4;
-  border-radius: 8px;
+  border-radius: 4px;
   overflow: hidden;
 }
 
@@ -2084,7 +1488,7 @@
 .note-switch-row span {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
 }
 
 /* Red removal button; disabled while the page is locked. */
@@ -2094,9 +1498,9 @@
   justify-content: center;
   gap: 8px;
   width: 100%;
-  padding: 10px 12px;
+  padding: 12px 12px;
   border: 1px solid #f6cfcf;
-  border-radius: 8px;
+  border-radius: 4px;
   background: #fff5f5;
   color: #d23f3f;
   font: inherit;
@@ -2125,6 +1529,628 @@
 
 
 /* =========================
+   Welcome Panel, Starred and Recent
+   ========================= */
+
+/* The welcome panel: greeting and clock on the left, "where you left off" on the right. */
+.home-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 360px);
+  gap: 24px;
+  align-items: stretch;
+  margin-bottom: 24px;
+  padding: 24px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--paper);
+}
+
+.home-hero-time {
+  margin: 0 0 4px;
+  color: #8a97aa;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.home-hero h1 {
+  margin: 0 0 8px;
+  color: var(--ink);
+  font-size: 28px;
+  letter-spacing: -.6px;
+}
+
+.home-hero-intro > p:not(.home-hero-time) {
+  max-width: 460px;
+  margin: 0 0 20px;
+  color: #7d8ba0;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+/* "Where you left off" sits in a tinted box so it reads as a separate shortcut. */
+.home-resume {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px;
+  border: 1px solid #dce7fb;
+  border-radius: 4px;
+  background: var(--blue-soft);
+}
+
+.home-resume-label {
+  color: var(--blue);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.home-resume-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: auto;
+}
+
+/* Starred and Recent share one panel; the tabs choose which list is shown. */
+.home-tabs-panel {
+  margin-bottom: 32px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--paper);
+}
+
+.home-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--line);
+}
+
+/* The active tab is marked with a blue line along its bottom edge. */
+.home-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 44px;
+  padding: 0 12px;
+  margin-bottom: -1px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: #7d8ba0;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.home-tab:hover {
+  color: var(--ink);
+}
+
+.home-tab.is-active {
+  border-bottom-color: var(--blue);
+  color: var(--blue);
+}
+
+/* Note cards fill the row: as many 220px-wide columns as fit. */
+.note-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+  padding: 16px;
+}
+
+.note-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 116px;
+  padding: 12px 16px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--paper);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.note-tile:hover {
+  border-color: #c9d7ee;
+  background: var(--blue-soft);
+}
+
+.note-tile-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  color: #2c3d58;
+  font-size: 13px;
+}
+
+.note-tile-title svg {
+  flex-shrink: 0;
+  color: #94a1b3;
+}
+
+.note-tile-title strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.note-tile-icon {
+  font-size: 16px;
+  line-height: 1;
+}
+
+/* At most two lines of description, ending with "…". */
+.note-tile-text {
+  display: -webkit-box;
+  overflow: hidden;
+  color: #7d8ba0;
+  font-size: 11px;
+  line-height: 1.6;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.note-tile-meta {
+  margin-top: auto;
+  color: #a0abbb;
+  font-size: 10px;
+}
+
+@media (max-width: 860px) {
+  .home-hero {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+
+/* =========================
+   All Notes
+   ========================= */
+
+.all-notes {
+  margin-top: 24px;
+}
+
+.all-notes-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.all-notes-heading h2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  color: #2c3d58;
+  font-size: 16px;
+  font-weight: 750;
+}
+
+/* The chevron turns upside down while the filters are open. */
+.is-flipped {
+  transform: rotate(180deg);
+}
+
+/* Each row is the open button (name, category, time) plus a pin button at the end. */
+.note-row-columns,
+.note-row {
+  grid-template-columns: minmax(0, 1fr) 40px;
+}
+
+.note-row-columns {
+  grid-template-columns: minmax(0, 1fr) 120px 148px 40px;
+  padding-right: 0;
+}
+
+.note-row {
+  display: grid;
+  padding: 0;
+}
+
+.note-row-open {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 120px 148px;
+  align-items: center;
+  gap: 16px;
+  min-height: 64px;
+  padding: 8px 0 8px 20px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.note-pin {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: #c3ccd9;
+  cursor: pointer;
+}
+
+.note-pin:hover {
+  background: var(--blue-soft);
+  color: var(--blue);
+}
+
+.note-pin.is-pinned {
+  color: #e2a520;
+}
+
+.note-pin.is-pinned svg {
+  fill: currentColor;
+}
+
+@media (max-width: 700px) {
+  .note-row-columns {
+    grid-template-columns: minmax(0, 1fr) 40px;
+  }
+
+  .note-row-open {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .note-row-open .recent-category,
+  .note-row-open .recent-time {
+    display: none;
+  }
+}
+
+
+/* =========================
+   Notes List and Categories
+   ========================= */
+
+/* Filter chips sit in one row; the edit and add buttons are pushed to the right. */
+.category-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.category-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 30px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--paper);
+  color: #56657b;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.category-filter:hover {
+  border-color: #c9d7ee;
+}
+
+.category-filter.is-active {
+  border-color: var(--blue);
+  background: var(--blue-soft);
+  color: var(--blue);
+}
+
+.category-count {
+  color: #9aa6b6;
+  font-weight: 600;
+}
+
+.category-filter.is-active .category-count {
+  color: inherit;
+}
+
+.category-edit {
+  display: inline-flex;
+  align-items: center;
+  height: 30px;
+  border: 1px solid #c9d7ee;
+  border-radius: 4px;
+  background: var(--paper);
+}
+
+.category-name-input {
+  width: 110px;
+  height: 100%;
+  padding: 0 4px 0 12px;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 650;
+  outline: none;
+}
+
+.category-remove {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 100%;
+  border: 0;
+  background: transparent;
+  color: #a3adbb;
+  cursor: pointer;
+}
+
+.category-remove:hover {
+  color: #d23f3f;
+}
+
+.category-actions {
+  display: inline-flex;
+  gap: 4px;
+  margin-left: auto;
+}
+
+.note-row-icon {
+  flex-shrink: 0;
+  width: 24px;
+  font-size: 18px;
+  line-height: 1;
+  text-align: center;
+}
+
+.notes-empty-list {
+  margin: 0;
+  padding: 28px 20px;
+  color: #9aa6b6;
+  font-size: 12px;
+}
+
+
+/* =========================
+   Note Header
+   ========================= */
+
+/* The emoji picker opens under the header buttons, so the header is its positioning parent. */
+.note-header {
+  position: relative;
+}
+
+.note-icon {
+  display: block;
+  margin: 0 0 8px -4px;
+  padding: 2px 4px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  font-size: 44px;
+  line-height: 1.1;
+  cursor: pointer;
+}
+
+.note-icon:hover:not(:disabled) {
+  background: var(--blue-soft);
+}
+
+.note-icon:disabled {
+  cursor: default;
+}
+
+.note-header-actions {
+  display: flex;
+  gap: 4px;
+  margin: 0 0 8px -8px;
+}
+
+.note-header-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 26px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: #94a1b3;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.note-header-action:hover {
+  background: var(--blue-soft);
+  color: var(--blue);
+}
+
+/* Details are a two-column list: labels on the left, values on the right. */
+.note-details {
+  display: grid;
+  grid-template-columns: 110px minmax(0, 1fr);
+  align-items: center;
+  gap: 2px 12px;
+  margin: 4px 0 0;
+  font-size: 12px;
+}
+
+.note-details dt {
+  color: #94a1b3;
+  font-weight: 600;
+}
+
+.note-details dd {
+  min-height: 30px;
+  display: flex;
+  align-items: center;
+  margin: 0;
+  color: #4b5b74;
+}
+
+.note-detail-field {
+  width: 100%;
+  max-width: 420px;
+  height: 30px;
+  padding: 0 8px;
+  margin-left: -8px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: transparent;
+  color: #4b5b74;
+  font: inherit;
+  font-size: 12px;
+}
+
+.note-detail-field:hover:not(:disabled):not([readonly]) {
+  border-color: var(--line);
+}
+
+.note-detail-field:focus {
+  border-color: #a7c5f5;
+  outline: none;
+}
+
+.note-detail-field:disabled {
+  opacity: 1;
+  appearance: none;
+}
+
+.note-detail-field::placeholder {
+  color: #b2bccb;
+}
+
+
+/* =========================
+   Emoji Picker
+   ========================= */
+
+/* Opens just below the "Add icon" button, over the note rather than pushing it down. */
+.emoji-picker {
+  position: absolute;
+  top: 34px;
+  left: 0;
+  z-index: 40;
+  width: 316px;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--paper);
+  box-shadow: 0 14px 40px rgba(28, 54, 96, .16);
+}
+
+.emoji-tabs {
+  display: flex;
+  gap: 2px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--line);
+}
+
+.emoji-tab {
+  flex: 1;
+  height: 30px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  font-size: 16px;
+  cursor: pointer;
+  filter: grayscale(.6);
+  opacity: .7;
+}
+
+.emoji-tab:hover,
+.emoji-tab.is-active {
+  background: var(--blue-soft);
+  filter: none;
+  opacity: 1;
+}
+
+.emoji-group-name {
+  margin: 8px 4px 4px;
+  color: #94a1b3;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+/* Eight emoji per row. */
+.emoji-grid {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 2px;
+}
+
+.emoji-option {
+  height: 34px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+.emoji-option:hover,
+.emoji-option.is-current {
+  background: var(--blue-soft);
+}
+
+.emoji-footer {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+}
+
+.emoji-input {
+  flex: 1;
+  min-width: 0;
+  height: 30px;
+  padding: 0 8px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 12px;
+}
+
+.emoji-remove {
+  height: 30px;
+  padding: 0 12px;
+  border: 1px solid #f6cfcf;
+  border-radius: 4px;
+  background: transparent;
+  color: #d23f3f;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+@media (max-width: 700px) {
+  .note-details {
+    grid-template-columns: 90px minmax(0, 1fr);
+  }
+
+  .category-actions {
+    margin-left: 0;
+  }
+}
+
+
+/* =========================
    Printing
    ========================= */
 
@@ -2149,9 +2175,6 @@
   .topbar,
   .editor-toolbar,
   .editor-meta,
-  .editor-tags,
-  .markdown-hint,
-  .block-footer-note,
   .block-controls,
   .code-lang-layer,
   .comment-layer,

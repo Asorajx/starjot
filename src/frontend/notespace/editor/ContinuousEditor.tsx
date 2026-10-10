@@ -2,7 +2,7 @@ import { memo, useEffect, useLayoutEffect, useRef, type ClipboardEvent, type For
 import { cleanHtml } from '../sanitize';
 import { getRange, setOffset, setRange } from './caret';
 import { highlight, highlightAll, insertNewline, preAtCaret } from './code';
-import { caretAtEdge, closestAtCaret, emptyParagraph, isEmptyContent, placeCaret, selectContents, wrapLooseLines } from './dom';
+import { caretAtEdge, closestAtCaret, emptyParagraph, placeCaret, selectContents, wrapLooseLines } from './dom';
 import { applyMarkdownShortcut } from './markdown';
 import { stickyStateForRange, toggleStickyRange } from './stickyDom';
 import type { EditorSession } from './session';
@@ -32,7 +32,6 @@ export const ContinuousEditor = memo(function ContinuousEditor({ session, conten
     const body = bodyRef.current;
     if (!body) return;
     wrapLooseLines(body);
-    body.classList.toggle('is-empty', isEmptyContent(body) && body.children.length <= 1 && !body.querySelector('ul, ol, pre, blockquote'));
     session.save(body.innerHTML);
   }
 
@@ -49,7 +48,6 @@ export const ContinuousEditor = memo(function ContinuousEditor({ session, conten
     body.innerHTML = cleanHtml(content) || '<p><br></p>';
     wrapLooseLines(body);
     highlightAll(body);
-    body.classList.toggle('is-empty', isEmptyContent(body) && body.children.length <= 1);
     if (session.pendingCaret !== null) {
       setOffset(body, session.pendingCaret);
       session.pendingCaret = null;
@@ -238,7 +236,6 @@ export const ContinuousEditor = memo(function ContinuousEditor({ session, conten
       role="textbox"
       aria-multiline="true"
       aria-label="Document content"
-      data-placeholder="Start writing here…"
       onKeyDown={handleKeyDown}
       onInput={handleInput}
       onPaste={handlePaste}

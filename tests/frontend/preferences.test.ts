@@ -41,4 +41,14 @@ describe('preferences', () => {
     preferences.applyTheme();
     expect(document.documentElement.dataset.theme).toBe('dark');
   });
+
+  it('slides smoothly to headings by default and remembers an instant jump', async () => {
+    let preferences = await openApp();
+    expect(preferences.getPreferences().contentsScroll).toBe('smooth');
+    preferences.updatePreferences({ contentsScroll: 'instant' });
+
+    vi.resetModules();
+    preferences = await openApp();
+    expect(preferences.getPreferences().contentsScroll).toBe('instant');
+  });
 });

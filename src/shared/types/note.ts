@@ -3,7 +3,6 @@
    ========================= */
 
 /* Shared by the frontend (screens and editor) and the backend (storage). */
-
 export type NoteMode = 'continuous' | 'blocks';
 export type NoteAccent = 'indigo' | 'mint' | 'amber' | 'rose';
 
@@ -11,15 +10,20 @@ export type NoteAccent = 'indigo' | 'mint' | 'amber' | 'rose';
 export type Note = {
   id: string;
   title: string;
+
+  /* The description shown in the note's details. */
   subtitle: string;
   preview: string;
+
+  /* The id of the note's category, or an empty string when it has none. */
   category: string;
   updated: string;
   updatedAt: string | null;
   createdAt: string | null;
   date: string;
   pinned: boolean;
-  /* The name of an icon from the frontend's icon set, such as 'layers'. */
+
+  /* An emoji chosen by the user, or an empty string for no icon (the default). */
   icon: string;
   accent: NoteAccent;
   read: string;
@@ -28,6 +32,9 @@ export type Note = {
 
   /* A locked note can be read, selected and commented on, but not edited. */
   locked: boolean;
+
+  /* Hides the details (category, description, dates, comments) under the title. */
+  detailsHidden: boolean;
   comments: NoteComment[];
   content: string;
 };
@@ -41,6 +48,13 @@ export type NoteComment = {
 };
 
 /* The fields an editor may change; everything else is managed by the store. */
-export type NoteChanges = Partial<Pick<Note, 'title' | 'content' | 'mode' | 'stickyIndicator' | 'locked' | 'comments'>>;
+export type NoteChanges = Partial<Pick<Note,
+  'title' | 'subtitle' | 'category' | 'icon' | 'content' | 'mode' | 'stickyIndicator' | 'locked' | 'detailsHidden' | 'comments'>>;
+
+/* A user-defined group of notes, such as "Work". Notes refer to it by id, so renaming is safe. */
+export type Category = {
+  id: string;
+  name: string;
+};
 
 export type SaveStatus = 'saved' | 'saving' | 'unsaved';

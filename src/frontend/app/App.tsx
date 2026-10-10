@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type MouseEvent } from 'react';
 import { usePreferences } from './preferences';
 import { MobileNav, Sidebar, Topbar } from './Shell';
-import { NotesHome } from '../notespace/NotesHome';
+import { NotesHome, type NoteFilter } from '../notespace/NotesHome';
 import { NoteEditor } from '../notespace/editor/NoteEditor';
 import { createNote, flushSave } from '../notespace/store';
 import { Settings, type SettingsSection } from '../settings/Settings';
@@ -20,6 +20,7 @@ export function App() {
   const [openNoteId, setOpenNoteId] = useState<string | null>(null);
   const [workTab, setWorkTab] = useState<BoardTab>('todo');
   const [settingsSection, setSettingsSection] = useState<SettingsSection>('general');
+  const [noteFilter, setNoteFilter] = useState<NoteFilter>('all');
   const { sidebarCollapsed } = usePreferences();
 
   /* A hidden sidebar "peeks" out when the pointer rests at the left edge of the window. */
@@ -40,7 +41,10 @@ export function App() {
 
   function newNote() {
     flushSave();
-    openNote(createNote().id);
+
+    /* While a category is being filtered, the new note starts in that category. */
+    const category = noteFilter === 'all' || noteFilter === 'none' ? '' : noteFilter;
+    openNote(createNote(category).id);
 
     /* Select the placeholder title so typing replaces it straight away. */
     requestAnimationFrame(() => {
@@ -100,7 +104,7 @@ export function App() {
   if (workspace === 'notes') {
     screen = openNoteId
       ? <NoteEditor key={openNoteId} noteId={openNoteId} onClose={() => navigate('notes')} />
-      : <NotesHome onOpen={openNote} onCreate={newNote} />;
+      : <NotesHome filter={noteFilter} onFilterChange={setNoteFilter} onOpen={openNote} onCreate={newNote} />;
   } else if (workspace === 'workboard') {
     screen = <Workboard tab={workTab} onTabChange={setWorkTab} />;
   } else {

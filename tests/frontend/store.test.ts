@@ -45,9 +45,99 @@ describe('note store', () => {
     expect(store.getNote('atlas')).toBeUndefined();
   });
 
+  it('pins and unpins a note without changing when it was last edited', async () => {
+    const store = await openApp();
+    const note = store.createNote();
+    const editedAt = store.getNote(note.id)?.updatedAt;
+    store.setPinned(note.id, true);
+    expect(store.getNote(note.id)?.pinned).toBe(true);
+    expect(store.getNote(note.id)?.updatedAt).toBe(editedAt);
+    store.setPinned(note.id, false);
+    expect(store.getNote(note.id)?.pinned).toBe(false);
+  });
+
   it('labels a note edited just now', async () => {
     const store = await openApp();
     const note = store.createNote();
     expect(store.updatedLabel(note)).toBe('Just now');
+  });
+});
+
+
+/* =========================
+   Categories
+   ========================= */
+
+describe('categories', () => {
+  it('starts with Personal, Work and School', async () => {
+    const store = await openApp();
+    const names = () => store.categoryName('personal') + store.categoryName('work') + store.categoryName('school');
+    expect(names()).toBe('PersonalWorkSchool');
+  });
+
+  it('allows at most 5 categories and no duplicate names', async () => {
+    const store = await openApp();
+    expect(store.addCategory('work')).toBeNull();
+    expect(store.addCategory('Hobbies')).not.toBeNull();
+    expect(store.addCategory('Travel')).not.toBeNull();
+    expect(store.canAddCategory()).toBe(false);
+    expect(store.addCategory('One too many')).toBeNull();
+  });
+
+  it('renames a category, keeping the old name when the new one is empty or taken', async () => {
+    const store = await openApp();
+    expect(store.renameCategory('school', 'University')).toBe(true);
+    expect(store.categoryName('school')).toBe('University');
+    expect(store.renameCategory('school', '   ')).toBe(false);
+    expect(store.renameCategory('school', 'Work')).toBe(false);
+    expect(store.categoryName('school')).toBe('University');
+  });
+
+  it('keeps notes from a removed category, without a category', async () => {
+    const store = await openApp();
+    const note = store.createNote('work');
+    store.removeCategory('work');
+    expect(store.getNote(note.id)?.category).toBe('');
+    expect(store.categoryName('work')).toBe('');
+  });
+
+  it('moves notes saved with an old category name into the matching category', async () => {
+    localStorage.setItem('strata-notespace-v1', JSON.stringify({ notes: [{ id: 'old1', title: 'Old', category: 'Projects' }], deleted: [] }));
+    const store = await openApp();
+    expect(store.getNote('old1')?.category).toBe('work');
+  });
+});
+
+
+/* =========================
+   Note Icons and Details
+   ========================= */
+
+describe('note icons and details', () => {
+  it('starts new notes without an icon and keeps only emoji icons', async () => {
+    const store = await openApp();
+    const note = store.createNote();
+    expect(note.icon).toBe('');
+    store.updateNote(note.id, { icon: '📝' });
+    expect(store.getNote(note.id)?.icon).toBe('📝');
+    store.updateNote(note.id, { icon: 'layers' });
+    expect(store.getNote(note.id)?.icon).toBe('');
+  });
+
+  it('drops the old named icons from saved notes', async () => {
+    localStorage.setItem('strata-notespace-v1', JSON.stringify({ notes: [{ id: 'old2', title: 'Old', icon: 'layers' }], deleted: [] }));
+    const store = await openApp();
+    expect(store.getNote('old2')?.icon).toBe('');
+  });
+
+  it('saves the description and whether details are hidden', async () => {
+    let store = await openApp();
+    const note = store.createNote();
+    store.updateNote(note.id, { subtitle: 'A short summary', detailsHidden: true });
+
+    vi.resetModules();
+    store = await openApp();
+    expect(store.getNote(note.id)?.subtitle).toBe('A short summary');
+    expect(store.getNote(note.id)?.detailsHidden).toBe(true);
   });
 });
