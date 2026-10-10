@@ -30,6 +30,14 @@ describe('preferences', () => {
     expect(zoom()).toBe(1);
   });
 
+  it('starts in light mode, even when the computer prefers dark mode', async () => {
+    const original = window.matchMedia;
+    window.matchMedia = ((query: string) => ({ matches: query.includes('dark'), media: query })) as unknown as typeof window.matchMedia;
+    const preferences = await openApp();
+    expect(preferences.getPreferences().theme).toBe('light');
+    window.matchMedia = original;
+  });
+
   it('applies the theme to the page and remembers it', async () => {
     let preferences = await openApp();
     preferences.updatePreferences({ theme: 'dark' });

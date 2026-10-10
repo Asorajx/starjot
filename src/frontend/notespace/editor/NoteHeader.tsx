@@ -1,12 +1,14 @@
 import { useState } from 'react';
 import { EmojiPicker } from '../../components/EmojiPicker';
 import { Icon } from '../../components/Icon';
-import { scheduleSave, updateNote, useCategories } from '../store';
+import { canAddSubpage, scheduleSave, updateNote, useCategories, useNotes } from '../store';
 import type { Note } from '../../../shared/types/note';
 
 type NoteHeaderProps = {
   note: Note;
   locked: boolean;
+  onOpenNote: (id: string) => void;
+  onAddSubpage: () => void;
 };
 
 function formatDate(iso: string | null) {
@@ -19,10 +21,11 @@ function formatDate(iso: string | null) {
    Note Header
    ========================= */
 
-/* The top of a note: its icon, title and details (category, description, dates, comments). */
+/* The top of a note: its icon, title, details (category, description, dates, comments) and sub-pages. */
 /* Details can be hidden per note; they can only be edited while the note is unlocked. */
-export function NoteHeader({ note, locked }: NoteHeaderProps) {
+export function NoteHeader({ note, locked, onOpenNote, onAddSubpage }: NoteHeaderProps) {
   const categories = useCategories();
+  const subpages = useNotes().filter(item => item.parentId === note.id);
   const [picking, setPicking] = useState(false);
 
   /* Text fields save after a short pause, like typing in the note itself. */
@@ -51,6 +54,13 @@ export function NoteHeader({ note, locked }: NoteHeaderProps) {
         {!note.icon && !locked && (
           <button type="button" className="note-header-action" onClick={() => setPicking(true)}>
             <Icon name="sparkles" size={14} /> Add icon
+          </button>
+        )}
+
+        {/* Hidden at the deepest level, because pages can only be nested a few levels deep. */}
+        {!locked && canAddSubpage(note.id) && (
+          <button type="button" className="note-header-action" onClick={onAddSubpage}>
+            <Icon name="file-text" size={14} /> Add sub-page
           </button>
         )}
         <button type="button" className="note-header-action" aria-expanded={!note.detailsHidden} onClick={() => updateNote(note.id, { detailsHidden: !note.detailsHidden })}>
@@ -91,7 +101,7 @@ export function NoteHeader({ note, locked }: NoteHeaderProps) {
               value={note.category}
               onChange={event => updateNote(note.id, { category: event.target.value })}
             >
-              <option value="">No category</option>
+              <option value="">None</option>
               {categories.map(category => <option key={category.id} value={category.id}>{category.name}</option>)}
             </select>
           </dd>
@@ -116,6 +126,17 @@ export function NoteHeader({ note, locked }: NoteHeaderProps) {
           <dt>Comments</dt>
           <dd>{comments || 'None'}</dd>
         </dl>
+      )}
+
+      {subpages.length > 0 && (
+        <div className="note-subpages" aria-label="Sub-pages">
+          {subpages.map(page => (
+            <button key={page.id} type="button" className="note-subpage" onClick={() => onOpenNote(page.id)}>
+              {page.icon ? <span aria-hidden="true">{page.icon}</span> : <Icon name="file-text" size={14} />}
+              <span className="note-subpage-title">{page.title || 'Untitled note'}</span>
+            </button>
+          ))}
+        </div>
       )}
     </div>
   );

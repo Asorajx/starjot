@@ -1,0 +1,90 @@
+import { Icon } from '../components/Icon';
+import { categoryName, getNote, setPinned, updatedLabel } from './store';
+import type { Note } from '../../shared/types/note';
+
+type OpenNote = (id: string) => void;
+
+
+/* =========================
+   Note Labels
+   ========================= */
+
+/* "Edited 5 min ago". Sample notes already store a full "Edited …" label, so it is not repeated. */
+export function editedText(note: Note) {
+  const label = updatedLabel(note);
+  return /^edited/i.test(label) ? label : `Edited ${label.toLowerCase()}`;
+}
+
+/* Newest first, by the time each note was last edited. */
+export function newestFirst(notes: Note[]) {
+  return [...notes].sort((a, b) => (b.updatedAt ?? '').localeCompare(a.updatedAt ?? ''));
+}
+
+
+/* =========================
+   Note Cards and Rows
+   ========================= */
+
+/* Marks a sub-page in a list, so it is not mistaken for a top-level note. */
+function SubpageTag({ note }: { note: Note }) {
+  const parent = getNote(note.parentId);
+  if (!parent) return null;
+  const label = `Sub-page of ${parent.title || 'Untitled note'}`;
+  return <span className="note-subpage-tag" title={label}>{label}</span>;
+}
+
+/* A note card: icon, title, description, category and edit time. */
+export function NoteTile({ note, onOpen }: { note: Note; onOpen: OpenNote }) {
+  const category = categoryName(note.category);
+  return (
+    <button type="button" className="note-tile" onClick={() => onOpen(note.id)}>
+      <span className="note-tile-title">
+        {note.icon ? <span className="note-tile-icon" aria-hidden="true">{note.icon}</span> : <Icon name="file-text" size={16} />}
+        <strong>{note.title || 'Untitled note'}</strong>
+      </span>
+      <SubpageTag note={note} />
+      <span className="note-tile-text">{note.subtitle || note.preview || 'No content yet.'}</span>
+      <span className="note-tile-meta">{category && <>{category} · </>}{updatedLabel(note)}</span>
+    </button>
+  );
+}
+
+/* One row of a note list. The star adds or removes the note from Starred without opening it. */
+function NoteRow({ note, onOpen }: { note: Note; onOpen: OpenNote }) {
+  return (
+    <div className="recent-row note-row">
+      <button type="button" className="note-row-open" onClick={() => onOpen(note.id)}>
+        <span className="recent-name">
+          {note.icon && <span className="note-row-icon" aria-hidden="true">{note.icon}</span>}
+          <span className="recent-text">
+            <span className="note-row-title"><strong>{note.title || 'Untitled note'}</strong><SubpageTag note={note} /></span>
+            <small>{note.subtitle || note.preview}</small>
+          </span>
+        </span>
+        <span className="recent-category">{categoryName(note.category)}</span>
+        <span className="recent-time">{updatedLabel(note)}</span>
+      </button>
+      <button
+        type="button"
+        className={`note-pin ${note.pinned ? 'is-pinned' : ''}`}
+        aria-label={note.pinned ? `Unstar ${note.title || 'note'}` : `Star ${note.title || 'note'}`}
+        aria-pressed={note.pinned}
+        onClick={() => setPinned(note.id, !note.pinned)}
+      >
+        <Icon name="star" size={15} />
+      </button>
+    </div>
+  );
+}
+
+/* A table of notes with Name, Category and Last edited columns. */
+export function NoteTable({ notes, onOpen }: { notes: Note[]; onOpen: OpenNote }) {
+  return (
+    <div className="recent-table">
+      <div className="recent-columns note-row-columns"><span>NAME</span><span>CATEGORY</span><span>LAST EDITED</span><span /></div>
+      {notes.length
+        ? notes.map(note => <NoteRow key={note.id} note={note} onOpen={onOpen} />)
+        : <p className="notes-empty-list">No notes here yet.</p>}
+    </div>
+  );
+}

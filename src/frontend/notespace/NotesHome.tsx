@@ -1,35 +1,34 @@
 import { useEffect, useState } from 'react';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { Icon } from '../components/Icon';
+import { editedText, newestFirst, NoteTable, NoteTile } from './NoteList';
 import {
-  addCategory, canAddCategory, categoryName, removeCategory, renameCategory, setPinned, updatedLabel, useCategories, useNotes
+  addCategory, canAddCategory, categoryName, removeCategory, renameCategory, useCategories, useNotes
 } from './store';
 import type { Category, Note } from '../../shared/types/note';
 
-/* The filter can be "all notes", one category id, or notes without a category. */
-export type NoteFilter = 'all' | 'none' | string;
+/* The filter can be "all notes" or one category id. */
+export type NoteFilter = 'all' | string;
 
 type NotesHomeProps = {
   filter: NoteFilter;
   onFilterChange: (filter: NoteFilter) => void;
   onOpen: (id: string) => void;
+  onOpenCategory: (id: string) => void;
   onCreate: () => void;
 };
+
+type HomeTab = 'starred' | 'recent' | 'categories';
 
 /* How many notes the Starred and Recent tabs show. */
 const TAB_COUNT = 6;
 
+/* After midnight it is still "evening" until 5 am. */
 function greeting(now: Date) {
   const hour = now.getHours();
-  if (hour < 12) return 'Good morning';
-  if (hour < 18) return 'Good afternoon';
+  if (hour >= 5 && hour < 12) return 'Good morning';
+  if (hour >= 12 && hour < 18) return 'Good afternoon';
   return 'Good evening';
-}
-
-/* "Edited 5 min ago". Sample notes already store a full "Edited …" label, so it is not repeated. */
-function editedText(note: Note) {
-  const label = updatedLabel(note);
-  return /^edited/i.test(label) ? label : `Edited ${label.toLowerCase()}`;
 }
 
 /* The current time, updated every 30 seconds so the clock and greeting stay correct. */
@@ -59,7 +58,6 @@ function CategoryBar({ notes, filter, onFilterChange }: CategoryBarProps) {
   const [editing, setEditing] = useState(false);
   const [removing, setRemoving] = useState<Category | null>(null);
   const count = (id: string) => notes.filter(note => note.category === id).length;
-  const uncategorised = count('');
 
   /* A new category starts with a placeholder name and is opened for renaming straight away. */
   function add() {
@@ -114,8 +112,6 @@ function CategoryBar({ notes, filter, onFilterChange }: CategoryBarProps) {
         </span>
       ) : chip(category.id, category.name, count(category.id))))}
 
-      {uncategorised > 0 && !editing && chip('none', 'No category', uncategorised)}
-
       <span className="category-actions">
         {editing && (
           <button type="button" className="btn btn-sm btn-tertiary" disabled={!canAddCategory()} onClick={add}>
@@ -138,46 +134,31 @@ function CategoryBar({ notes, filter, onFilterChange }: CategoryBarProps) {
 
 
 /* =========================
-   Note Lists
+   Category Cards
    ========================= */
 
-/* A note card for the Starred and Recent tabs: icon, title, description, category and edit time. */
-function NoteTile({ note, onOpen }: { note: Note; onOpen: (id: string) => void }) {
-  const category = categoryName(note.category);
-  return (
-    <button type="button" className="note-tile" onClick={() => onOpen(note.id)}>
-      <span className="note-tile-title">
-        {note.icon ? <span className="note-tile-icon" aria-hidden="true">{note.icon}</span> : <Icon name="file-text" size={16} />}
-        <strong>{note.title || 'Untitled note'}</strong>
-      </span>
-      <span className="note-tile-text">{note.subtitle || note.preview || 'No content yet.'}</span>
-      <span className="note-tile-meta">{category && <>{category} · </>}{updatedLabel(note)}</span>
-    </button>
-  );
-}
+type CategoryCardProps = {
+  id: string;
+  name: string;
+  notes: Note[];
+  onOpenCategory: (id: string) => void;
+};
 
-/* One row of the full list. The star adds or removes the note from Starred without opening it. */
-function NoteRow({ note, onOpen }: { note: Note; onOpen: (id: string) => void }) {
+/* A card for one category: its name, how many notes it has, and its latest three notes. */
+function CategoryCard({ id, name, notes, onOpenCategory }: CategoryCardProps) {
   return (
-    <div className="recent-row note-row">
-      <button type="button" className="note-row-open" onClick={() => onOpen(note.id)}>
-        <span className="recent-name">
-          {note.icon && <span className="note-row-icon" aria-hidden="true">{note.icon}</span>}
-          <span className="recent-text"><strong>{note.title || 'Untitled note'}</strong><small>{note.subtitle || note.preview}</small></span>
-        </span>
-        <span className="recent-category">{categoryName(note.category)}</span>
-        <span className="recent-time">{updatedLabel(note)}</span>
-      </button>
-      <button
-        type="button"
-        className={`note-pin ${note.pinned ? 'is-pinned' : ''}`}
-        aria-label={note.pinned ? `Unstar ${note.title || 'note'}` : `Star ${note.title || 'note'}`}
-        aria-pressed={note.pinned}
-        onClick={() => setPinned(note.id, !note.pinned)}
-      >
-        <Icon name="star" size={15} />
-      </button>
-    </div>
+    <button type="button" className="note-tile category-card" onClick={() => onOpenCategory(id)}>
+      <span className="note-tile-title">
+        <Icon name="folder" size={16} />
+        <strong>{name}</strong>
+        <span className="category-count">{notes.length}</span>
+      </span>
+      <span className="category-card-notes">
+        {notes.length
+          ? notes.slice(0, 3).map(note => <span key={note.id}>{note.icon ? `${note.icon} ` : ''}{note.title || 'Untitled note'}</span>)
+          : <span className="category-card-empty">No notes yet</span>}
+      </span>
+    </button>
   );
 }
 
@@ -186,23 +167,37 @@ function NoteRow({ note, onOpen }: { note: Note; onOpen: (id: string) => void })
    Notespace Home
    ========================= */
 
-export function NotesHome({ filter, onFilterChange, onOpen, onCreate }: NotesHomeProps) {
+export function NotesHome({ filter, onFilterChange, onOpen, onOpenCategory, onCreate }: NotesHomeProps) {
   const notes = useNotes();
   const now = useNow();
   const [showFilters, setShowFilters] = useState(filter !== 'all');
 
   /* Re-render when categories are renamed, so each row shows the current name. */
-  useCategories();
+  const categories = useCategories();
 
-  const newest = [...notes].sort((a, b) => (b.updatedAt ?? '').localeCompare(a.updatedAt ?? ''));
+  const newest = newestFirst(notes);
   const starred = newest.filter(note => note.pinned);
   const lastEdited = newest[0];
-  const shown = newest.filter(note => filter === 'all' || (filter === 'none' ? note.category === '' : note.category === filter));
-  const filterLabel = filter === 'all' ? 'All notes' : filter === 'none' ? 'No category' : categoryName(filter);
+  const shown = newest.filter(note => filter === 'all' || note.category === filter);
+  const filterLabel = filter === 'all' ? 'All notes' : categoryName(filter);
 
   /* Starred opens first when there are starred notes; otherwise Recent. */
-  const [tab, setTab] = useState<'starred' | 'recent'>(starred.length ? 'starred' : 'recent');
+  const [tab, setTab] = useState<HomeTab>(starred.length ? 'starred' : 'recent');
   const tabNotes = (tab === 'starred' ? starred : newest).slice(0, TAB_COUNT);
+
+  const tabButton = (id: HomeTab, label: string, icon: 'star' | 'clock' | 'folder', count?: number) => (
+    <button
+      type="button"
+      role="tab"
+      id={`tab-${id}`}
+      aria-selected={tab === id}
+      aria-controls="home-tab-panel"
+      className={`home-tab ${tab === id ? 'is-active' : ''}`}
+      onClick={() => setTab(id)}
+    >
+      <Icon name={icon} size={14} /> {label} {count !== undefined && <span className="category-count">{count}</span>}
+    </button>
+  );
 
   return (
     <div className="content-pad notes-home">
@@ -234,18 +229,20 @@ export function NotesHome({ filter, onFilterChange, onOpen, onCreate }: NotesHom
       </section>
 
       <section className="home-tabs-panel">
-        <div className="home-tabs" role="tablist" aria-label="Starred and recent notes">
-          <button type="button" role="tab" id="tab-starred" aria-selected={tab === 'starred'} aria-controls="home-tab-panel" className={`home-tab ${tab === 'starred' ? 'is-active' : ''}`} onClick={() => setTab('starred')}>
-            <Icon name="star" size={14} /> Starred <span className="category-count">{starred.length}</span>
-          </button>
-          <button type="button" role="tab" id="tab-recent" aria-selected={tab === 'recent'} aria-controls="home-tab-panel" className={`home-tab ${tab === 'recent' ? 'is-active' : ''}`} onClick={() => setTab('recent')}>
-            <Icon name="clock" size={14} /> Recent
-          </button>
+        <div className="home-tabs" role="tablist" aria-label="Starred notes, recent notes and categories">
+          {tabButton('starred', 'Starred', 'star', starred.length)}
+          {tabButton('recent', 'Recent', 'clock')}
+          {tabButton('categories', 'Categories', 'folder', categories.length)}
         </div>
-        <div className="note-tiles" id="home-tab-panel" role="tabpanel" aria-labelledby={tab === 'starred' ? 'tab-starred' : 'tab-recent'}>
-          {tabNotes.length
+        <div className="note-tiles" id="home-tab-panel" role="tabpanel" aria-labelledby={`tab-${tab}`}>
+          {tab === 'categories' && (
+            categories.map(category => (
+              <CategoryCard key={category.id} id={category.id} name={category.name} notes={newest.filter(note => note.category === category.id)} onOpenCategory={onOpenCategory} />
+            ))
+          )}
+          {tab !== 'categories' && (tabNotes.length
             ? tabNotes.map(note => <NoteTile key={note.id} note={note} onOpen={onOpen} />)
-            : <p className="notes-empty-list">Star a note with the ☆ in the list below to keep it here.</p>}
+            : <p className="notes-empty-list">Star a note with the ☆ in the list below to keep it here.</p>)}
         </div>
       </section>
 
@@ -265,12 +262,7 @@ export function NotesHome({ filter, onFilterChange, onOpen, onCreate }: NotesHom
 
         {showFilters && <CategoryBar notes={notes} filter={filter} onFilterChange={onFilterChange} />}
 
-        <div className="recent-table">
-          <div className="recent-columns note-row-columns"><span>NAME</span><span>CATEGORY</span><span>LAST EDITED</span><span /></div>
-          {shown.length
-            ? shown.map(note => <NoteRow key={note.id} note={note} onOpen={onOpen} />)
-            : <p className="notes-empty-list">No notes here yet.</p>}
-        </div>
+        <NoteTable notes={shown} onOpen={onOpen} />
       </section>
     </div>
   );

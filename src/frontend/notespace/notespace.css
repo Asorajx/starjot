@@ -70,6 +70,39 @@
   white-space: nowrap;
 }
 
+/* A row title and, for a sub-page, the tag naming its parent. */
+.note-row-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.note-row-title strong {
+  min-width: 0;
+}
+
+/* "Sub-page of …", shown in lists and on note cards. */
+.note-subpage-tag {
+  flex-shrink: 1;
+  align-self: flex-start;
+  max-width: 200px;
+  padding: 0 8px;
+  overflow: hidden;
+  border-radius: 4px;
+  background: #f1f4f9;
+  color: #7a889d;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 18px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.note-row-title .note-subpage-tag {
+  align-self: center;
+}
+
 .recent-text small {
   font-size: 10px;
   color: #a4adbb;
@@ -605,6 +638,12 @@
   white-space: nowrap;
 }
 
+/* Only shown when the browser refuses to save, so edits may be lost. */
+.saved-pill.is-warning {
+  color: #b45309;
+  background: #fff7ed;
+}
+
 .note-toolbar-button:disabled {
   opacity: .4;
   cursor: default;
@@ -853,9 +892,102 @@
   font-size: 11px;
 }
 
-.editor-crumb-category {
+/* The category and parent pages in the breadcrumb are links to those pages. */
+.editor-crumb-link {
   flex-shrink: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
   white-space: nowrap;
+  cursor: pointer;
+}
+
+.editor-crumb-link:hover,
+.editor-crumb-link:focus-visible {
+  color: var(--blue);
+  text-decoration: underline;
+}
+
+/* A shown parent step. A long parent title shrinks before the current page title does. */
+.editor-crumb-step {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 4;
+  min-width: 40px;
+}
+
+.editor-crumb-parent {
+  min-width: 0;
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* "…" stands in for the pages between the category and the parent page. */
+.editor-crumb-folded {
+  position: relative;
+  flex-shrink: 0;
+}
+
+/* The full path, shown below "…". The top padding bridges the gap so the pointer can move into it. */
+.editor-crumb-path {
+  position: absolute;
+  top: 100%;
+  left: -12px;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  min-width: 200px;
+  max-width: 320px;
+  padding: 4px;
+  margin-top: 4px;
+  border: 1px solid #e2e8f1;
+  border-radius: 4px;
+  background: #ffffff;
+  box-shadow: 0 8px 24px rgb(15 23 42 / 12%);
+}
+
+.editor-crumb-path::before {
+  content: "";
+  position: absolute;
+  inset: -8px 0 auto;
+  height: 8px;
+}
+
+.editor-crumb-path-item {
+  padding: 4px 12px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: #526581;
+  font: inherit;
+  font-size: 12px;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.editor-crumb-path-item:hover,
+.editor-crumb-path-item:focus-visible {
+  background: var(--blue-soft);
+  color: var(--blue);
+  outline: none;
+}
+
+.editor-crumb-path-item.is-current {
+  color: #22344f;
+  font-weight: 650;
+  cursor: default;
+}
+
+.editor-crumb-path-item.is-current:hover {
+  background: transparent;
+  color: #22344f;
 }
 
 .editor-breadcrumb-separator {
@@ -863,7 +995,7 @@
 }
 
 .editor-crumb-current {
-  min-width: 0;
+  min-width: 48px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -938,8 +1070,8 @@
     max-width: 34vw;
   }
 
-  .editor-crumb-category,
-  .editor-breadcrumb-separator:last-of-type {
+  /* Phones only have room for the current page title. */
+  .editor-breadcrumb > :not(.editor-crumb-current) {
     display: none;
   }
 }
@@ -1704,6 +1836,45 @@
   font-size: 10px;
 }
 
+/* Category cards list the latest notes in the category, one per line. */
+.category-card .category-count {
+  margin-left: auto;
+}
+
+.category-card-notes {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  color: #7d8ba0;
+  font-size: 11px;
+}
+
+.category-card-notes span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.category-card-empty {
+  color: #a0abbb;
+}
+
+/* The category page reuses the notes home layout, with a back link above the title. */
+.category-back {
+  margin: 0 0 12px -12px;
+}
+
+.category-page h1 {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.category-page h1 svg {
+  color: #94a1b3;
+}
+
 @media (max-width: 860px) {
   .home-hero {
     grid-template-columns: minmax(0, 1fr);
@@ -1975,6 +2146,42 @@
 .note-header-action:hover {
   background: var(--blue-soft);
   color: var(--blue);
+}
+
+/* Sub-pages are listed under the details as small cards that open the page. */
+.note-subpages {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 12px 0 0;
+}
+
+.note-subpage {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 240px;
+  height: 32px;
+  padding: 0 12px;
+  border: 1px solid #e2e8f1;
+  border-radius: 4px;
+  background: #ffffff;
+  color: #4b5b74;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.note-subpage:hover {
+  border-color: #a7c5f5;
+  color: var(--blue);
+}
+
+.note-subpage-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* Details are a two-column list: labels on the left, values on the right. */

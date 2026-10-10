@@ -141,3 +141,81 @@ describe('note icons and details', () => {
     expect(store.getNote(note.id)?.detailsHidden).toBe(true);
   });
 });
+
+
+/* =========================
+   Sub-pages
+   ========================= */
+
+describe('sub-pages', () => {
+  it('creates a sub-page in the same category as its parent', async () => {
+    const store = await openApp();
+    const work = store.addCategory('Garden');
+    const parent = store.createNote(work!.id);
+    const child = store.createSubpage(parent.id);
+
+    expect(child?.parentId).toBe(parent.id);
+    expect(child?.category).toBe(work!.id);
+    expect(store.childrenOf(parent.id).map(note => note.id)).toEqual([child!.id]);
+  });
+
+  it('lists the pages above a sub-page, top level first', async () => {
+    const store = await openApp();
+    const top = store.createNote();
+    const middle = store.createSubpage(top.id)!;
+    const bottom = store.createSubpage(middle.id)!;
+
+    expect(store.ancestorsOf(bottom.id).map(note => note.id)).toEqual([top.id, middle.id]);
+    expect(store.depthOf(bottom.id)).toBe(3);
+  });
+
+  it('stops adding sub-pages at the deepest level', async () => {
+    const store = await openApp();
+    const top = store.createNote();
+    const middle = store.createSubpage(top.id)!;
+    const bottom = store.createSubpage(middle.id)!;
+
+    expect(store.canAddSubpage(middle.id)).toBe(true);
+    expect(store.canAddSubpage(bottom.id)).toBe(false);
+    expect(store.createSubpage(bottom.id)).toBeNull();
+  });
+
+  it('moves sub-pages up one level when their parent is deleted', async () => {
+    const store = await openApp();
+    const top = store.createNote();
+    const middle = store.createSubpage(top.id)!;
+    const bottom = store.createSubpage(middle.id)!;
+
+    store.deleteNote(middle.id);
+    expect(store.getNote(bottom.id)?.parentId).toBe(top.id);
+
+    store.deleteNote(top.id);
+    expect(store.getNote(bottom.id)?.parentId).toBe('');
+  });
+
+  it('keeps sub-pages inside their parent after reopening', async () => {
+    let store = await openApp();
+    const top = store.createNote();
+    const child = store.createSubpage(top.id)!;
+    store.save();
+
+    vi.resetModules();
+    store = await openApp();
+    expect(store.getNote(child.id)?.parentId).toBe(top.id);
+  });
+
+  it('turns sub-pages with a missing parent, or in a loop, into top-level notes', async () => {
+    const page = (id: string, parentId: string) => ({ id, title: id, content: '<p></p>', mode: 'structured', parentId });
+    localStorage.setItem('strata-notespace-v1', JSON.stringify({
+      version: 1,
+      deleted: [],
+      notes: [page('orphan', 'gone'), page('loop-a', 'loop-b'), page('loop-b', 'loop-a'), page('kept', 'atlas')]
+    }));
+    const store = await openApp();
+
+    expect(store.getNote('orphan')?.parentId).toBe('');
+    expect(store.getNote('loop-a')?.parentId).toBe('');
+    expect(store.getNote('loop-b')?.parentId).toBe('');
+    expect(store.getNote('kept')?.parentId).toBe('atlas');
+  });
+});

@@ -27,10 +27,9 @@ const listeners = new Set<() => void>();
    Loading and Saving
    ========================= */
 
-/* Without a saved choice, the theme follows the system's light or dark setting. */
+/* Light mode is the default; once a theme is chosen in Settings it is remembered between visits. */
 function load(): Preferences {
-  const systemTheme: Theme = window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-  const defaults: Preferences = { theme: systemTheme, zoom: 1, sidebarCollapsed: false, contentsScroll: 'smooth' };
+  const defaults: Preferences = { theme: 'light', zoom: 1, sidebarCollapsed: false, contentsScroll: 'smooth' };
   const saved = readPreferences();
   return {
     theme: saved.theme === 'dark' || saved.theme === 'light' ? saved.theme : defaults.theme,

@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState, type MouseEvent } from 'react';
 import { usePreferences } from './preferences';
 import { MobileNav, Sidebar, Topbar } from './Shell';
+import { CategoryPage } from '../notespace/CategoryPage';
 import { NotesHome, type NoteFilter } from '../notespace/NotesHome';
 import { NoteEditor } from '../notespace/editor/NoteEditor';
-import { createNote, flushSave } from '../notespace/store';
+import { categoryName, createNote, createSubpage, flushSave, getNote } from '../notespace/store';
 import { Settings, type SettingsSection } from '../settings/Settings';
 import { Workboard } from '../workboard/Workboard';
 import type { BoardTab } from '../../shared/types/task';
@@ -18,6 +19,12 @@ import { workspaceLabel, type WorkspaceId } from './workspaces';
 export function App() {
   const [workspace, setWorkspace] = useState<WorkspaceId>('notes');
   const [openNoteId, setOpenNoteId] = useState<string | null>(null);
+
+  /* Notes opened from inside other notes (a sub-page or breadcrumb link), so Back can return to them. */
+  const [noteTrail, setNoteTrail] = useState<string[]>([]);
+
+  /* The category page being shown, or null for the notes home. */
+  const [openCategoryId, setOpenCategoryId] = useState<string | null>(null);
   const [workTab, setWorkTab] = useState<BoardTab>('todo');
   const [settingsSection, setSettingsSection] = useState<SettingsSection>('general');
   const [noteFilter, setNoteFilter] = useState<NoteFilter>('all');
@@ -30,28 +37,73 @@ export function App() {
   function navigate(next: WorkspaceId) {
     flushSave();
     setWorkspace(next);
-    if (next === 'notes') setOpenNoteId(null);
+    if (next === 'notes') {
+      setOpenNoteId(null);
+      setNoteTrail([]);
+      setOpenCategoryId(null);
+    }
   }
 
-  function openNote(id: string) {
-    setWorkspace('notes');
-    setOpenNoteId(id);
+  function scrollToTop() {
     document.getElementById('main-scroll')?.scrollTo(0, 0);
   }
 
-  function newNote() {
+  /* Opening a note from a list starts a fresh trail. */
+  function openNote(id: string) {
+    setWorkspace('notes');
+    setOpenNoteId(id);
+    setNoteTrail([]);
+    scrollToTop();
+  }
+
+  /* Opening a note from inside another note remembers the one being left. */
+  function openLinkedNote(id: string) {
     flushSave();
+    if (openNoteId && openNoteId !== id) setNoteTrail(trail => [...trail, openNoteId]);
+    setOpenNoteId(id);
+    scrollToTop();
+  }
 
-    /* While a category is being filtered, the new note starts in that category. */
-    const category = noteFilter === 'all' || noteFilter === 'none' ? '' : noteFilter;
-    openNote(createNote(category).id);
+  /* Back returns to the previous note, or to the category page or notes home it was opened from. */
+  function closeNote() {
+    flushSave();
+    const trail = noteTrail.filter(id => getNote(id));
+    setOpenNoteId(trail[trail.length - 1] ?? null);
+    setNoteTrail(trail.slice(0, -1));
+    scrollToTop();
+  }
 
-    /* Select the placeholder title so typing replaces it straight away. */
+  function addSubpage(parentId: string) {
+    const page = createSubpage(parentId);
+    if (!page) return;
+    openLinkedNote(page.id);
+    focusTitle();
+  }
+
+  /* Select the placeholder title so typing replaces it straight away. */
+  function focusTitle() {
     requestAnimationFrame(() => {
       const title = document.getElementById('note-title') as HTMLInputElement | null;
       title?.focus();
       title?.select();
     });
+  }
+
+  function openCategory(id: string) {
+    flushSave();
+    setWorkspace('notes');
+    setOpenNoteId(null);
+    setNoteTrail([]);
+    setOpenCategoryId(id);
+    scrollToTop();
+  }
+
+  /* A new note starts in the category being viewed or filtered, if there is one. */
+  function newNote(category?: string) {
+    flushSave();
+    const filtered = noteFilter === 'all' ? '' : noteFilter;
+    openNote(createNote(category ?? openCategoryId ?? filtered).id);
+    focusTitle();
   }
 
   useEffect(() => {
@@ -102,9 +154,25 @@ export function App() {
 
   let screen;
   if (workspace === 'notes') {
-    screen = openNoteId
-      ? <NoteEditor key={openNoteId} noteId={openNoteId} onClose={() => navigate('notes')} />
-      : <NotesHome filter={noteFilter} onFilterChange={setNoteFilter} onOpen={openNote} onCreate={newNote} />;
+    if (openNoteId) {
+      const previous = getNote(noteTrail[noteTrail.length - 1] ?? '');
+      const backLabel = previous ? previous.title || 'Untitled note' : openCategoryId ? categoryName(openCategoryId) : 'All notes';
+      screen = (
+        <NoteEditor
+          key={openNoteId}
+          noteId={openNoteId}
+          onClose={closeNote}
+          onOpenNote={openLinkedNote}
+          onOpenCategory={openCategory}
+          onAddSubpage={addSubpage}
+          backLabel={backLabel}
+        />
+      );
+    } else if (openCategoryId) {
+      screen = <CategoryPage categoryId={openCategoryId} onBack={() => setOpenCategoryId(null)} onOpen={openNote} onCreate={newNote} />;
+    } else {
+      screen = <NotesHome filter={noteFilter} onFilterChange={setNoteFilter} onOpen={openNote} onOpenCategory={openCategory} onCreate={() => newNote()} />;
+    }
   } else if (workspace === 'workboard') {
     screen = <Workboard tab={workTab} onTabChange={setWorkTab} />;
   } else {

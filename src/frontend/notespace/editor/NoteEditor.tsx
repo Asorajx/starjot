@@ -2,13 +2,14 @@ import { useEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEven
 import { changeZoom, usePreferences } from '../../app/preferences';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
 import { Icon } from '../../components/Icon';
-import { categoryName, deleteNote, flushSave, getNote, isStorageAvailable, updateNote, updatedLabel, useCategories, useNote, useSaveStatus } from '../store';
+import { childrenOf, deleteNote, flushSave, getNote, isStorageAvailable, updateNote, updatedLabel, useCategories, useNote, useSaveStatus } from '../store';
 import type { NoteMode } from '../../../shared/types/note';
 import { CodeLanguagePickers } from './CodeLanguagePickers';
 import { CommentLayer } from './CommentLayer';
 import { ContinuousEditor } from './ContinuousEditor';
 import { PageOptions, TableOfContents } from './EditorPanels';
 import { SelectionToolbar } from './SelectionToolbar';
+import { NoteBreadcrumb } from './NoteBreadcrumb';
 import { NoteHeader } from './NoteHeader';
 import { EditorSession, useSessionValue } from './session';
 import { StructuredEditor } from './StructuredEditor';
@@ -18,18 +19,25 @@ type Panel = 'toc' | 'options' | null;
 type NoteEditorProps = {
   noteId: string;
   onClose: () => void;
+  onOpenNote: (id: string) => void;
+  onOpenCategory: (id: string) => void;
+  onAddSubpage: (parentId: string) => void;
+
+  /* The page the back button returns to, such as "All notes" or a category name. */
+  backLabel: string;
 };
 
-const SAVE_LABELS = { saved: 'Saved locally', saving: 'Saving…', unsaved: 'Not saved' };
 
 
 /* =========================
    Note Editor Screen
    ========================= */
 
-export function NoteEditor({ noteId, onClose }: NoteEditorProps) {
+export function NoteEditor({ noteId, onClose, onOpenNote, onOpenCategory, onAddSubpage, backLabel }: NoteEditorProps) {
   const note = useNote(noteId);
-  const saveStatus = useSaveStatus();
+
+  /* Re-render after each save, so the warning appears if the browser stops accepting saves. */
+  useSaveStatus();
 
   /* Re-render when categories are renamed, so the breadcrumb stays current. */
   useCategories();
@@ -139,17 +147,10 @@ export function NoteEditor({ noteId, onClose }: NoteEditorProps) {
   return (
     <div className={`editor-wrap ${locked ? 'is-locked' : ''}`}>
       <div className="editor-toolbar">
-        <button className="back-button" type="button" onClick={onClose}><Icon name="arrow-left" size={17} /> All notes</button>
-        <nav className="editor-breadcrumb" aria-label="Note breadcrumb">
-          <span className="editor-breadcrumb-separator">/</span>
-          <span className="editor-crumb-category">{categoryName(note.category) || 'Notes'}</span>
-          <span className="editor-breadcrumb-separator">/</span>
-          <span id="editor-crumb-title" className="editor-crumb-current">{note.title || 'Untitled note'}</span>
-        </nav>
+        <button className="back-button" type="button" onClick={onClose}><Icon name="arrow-left" size={17} /> {backLabel}</button>
+        <NoteBreadcrumb note={note} onOpenNote={onOpenNote} onOpenCategory={onOpenCategory} />
         <span className="editor-toolbar-fill" />
-        <span className="saved-pill" id="note-save-state" role="status">
-          {saveStatus === 'saved' && <Icon name="check" size={14} />} {isStorageAvailable() ? SAVE_LABELS[saveStatus] : SAVE_LABELS.unsaved}
-        </span>
+        {!isStorageAvailable() && <span className="saved-pill is-warning" id="note-save-state" role="status">Not saved</span>}
 
         <span className="note-history-buttons" role="group" aria-label="Undo and redo">
           <button type="button" className="btn note-toolbar-button note-icon-button" aria-label="Undo (Ctrl + Z)" disabled={!canUndo || locked} onMouseDown={keepSelection} onClick={() => session.undo()}>
@@ -204,7 +205,7 @@ export function NoteEditor({ noteId, onClose }: NoteEditorProps) {
               <span className="meta-dot">•</span>
               <span id="note-updated-label">{updatedLabel(note)}</span>
             </div>
-            <NoteHeader note={note} locked={locked} />
+            <NoteHeader note={note} locked={locked} onOpenNote={onOpenNote} onAddSubpage={() => onAddSubpage(note.id)} />
             <div className="article-rule" />
 
             {/* The key re-creates the editor after undo/redo or a mode change, so it shows the saved content. */}
@@ -229,6 +230,7 @@ export function NoteEditor({ noteId, onClose }: NoteEditorProps) {
       {confirmDelete && (
         <ConfirmDialog title="Delete this note?" confirmLabel="Delete note" danger onConfirm={removeNote} onCancel={() => setConfirmDelete(false)}>
           <p><strong>{note.title || 'Untitled note'}</strong> will be removed from this browser. This cannot be undone.</p>
+          {childrenOf(note.id).length > 0 && <p>Its {childrenOf(note.id).length} sub-page(s) will be kept and move up one level.</p>}
         </ConfirmDialog>
       )}
     </div>

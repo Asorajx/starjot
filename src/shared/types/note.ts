@@ -35,6 +35,9 @@ export type Note = {
 
   /* Hides the details (category, description, dates, comments) under the title. */
   detailsHidden: boolean;
+
+  /* The id of the page this note sits inside, or an empty string for a top-level note. */
+  parentId: string;
   comments: NoteComment[];
   content: string;
 };

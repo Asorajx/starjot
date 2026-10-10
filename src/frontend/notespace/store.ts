@@ -15,6 +15,9 @@ const ACCENTS: NoteAccent[] = ['indigo', 'mint', 'amber', 'rose'];
 
 const CATEGORY_NAME_LENGTH = 24;
 
+/* Pages can sit inside pages up to this many levels deep (a note, its sub-page, and one more). */
+export const MAX_PAGE_DEPTH = 3;
+
 /* Category names used before categories could be edited, matched to today's default categories. */
 const OLD_CATEGORY_NAMES: Record<string, string> = {
   personal: 'personal', projects: 'work', meetings: 'work', work: 'work', knowledge: 'school', school: 'school'
@@ -80,6 +83,7 @@ function normalizeNote(raw: unknown): Note | null {
     stickyIndicator: record.stickyIndicator !== false,
     locked: record.locked === true,
     detailsHidden: record.detailsHidden === true,
+    parentId: /^[a-zA-Z0-9_-]+$/.test(String(record.parentId ?? '')) ? String(record.parentId) : '',
     comments: normalizeComments(record.comments),
     content: cleanHtml(record.content ?? SAMPLE_CONTENT[id] ?? '')
   };
@@ -105,6 +109,21 @@ function normalizeCategories(raw: unknown[] | null): Category[] {
   }).slice(0, MAX_CATEGORIES);
 }
 
+/* A sub-page whose parent is missing, or a loop of pages inside each other, becomes a top-level note. */
+function repairParents(notes: Note[]) {
+  const byId = new Map(notes.map(note => [note.id, note]));
+  return notes.map(note => {
+    const seen = new Set([note.id]);
+    let parent = byId.get(note.parentId);
+    while (parent) {
+      if (seen.has(parent.id)) return { ...note, parentId: '' };
+      seen.add(parent.id);
+      parent = byId.get(parent.parentId);
+    }
+    return note.parentId && !byId.has(note.parentId) ? { ...note, parentId: '' } : note;
+  });
+}
+
 function load(): Note[] {
   const seeds = SAMPLE_NOTES.map(normalizeNote).filter((note): note is Note => note !== null);
   try {
@@ -113,7 +132,7 @@ function load(): Note[] {
     deletedIds = saved.deleted;
     const restored = saved.notes.slice(0, MAX_NOTES).map(normalizeNote).filter((note): note is Note => note !== null);
     const ids = new Set(restored.map((note: Note) => note.id));
-    return [...restored, ...seeds.filter(note => !ids.has(note.id) && !deletedIds.includes(note.id))];
+    return repairParents([...restored, ...seeds.filter(note => !ids.has(note.id) && !deletedIds.includes(note.id))]);
   } catch (error) {
     storageAvailable = false;
     console.warn('Notespace: browser storage is unavailable; notes will remain in this page only.', error);
@@ -164,11 +183,12 @@ export function getNote(id: string) {
 }
 
 /* A new note can start in a category, for example the one being filtered on the home page. */
-export function createNote(category = '') {
+/* A sub-page is created inside a parent note and starts in the parent's category. */
+export function createNote(category = '', parentId = '') {
   const now = new Date().toISOString();
   const note = normalizeNote({
     id: `note_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`,
-    title: 'Untitled note', subtitle: '', preview: '', category,
+    title: 'Untitled note', subtitle: '', preview: '', category, parentId,
     updatedAt: now, createdAt: now, pinned: false, icon: '',
     accent: 'indigo', mode: 'continuous', content: ''
   }) as Note;
@@ -208,11 +228,52 @@ export function setPinned(id: string, pinned: boolean) {
   save();
 }
 
-/* Remove a note permanently from this browser. */
+/* Remove a note permanently from this browser. Its sub-pages are kept and move up one level. */
 export function deleteNote(id: string) {
+  const removed = getNote(id);
   if (SAMPLE_NOTES.some(note => note.id === id)) deletedIds = [...deletedIds, id];
-  setState({ notes: state.notes.filter(note => note.id !== id) });
+  setState({
+    notes: state.notes
+      .filter(note => note.id !== id)
+      .map(note => (note.parentId === id ? { ...note, parentId: removed?.parentId ?? '' } : note))
+  });
   save();
+}
+
+
+/* =========================
+   Pages Inside Pages
+   ========================= */
+
+/* The pages above a note, from the top-level note down to its direct parent. */
+export function ancestorsOf(id: string) {
+  const ancestors: Note[] = [];
+  let parent = getNote(getNote(id)?.parentId ?? '');
+  while (parent && ancestors.length < MAX_PAGE_DEPTH) {
+    ancestors.unshift(parent);
+    parent = getNote(parent.parentId);
+  }
+  return ancestors;
+}
+
+/* 1 for a top-level note, 2 for its sub-page, and so on. */
+export function depthOf(id: string) {
+  return ancestorsOf(id).length + 1;
+}
+
+export function childrenOf(id: string) {
+  return state.notes.filter(note => note.parentId === id);
+}
+
+export function canAddSubpage(id: string) {
+  return Boolean(getNote(id)) && depthOf(id) < MAX_PAGE_DEPTH;
+}
+
+/* Returns the new sub-page, or null when the parent is already at the deepest level. */
+export function createSubpage(parentId: string) {
+  const parent = getNote(parentId);
+  if (!parent || !canAddSubpage(parentId)) return null;
+  return createNote(parent.category, parentId);
 }
 
 
