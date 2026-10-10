@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f8faff">
+  <meta name="description" content="A clean, local-first Gantt timeline editor.">
+  <title>Gantt Studio — Timeline</title>
+
+  <!-- In Workboard, hide the Gantt Studio shell but retain the chart and its controls. -->
+  <script>
+    if (new URLSearchParams(window.location.search).get('embed') === '1') {
+      document.documentElement.classList.add('embedded');
+    }
+  </script>
+  <link rel="stylesheet" href="styles.css">
+  <script defer src="app.js"></script>
+</head>
+<body>
+  <div class="app-shell" id="appShell">
+    <aside class="rail" aria-label="Workspace navigation">
+      <div class="rail-brand" title="Gantt Studio">
+        <svg viewBox="0 0 32 32" width="23" height="23" aria-hidden="true"><rect x="4" y="6" width="11" height="5" rx="1" fill="currentColor"/><rect x="10" y="14" width="18" height="5" rx="1" fill="currentColor"/><rect x="4" y="22" width="16" height="5" rx="1" fill="currentColor"/></svg>
+      </div>
+      <button class="rail-item selected" aria-label="Timeline" title="Timeline" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18M7 4v4M14 10v4M10 16v4"/></svg></button>
+      <div class="rail-spacer"></div>
+      <button class="rail-item" id="railHelp" aria-label="Keyboard and storage information" title="Information" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.6 2.6 0 0 1 5 1c0 1.8-2.5 2.3-2.5 4M12 17.3h.01"/></svg></button>
+      <div class="rail-avatar" aria-label="Local workspace">GS</div>
+    </aside>
+
+    <div class="main-shell">
+      <header class="topbar">
+        <div class="topbar-left">
+          <button class="icon-button nav-toggle" id="toggleSidebar" title="Collapse sidebar" aria-label="Collapse sidebar" aria-expanded="true" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="0"/><path d="M9 4v16M14 10l-3 2 3 2"/></svg></button>
+          <span class="product-label">GANTT STUDIO</span>
+          <span class="crumb-divider">/</span>
+          <span class="project-icon">P</span>
+          <input id="projectTitle" class="project-title-input" aria-label="Project name" maxlength="70" spellcheck="false" value="Untitled project">
+          <span class="project-chevron" aria-hidden="true">⌄</span>
+        </div>
+        <div class="topbar-right">
+          <button class="quiet-button" id="importButton" type="button" title="Import CSV or JSON project">Import</button>
+          <div class="menu-anchor">
+            <button class="secondary-button" id="exportButton" type="button" aria-expanded="false">Export <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 10 5 5 5-5"/></svg></button>
+            <div id="exportMenu" class="popup-menu" hidden>
+              <button type="button" data-export="png"><span>PNG image</span><small>Full timeline</small></button>
+              <button type="button" data-export="svg"><span>SVG image</span><small>Scalable graphic</small></button>
+              <button type="button" data-export="csv"><span>CSV spreadsheet</span><small>Edit or re-import tasks</small></button>
+              <button type="button" data-export="json"><span>Project backup</span><small>JSON data</small></button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main class="workspace">
+        <section class="page-heading" aria-label="Timeline controls">
+          <div class="heading-info"><h1>Timeline</h1><div class="subtitle" id="subtitle">Plan sprints, structure work, and track delivery.</div></div>
+          <div class="heading-actions">
+            <button class="secondary-button" id="manageMembersButton" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3 20v-2a6 6 0 0 1 12 0v2M18 8v8M14 12h8"/></svg> Members</button>
+            <button class="secondary-button" id="newSprintButton" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg> Sprint</button>
+            <div class="menu-anchor">
+              <button class="primary-button" id="createButton" type="button" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg> Create <svg class="chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m7 10 5 5 5-5"/></svg></button>
+              <div id="createMenu" class="popup-menu create-menu" hidden>
+                <button type="button" data-create="epic"><span><i class="type-square epic-marker">◆</i> Epic</span><small>Group features</small></button>
+                <button type="button" data-create="feature"><span><i class="type-square feature-marker">▣</i> Feature</span><small>Group tasks</small></button>
+                <button type="button" data-create="task"><span><i class="type-square task-marker">✓</i> Task</span><small>Work to complete</small></button>
+                <div class="menu-divider"></div>
+                <button type="button" data-create="sprint"><span><i class="type-square sprint-marker">▰</i> Sprint</span><small>Planning period</small></button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <div id="importNotice" class="import-notice" role="status" aria-live="polite" hidden>
+          <span id="importNoticeMessage"></span>
+          <button id="dismissImportNotice" type="button" aria-label="Dismiss import message">×</button>
+        </div>
+
+        <section class="timeline-card" id="timelineCard" aria-label="Editable Gantt timeline">
+          <div class="timeline-tools">
+            <div class="tools-left">
+              <div class="search-box"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.5"/><path d="m16 16 5 5"/></svg><input id="searchInput" placeholder="Search work" aria-label="Search work items" autocomplete="off"><button class="clear-search" id="clearSearch" aria-label="Clear search" type="button" hidden>×</button></div>
+              <span class="tool-separator"></span>
+              <span class="count-label" id="counts">0 items · 0 sprints</span>
+            </div>
+            <div class="tools-right">
+              <button class="quiet-button today-button" id="todayButton" type="button">Today</button>
+              <div class="segmented" role="group" aria-label="Timeline scale">
+                <button type="button" data-zoom="day">Day</button><button type="button" data-zoom="week" class="active">Week</button><button type="button" data-zoom="month">Month</button>
+              </div>
+              <button class="icon-button" id="expandButton" title="Expand Gantt chart" aria-label="Expand Gantt chart" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3H3v5M16 21h5v-5M3 3l7 7M21 21l-7-7"/></svg></button>
+            </div>
+          </div>
+          <div class="gantt-scroll" id="ganttScroll" tabindex="0" aria-label="Gantt timeline grid">
+            <div id="ganttContent" class="gantt-content"></div>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <div id="backdrop" class="backdrop" hidden></div>
+  <aside id="drawer" class="drawer" role="dialog" aria-modal="true" aria-labelledby="drawerTitle" aria-hidden="true">
+    <div class="drawer-header"><div><div class="drawer-overline" id="drawerOverline">WORK ITEM</div><h2 id="drawerTitle">New work item</h2></div><button class="icon-button" id="closeDrawer" type="button" aria-label="Close editor"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5l14 14M19 5 5 19"/></svg></button></div>
+    <form id="editorForm" class="drawer-form" novalidate>
+      <label class="field full"><span>Name <b>*</b></span><input id="editName" maxlength="140" placeholder="Enter a name" required></label>
+      <div id="itemFields" class="field-set">
+        <label class="field"><span>Type</span><select id="editType"><option value="epic">Epic</option><option value="feature">Feature</option><option value="task">Task</option></select></label>
+        <label class="field" id="editStatusField"><span>Status</span><select id="editStatus"><option value="todo">To do</option><option value="progress">In progress</option><option value="review">In review</option><option value="done">Done</option><option value="blocked">Blocked</option></select></label>
+        <label class="field full"><span>Parent work item</span><select id="editParent"></select><div class="field-hint">Epics contain features. Features contain tasks.</div></label>
+        <label class="field"><span>Sprint</span><select id="editSprint"></select></label>
+        <label class="field"><span>Assignee <button type="button" class="field-link" id="editManageMembers">Manage members</button></span><select id="editAssignee"></select></label>
+        <label class="field full"><span>Work item colour</span><div id="swatches" class="swatches" role="group" aria-label="Work item colour"></div><input id="editColor" type="color" aria-label="Custom work item colour" value="#4e82f7"></label>
+        <label class="field full" id="editProgressField"><span>Progress <output id="progressOutput">0%</output></span><input id="editProgress" type="range" min="0" max="100" step="5" value="0"></label>
+        <div class="field full epic-completion-field" id="epicCompletionField" hidden><span>Task completion <strong id="epicCompletionValue">0%</strong></span><div class="epic-completion-track"><b id="epicCompletionTrack"></b></div><div class="field-hint" id="epicCompletionDetail">No tasks yet</div><div class="field-hint">Calculated automatically from tasks marked Done.</div></div>
+      </div>
+      <div class="dates-pair"><label class="field"><span>Start date <b>*</b></span><input id="editStart" type="date" required></label><label class="field"><span>End date <b>*</b></span><input id="editEnd" type="date" required></label></div>
+      <div id="sprintInfo" class="sprint-info" hidden>Sprint colour is fixed. You can edit the sprint name and dates.</div>
+      <p id="formError" class="form-error" role="alert"></p>
+      <div class="drawer-footer"><button id="deleteButton" class="danger-link" type="button" hidden>Delete</button><div class="drawer-footer-right"><button class="secondary-button" id="cancelButton" type="button">Cancel</button><button class="primary-button" type="submit">Save changes</button></div></div>
+    </form>
+  </aside>
+  <div id="membersBackdrop" class="backdrop members-backdrop" hidden></div>
+  <section class="members-dialog" id="membersDialog" role="dialog" aria-modal="true" aria-labelledby="membersTitle" aria-hidden="true">
+    <header class="members-header"><div><h2 id="membersTitle">Team members</h2><p>Manage the names available in assignee dropdowns.</p></div><button type="button" class="icon-button" id="closeMembers" aria-label="Close members">×</button></header>
+    <form id="memberForm" class="member-add-form"><label for="newMemberName">Add member</label><div class="member-add-row"><input id="newMemberName" maxlength="80" placeholder="Member name" autocomplete="off" required><button type="submit" class="primary-button">Add</button></div><p class="form-error" id="memberError" role="alert"></p></form>
+    <div class="members-list" id="membersList"></div>
+  </section>
+  <input id="importFile" type="file" accept=".json,.csv,.txt,application/json,text/csv,application/csv,text/plain" hidden>
+  <div id="dragTooltip" class="drag-tooltip" role="status" hidden></div>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+</body>
+</html>

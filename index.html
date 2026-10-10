@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#f7f9fc" />
+  <meta name="description" content="A Windows-first workspace project, currently a browser prototype with editable local Notespace documents." />
+  <title>Starjot — Workspace prototype</title>
+</head>
+<body>
+
+
+  <!-- =========================
+       Application Root
+       ========================= -->
+
+  <!-- React renders the application here; the message stays visible if the app cannot start. -->
+  <div id="app" class="app-root">
+    <div class="startup-placeholder" role="status">
+      <strong>Opening Starjot…</strong>
+      <p>If this message stays visible, run <code>npm install</code> and then <code>npm run dev</code>, and open the address it prints.</p>
+    </div>
+  </div>
+  <noscript>Starjot needs JavaScript for its interface. Notespace data is currently saved only in this browser.</noscript>
+
+
+  <!-- =========================
+       Application Script
+       ========================= -->
+
+  <!-- Vite bundles the TypeScript source, starting from src/frontend/main.tsx. -->
+  <script type="module" src="/src/frontend/main.tsx"></script>
+</body>
+</html>

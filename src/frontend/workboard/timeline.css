@@ -1,0 +1,56 @@
+/* =========================
+   Workboard Timeline Integration
+   ========================= */
+
+/* Give the wide timeline more room without changing the other Workboard views. */
+.board-page--timeline {
+  width: 100%;
+  max-width: none;
+  padding: 30px 26px 32px;
+}
+
+.timeline-integration {
+  min-width: 0;
+  padding: 0;
+}
+
+/* The embedded tool handles its own scrolling, dialogs, and responsive layout. */
+.timeline-integration-frame {
+  display: block;
+  width: 100%;
+  height: clamp(570px, calc(100dvh - 270px), 1000px);
+  border: 0;
+  background: #fff;
+}
+
+.timeline-integration-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 0;
+  padding: 12px 18px;
+  border-top: 1px solid var(--line);
+  background: #f9fbff;
+  color: var(--muted-deep);
+  font-size: 11px;
+  line-height: 1.55;
+}
+
+.timeline-integration-note .icon {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+@media (max-width: 700px) {
+  .board-page--timeline {
+    padding: 22px 12px 90px;
+  }
+
+  .timeline-integration-frame {
+    height: max(590px, calc(100dvh - 240px));
+  }
+
+  .timeline-integration-note {
+    padding: 11px 12px;
+  }
+}

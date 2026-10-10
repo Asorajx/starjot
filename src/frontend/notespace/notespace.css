@@ -1,0 +1,2182 @@
+/* =========================
+   Notespace Home
+   ========================= */
+
+.home-feature {
+  height: 222px;
+  border-radius: 14px;
+  overflow: hidden;
+  display: flex;
+  position: relative;
+  background: linear-gradient(111deg,#eaf2ff 0%,#edf5ff 58%,#dceafe 100%);
+  border: 1px solid #e0eafd;
+  margin-bottom: 38px;
+}
+
+.home-feature::after {
+  content: "";
+  width: 410px;
+  height: 410px;
+  border-radius: 50%;
+  border: 1px solid rgba(108,152,230,.13);
+  position: absolute;
+  right: -83px;
+  top: -250px;
+}
+
+.home-feature-left {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  padding: 28px 34px;
+}
+
+.feature-kicker {
+  font-size: 9px;
+  letter-spacing: 1.25px;
+  color: #6f9bdf;
+  font-weight: 850;
+}
+
+.home-feature h2 {
+  font-size: 23px;
+  line-height: 1.3;
+  letter-spacing: -.72px;
+  margin: 11px 0 11px;
+  color: #234379;
+  font-weight: 760;
+}
+
+.home-feature p {
+  font-size: 11px;
+  line-height: 1.7;
+  color: #7090b8;
+  max-width: 400px;
+  margin-bottom: 14px;
+}
+
+.feature-link {
+  padding: 0;
+  background: transparent;
+  border: 0;
+  color: #336fcf;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 11px;
+  font-weight: 750;
+}
+
+.feature-link:hover {
+  text-decoration: underline;
+}
+
+.document-illustration {
+  width: 37%;
+  height: 100%;
+  position: relative;
+}
+
+.paper-sheet {
+  position: absolute;
+  top: 23px;
+  left: 15%;
+  width: 201px;
+  height: 257px;
+  border: 1px solid #dae7f7;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 9px 26px rgba(65,104,169,.13);
+  transform: rotate(-5deg);
+  padding: 22px 21px;
+}
+
+.paper-sheet--back {
+  left: 22%;
+  top: 34px;
+  transform: rotate(9deg);
+  background: #f5f9ff;
+  box-shadow: 0 8px 16px rgba(64,102,153,.08);
+}
+
+.paper-topline {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 26px;
+}
+
+.paper-topline span {
+  display: block;
+  height: 5px;
+  width: 5px;
+  border-radius: 50%;
+  background: #e9eef9;
+}
+
+.paper-heading {
+  background: #a5c0ef;
+  height: 11px;
+  border-radius: 3px;
+  width: 107px;
+  margin-bottom: 17px;
+}
+
+.paper-line {
+  height: 6px;
+  background: #dce6f6;
+  border-radius: 4px;
+  margin-bottom: 9px;
+}
+
+.paper-line.long {
+  width: 155px;
+}
+
+.paper-line.medium {
+  width: 134px;
+}
+
+.paper-line.short {
+  width: 90px;
+}
+
+.paper-tag {
+  position: absolute;
+  top: 180px;
+  left: 19px;
+  background: #f0f6ff;
+  border: 1px solid #dce9fb;
+  color: #6a94cf;
+  border-radius: 5px;
+  padding: 6px 7px;
+  font-size: 8px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-weight: 700;
+}
+
+.paper-tag-dot {
+  display: inline-block;
+  background: #7ab6f9;
+  border-radius: 50%;
+  height: 6px;
+  width: 6px;
+}
+
+.floating-shape {
+  position: absolute;
+  border: 1px solid #b7d1fa;
+  border-radius: 8px;
+  transform: rotate(10deg);
+}
+
+.floating-shape--one {
+  width: 29px;
+  height: 29px;
+  left: 1%;
+  top: 39px;
+}
+
+.floating-shape--two {
+  width: 16px;
+  height: 16px;
+  right: 7%;
+  bottom: 52px;
+  transform: rotate(-15deg);
+}
+
+.content-section {
+  margin-bottom: 34px;
+}
+
+.section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.section-heading h2 {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-weight: 750;
+  font-size: 16px;
+  letter-spacing: -.4px;
+  margin: 0 0 7px;
+  color: #2c3d58;
+}
+
+.section-heading h2 svg {
+  color: #7a94c2;
+}
+
+.section-heading p {
+  margin: 0;
+  color: #9aa6b6;
+  font-size: 11px;
+}
+
+.subtle-counter {
+  font-size: 11px;
+  color: #9aa8ba;
+}
+
+.pinned-grid {
+  display: grid;
+  grid-template-columns: repeat(3,minmax(0,1fr));
+  gap: 17px;
+}
+
+.note-card {
+  background: white;
+  border: 1px solid #e9edf4;
+  box-shadow: var(--shadow);
+  border-radius: 12px;
+  min-width: 0;
+  min-height: 196px;
+  padding: 19px 20px 16px;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  transition: border-color .15s,transform .15s,box-shadow .15s;
+}
+
+.note-card:hover {
+  border-color: #b9d0fb;
+  transform: translateY(-2px);
+  box-shadow: 0 10px 26px rgba(37,73,131,.08);
+}
+
+.note-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 17px;
+}
+
+.doc-icon {
+  height: 40px;
+  width: 40px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 10px;
+  flex-shrink: 0;
+  color: #637ddc;
+  background: #edf1ff;
+}
+
+.doc-icon--mint {
+  color: #4eae9a;
+  background: #e5f7f1;
+}
+
+.doc-icon--amber {
+  color: #d8a14b;
+  background: #fff5df;
+}
+
+.doc-icon--rose {
+  color: #d68799;
+  background: #fff0f4;
+}
+
+.doc-icon--small {
+  width: 33px;
+  height: 33px;
+  border-radius: 8px;
+}
+
+.note-card-arrow {
+  color: #a5b5ce;
+}
+
+.note-card strong {
+  font-size: 13px;
+  letter-spacing: -.1px;
+  color: #2e3e58;
+  margin-bottom: 9px;
+}
+
+.note-card-description {
+  font-size: 11px;
+  color: #9aa6b4;
+  line-height: 1.68;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.note-card-bottom {
+  border-top: 1px solid #f0f2f7;
+  margin-top: auto;
+  padding-top: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 5px;
+  color: #a4aebc;
+  font-size: 10px;
+}
+
+.category-chip {
+  font-size: 10px;
+  color: #7290bd;
+  background: #f2f6fd;
+  border-radius: 5px;
+  padding: 5px 8px;
+  font-weight: 640;
+}
+
+.recent-section {
+  margin-top: 0;
+}
+
+.recent-table {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  overflow: hidden;
+  background: #fff;
+  box-shadow: var(--shadow);
+}
+
+.recent-columns,.recent-row {
+  display: grid;
+  grid-template-columns: minmax(0,1fr) 120px 147px;
+  align-items: center;
+  gap: 16px;
+}
+
+.recent-columns {
+  height: 38px;
+  border-bottom: 1px solid #eef0f5;
+  background: #fafbfd;
+  color: #a6afbc;
+  font-size: 9px;
+  font-weight: 760;
+  letter-spacing: .85px;
+  padding: 0 21px;
+}
+
+.recent-row {
+  width: 100%;
+  min-height: 66px;
+  border: 0;
+  border-bottom: 1px solid #f1f2f6;
+  background: #fff;
+  padding: 10px 21px;
+  text-align: left;
+}
+
+.recent-row:last-child {
+  border-bottom: 0;
+}
+
+.recent-row:hover {
+  background: #f8faff;
+}
+
+.recent-name {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.recent-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: 5px;
+}
+
+.recent-text strong {
+  font-size: 11px;
+  font-weight: 680;
+  color: #4b5b74;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.recent-text small {
+  font-size: 10px;
+  color: #a4adbb;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.recent-category {
+  font-size: 11px;
+  color: #8695a8;
+}
+
+.recent-time {
+  font-size: 10px;
+  color: #99a5b5;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 7px;
+}
+
+.recent-time svg {
+  color: #c6ceda;
+}
+
+.mini-footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  color: #adb7c5;
+  font-size: 10px;
+  padding: 0 1px 10px;
+}
+
+
+/* =========================
+   Notespace Editor
+   ========================= */
+
+.editor-wrap {
+  background: #fff;
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.editor-toolbar {
+  height: 58px;
+  min-height: 58px;
+  display: flex;
+  align-items: center;
+  padding: 0 33px;
+  gap: 17px;
+  border-bottom: 1px solid var(--line);
+}
+
+.back-button {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  background: none;
+  border: none;
+  color: #5d6f8a;
+  padding: 8px 3px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.back-button:hover {
+  color: var(--blue);
+}
+
+.toolbar-separator {
+  height: 18px;
+  border-left: 1px solid #e9edf4;
+}
+
+.editor-toolbar-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: #94a0b0;
+}
+
+.editor-toolbar-fill {
+  flex: 1;
+}
+
+.saved-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #56a48b;
+  background: #f1faf5;
+  padding: 7px 10px;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 690;
+}
+
+.editor-dots {
+  margin-left: 2px;
+}
+
+.editor-layout {
+  display: grid;
+  grid-template-columns: 188px minmax(0,1fr) 256px;
+  flex: 1;
+  min-height: calc(100vh - 131px);
+}
+
+.editor-outline {
+  padding: 43px 15px 22px 27px;
+  border-right: 1px solid #f0f2f6;
+  position: relative;
+}
+
+.outline-label {
+  font-size: 9px;
+  font-weight: 830;
+  color: #9ca8b6;
+  letter-spacing: 1.3px;
+  margin-bottom: 23px;
+}
+
+.outline-item {
+  display: block;
+  font-size: 11px;
+  line-height: 1.4;
+  padding: 10px 9px;
+  margin-bottom: 6px;
+  border-left: 2px solid transparent;
+  color: #98a5b4;
+}
+
+.outline-item:hover {
+  color: #526fbb;
+}
+
+.outline-item--active {
+  border-left-color: #4380f0;
+  color: #3772d8;
+  font-weight: 700;
+  background: #f7faff;
+}
+
+.outline-bottom {
+  margin-top: 75px;
+  color: #adb7c4;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 10px;
+  line-height: 1.7;
+}
+
+.outline-bottom svg {
+  margin-top: 2px;
+}
+
+.editor-canvas {
+  min-width: 0;
+  padding: 56px clamp(27px,6%,76px) 72px;
+  background: white;
+}
+
+.editor-width {
+  width: 100%;
+  max-width: 745px;
+  margin: 0 auto;
+}
+
+.editor-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 10px;
+  color: #9aa6b5;
+  margin-bottom: 20px;
+}
+
+.page-type {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #708cc7;
+  font-weight: 780;
+  letter-spacing: .85px;
+}
+
+.meta-dot {
+  color: #d0d6e0;
+}
+
+.editor-width>h1 {
+  font-size: clamp(26px,2.5vw,36px);
+  letter-spacing: -1.35px;
+  line-height: 1.22;
+  margin: 0 0 13px;
+  color: #1c2c47;
+  font-weight: 790;
+}
+
+.editor-subtitle {
+  font-size: 13px;
+  color: #95a0b0;
+  line-height: 1.75;
+  margin: 0 0 18px;
+}
+
+.editor-tags {
+  display: flex;
+  gap: 7px;
+  flex-wrap: wrap;
+}
+
+.tag-chip {
+  font-size: 10px;
+  color: #8f9eb0;
+  border-radius: 5px;
+  background: #f4f6f9;
+  padding: 6px 8px;
+}
+
+.tag-chip--blue {
+  color: #4d7dcc;
+  background: #eaf2ff;
+}
+
+.article-rule {
+  margin: 30px 0 34px;
+  border-top: 1px solid #edf0f5;
+}
+
+.article-body {
+  max-width: 680px;
+  color: #56657b;
+}
+
+.document-tagline,.overline {
+  font-size: 9px;
+  letter-spacing: 1.4px;
+  color: #83a1d8;
+  font-weight: 800;
+  margin-bottom: 11px;
+  display: block;
+}
+
+.article-body h2,.block-content h2 {
+  font-size: 20px;
+  letter-spacing: -.5px;
+  font-weight: 770;
+  color: #2b3d59;
+  margin: 20px 0 14px;
+  line-height: 1.36;
+}
+
+.article-body h2:first-of-type {
+  margin-top: 8px;
+}
+
+.article-body p,.block-content p {
+  font-size: 12.6px;
+  line-height: 1.96;
+  color: #65738a;
+  margin: 0 0 17px;
+}
+
+.article-body ul,.block-content ul {
+  padding-left: 21px;
+  margin: 5px 0 23px;
+  color: #66758c;
+  font-size: 12.5px;
+  line-height: 1.9;
+}
+
+.article-body li,.block-content li {
+  margin-bottom: 9px;
+}
+
+.article-body strong,.block-content strong {
+  color: #41546e;
+}
+
+.article-body blockquote,.block-content blockquote {
+  border-left: 3px solid #bcd1ff;
+  background: #f7faff;
+  padding: 13px 19px;
+  margin: 22px 0 27px;
+  font-size: 12px;
+  font-style: italic;
+  color: #6c84b6;
+  line-height: 1.9;
+  border-radius: 0 8px 8px 0;
+}
+
+.document-end {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  color: #c1c9d5;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 1.1px;
+  margin-top: 60px;
+  white-space: nowrap;
+}
+
+.document-end span {
+  height: 1px;
+  background: #eff1f5;
+  flex: 1;
+}
+
+.editor-side-panel {
+  border-left: 1px solid var(--line);
+  padding: 30px 18px 30px 19px;
+  min-width: 0;
+  background: #fcfdff;
+}
+
+.side-panel-heading {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  font-weight: 740;
+  color: #455874;
+  align-items: center;
+  margin-bottom: 30px;
+}
+
+.side-panel-heading span {
+  color: #9daabd;
+}
+
+.side-setting>strong {
+  font-size: 11px;
+  color: #455775;
+}
+
+.side-setting>p {
+  font-size: 10px;
+  line-height: 1.75;
+  color: #a1acba;
+  margin: 8px 0 14px;
+}
+
+.editor-mode-options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.mode-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #fff;
+  border: 1px solid #e9edf3;
+  border-radius: 8px;
+  padding: 11px 8px;
+  text-align: left;
+}
+
+.mode-option.selected {
+  border-color: #8bb3fb;
+  background: #f7faff;
+  box-shadow: 0 0 0 2px #eaf2ff;
+}
+
+.mode-option:hover {
+  border-color: #c3d5f4;
+}
+
+.mode-icon {
+  color: #8496af;
+  display: grid;
+  place-items: center;
+  width: 25px;
+  height: 25px;
+  flex-shrink: 0;
+}
+
+.mode-option.selected .mode-icon {
+  color: #4d7ee3;
+}
+
+.mode-option>span:nth-child(2) {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.mode-option strong {
+  font-size: 10px;
+  color: #586b86;
+  white-space: nowrap;
+}
+
+.mode-option small {
+  font-size: 9px;
+  line-height: 1.4;
+  color: #a2adbb;
+}
+
+.mode-radio {
+  width: 13px;
+  height: 13px;
+  border: 1.5px solid #d0d8e5;
+  border-radius: 50%;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.mode-option.selected .mode-radio {
+  border-color: #4781e5;
+}
+
+.mode-option.selected .mode-radio::before {
+  content: "";
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  position: absolute;
+  top: 2.5px;
+  left: 2.5px;
+  background: #4781e5;
+}
+
+.settings-hint {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  color: #a0adbd;
+  line-height: 1.6;
+  font-size: 9px;
+  margin-top: 12px;
+}
+
+.settings-hint svg {
+  margin-top: 1px;
+}
+
+.side-setting--border {
+  border-top: 1px solid #e9edf4;
+  padding-top: 23px;
+  margin-top: 24px;
+}
+
+.feature-state {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  background: #f4f7fd;
+  border-radius: 6px;
+  padding: 11px;
+  font-size: 10px;
+  color: #778db4;
+}
+
+.coming-later {
+  font-size: 10px;
+  color: #abb5c3;
+  margin-top: 11px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.layout-option {
+  height: 34px;
+  background: #fff;
+  border: 1px solid #dfe9fc;
+  border-radius: 6px;
+  padding: 0 10px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: #5c7db5;
+  font-size: 10px;
+  margin-bottom: 8px;
+}
+
+.layout-option span {
+  margin-left: auto;
+}
+
+.layout-option--disabled {
+  border-color: #edf0f4;
+  color: #adb8c5;
+}
+
+.layout-option em {
+  margin-left: auto;
+  color: #a3adbb;
+  font-size: 9px;
+  font-style: normal;
+}
+
+.structured-document {
+  padding-bottom: 20px;
+}
+
+.editable-block {
+  position: relative;
+  margin: 6px 0 12px;
+  padding: 3px 4px 3px 21px;
+  border-radius: 5px;
+}
+
+.editable-block:hover {
+  background: #f8faff;
+}
+
+.block-handle {
+  position: absolute;
+  left: 0;
+  top: 8px;
+  color: #a8b4c5;
+}
+
+.block-content h2 {
+  margin: 2px 0 5px;
+}
+
+.block-content p {
+  margin: 0;
+}
+
+.block-content ul {
+  margin: 0;
+}
+
+.block-content blockquote {
+  margin: 0;
+}
+
+.block-image-demo {
+  height: 138px;
+  overflow: hidden;
+  position: relative;
+  border-radius: 7px;
+  background: linear-gradient(120deg,#e5effe,#f0f6ff);
+  display: flex;
+  align-items: flex-end;
+  padding: 14px 15px;
+}
+
+.block-image-demo>span {
+  position: relative;
+  z-index: 1;
+  color: #7b98c9;
+  font-size: 10px;
+  font-weight: 750;
+}
+
+.image-demo-orb {
+  position: absolute;
+  background: #d2e4fc;
+  height: 180px;
+  width: 180px;
+  border-radius: 50%;
+  right: -15px;
+  top: -105px;
+}
+
+.image-demo-layer {
+  position: absolute;
+  transform: rotate(-17deg);
+  border: 2px solid #aecafa;
+  height: 65px;
+  width: 65px;
+  top: 32px;
+  left: 44%;
+  border-radius: 14px;
+}
+
+.image-demo-layer.l2 {
+  top: 45px;
+  left: 49%;
+  background: #c9dcfa;
+  border-color: #b2cbf6;
+}
+
+.block-content .image-caption {
+  color: #96a4b8;
+  font-size: 10px;
+}
+
+.preview-table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 11px;
+  color: #6b7c92;
+}
+
+.preview-table th {
+  text-align: left;
+  background: #f3f6fc;
+  color: #6f85a9;
+  font-size: 10px;
+}
+
+.preview-table th,.preview-table td {
+  border: 1px solid #e6edf7;
+  padding: 9px;
+}
+
+.status-pill {
+  background: #edf4ff;
+  color: #5f86c8;
+  border-radius: 4px;
+  padding: 4px 6px;
+  font-size: 9px;
+}
+
+.code-preview {
+  margin: 0;
+  border: 1px solid #e4eaf4;
+  background: #f6f8fb;
+  padding: 12px;
+  color: #5778aa;
+  border-radius: 6px;
+  line-height: 1.8;
+  white-space: pre-wrap;
+  font-size: 11px;
+}
+
+.block-footer-note {
+  font-size: 10px;
+  display: flex;
+  gap: 8px;
+  line-height: 1.7;
+  color: #a5b3c3;
+  margin-top: 24px;
+}
+
+
+/* =========================
+   Editable Notespace Documents
+   ========================= */
+
+/* Notes now use the full document width; optional panels float above it. */
+.editor-wrap .editor-layout {
+  display: block;
+  min-height: calc(100vh - 131px);
+}
+
+.editor-wrap .editor-canvas {
+  padding: 50px clamp(26px, 5vw, 78px) 85px;
+}
+
+.editor-wrap .editor-width {
+  max-width: 805px;
+}
+
+.editor-wrap .editor-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 22;
+  gap: 11px;
+  padding: 0 27px;
+  background: #fff;
+}
+
+.note-title-input {
+  display: block;
+  width: 100%;
+  margin: 0 0 13px;
+  padding: 0;
+  background: transparent;
+  color: #1c2c47;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  outline: none;
+  font: inherit;
+  font-size: clamp(26px, 2.5vw, 36px);
+  font-weight: 790;
+  line-height: 1.3;
+  letter-spacing: -1.35px;
+}
+
+.note-title-input:focus {
+  border-color: #a7c5f5;
+  box-shadow: 0 0 0 3px #edf4ff;
+}
+
+.note-title-input::placeholder {
+  color: #a5b5cb;
+}
+
+.editor-wrap .editor-subtitle:empty {
+  display: none;
+}
+
+.note-editable {
+  min-height: 270px;
+  padding: 4px 0;
+  outline: none;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* The editor always holds one empty paragraph, so the placeholder is shown with a class */
+/* (set by the editor) and placed over that first line. */
+.note-editable.is-empty {
+  position: relative;
+}
+
+.note-editable.is-empty::before {
+  content: attr(data-placeholder);
+  position: absolute;
+  top: 4px;
+  left: 0;
+  color: #acb8c9;
+  font-size: 12.6px;
+  line-height: 1.96;
+  pointer-events: none;
+}
+
+.note-editable:focus {
+  outline: none;
+}
+
+.note-editable h2,
+.structured-document h2,
+.note-editable h3,
+.structured-document h3 {
+  scroll-margin-top: 100px;
+}
+
+.note-editable h3,
+.block-content h3 {
+  color: #364a66;
+  font-size: 16px;
+  margin: 22px 0 12px;
+}
+
+.note-toolbar-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 10px;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  background: transparent;
+  color: #71829b;
+  white-space: nowrap;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.note-toolbar-button:hover,
+.note-toolbar-button.selected {
+  color: #3878e4;
+  background: #edf4ff;
+  border-color: #dbe7ff;
+}
+
+/* Keep short toolbar labels on one line; the breadcrumb shrinks instead when space is tight. */
+.editor-wrap .back-button,
+.editor-wrap .saved-pill {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.note-toolbar-button:disabled {
+  opacity: .4;
+  cursor: default;
+}
+
+.note-toolbar-button:disabled:hover {
+  background: transparent;
+  border-color: transparent;
+  color: #71829b;
+}
+
+/* Undo and redo sit together as a compact pair of icon buttons. */
+.note-history-buttons {
+  display: inline-flex;
+  gap: 2px;
+}
+
+.note-icon-button {
+  padding: 8px;
+}
+
+/* Red "Unstick" state: the selection is inside an existing sticky group. */
+.note-sticky-button.is-unstick,
+.note-sticky-button.is-unstick:hover {
+  color: #d23f3f;
+  background: #fff1f1;
+  border-color: #f8d2d2;
+}
+
+.note-toolbar-button:focus-visible,
+.flyout-close:focus-visible,
+.note-toc-links button:focus-visible {
+  outline: 2px solid #5591ed;
+  outline-offset: 2px;
+}
+
+.notes-empty {
+  grid-column: 1 / -1;
+  color: #94a2b5;
+  font-size: 12px;
+}
+
+
+/* =========================
+   Optional Contents and Preferences Panels
+   ========================= */
+
+/* Both panels are overlays, so closed panels never reserve document space. */
+.editor-flyout {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 24px;
+  z-index: 32;
+  width: min(305px, calc(100vw - 35px));
+  max-height: min(650px, 76vh);
+  overflow-y: auto;
+  padding: 20px;
+  background: #fff;
+  border: 1px solid #e0e8f4;
+  border-radius: 12px;
+  box-shadow: 0 18px 55px rgba(28, 54, 96, .16);
+}
+
+.flyout-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 22px;
+  color: #344962;
+  font-size: 13px;
+}
+
+.flyout-close {
+  display: grid;
+  place-items: center;
+  width: 27px;
+  height: 27px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: #95a3b7;
+}
+
+.flyout-close:hover {
+  background: #f2f6fd;
+  color: #4c78cb;
+}
+
+.note-toc-links {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.note-toc-links .outline-item {
+  width: 100%;
+  margin: 0;
+  padding: 10px 12px;
+  border-top: 0;
+  border-right: 0;
+  border-bottom: 0;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.note-toc-links .outline-item:hover,
+.note-toc-links .outline-item--active {
+  background: #f3f7ff;
+  color: #3370d9;
+}
+
+.note-toc-links .outline-item--nested {
+  padding-left: 27px;
+}
+
+.toc-empty {
+  margin: 9px 4px;
+  color: #91a0b3;
+  font-size: 11px;
+  line-height: 1.7;
+}
+
+.flyout-footnote {
+  display: flex;
+  gap: 7px;
+  margin-top: 23px;
+  padding-top: 16px;
+  border-top: 1px solid #edf1f7;
+  color: #9aa9bd;
+  font-size: 10px;
+  line-height: 1.6;
+}
+
+.editor-flyout .side-setting--border {
+  margin-top: 22px;
+  padding-top: 21px;
+}
+
+.note-switch-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 0;
+  color: #526581;
+  font-size: 11px;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.note-switch-row input {
+  width: 17px;
+  height: 17px;
+  accent-color: #397bf0;
+  cursor: pointer;
+}
+
+.note-switch-row input:disabled {
+  cursor: not-allowed;
+}
+
+/* Block text is edited inside the structured document, which is one editable area. */
+/* pre-wrap matches the continuous editor, so line breaks look the same in both modes. */
+.block-content {
+  min-height: 19px;
+  outline: none;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.structured-document[contenteditable="true"] {
+  outline: none;
+}
+
+@media (max-width: 700px) {
+  .editor-wrap .editor-toolbar {
+    gap: 5px;
+    padding: 0 10px;
+  }
+
+  .note-toolbar-button {
+    width: 34px;
+    height: 34px;
+    justify-content: center;
+    padding: 6px;
+  }
+
+  .note-toolbar-button span {
+    display: none;
+  }
+
+  .note-icon-button {
+    width: 30px;
+  }
+
+  .editor-wrap .editor-canvas {
+    padding: 34px 22px 65px;
+  }
+
+  .editor-flyout {
+    right: 9px;
+    top: calc(100% + 5px);
+  }
+}
+
+
+/* =========================
+   Compact Document Layout
+   ========================= */
+
+/* The editor is wider and starts closer to the toolbar without fixed side panels. */
+.editor-wrap .editor-layout {
+  min-height: calc(100vh - 58px);
+}
+
+/* The same side padding in both modes keeps text in place when switching modes. It also leaves */
+/* room for the block controls and a gap from the left edge, where a hidden sidebar can be revealed. */
+.editor-wrap .editor-canvas {
+  padding: 27px clamp(72px, 7vw, 104px) 60px;
+}
+
+.editor-wrap .editor-width {
+  max-width: 1120px;
+}
+
+.editor-wrap .article-body {
+  max-width: 100%;
+}
+
+.editor-wrap .editor-meta {
+  margin-bottom: 13px;
+}
+
+.editor-wrap .note-title-input {
+  margin-bottom: 7px;
+}
+
+.editor-wrap .article-rule {
+  margin: 21px 0 19px;
+}
+
+/* The breadcrumb occupies the former category label area beside All notes. */
+.editor-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  max-width: min(48vw, 510px);
+  color: #8795a9;
+  font-size: 11px;
+}
+
+.editor-crumb-category {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.editor-breadcrumb-separator {
+  color: #c7cfdb;
+}
+
+.editor-crumb-current {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #526581;
+  font-weight: 630;
+}
+
+/* A quiet reminder makes discoverable typing shortcuts without a permanent toolbar. */
+.markdown-hint {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+  color: #98a5b6;
+  font-size: 10px;
+}
+
+.markdown-hint kbd {
+  padding: 1px 5px;
+  border: 1px solid #e3e9f2;
+  border-radius: 4px;
+  background: #f8faff;
+  color: #77869b;
+  font-family: inherit;
+}
+
+/* Markdown-generated headings, lists and code share the same look in both modes. */
+.note-editable h1,
+.block-content h1 {
+  margin: 17px 0 12px;
+  color: #22344f;
+  font-size: 27px;
+  line-height: 1.3;
+}
+
+.note-editable h4,
+.note-editable h5,
+.note-editable h6,
+.block-content h4,
+.block-content h5,
+.block-content h6 {
+  margin: 13px 0 9px;
+  color: #394b66;
+  font-size: 14px;
+}
+
+.note-editable ol,
+.block-content ol {
+  padding-left: 22px;
+  margin: 6px 0 17px;
+  color: #65738a;
+  font-size: 12.6px;
+  line-height: 1.9;
+}
+
+.note-editable pre,
+.block-content pre {
+  margin: 12px 0 19px;
+  padding: 40px 17px 14px;
+  overflow-x: auto;
+  border: 1px solid #e2eaf6;
+  border-radius: 8px;
+
+  /* The lighter top band holds the language picker without covering any code. */
+  background: linear-gradient(#eef2fa, #eef2fa) top / 100% 30px no-repeat, #f6f8fd;
+  color: #273c5e;
+  font: 12px/1.7 ui-monospace, SFMono-Regular, Consolas, monospace;
+  white-space: pre-wrap;
+  tab-size: 2;
+}
+
+.note-editable code,
+.block-content code {
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+}
+
+.note-editable hr,
+.block-content hr {
+  margin: 16px 0;
+  border: 0;
+  border-top: 1px solid #e0e7f2;
+}
+
+@media (max-width: 700px) {
+  .editor-wrap .editor-canvas {
+    padding: 23px 17px 55px;
+  }
+
+  .editor-breadcrumb {
+    gap: 6px;
+    max-width: 34vw;
+  }
+
+  .editor-crumb-category,
+  .editor-breadcrumb-separator:last-of-type {
+    display: none;
+  }
+
+  .markdown-hint {
+    line-height: 1.7;
+  }
+}
+
+
+/* =========================
+   Structured Block Interaction
+   ========================= */
+
+/* Blocks stay visually quiet; their controls only appear while the pointer is over them. */
+.structured-document .editable-block {
+  margin-left: -60px;
+  padding: 4px 0 4px 60px;
+  border-radius: 5px;
+}
+
+.structured-document .editable-block:hover {
+  background: transparent;
+}
+
+/* The document is focused (without an outline) while Ctrl + A has the whole note selected. */
+.structured-document:focus {
+  outline: none;
+}
+
+/* A locked page hides the block controls, since blocks cannot be added or moved. */
+.editor-wrap.is-locked .block-controls {
+  display: none;
+}
+
+.structured-document .editable-block.is-selected {
+  background: #f9fbff;
+  box-shadow: inset 2px 0 #abc9fc;
+}
+
+.block-controls {
+  position: absolute;
+  top: 4px;
+  left: 18px;
+  display: flex;
+  align-items: center;
+  height: 26px;
+  gap: 0;
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.editable-block:hover .block-controls {
+  visibility: visible;
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Touch screens have no hover, so they show the controls on the selected block instead. */
+@media (hover: none) {
+  .editable-block.is-selected .block-controls {
+    visibility: visible;
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
+.block-controls .block-control {
+  position: static;
+  display: grid;
+  place-items: center;
+  flex: 0 0 19px;
+  width: 19px;
+  height: 26px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: #8797ac;
+  font-size: 13px;
+  line-height: 1;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.block-controls .block-handle {
+  cursor: grab;
+}
+
+.block-controls .block-handle:active {
+  cursor: grabbing;
+}
+
+.block-controls .block-control:hover,
+.block-controls .block-control:focus-visible {
+  color: #3978e8;
+  background: #e9f2ff;
+}
+
+.structured-document .editable-block.is-picked {
+  background: #eef4ff;
+  box-shadow: inset 2px 0 #6f9ff0;
+}
+
+.editable-block.is-dragging {
+  opacity: .45;
+}
+
+.editable-block.drop-before::before,
+.editable-block.drop-after::after {
+  content: "";
+  position: absolute;
+  left: 60px;
+  right: 0;
+  height: 2px;
+  background: #347af4;
+  pointer-events: none;
+}
+
+.editable-block.drop-before::before {
+  top: -4px;
+}
+
+.editable-block.drop-after::after {
+  bottom: -5px;
+}
+
+/* Windows is the primary target; compact widths keep reordering controls accessible. */
+@media (max-width: 700px) {
+  .structured-document .editable-block {
+    margin-left: 0;
+    padding-left: 0;
+  }
+
+  .block-controls {
+    left: auto;
+    right: 0;
+    top: -25px;
+    z-index: 2;
+    background: #f8fbff;
+    border-radius: 5px;
+  }
+}
+
+
+/* =========================
+   Sticky Groups
+   ========================= */
+
+/* Negative margins plus matching padding create side areas without moving the text. */
+/* The left side area is where a double-click selects the whole group. */
+.sticky-group {
+  --sticky-gutter: 22px;
+  position: relative;
+  margin-right: calc(var(--sticky-gutter) * -1);
+  margin-left: calc(var(--sticky-gutter) * -1);
+  padding-right: var(--sticky-gutter);
+  padding-left: var(--sticky-gutter);
+}
+
+/* The indicator is a pair of brackets, [ on the left and ] on the right, drawn in the side areas. */
+/* z-index keeps them above a selected block's background; clicks pass through to the group. */
+.sticky-group::before,
+.sticky-group::after {
+  content: "";
+  position: absolute;
+  z-index: 1;
+  top: 2px;
+  bottom: 2px;
+  width: 7px;
+  border: 2px solid #a9c4f4;
+  pointer-events: none;
+  transition: border-color .15s ease;
+}
+
+.sticky-group::before {
+  left: 8px;
+  border-right: 0;
+  border-radius: 3px 0 0 3px;
+}
+
+.sticky-group::after {
+  right: 8px;
+  border-left: 0;
+  border-radius: 0 3px 3px 0;
+}
+
+.sticky-group:hover::before,
+.sticky-group:hover::after {
+  border-color: #4f8cf0;
+}
+
+.sticky-indicators-off .sticky-group::before,
+.sticky-indicators-off .sticky-group::after {
+  display: none;
+}
+
+/* Hidden brackets still appear while a group's text is selected or the group is being moved. */
+.sticky-indicators-off .sticky-group.is-revealed::before,
+.sticky-indicators-off .sticky-group.is-revealed::after {
+  display: block;
+}
+
+.sticky-group.is-revealed::before,
+.sticky-group.is-revealed::after {
+  border-color: #4f8cf0;
+}
+
+@media (max-width: 700px) {
+  .sticky-group {
+    --sticky-gutter: 14px;
+  }
+
+  .sticky-group::before {
+    left: 3px;
+  }
+
+  .sticky-group::after {
+    right: 3px;
+  }
+}
+
+
+/* =========================
+   Code Blocks
+   ========================= */
+
+/* The picker layer covers the note content; only the pickers themselves receive clicks. */
+.note-content {
+  position: relative;
+}
+
+.code-lang-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.code-lang-select {
+  position: absolute;
+  height: 22px;
+  padding: 0 6px;
+  border: 1px solid #dbe4f2;
+  border-radius: 5px;
+  background: #fff;
+  color: #5d6f8a;
+  font: inherit;
+  font-size: 10px;
+  font-weight: 650;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.code-lang-select:focus-visible {
+  outline: 2px solid #5591ed;
+  outline-offset: 1px;
+}
+
+/* Token colours used by the syntax highlighter in code.js. */
+.tok-comment {
+  color: #8a99ad;
+  font-style: italic;
+}
+
+.tok-string {
+  color: #22863a;
+}
+
+.tok-number,
+.tok-literal {
+  color: #b15c00;
+}
+
+.tok-keyword,
+.tok-tag {
+  color: #7a3fc4;
+}
+
+.tok-function {
+  color: #2f6fd6;
+}
+
+.tok-property,
+.tok-attr {
+  color: #c2366b;
+}
+
+
+/* =========================
+   Mode Switching
+   ========================= */
+
+/* A quick fade when changing between continuous and structured layouts. */
+.note-content.is-switching {
+  animation: note-mode-fade .22s ease-out;
+}
+
+@keyframes note-mode-fade {
+  from {
+    opacity: 0;
+    transform: translateY(3px);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .note-content.is-switching {
+    animation: none;
+  }
+}
+
+
+/* =========================
+   Links and Comments in Notes
+   ========================= */
+
+.note-editable a,
+.block-content a {
+  color: var(--blue);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* Commented words get a soft highlight; the open comment's words are highlighted more strongly. */
+.comment-mark {
+  border-bottom: 2px solid #f0c341;
+  background: #fff6d6;
+  cursor: pointer;
+}
+
+.comment-mark.is-active {
+  background: #ffe9a3;
+}
+
+/* Markers sit in the right-hand page padding, beside the commented line. */
+.comment-layer {
+  position: absolute;
+  top: 0;
+  right: -40px;
+  width: 0;
+}
+
+.comment-marker-wrap {
+  position: absolute;
+  right: 0;
+}
+
+.comment-marker {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 22px;
+  padding: 0;
+  border: 1px solid #f1d98a;
+  border-radius: 6px;
+  background: #fff8df;
+  color: #b0861a;
+  cursor: pointer;
+}
+
+.comment-marker:hover,
+.comment-marker.is-open {
+  border-color: #e5b52c;
+  background: #ffefb5;
+}
+
+.comment-popover {
+  position: absolute;
+  top: 28px;
+  right: 0;
+  z-index: 30;
+  width: 240px;
+  padding: 12px 14px;
+  border: 1px solid #e0e8f4;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 14px 40px rgba(28, 54, 96, .16);
+}
+
+.comment-popover p {
+  margin: 0 0 10px;
+  color: #3a4b64;
+  font-size: 12px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.comment-popover-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  color: #97a4b6;
+  font-size: 10px;
+}
+
+.comment-delete {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 6px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: #d23f3f;
+  font: inherit;
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.comment-delete:hover {
+  background: #fff1f1;
+}
+
+@media (max-width: 700px) {
+  .comment-layer {
+    right: -14px;
+  }
+}
+
+
+/* =========================
+   Selection Toolbar
+   ========================= */
+
+/* Fixed positioning places the bar over the selected text; translateX centres it. */
+.selection-toolbar {
+  position: fixed;
+  z-index: 70;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px;
+  border: 1px solid #dfe7f3;
+  border-radius: 9px;
+  background: #fff;
+  box-shadow: 0 10px 30px rgba(28, 54, 96, .18);
+  transform: translateX(-50%);
+}
+
+.selection-tool {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-width: 30px;
+  height: 30px;
+  padding: 0 7px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: #4f6280;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.selection-tool:hover,
+.selection-tool:focus-visible {
+  background: #edf4ff;
+  color: #3370d9;
+}
+
+.selection-divider {
+  width: 1px;
+  height: 18px;
+  margin: 0 3px;
+  background: #e3e9f2;
+}
+
+.selection-input {
+  width: 260px;
+  padding: 7px 9px;
+  border: 1px solid #d6e2f5;
+  border-radius: 6px;
+  background: #fff;
+  color: #2b3d59;
+  font: inherit;
+  font-size: 12px;
+  outline: none;
+  resize: none;
+}
+
+.selection-input:focus {
+  border-color: #8fb3f2;
+}
+
+.selection-comment {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.selection-comment-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+
+/* =========================
+   Page Options
+   ========================= */
+
+.zoom-control {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 4px;
+  border: 1px solid #e0e8f4;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.zoom-button,
+.zoom-value {
+  height: 32px;
+  border: 0;
+  background: transparent;
+  color: #4f6280;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.zoom-button {
+  display: grid;
+  place-items: center;
+  width: 34px;
+}
+
+.zoom-value {
+  min-width: 58px;
+  border-right: 1px solid #e0e8f4;
+  border-left: 1px solid #e0e8f4;
+}
+
+.zoom-button:hover,
+.zoom-value:hover {
+  background: #f3f7ff;
+  color: #3370d9;
+}
+
+.note-switch-row span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Red removal button; disabled while the page is locked. */
+.danger-option {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #f6cfcf;
+  border-radius: 8px;
+  background: #fff5f5;
+  color: #d23f3f;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.danger-option:hover {
+  border-color: #eea9a9;
+  background: #ffeaea;
+}
+
+.danger-option:disabled {
+  opacity: .5;
+  cursor: not-allowed;
+}
+
+.page-locked {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #b0861a;
+  font-weight: 700;
+}
+
+
+/* =========================
+   Printing
+   ========================= */
+
+/* Print only the document, and keep each sticky group on one page when it fits. */
+@media print {
+  html,
+  body,
+  #app,
+  .app-shell,
+  .main-column,
+  .main-scroll,
+  .editor-wrap,
+  .editor-layout {
+    display: block;
+    height: auto;
+    min-height: 0;
+    overflow: visible;
+  }
+
+  .sidebar,
+  .mobile-nav,
+  .topbar,
+  .editor-toolbar,
+  .editor-meta,
+  .editor-tags,
+  .markdown-hint,
+  .block-footer-note,
+  .block-controls,
+  .code-lang-layer,
+  .comment-layer,
+  .selection-toolbar,
+  .document-end {
+    display: none !important;
+  }
+
+  .editor-wrap .editor-canvas {
+    padding: 0;
+  }
+
+  .sticky-group {
+    break-inside: avoid;
+  }
+
+  .sticky-group::before,
+  .sticky-group::after {
+    display: none;
+  }
+
+  .structured-document .editable-block,
+  .structured-document .editable-block.is-selected,
+  .structured-document .editable-block.is-picked {
+    background: none;
+    box-shadow: none;
+  }
+}

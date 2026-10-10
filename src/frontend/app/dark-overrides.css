@@ -1,0 +1,59 @@
+/* =========================
+   Dark Theme Adjustments
+   ========================= */
+
+/* Hand-tuned dark styles that the generated dark-theme.css cannot work out on its own. */
+[data-theme="dark"] body {
+  background: var(--bg);
+}
+
+/* Sticky brackets slightly brighter than the generated colour, so they read like the light theme's. */
+[data-theme="dark"] .sticky-group::before,
+[data-theme="dark"] .sticky-group::after {
+  border-color: hsl(218 55% 46%);
+}
+
+[data-theme="dark"] .sticky-group:hover::before,
+[data-theme="dark"] .sticky-group:hover::after,
+[data-theme="dark"] .sticky-group.is-revealed::before,
+[data-theme="dark"] .sticky-group.is-revealed::after {
+  border-color: hsl(218 85% 64%);
+}
+
+/* Code token colours brightened for a dark background. */
+[data-theme="dark"] .tok-comment {
+  color: hsl(215 14% 52%);
+}
+
+[data-theme="dark"] .tok-string {
+  color: hsl(130 45% 62%);
+}
+
+[data-theme="dark"] .tok-number,
+[data-theme="dark"] .tok-literal {
+  color: hsl(30 80% 64%);
+}
+
+[data-theme="dark"] .tok-keyword,
+[data-theme="dark"] .tok-tag {
+  color: hsl(270 70% 76%);
+}
+
+[data-theme="dark"] .tok-function {
+  color: hsl(215 85% 70%);
+}
+
+[data-theme="dark"] .tok-property,
+[data-theme="dark"] .tok-attr {
+  color: hsl(335 70% 72%);
+}
+
+/* Comment highlights use a muted amber instead of a bright yellow. */
+[data-theme="dark"] .comment-mark {
+  border-bottom-color: hsl(43 70% 45%);
+  background: hsl(43 45% 18%);
+}
+
+[data-theme="dark"] .comment-mark.is-active {
+  background: hsl(43 50% 25%);
+}
