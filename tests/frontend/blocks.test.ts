@@ -161,8 +161,17 @@ describe('table and toggle keys', () => {
     expect(table.rows[1].cells.length).toBe(2);
   });
 
-  it('Enter in a toggle title opens it and moves into its first line', () => {
+  it('Enter in a closed toggle title adds a line below the toggle and keeps it closed', () => {
     const body = editor('<div class="toggle-block"><p class="toggle-summary">Title</p><div class="toggle-body"><p>Line</p></div></div>');
+    placeCaret(body.querySelector('.toggle-summary')?.firstChild as Node, 5);
+    const result = handleBlockKeys(press('Enter'), body);
+    expect(result?.kind).toBe('lines');
+    expect(body.querySelector('.toggle-block')?.classList.contains('is-open')).toBe(false);
+    expect(body.lastElementChild?.outerHTML).toBe('<p><br></p>');
+  });
+
+  it('Enter in an open toggle title moves into its first line', () => {
+    const body = editor('<div class="toggle-block is-open"><p class="toggle-summary">Title</p><div class="toggle-body"><p>Line</p></div></div>');
     placeCaret(body.querySelector('.toggle-summary')?.firstChild as Node, 5);
     expect(handleBlockKeys(press('Enter'), body)).toEqual({ kind: 'changed' });
     expect(body.querySelector('.toggle-block')?.classList.contains('is-open')).toBe(true);

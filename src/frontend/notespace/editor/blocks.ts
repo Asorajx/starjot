@@ -698,7 +698,15 @@ function toggleKeys(event: KeyboardEvent): KeyResult | null {
     return { kind: 'blocked' };
   }
 
-  /* Enter in the title opens the toggle and moves to its first line. */
+  /* Enter in the title of a closed toggle adds a new line below the toggle and leaves it closed. */
+  if (summary && event.key === 'Enter' && !event.shiftKey && !toggle.classList.contains('is-open')) {
+    event.preventDefault();
+    const paragraph = emptyParagraph();
+    toggle.after(paragraph);
+    return { kind: 'lines', focus: paragraph, atEnd: false };
+  }
+
+  /* Enter in the title of an open toggle moves to its first line. */
   if (summary && event.key === 'Enter' && !event.shiftKey) {
     event.preventDefault();
     toggle.classList.add('is-open');
