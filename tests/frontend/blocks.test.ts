@@ -85,6 +85,20 @@ describe('slash command lines', () => {
     expect(body.lastElementChild?.outerHTML).toBe('<p><br></p>');
   });
 
+  it('moves the caret out of a page link before Enter, so the link is never split or copied', () => {
+    const body = editor('<p>See <a class="page-link" data-page="atlas">Atlas</a> now</p>');
+    const link = body.querySelector('a') as HTMLElement;
+    placeCaret(link.firstChild as Node, 3);
+    expect(handleBlockKeys(press('Enter'), body)).toBeNull();
+    const after = window.getSelection()?.getRangeAt(0);
+    expect(after?.startContainer).toBe(body.querySelector('p'));
+    expect(after?.startOffset).toBe(2);
+
+    placeCaret(link.firstChild as Node, 0);
+    handleBlockKeys(press('Enter'), body);
+    expect(window.getSelection()?.getRangeAt(0).startOffset).toBe(1);
+  });
+
   it('places a page block inside the text at the caret, with room to keep typing after it', () => {
     const body = editor('<p>Before after</p>');
     const range = document.createRange();

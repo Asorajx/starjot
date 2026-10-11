@@ -541,8 +541,23 @@ function toggleKeys(event: KeyboardEvent): KeyResult | null {
   return null;
 }
 
+/* Enter inside a page link would split it, or carry the link onto the new line. The caret is */
+/* moved just outside the link first (before it at its start, after it anywhere else), so the */
+/* new line starts as plain text. The key itself is still handled as usual afterwards. */
+function leavePageLink(event: KeyboardEvent) {
+  const link = event.key === 'Enter' ? closestAtCaret('a.page-link') : null;
+  const selection = window.getSelection();
+  if (!link || !selection?.isCollapsed) return;
+  const caret = document.createRange();
+  if (caretAtEdge(link, 'start') && link.textContent) caret.setStartBefore(link);
+  else caret.setStartAfter(link);
+  selection.removeAllRanges();
+  selection.addRange(caret);
+}
+
 /* Keys with special meaning in table cells and toggle lists. Returns null for every other key. */
 export function handleBlockKeys(event: KeyboardEvent, root: HTMLElement): KeyResult | null {
+  leavePageLink(event);
   const cell = closestAtCaret<HTMLTableCellElement>('td, th');
   if (cell && root.contains(cell)) return cellKeys(event, cell);
   return enterTableKeys(event) ?? toggleKeys(event);
