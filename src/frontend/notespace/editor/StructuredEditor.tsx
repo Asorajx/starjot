@@ -10,7 +10,7 @@ import {
   type DocBlock
 } from './blockModel';
 import { isRuleOnly, mergeContents, splitAtCaret } from './blockEditing';
-import { deleteKeepingPages, handleBlockKeys, hydratePages, pageBlocksIn } from './blocks';
+import { deleteKeepingPages, handleBlockKeys, hydratePages, joinLineOfToggle, pageBlocksIn } from './blocks';
 import { getLength, getOffset, setOffset } from './caret';
 import { highlight, insertNewline, preAtCaret } from './code';
 import { caretAtEdge, closestAtCaret, emptyParagraph, isEmptyContent, placeCaret, selectContents, selectionInside, wrapLooseLines } from './dom';
@@ -122,7 +122,12 @@ export const StructuredEditor = memo(function StructuredEditor({ session, conten
   function focusBlock(id: string, position: CaretPosition, path?: number) {
     const element = elements.current.get(id);
     if (!element) return;
-    const target = path === undefined ? null : element.querySelectorAll('*')[path];
+
+    /* The end of a toggle block is the end of its last line, or of its title when it has none, */
+    /* never its empty body. */
+    const last = element.lastElementChild;
+    const toggleEnd = position === 'end' && path === undefined && last?.classList.contains('toggle-block') ? joinLineOfToggle(last) : null;
+    const target = toggleEnd ?? (path === undefined ? null : element.querySelectorAll('*')[path]);
     if (target) {
       bodyRef.current?.focus({ preventScroll: true });
       if (typeof position === 'number') setOffset(target, position);
@@ -257,8 +262,18 @@ export const StructuredEditor = memo(function StructuredEditor({ session, conten
     const next = live[index + 1];
     const backward = event.key === 'Backspace';
 
+    /* The only block is never removed: emptied, it becomes a plain empty line. The browser would */
+    /* otherwise delete the block's own frame and leave nowhere to type. */
+    if (isEmptyContent(editable) && !previous && !next) {
+      event.preventDefault();
+      if (editable.innerHTML !== '<p><br></p>') {
+        live[index] = { ...live[index], html: '<p><br></p>', version: live[index].version + 1 };
+        applyBlocks(live, { id, position: 'start' });
+      }
+      return;
+    }
+
     if (isEmptyContent(editable)) {
-      if (!previous && !next) return;
       event.preventDefault();
       live.splice(index, 1);
       applyBlocks(live, previous ? { id: previous.id, position: 'end' } : { id: next.id, position: 'start' });
@@ -267,8 +282,22 @@ export const StructuredEditor = memo(function StructuredEditor({ session, conten
 
     const upper = backward ? previous : live[index];
     const lower = backward ? live[index] : next;
-    if (!upper || !lower || !caretAtEdge(editable, backward ? 'start' : 'end')) return;
+    if (!caretAtEdge(editable, backward ? 'start' : 'end')) return;
     event.preventDefault();
+
+    /* Nothing to join with (the start of the first block or the end of the last). Backspace at */
+    /* the start of a heading turns it into normal text, like in other editors. */
+    if (!upper || !lower) {
+      const first = editable.firstElementChild;
+      if (backward && first && /^H[1-6]$/.test(first.tagName) && !first.classList.contains('toggle-summary')) {
+        const paragraph = document.createElement('p');
+        paragraph.append(...Array.from(first.childNodes));
+        first.replaceWith(paragraph);
+        live[index] = { ...live[index], html: editable.innerHTML, version: live[index].version + 1 };
+        applyBlocks(live, { id, position: 'start' });
+      }
+      return;
+    }
 
     const upperElement = elements.current.get(upper.id) as HTMLElement;
     const lowerElement = elements.current.get(lower.id) as HTMLElement;
@@ -831,7 +860,7 @@ export const StructuredEditor = memo(function StructuredEditor({ session, conten
       tabIndex={-1}
       role="textbox"
       aria-multiline="true"
-      aria-label="Document content, structured blocks"
+      aria-label="Document content, blocks"
       aria-readonly={locked}
       onKeyDown={handleKeyDown}
       onInput={handleInput}

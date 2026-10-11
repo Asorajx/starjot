@@ -54,13 +54,30 @@ type CommandContext = {
   canAddPage: boolean;
 };
 
-/* Commands whose name or keywords contain the typed text; names that start with it come first. */
+/* How well one typed word matches a command: the start of a word in its name counts most (the */
+/* first word most of all), then the start of a keyword, then (for three letters or more) any */
+/* part of its name or keywords. 0 means no match. */
+function wordScore(word: string, command: SlashCommand) {
+  const names = command.label.toLowerCase().split(/\s+/);
+  if (names[0].startsWith(word)) return 4;
+  if (names.some(name => name.startsWith(word))) return 3;
+  if (`${command.keywords} ${command.hint}`.toLowerCase().split(/\s+/).some(keyword => keyword && keyword.startsWith(word))) return 2;
+  return word.length >= 3 && `${command.label} ${command.keywords}`.toLowerCase().includes(word) ? 1 : 0;
+}
+
+/* Commands that match every typed word, best first, so short forms work: "tog 4" finds Toggle */
+/* heading 4, "h2" finds Heading 2, and "num" finds Numbered list. Equal matches keep the menu's order. */
 export function matchCommands(query: string, context: CommandContext) {
-  const text = query.trim().toLowerCase();
+  const words = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
   return SLASH_COMMANDS
     .filter(command => (command.id !== 'page' || context.canAddPage) && (!context.inlineOnly || command.id === 'link' || command.id === 'page'))
-    .filter(command => !text || `${command.label} ${command.keywords}`.toLowerCase().includes(text))
-    .sort((a, b) => Number(b.label.toLowerCase().startsWith(text)) - Number(a.label.toLowerCase().startsWith(text)));
+    .map(command => {
+      const scores = words.map(word => wordScore(word, command));
+      return { command, score: scores.includes(0) ? 0 : scores.reduce<number>((sum, score) => sum + score, 0) };
+    })
+    .filter(item => !words.length || item.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .map(item => item.command);
 }
 
 /* True when the caret is somewhere a new line cannot be added. */
@@ -111,6 +128,28 @@ function buildLine(kind: CommandId): { element: HTMLElement; text: HTMLElement }
   }
   const paragraph = document.createElement('p');
   return { element: paragraph, text: paragraph };
+}
+
+/* A toggle's body, holding the lines it opens and closes. A toggle that lost its body (an older */
+/* bug could delete it) gets an empty one again, so the toggle can still be opened and filled. */
+export function toggleBody(toggle: Element) {
+  const body = toggle.querySelector<HTMLElement>(':scope > .toggle-body');
+  if (body) return body;
+  const made = document.createElement('div');
+  made.className = 'toggle-body';
+  toggle.appendChild(made);
+  return made;
+}
+
+/* The line that text joins when the line below a toggle is joined up to it: the toggle's last */
+/* line when it is open and has lines, or its title otherwise. */
+export function joinLineOfToggle(toggle: Element) {
+  const body = toggleBody(toggle);
+  const summary = toggle.querySelector<HTMLElement>(':scope > .toggle-summary');
+  let line: Element | null = toggle.classList.contains('is-open') ? body.lastElementChild : null;
+  while (line && ['UL', 'OL', 'BLOCKQUOTE'].includes(line.tagName) && line.lastElementChild) line = line.lastElementChild;
+  if (line?.classList.contains('toggle-block')) return joinLineOfToggle(line);
+  return (line && !['PRE', 'HR', 'TABLE'].includes(line.tagName) ? line : summary) as HTMLElement | null;
 }
 
 /* A toggle list's title is a paragraph, or a heading (levels 1 to 5) for a toggle heading. */
@@ -603,12 +642,61 @@ function cellKeys(event: KeyboardEvent, cell: HTMLTableCellElement): KeyResult |
   return null;
 }
 
+/* Backspace at the start of the line just below a toggle joins that line to the toggle (see */
+/* joinLineOfToggle). The browser would otherwise move it into the toggle's frame, outside its */
+/* lines, where a few more presses could delete the toggle's body. */
+function joinBelowToggle(event: KeyboardEvent): KeyResult | null {
+  if (event.key !== 'Backspace' || event.altKey || event.ctrlKey || event.metaKey || !window.getSelection()?.isCollapsed) return null;
+  let line: Element | null = caretElement();
+  while (line && !line.previousElementSibling?.classList.contains('toggle-block')) {
+    if (line.matches('.block-content, .note-body, .toggle-body, td, th') || !caretAtEdge(line, 'start')) return null;
+    line = line.parentElement;
+  }
+  if (!line || !caretAtEdge(line, 'start') || !/^(P|H[1-6])$/.test(line.tagName)) return null;
+  const target = joinLineOfToggle(line.previousElementSibling as Element);
+  if (!target) return null;
+
+  event.preventDefault();
+  if (isEmptyContent(target)) target.replaceChildren();
+  else if (target.lastChild?.nodeName === 'BR') target.lastChild.remove();
+  const caret = document.createRange();
+  caret.setStart(target, target.childNodes.length);
+  if (!isEmptyContent(line)) target.append(...Array.from(line.childNodes));
+  if (!target.childNodes.length) target.append(document.createElement('br'));
+  line.remove();
+  window.getSelection()?.removeAllRanges();
+  window.getSelection()?.addRange(caret);
+  return { kind: 'changed' };
+}
+
 function toggleKeys(event: KeyboardEvent): KeyResult | null {
   const summary = closestAtCaret('.toggle-summary');
   const toggle = (summary ?? closestAtCaret('.toggle-body'))?.closest<HTMLElement>('.toggle-block');
-  if (!toggle || event.altKey || event.ctrlKey || event.metaKey) return null;
-  const body = toggle.querySelector<HTMLElement>(':scope > .toggle-body');
-  if (!body) return null;
+  if (!toggle) return joinBelowToggle(event);
+  const body = toggleBody(toggle);
+
+  /* Ctrl + Enter opens or closes the toggle. Closing it from one of its lines moves the caret to */
+  /* the end of its title, so the caret is never hidden. */
+  if (event.key === 'Enter' && (event.ctrlKey || event.metaKey) && !event.altKey && !event.shiftKey) {
+    event.preventDefault();
+    const open = !toggle.classList.contains('is-open');
+    toggle.classList.toggle('is-open', open);
+    if (!open && !summary) {
+      const title = toggle.querySelector(':scope > .toggle-summary');
+      if (title) placeCaret(title, true);
+    }
+    return { kind: 'changed' };
+  }
+  if (event.altKey || event.ctrlKey || event.metaKey) return null;
+
+  /* A caret in a toggle with no lines sits in its empty body; deleting there would delete the */
+  /* body itself, so the caret moves to the end of the title instead. */
+  if (!summary && (event.key === 'Backspace' || event.key === 'Delete') && !body.firstElementChild) {
+    event.preventDefault();
+    const title = toggle.querySelector(':scope > .toggle-summary');
+    if (title) placeCaret(title, true);
+    return { kind: 'blocked' };
+  }
 
   /* Enter in the title opens the toggle and moves to its first line. */
   if (summary && event.key === 'Enter' && !event.shiftKey) {

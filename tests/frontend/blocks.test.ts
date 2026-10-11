@@ -24,8 +24,8 @@ function placeCaret(node: Node, offset: number) {
   window.getSelection()?.addRange(range);
 }
 
-function press(key: string, shiftKey = false) {
-  return new KeyboardEvent('keydown', { key, shiftKey, cancelable: true });
+function press(key: string, shiftKey = false, ctrlKey = false) {
+  return new KeyboardEvent('keydown', { key, shiftKey, ctrlKey, cancelable: true });
 }
 
 
@@ -44,6 +44,15 @@ describe('slash command list', () => {
   it('offers headings 1 to 5, as plain headings and as toggle headings', () => {
     const ids = matchCommands('heading', { inlineOnly: false, canAddPage: true }).map(command => command.id);
     expect(ids).toEqual(['h1', 'h2', 'h3', 'h4', 'h5', 'toggle-h1', 'toggle-h2', 'toggle-h3', 'toggle-h4', 'toggle-h5']);
+  });
+
+  it('matches every typed word against the start of the words in a command', () => {
+    const ids = (query: string) => matchCommands(query, { inlineOnly: false, canAddPage: true }).map(command => command.id);
+    expect(ids('tog 4')).toEqual(['toggle-h4']);
+    expect(ids('h2')[0]).toBe('h2');
+    expect(ids('num')[0]).toBe('numbered');
+    expect(ids('head 3')).toEqual(['h3', 'toggle-h3']);
+    expect(ids('zzz')).toEqual([]);
   });
 
   it('hides Sub-page at the deepest level, and offers only links and sub-pages inside table cells', () => {
@@ -172,6 +181,46 @@ describe('table and toggle keys', () => {
     const result = handleBlockKeys(press('Backspace'), body);
     expect(result?.kind).toBe('lines');
     expect(body.innerHTML).toBe('<div class="toggle-block is-open"><p class="toggle-summary">T</p><div class="toggle-body"><p>A</p></div></div><p><br></p>');
+  });
+
+  it('Backspace at the start of the line below a toggle joins it to the toggle, keeping the toggle whole', () => {
+    const body = editor('<div class="toggle-block is-open"><p class="toggle-summary">T</p><div class="toggle-body"></div></div><p>More</p>');
+    placeCaret(body.querySelectorAll('p')[1].firstChild as Node, 0);
+    expect(handleBlockKeys(press('Backspace'), body)?.kind).toBe('changed');
+    expect(body.innerHTML).toBe('<div class="toggle-block is-open"><p class="toggle-summary">TMore</p><div class="toggle-body"></div></div>');
+  });
+
+  it('Backspace below an open toggle with lines joins its last line', () => {
+    const body = editor('<div class="toggle-block is-open"><p class="toggle-summary">T</p><div class="toggle-body"><p>A</p></div></div><p><br></p>');
+    placeCaret(body.querySelectorAll('p')[2], 0);
+    handleBlockKeys(press('Backspace'), body);
+    expect(body.innerHTML).toBe('<div class="toggle-block is-open"><p class="toggle-summary">T</p><div class="toggle-body"><p>A</p></div></div>');
+  });
+
+  it('Backspace in an empty toggle body moves the caret to the title instead of deleting the body', () => {
+    const body = editor('<div class="toggle-block is-open"><p class="toggle-summary">T</p><div class="toggle-body"></div></div>');
+    placeCaret(body.querySelector('.toggle-body') as Node, 0);
+    expect(handleBlockKeys(press('Backspace'), body)?.kind).toBe('blocked');
+    expect(body.querySelector('.toggle-body')).not.toBeNull();
+    const caret = window.getSelection()?.anchorNode;
+    expect((caret instanceof Element ? caret : caret?.parentElement)?.closest('.toggle-summary')).not.toBeNull();
+  });
+
+  it('Ctrl + Enter closes and opens a toggle, moving the caret out of a closed toggle', () => {
+    const body = editor('<div class="toggle-block is-open"><p class="toggle-summary">T</p><div class="toggle-body"><p>A</p></div></div>');
+    placeCaret(body.querySelector('.toggle-body p')?.firstChild as Node, 1);
+    handleBlockKeys(press('Enter', false, true), body);
+    expect(body.querySelector('.toggle-block')?.classList.contains('is-open')).toBe(false);
+    expect(window.getSelection()?.anchorNode?.textContent).toBe('T');
+    handleBlockKeys(press('Enter', false, true), body);
+    expect(body.querySelector('.toggle-block')?.classList.contains('is-open')).toBe(true);
+  });
+
+  it('gives a toggle that lost its body a new one when Enter is pressed in its title', () => {
+    const body = editor('<div class="toggle-block is-open"><p class="toggle-summary">T</p></div>');
+    placeCaret(body.querySelector('.toggle-summary')?.firstChild as Node, 1);
+    handleBlockKeys(press('Enter'), body);
+    expect(body.querySelector('.toggle-body')?.innerHTML).toBe('<p><br></p>');
   });
 
   it('makes toggle headings, which stay headings when turned back into lines', () => {

@@ -107,6 +107,22 @@ export function cleanHtml(input: unknown) {
     });
   });
 
+  /* A toggle always has a title and a body, so it can be opened, closed and filled. Older edits */
+  /* could delete its body. */
+  safe.querySelectorAll('div.toggle-block').forEach(toggle => {
+    if (!toggle.querySelector(':scope > .toggle-summary')) {
+      const title = document.createElement('p');
+      title.className = 'toggle-summary';
+      title.appendChild(document.createElement('br'));
+      toggle.prepend(title);
+    }
+    if (!toggle.querySelector(':scope > .toggle-body')) {
+      const body = document.createElement('div');
+      body.className = 'toggle-body';
+      toggle.appendChild(body);
+    }
+  });
+
   /* A sticky group with nothing left inside it is removed. */
   safe.querySelectorAll('div.sticky-group').forEach(group => {
     if (!group.textContent?.trim() && !group.querySelector('br, hr')) group.remove();

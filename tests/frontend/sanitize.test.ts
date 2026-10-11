@@ -22,6 +22,11 @@ describe('cleanHtml', () => {
     expect(cleanHtml(html)).toBe(html);
   });
 
+  it('gives a toggle back a title or body it lost', () => {
+    expect(cleanHtml('<div class="toggle-block is-open"><p class="toggle-summary">T</p></div>'))
+      .toBe('<div class="toggle-block is-open"><p class="toggle-summary">T</p><div class="toggle-body"></div></div>');
+  });
+
   it('drops links that could run script', () => {
     expect(cleanHtml('<a href="javascript:alert(1)">x</a>')).toBe('<a>x</a>');
     expect(cleanHtml('<a href="https://example.com">x</a>')).toBe('<a href="https://example.com">x</a>');

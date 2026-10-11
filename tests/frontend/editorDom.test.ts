@@ -62,6 +62,15 @@ describe('mergeContents', () => {
     expect(merged.html).toBe('<p>Hello world</p>');
     expect(merged.offset).toBe(6);
   });
+
+  it('joins text into a toggle above: its last line when open, its title when closed', () => {
+    const open = element('<div class="toggle-block is-open"><p class="toggle-summary">T</p><div class="toggle-body"><p>A</p></div></div>');
+    expect(mergeContents(open, element('<p>B</p>')).html)
+      .toBe('<div class="toggle-block is-open"><p class="toggle-summary">T</p><div class="toggle-body"><p>AB</p></div></div>');
+    const closed = element('<div class="toggle-block"><p class="toggle-summary">T</p><div class="toggle-body"><p>A</p></div></div>');
+    expect(mergeContents(closed, element('<p>B</p>')).html)
+      .toBe('<div class="toggle-block"><p class="toggle-summary">TB</p><div class="toggle-body"><p>A</p></div></div>');
+  });
 });
 
 describe('wrapLooseLines', () => {

@@ -88,6 +88,9 @@ function normalizeNote(raw: unknown): Note | null {
     read: text('read', '1 min read', 35),
     mode: record.mode === 'blocks' ? 'blocks' : 'continuous',
     stickyIndicator: record.stickyIndicator !== false,
+    layout: record.layout === 'paginated' ? 'paginated' : 'pageless',
+    pageSize: record.pageSize === 'letter' ? 'letter' : 'a4',
+    landscape: record.landscape === true,
     locked: record.locked === true,
     unlockedUntil: typeof record.unlockedUntil === 'string' && !Number.isNaN(Date.parse(record.unlockedUntil)) ? record.unlockedUntil : null,
     remarks: cleanHtml(String(record.remarks ?? '').slice(0, REMARKS_LENGTH)),
@@ -234,6 +237,9 @@ export function updateNote(id: string, changes: NoteChanges, persist = true) {
   }
   if (changes.mode === 'continuous' || changes.mode === 'blocks') next.mode = changes.mode;
   if (typeof changes.stickyIndicator === 'boolean') next.stickyIndicator = changes.stickyIndicator;
+  if (changes.layout === 'pageless' || changes.layout === 'paginated') next.layout = changes.layout;
+  if (changes.pageSize === 'a4' || changes.pageSize === 'letter') next.pageSize = changes.pageSize;
+  if (typeof changes.landscape === 'boolean') next.landscape = changes.landscape;
   if (changes.remarks !== undefined) next.remarks = cleanHtml(String(changes.remarks).slice(0, REMARKS_LENGTH));
   if (changes.comments) next.comments = normalizeComments(changes.comments);
 

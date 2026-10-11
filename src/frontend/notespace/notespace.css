@@ -320,14 +320,14 @@
 }
 
 /* Split right, split down, stack and unsplit, two to a row. */
-.pane-options {
+.option-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 8px;
   margin-top: 12px;
 }
 
-.pane-option {
+.option-tile {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -344,22 +344,60 @@
   cursor: pointer;
 }
 
-.pane-option:hover:not(:disabled) {
+.option-tile:hover:not(:disabled) {
   border-color: #c3d5f4;
 }
 
-.pane-option.selected {
+.option-tile.selected {
   border-color: #8bb3fb;
   background: #f7faff;
   color: #4d7ee3;
 }
 
-.pane-option:disabled {
+.option-tile:disabled {
   color: #b7c0cd;
   cursor: default;
 }
 
-.pane-option em {
+/* A row of small choices under an option, such as the page size of a paginated note. */
+.option-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 12px;
+}
+
+.option-row > span {
+  flex: 1;
+  color: #526581;
+  font-size: 11px;
+  font-weight: 650;
+}
+
+.option-chip {
+  height: 28px;
+  padding: 0 8px;
+  border: 1px solid #e9edf3;
+  border-radius: 4px;
+  background: #fff;
+  color: #586b86;
+  font: inherit;
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.option-chip:hover {
+  border-color: #c3d5f4;
+}
+
+.option-chip.selected {
+  border-color: #8bb3fb;
+  background: #f7faff;
+  color: #4d7ee3;
+}
+
+.option-tile em {
   margin-left: auto;
   color: #8496af;
   font-size: 9px;
@@ -598,6 +636,7 @@
 .page-bar {
   position: sticky;
   top: 0;
+  left: 0;
   z-index: 22;
   display: flex;
   flex-wrap: wrap;
@@ -875,9 +914,76 @@
   padding: 28px clamp(72px, 7vw, 104px) 60px;
 }
 
+/* A paginated note sits on white page-sized sheets over a grey background. The column is as */
+/* wide as a page, with the page margin as padding; the sheets are drawn behind the text. */
+/* Pages wider than the pane (landscape, or zoomed in) scroll sideways with the pane itself, so the */
+/* scrollbar sits at the bottom of the window rather than below the last page. The page widens to */
+/* fit them, while its page bar keeps the pane's width (measured in NoteEditor) and stays in view. */
+.editor-wrap.is-paginated {
+  width: max-content;
+  min-width: 100%;
+}
+
+.editor-wrap.is-paginated > .page-bar {
+  width: var(--pane-width, 100%);
+}
+
+/* A CSS container hides its content's width from the page around it, so a paginated note's layout */
+/* is not one (its pages are never as narrow as the container rules are for). */
+.editor-wrap.is-paginated .editor-layout {
+  container-type: normal;
+}
+
+.editor-wrap .editor-canvas.is-paginated {
+  background: #e9edf3;
+}
+
+.editor-width.is-paginated {
+  position: relative;
+  margin: 0 auto;
+}
+
+.editor-width.is-paginated > :not(.page-sheets) {
+  position: relative;
+  z-index: 1;
+}
+
+.page-sheets {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.page-sheet {
+  position: absolute;
+  left: 0;
+  right: 0;
+  border: 1px solid #dde3ec;
+  border-radius: 4px;
+  background: #ffffff;
+}
+
+.page-number {
+  position: absolute;
+  bottom: 40px;
+  left: 0;
+  right: 0;
+  color: #a4adbb;
+  font-size: 10px;
+  text-align: center;
+}
+
+/* A line that would cross a page's bottom margin starts on the next page instead. The extra */
+/* space is only shown on screen; printing breaks pages by itself. */
+@media screen {
+  .page-pushed {
+    margin-top: var(--page-push) !important;
+  }
+}
+
 /* A narrow pane keeps just enough room for the block controls. */
 @container (max-width: 600px) {
-  .editor-wrap .editor-canvas {
+  .editor-wrap .editor-canvas:not(.is-paginated) {
     padding: 24px 24px 56px 40px;
   }
 
@@ -2140,6 +2246,13 @@
   color: #8795a9;
 }
 
+/* The whole chip shows that its name is being edited; the input itself has no focus ring, which */
+/* would stick out of the chip. */
+.category-edit:focus-within {
+  border-color: #8fb3f2;
+  box-shadow: 0 0 0 2px #eaf2ff;
+}
+
 .category-name-input {
   width: 110px;
   height: 100%;
@@ -2150,6 +2263,10 @@
   font: inherit;
   font-size: 11px;
   font-weight: 650;
+  outline: none;
+}
+
+.category-name-input:focus-visible {
   outline: none;
 }
 
@@ -3506,6 +3623,7 @@
   .page-block-sizes,
   .document-end,
   .link-tools,
+  .page-sheets,
   .window-bar,
   .stack-spine,
   .tab-group:not(.is-focused),
@@ -3515,6 +3633,14 @@
 
   .editor-wrap .editor-canvas {
     padding: 0;
+    background: none;
+  }
+
+  /* The printer's own pages replace the sheets drawn on screen. */
+  .editor-width.is-paginated {
+    width: auto !important;
+    min-height: 0 !important;
+    padding: 0 !important;
   }
 
   .sticky-group {

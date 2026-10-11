@@ -3,7 +3,7 @@ import { getPreferences } from '../../app/preferences';
 import { STACK_LIMIT } from '../../app/noteTabs';
 import { Icon, type IconName } from '../../components/Icon';
 import type { EditorSession } from './session';
-import type { Note, NoteMode } from '../../../shared/types/note';
+import type { Note, NoteMode, PageLayout, PageSize } from '../../../shared/types/note';
 
 
 /* =========================
@@ -99,13 +99,19 @@ type PageOptionsProps = {
   onStickyIndicatorChange: (visible: boolean) => void;
   onZoom: (direction: -1 | 0 | 1) => void;
   onLockChange: (locked: boolean) => void;
+  onPageChange: (changes: { layout?: PageLayout; pageSize?: PageSize; landscape?: boolean }) => void;
   onDelete: () => void;
 };
+
+const LAYOUTS: { id: PageLayout; title: string; tooltip: string; icon: IconName }[] = [
+  { id: 'pageless', title: 'Pageless', tooltip: 'One long page without page breaks. Stored on this note only.', icon: 'file-text' },
+  { id: 'paginated', title: 'Paginated', tooltip: 'Shown on page-sized sheets, so you can see where printed pages break. Stored on this note only.', icon: 'layers' }
+];
 
 /* Explanations are tooltips on the options, so the panel stays short. */
 const MODES: { id: NoteMode; title: string; tooltip: string; icon: IconName }[] = [
   { id: 'continuous', title: 'Continuous', tooltip: 'A normal, flowing document. Stored on this note only.', icon: 'align-left' },
-  { id: 'blocks', title: 'Structured blocks', tooltip: 'Individual content elements that can be moved. Stored on this note only.', icon: 'blocks' }
+  { id: 'blocks', title: 'Block', tooltip: 'Individual content elements that can be moved. Stored on this note only.', icon: 'blocks' }
 ];
 
 /* A split opens a second group of tabs, with its own tab strip, showing this page again. */
@@ -114,7 +120,7 @@ const SPLITS: { id: 'right' | 'down'; title: string; tooltip: string; icon: Icon
   { id: 'down', title: 'Split down', tooltip: 'Open a second group of tabs below this one, showing this page again.', icon: 'split-down' }
 ];
 
-export function PageOptions({ id, note, open, zoom, view, onClose, onModeChange, onStickyIndicatorChange, onZoom, onLockChange, onDelete }: PageOptionsProps) {
+export function PageOptions({ id, note, open, zoom, view, onClose, onModeChange, onStickyIndicatorChange, onZoom, onLockChange, onPageChange, onDelete }: PageOptionsProps) {
   const stackTooltip = view.canStack
     ? `Stack this group's tabs side by side (up to ${STACK_LIMIT}), adding this page again. Two are open at a time; the others fold into strips with their titles.`
     : `A stack holds up to ${STACK_LIMIT} tabs.`;
@@ -150,12 +156,12 @@ export function PageOptions({ id, note, open, zoom, view, onClose, onModeChange,
 
       <div className="side-setting side-setting--border">
         <strong>View</strong>
-        <div className="pane-options">
+        <div className="option-grid">
           {SPLITS.map((split, index) => (
             <button
               key={split.id}
               type="button"
-              className={`pane-option ${view.split === split.id ? 'selected' : ''}`}
+              className={`option-tile ${view.split === split.id ? 'selected' : ''}`}
               aria-pressed={view.split === split.id}
               data-tooltip={view.split ? `Show the two groups of tabs ${split.id === 'right' ? 'side by side' : 'one above the other'}.` : split.tooltip}
               data-tooltip-align={index ? 'end' : 'start'}
@@ -167,7 +173,7 @@ export function PageOptions({ id, note, open, zoom, view, onClose, onModeChange,
           ))}
           <button
             type="button"
-            className={`pane-option ${view.stacked ? 'selected' : ''}`}
+            className={`option-tile ${view.stacked ? 'selected' : ''}`}
             disabled={!view.canStack}
             data-tooltip={stackTooltip}
             data-tooltip-align="start"
@@ -178,7 +184,7 @@ export function PageOptions({ id, note, open, zoom, view, onClose, onModeChange,
           </button>
           <button
             type="button"
-            className="pane-option"
+            className="option-tile"
             disabled={!view.canUnsplit}
             data-tooltip={view.canUnsplit ? 'Put every tab back into one normal tab strip.' : 'Nothing is split or stacked.'}
             data-tooltip-align="end"
@@ -227,12 +233,42 @@ export function PageOptions({ id, note, open, zoom, view, onClose, onModeChange,
 
       <div className="side-setting side-setting--border">
         <strong>Page layout</strong>
-        <div className="layout-option" data-tooltip="Continuous reading is currently available." data-tooltip-align="start" data-tooltip-wrap="">
-          <Icon name="file-text" size={16} /> Continuous <span><Icon name="check" size={15} /></span>
+        <div className="option-grid">
+          {LAYOUTS.map((layout, index) => (
+            <button
+              key={layout.id}
+              type="button"
+              className={`option-tile ${note.layout === layout.id ? 'selected' : ''}`}
+              aria-pressed={note.layout === layout.id}
+              data-tooltip={layout.tooltip}
+              data-tooltip-align={index ? 'end' : 'start'}
+              data-tooltip-wrap=""
+              onClick={() => onPageChange({ layout: layout.id })}
+            >
+              <Icon name={layout.icon} size={16} /> {layout.title}
+            </button>
+          ))}
         </div>
-        <div className="layout-option layout-option--disabled" data-tooltip="Pages split for printing are planned for later." data-tooltip-align="start" data-tooltip-wrap="">
-          <Icon name="layers" size={16} /> Paginated <em>Planned</em>
-        </div>
+        {note.layout === 'paginated' && (
+          <>
+            <div className="option-row" role="group" aria-label="Page size">
+              <span>Size</span>
+              {(['a4', 'letter'] as const).map(size => (
+                <button key={size} type="button" className={`option-chip ${note.pageSize === size ? 'selected' : ''}`} aria-pressed={note.pageSize === size} onClick={() => onPageChange({ pageSize: size })}>
+                  {size === 'a4' ? 'A4' : 'Letter'}
+                </button>
+              ))}
+            </div>
+            <div className="option-row" role="group" aria-label="Orientation">
+              <span>Orientation</span>
+              {[false, true].map(landscape => (
+                <button key={String(landscape)} type="button" className={`option-chip ${note.landscape === landscape ? 'selected' : ''}`} aria-pressed={note.landscape === landscape} onClick={() => onPageChange({ landscape })}>
+                  {landscape ? 'Landscape' : 'Portrait'}
+                </button>
+              ))}
+            </div>
+          </>
+        )}
       </div>
 
       <div className="side-setting side-setting--border">

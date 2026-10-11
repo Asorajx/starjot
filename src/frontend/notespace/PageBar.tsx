@@ -18,7 +18,7 @@ export type PageHistory = {
 
 /* The name shown for a place on its tab and in the Back and Forward tooltips. */
 export function placeLabel(place: Place) {
-  if (place.kind === 'home') return 'All notes';
+  if (place.kind === 'home') return 'Notespace';
   if (place.kind === 'category') return categoryName(place.id) || 'Category';
   return getNote(place.id)?.title || 'Untitled note';
 }

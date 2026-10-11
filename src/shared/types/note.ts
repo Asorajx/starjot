@@ -4,6 +4,10 @@
 
 /* Shared by the frontend (screens and editor) and the backend (storage). */
 export type NoteMode = 'continuous' | 'blocks';
+
+/* Pageless shows the note as one long page; paginated shows it on page-sized sheets. */
+export type PageLayout = 'pageless' | 'paginated';
+export type PageSize = 'a4' | 'letter';
 export type NoteAccent = 'indigo' | 'mint' | 'amber' | 'rose';
 
 /* Content is stored as sanitized HTML; sticky groups are <div class="sticky-group"> wrappers. */
@@ -32,6 +36,11 @@ export type Note = {
   read: string;
   mode: NoteMode;
   stickyIndicator: boolean;
+
+  /* Paginated notes are shown on sheets of this size, turned sideways when landscape is true. */
+  layout: PageLayout;
+  pageSize: PageSize;
+  landscape: boolean;
 
   /* A locked note can be read, selected and commented on, but not edited. */
   locked: boolean;
@@ -65,7 +74,8 @@ export type NoteComment = {
 
 /* The fields an editor may change; everything else is managed by the store. */
 export type NoteChanges = Partial<Pick<Note,
-  'title' | 'subtitle' | 'category' | 'icon' | 'content' | 'mode' | 'stickyIndicator' | 'locked' | 'detailsHidden' | 'pagesHidden' | 'comments' | 'remarks'>>;
+  'title' | 'subtitle' | 'category' | 'icon' | 'content' | 'mode' | 'stickyIndicator' | 'layout' | 'pageSize' | 'landscape' | 'locked' | 'detailsHidden'
+  | 'pagesHidden' | 'comments' | 'remarks'>>;
 
 /* A user-defined group of notes, such as "Work". Notes refer to it by id, so renaming is safe. */
 export type Category = {

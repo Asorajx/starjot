@@ -1,4 +1,5 @@
 import { getLength } from './caret';
+import { joinLineOfToggle } from './blocks';
 import { isEmptyContent, selectionInside } from './dom';
 
 
@@ -57,14 +58,20 @@ export function mergeContents(upper: HTMLElement, lower: HTMLElement) {
   const source = lower.cloneNode(true) as HTMLElement;
   const containers = ['UL', 'OL', 'BLOCKQUOTE', 'PRE'];
 
-  /* Find the innermost last line of the upper block and first line of the lower block. */
+  /* Find the innermost last line of the upper block and first line of the lower block. A toggle */
+  /* above takes the text into its last line, or its title when it is closed or empty. */
   let targetLine: Element = target.lastElementChild ?? target;
-  while (containers.includes(targetLine.tagName) && targetLine.lastElementChild) targetLine = targetLine.lastElementChild;
+  for (;;) {
+    if (containers.includes(targetLine.tagName) && targetLine.lastElementChild) targetLine = targetLine.lastElementChild;
+    else if (targetLine.classList.contains('toggle-block')) targetLine = joinLineOfToggle(targetLine) ?? target;
+    else break;
+  }
   let sourceLine: Element = source.firstElementChild ?? source;
   while (containers.includes(sourceLine.tagName) && sourceLine.firstElementChild) sourceLine = sourceLine.firstElementChild;
 
-  /* Divider lines cannot hold text, so blocks next to them are placed one after the other instead. */
-  const canJoin = targetLine.tagName !== 'HR' && sourceLine.tagName !== 'HR';
+  /* Divider lines cannot hold text, and a toggle below is kept whole, so blocks next to them are */
+  /* placed one after the other instead. */
+  const canJoin = targetLine.tagName !== 'HR' && sourceLine.tagName !== 'HR' && !sourceLine.classList.contains('toggle-block');
   if (canJoin && !targetLine.textContent) targetLine.replaceChildren();
   const offset = getLength(target);
 

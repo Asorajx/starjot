@@ -296,7 +296,7 @@ export function App() {
         <>
           <PageBar history={history}>
             <nav className="editor-breadcrumb" aria-label="Breadcrumb">
-              <button type="button" className="editor-crumb-link" onClick={openHome}>All notes</button>
+              <button type="button" className="editor-crumb-link" onClick={openHome}>Notespace</button>
               <span className="editor-breadcrumb-separator">/</span>
               <span className="editor-crumb-current">{placeLabel(shown)}</span>
             </nav>
@@ -308,7 +308,7 @@ export function App() {
       screen = (
         <>
           <PageBar history={history}>
-            <nav className="editor-breadcrumb" aria-label="Breadcrumb"><span className="editor-crumb-current">All notes</span></nav>
+            <nav className="editor-breadcrumb" aria-label="Breadcrumb"><span className="editor-crumb-current">Notespace</span></nav>
           </PageBar>
           <NotesHome filter={noteFilter} onFilterChange={setNoteFilter} onOpen={openHere} onOpenCategory={openCategory} onCreate={() => newNote(undefined, tabGroup.id, tab)} />
         </>

@@ -1,4 +1,4 @@
-import { useEffect, useId, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent } from 'react';
+import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type MouseEvent as ReactMouseEvent } from 'react';
 import { changeZoom, usePreferences } from '../../app/preferences';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
 import { Icon } from '../../components/Icon';
@@ -19,6 +19,7 @@ import { LinkTools } from './LinkTools';
 import { NoteBreadcrumb } from './NoteBreadcrumb';
 import { PageBar, SaveStatus, type PageHistory } from '../PageBar';
 import { NoteHeader } from './NoteHeader';
+import { pageGeometry, pageStep, usePages } from './pagination';
 import { EditorSession, useSessionValue } from './session';
 import { StructuredEditor } from './StructuredEditor';
 
@@ -133,6 +134,17 @@ function LockStatus({ noteId, temporary, unlockedUntil }: LockStatusProps) {
    Note Editor Screen
    ========================= */
 
+/* The column of a paginated note: one page wide, padded by the page margin, and as tall as its */
+/* pages (the last page is shown in full even when it is nearly empty). */
+function pageFrameStyle(geometry: ReturnType<typeof pageGeometry>, pages: number): CSSProperties {
+  return {
+    width: geometry.width,
+    maxWidth: 'none',
+    minHeight: pages * pageStep(geometry) - geometry.gap,
+    padding: geometry.margin
+  };
+}
+
 export function NoteEditor({ noteId, history, view, active, onClose, onOpenNote, onOpenNoteInNewTab, onOpenCategory, onOpenNewPage }: NoteEditorProps) {
   const note = useNote(noteId);
 
@@ -166,6 +178,29 @@ export function NoteEditor({ noteId, history, view, active, onClose, onOpenNote,
 
   /* Show edits made to this note in another pane. */
   useEffect(() => session.watch(), [session]);
+
+  /* A paginated note is laid out on page-sized sheets; frameRef is the column the sheets are drawn in. */
+  const frameRef = useRef<HTMLDivElement>(null);
+  const geometry = note?.layout === 'paginated' ? pageGeometry(note.pageSize, note.landscape) : null;
+  const pages = usePages(session, frameRef, geometry, `${note?.mode}-${revision}`);
+
+  /* Pages wider than the pane scroll sideways. The page bar stays in view by being exactly as wide */
+  /* as the pane, which CSS cannot read from inside the scrolling pane, so it is measured here. */
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const paginated = Boolean(geometry);
+  useLayoutEffect(() => {
+    const wrap = wrapRef.current;
+    const scroller = session.scroller();
+    if (!paginated || !wrap || !scroller) return;
+    const measure = () => wrap.style.setProperty('--pane-width', `${scroller.clientWidth}px`);
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(scroller);
+    return () => {
+      observer.disconnect();
+      wrap.style.removeProperty('--pane-width');
+    };
+  }, [paginated, session, revision]);
 
   /* Remember when the note was opened, and save pending edits when leaving it. */
   useEffect(() => {
@@ -287,7 +322,7 @@ export function NoteEditor({ noteId, history, view, active, onClose, onOpenNote,
   const keepSelection = (event: ReactMouseEvent) => event.preventDefault();
 
   return (
-    <div className={`editor-wrap ${locked ? 'is-locked' : ''}`}>
+    <div ref={wrapRef} className={`editor-wrap ${locked ? 'is-locked' : ''} ${geometry ? 'is-paginated' : ''}`}>
       <PageBar history={history} className={`editor-page-bar ${typing && !panel ? 'is-hidden' : ''}`}>
         <NoteBreadcrumb note={note} onOpenNote={onOpenNote} onOpenCategory={onOpenCategory} />
         <span className="page-bar-fill" />
@@ -350,14 +385,30 @@ export function NoteEditor({ noteId, history, view, active, onClose, onOpenNote,
           onStickyIndicatorChange={visible => updateNote(note.id, { stickyIndicator: visible })}
           onZoom={changeZoom}
           onLockChange={value => updateNote(note.id, { locked: value })}
+          onPageChange={changes => updateNote(note.id, changes)}
           onDelete={() => { setPanel(null); setConfirmDelete(true); }}
         />
       </PageBar>
 
       <div className="editor-layout">
-        <main className="editor-canvas" ref={canvasRef}>
-          {/* Zoom scales everything in the note, using the CSS zoom property. */}
-          <div className="editor-width" style={{ zoom }}>
+        <main className={`editor-canvas ${geometry ? 'is-paginated' : ''}`} ref={canvasRef}>
+          {/* Zoom scales everything in the note, using the CSS zoom property. A paginated note's */}
+          {/* column is exactly one page wide, with the page margin as its padding, and as tall as */}
+          {/* its pages; the sheets are drawn behind it. */}
+          <div ref={frameRef} className={`editor-width ${geometry ? 'is-paginated' : ''}`} style={{ zoom, ...(geometry ? pageFrameStyle(geometry, pages) : {}) }}>
+            {/* Printing uses the note's page size and margin. */}
+            {geometry && active && (
+              <style>{`@media print { @page { size: ${note.pageSize === 'a4' ? 'A4' : 'letter'} ${note.landscape ? 'landscape' : 'portrait'}; margin: 1in; } }`}</style>
+            )}
+            {geometry && (
+              <div className="page-sheets" aria-hidden="true">
+                {Array.from({ length: pages }, (_, index) => (
+                  <div key={index} className="page-sheet" style={{ top: index * pageStep(geometry), height: geometry.height }}>
+                    <span className="page-number">{index + 1}</span>
+                  </div>
+                ))}
+              </div>
+            )}
             <div className="editor-meta">
               <span className="page-type"><Icon name="file-text" size={14} /> DOCUMENT</span>
               <span className="meta-dot">•</span>
@@ -378,7 +429,7 @@ export function NoteEditor({ noteId, history, view, active, onClose, onOpenNote,
               <CodeLanguagePickers session={session} containerRef={contentRef} locked={locked} />
               <CommentLayer session={session} comments={note.comments} containerRef={contentRef} />
             </div>
-            <div className="document-end"><span /> END OF DOCUMENT <span /></div>
+            {!geometry && <div className="document-end"><span /> END OF DOCUMENT <span /></div>}
           </div>
         </main>
       </div>
