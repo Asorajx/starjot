@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type KeyboardEvent, type MouseEvent } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent, type MouseEvent } from 'react';
 import { Icon, type IconName } from '../../components/Icon';
 import { safeHref } from '../sanitize';
 import type { EditorSession } from './session';
@@ -8,8 +8,16 @@ type SelectionToolbarProps = {
   locked: boolean;
 };
 
-type Position = { top: number; left: number };
+type Box = { top: number; bottom: number; left: number; right: number };
+type Size = { width: number; height: number };
+
+/* The selection's outline, and the spot where the selection ends (where the mouse was released). */
+type Anchor = { selection: Box; end: Box };
 type Mode = 'buttons' | 'link' | 'comment';
+
+/* The editor's top bar covers this much of the window, so the toolbar never goes above it. */
+const TOP_LIMIT = 64;
+const GAP = 8;
 
 const FORMATS: { command: string; icon: IconName; label: string }[] = [
   { command: 'bold', icon: 'bold', label: 'Bold' },
@@ -20,15 +28,55 @@ const FORMATS: { command: string; icon: IconName; label: string }[] = [
 
 
 /* =========================
+   Toolbar Position
+   ========================= */
+
+/* Above the selection when there is room; otherwise below it; and when the selection fills the */
+/* window, next to the end where the mouse was released. The result is always kept inside the */
+/* window, so a selection near an edge can no longer push the bar off screen. */
+export function placeToolbar(anchor: Anchor, size: Size, view: Size) {
+  const { selection, end } = anchor;
+  const fitsAbove = (box: Box) => box.top - size.height - GAP >= TOP_LIMIT;
+  const fitsBelow = (box: Box) => box.bottom + GAP + size.height <= view.height - GAP;
+
+  let top = selection.bottom + GAP;
+  let center = (selection.left + selection.right) / 2;
+  if (fitsAbove(selection)) top = selection.top - size.height - GAP;
+  else if (!fitsBelow(selection)) {
+    top = fitsAbove(end) ? end.top - size.height - GAP : end.bottom + GAP;
+    center = end.left;
+  }
+
+  return {
+    top: Math.min(Math.max(top, TOP_LIMIT), view.height - size.height - GAP),
+    left: Math.min(Math.max(center, size.width / 2 + GAP), view.width - size.width / 2 - GAP)
+  };
+}
+
+/* The screen position of the end of the selection, or null when the browser cannot measure it. */
+function selectionEnd(selection: Selection): Box | null {
+  if (!selection.focusNode) return null;
+  const range = document.createRange();
+  range.setStart(selection.focusNode, selection.focusOffset);
+  const box = range.getClientRects()[0] ?? range.getBoundingClientRect();
+  return box.top || box.bottom || box.left ? box : null;
+}
+
+
+/* =========================
    Selection Toolbar
    ========================= */
 
 /* A small bar that appears above selected note text: formatting, links and comments. */
 /* It uses fixed positioning, so it lines up with the selection at any note zoom level. */
 export function SelectionToolbar({ session, locked }: SelectionToolbarProps) {
-  const [position, setPosition] = useState<Position | null>(null);
+  const [anchor, setAnchor] = useState<Anchor | null>(null);
   const [mode, setMode] = useState<Mode>('buttons');
   const [value, setValue] = useState('');
+
+  /* The bar's own size, measured after it is drawn; the comment box makes it taller. */
+  const [size, setSize] = useState<Size>({ width: 280, height: 40 });
+  const barRef = useRef<HTMLDivElement>(null);
 
   /* The selection is remembered, because typing a link or comment moves focus into this bar. */
   const savedRange = useRef<Range | null>(null);
@@ -43,15 +91,12 @@ export function SelectionToolbar({ session, locked }: SelectionToolbarProps) {
       const body = document.getElementById('note-body');
       const range = selection?.rangeCount ? selection.getRangeAt(0) : null;
       if (!body || !range || range.collapsed || !body.contains(range.commonAncestorContainer) || !range.toString().trim()) {
-        setPosition(null);
+        setAnchor(null);
         return;
       }
       savedRange.current = range.cloneRange();
       const bounds = range.getBoundingClientRect();
-
-      /* Sit above the selection, or below it when there is no room under the editor toolbar. */
-      const above = bounds.top - 48;
-      setPosition({ top: above > 64 ? above : bounds.bottom + 10, left: Math.max(12, bounds.left + bounds.width / 2) });
+      setAnchor({ selection: bounds, end: selectionEnd(selection as Selection) ?? bounds });
     }
 
     /* Clicking anywhere outside the bar cancels an unfinished link or comment. */
@@ -73,7 +118,16 @@ export function SelectionToolbar({ session, locked }: SelectionToolbarProps) {
     };
   }, []);
 
-  if (!position) return null;
+  /* Re-measure whenever the bar changes shape, such as opening the comment box. */
+  useLayoutEffect(() => {
+    const bar = barRef.current;
+    if (!bar) return;
+    const { width, height } = bar.getBoundingClientRect();
+    setSize(current => (current.width === width && current.height === height ? current : { width, height }));
+  });
+
+  if (!anchor) return null;
+  const position = placeToolbar(anchor, size, { width: window.innerWidth, height: window.innerHeight });
 
   /* Put the remembered selection back, so a command applies to the text that was selected. */
   function restoreSelection() {
@@ -89,7 +143,7 @@ export function SelectionToolbar({ session, locked }: SelectionToolbarProps) {
   function close() {
     setMode('buttons');
     setValue('');
-    setPosition(null);
+    setAnchor(null);
   }
 
   function format(command: string) {
@@ -147,7 +201,7 @@ export function SelectionToolbar({ session, locked }: SelectionToolbarProps) {
   const keepSelection = (event: MouseEvent) => event.preventDefault();
 
   return (
-    <div className="selection-toolbar" role="toolbar" aria-label="Format selected text" style={{ top: position.top, left: position.left }}>
+    <div ref={barRef} className="selection-toolbar" role="toolbar" aria-label="Format selected text" style={{ top: position.top, left: position.left }}>
       {mode === 'buttons' && (
         <>
           {!locked && FORMATS.map(item => (
