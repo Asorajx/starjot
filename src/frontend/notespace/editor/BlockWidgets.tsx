@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type MouseEvent as ReactMouseEvent } from 'react';
 import { Icon } from '../../components/Icon';
 import { categoryName, getNote, updatedLabel, useNotes } from '../store';
-import { addColumn, addRow, hydratePages, removeColumn, removeRow, type PageSize } from './blocks';
+import { addColumn, addRow, hydratePages, lineBelowTable, removeColumn, removeRow, type PageSize } from './blocks';
 import { emptyParagraph, placeCaret } from './dom';
 import type { EditorSession } from './session';
 
@@ -12,7 +12,7 @@ type BlockWidgetsProps = {
 };
 
 type Preview = { id: string; top: number; left: number; above: boolean };
-type TableBar = { top: number; left: number };
+type TableBar = { top: number; right: number };
 type TableAction = 'row' | 'column' | 'remove-row' | 'remove-column';
 
 const TABLE_ACTIONS: { action: TableAction; label: string }[] = [
@@ -93,6 +93,28 @@ export function BlockWidgets({ session, locked, onOpenNote }: BlockWidgetsProps)
       }
     }
 
+    /* Clicking just under a table puts the caret on the line below it, adding that line when */
+    /* the table is the last thing in the note or is followed by another block. */
+    function handleMouseDown(event: MouseEvent) {
+      const note = body();
+      const target = event.target as Element;
+      if (!note?.contains(target) || latest.current.locked || event.button !== 0 || target.closest('table')) return;
+      const table = Array.from(note.querySelectorAll('table')).find(item => {
+        const bounds = item.getBoundingClientRect();
+        return event.clientX >= bounds.left && event.clientX <= bounds.right && event.clientY > bounds.bottom && event.clientY <= bounds.bottom + 24;
+      });
+      if (!table) return;
+      event.preventDefault();
+      note.focus({ preventScroll: true });
+      const { line, created } = lineBelowTable(table);
+      if (!created) {
+        placeCaret(line);
+        return;
+      }
+      session.checkpoint();
+      session.linesChanged(line, false);
+    }
+
     /* Hovering a page link shows a preview of that page under it. */
     function handleMouseOver(event: MouseEvent) {
       const target = event.target as Element;
@@ -117,7 +139,8 @@ export function BlockWidgets({ session, locked, onOpenNote }: BlockWidgetsProps)
       hideTimer.current = window.setTimeout(() => setPreview(null), 200);
     }
 
-    /* The table buttons appear under a table while the caret is in one of its cells. */
+    /* The table buttons appear above the table's right corner while the caret is in one of its cells, */
+    /* leaving the space under the table free for clicking to add a line. */
     function updateTableBar() {
       const node = window.getSelection()?.focusNode;
       const element = node instanceof Element ? node : node?.parentElement;
@@ -129,17 +152,19 @@ export function BlockWidgets({ session, locked, onOpenNote }: BlockWidgetsProps)
       }
       cell.current = current;
       const bounds = (current.closest('table') as HTMLElement).getBoundingClientRect();
-      setTableBar({ top: bounds.bottom + 6, left: bounds.left });
+      setTableBar({ top: bounds.top - 36, right: window.innerWidth - bounds.right });
     }
 
     const scroller = document.getElementById('main-scroll');
     document.addEventListener('click', handleClick);
+    document.addEventListener('mousedown', handleMouseDown);
     document.addEventListener('mouseover', handleMouseOver);
     document.addEventListener('mouseout', handleMouseOut);
     document.addEventListener('selectionchange', updateTableBar);
     scroller?.addEventListener('scroll', updateTableBar);
     return () => {
       document.removeEventListener('click', handleClick);
+      document.removeEventListener('mousedown', handleMouseDown);
       document.removeEventListener('mouseover', handleMouseOver);
       document.removeEventListener('mouseout', handleMouseOut);
       document.removeEventListener('selectionchange', updateTableBar);
@@ -212,7 +237,7 @@ export function BlockWidgets({ session, locked, onOpenNote }: BlockWidgetsProps)
       )}
 
       {tableBar && (
-        <div className="table-bar" style={{ top: tableBar.top, left: tableBar.left }} role="toolbar" aria-label="Table">
+        <div className="table-bar" style={{ top: tableBar.top, right: tableBar.right }} role="toolbar" aria-label="Table">
           {TABLE_ACTIONS.map(item => (
             <button key={item.action} type="button" className="table-bar-button" onMouseDown={keepFocus} onClick={() => runTableAction(item.action)}>
               {item.action === 'row' || item.action === 'column' ? <Icon name="plus" size={13} /> : <Icon name="minus" size={13} />} {item.label}

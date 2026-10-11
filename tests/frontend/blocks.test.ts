@@ -1,12 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import {
-  addColumn, convertLine, createPageBlock, createTable, embeddedPageIds, handleBlockKeys, insertBlock, matchCommands, removeColumn
+  addColumn, convertLine, createPageBlock, createTable, embeddedPageIds, handleBlockKeys, insertBlock, lineBelowTable, matchCommands, removeColumn
 } from '../../src/frontend/notespace/editor/blocks';
 import { parseBlocks } from '../../src/frontend/notespace/editor/blockModel';
 
 /* An editable note body, like the continuous editor, added to the test page. */
 function editor(html: string) {
   const body = document.createElement('div');
+  body.id = 'note-body';
   body.contentEditable = 'true';
   body.innerHTML = html;
   document.body.replaceChildren(body);
@@ -142,5 +143,64 @@ describe('table and toggle keys', () => {
     placeCaret(body.querySelector('.toggle-summary')?.firstChild as Node, 0);
     expect(handleBlockKeys(press('Backspace'), body)?.kind).toBe('lines');
     expect(body.innerHTML).toBe('<p>T</p><p>A</p>');
+  });
+});
+
+
+/* =========================
+   Moving Around Tables
+   ========================= */
+
+/* The test page cannot measure text, so every cell counts as one line, like an empty cell. */
+describe('table arrow keys and the line below a table', () => {
+  const table = '<table><tbody><tr><th>A1</th><th>B1</th></tr><tr><td>A2</td><td>B2</td></tr></tbody></table>';
+  const caretText = () => window.getSelection()?.focusNode?.textContent;
+
+  it('Right at the end of a cell moves to the next cell, Left at the start moves back', () => {
+    const body = editor(`<p>Intro</p>${table}`);
+    placeCaret(body.querySelector('th')?.firstChild as Node, 2);
+    expect(handleBlockKeys(press('ArrowRight'), body)).toEqual({ kind: 'blocked' });
+    expect(caretText()).toBe('B1');
+    placeCaret(body.querySelectorAll('th')[1].firstChild as Node, 0);
+    expect(handleBlockKeys(press('ArrowLeft'), body)).toEqual({ kind: 'blocked' });
+    expect(caretText()).toBe('A1');
+  });
+
+  it('Down moves to the cell below in the same column', () => {
+    const body = editor(table);
+    placeCaret(body.querySelectorAll('th')[1].firstChild as Node, 1);
+    expect(handleBlockKeys(press('ArrowDown'), body)).toEqual({ kind: 'blocked' });
+    expect(caretText()).toBe('B2');
+  });
+
+  it('Left from the first cell goes to the line above the table', () => {
+    const body = editor(`<p>Intro</p>${table}`);
+    placeCaret(body.querySelector('th')?.firstChild as Node, 0);
+    handleBlockKeys(press('ArrowLeft'), body);
+    expect(caretText()).toBe('Intro');
+  });
+
+  it('Down from the last row adds a line when the table is last in the note', () => {
+    const body = editor(table);
+    placeCaret(body.querySelectorAll('td')[1].firstChild as Node, 1);
+    const result = handleBlockKeys(press('ArrowDown'), body);
+    expect(result?.kind).toBe('lines');
+    expect(body.lastElementChild?.outerHTML).toBe('<p><br></p>');
+  });
+
+  it('Up from the line under a table goes into its last row', () => {
+    const body = editor(`${table}<p>After</p>`);
+    placeCaret(body.querySelector('p')?.firstChild as Node, 2);
+    expect(handleBlockKeys(press('ArrowUp'), body)).toEqual({ kind: 'blocked' });
+    expect(caretText()).toBe('A2');
+  });
+
+  it('reuses an empty line under a table instead of adding another', () => {
+    const body = editor(`${table}<p><br></p>`);
+    const below = lineBelowTable(body.querySelector('table') as HTMLElement);
+    expect(below.created).toBe(false);
+    expect(below.line).toBe(body.lastElementChild);
+    body.lastElementChild?.remove();
+    expect(lineBelowTable(body.querySelector('table') as HTMLElement).created).toBe(true);
   });
 });

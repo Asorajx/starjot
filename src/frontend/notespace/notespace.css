@@ -2793,7 +2793,7 @@
   font-weight: 650;
 }
 
-/* Buttons for adding and deleting rows and columns, shown under the table being edited. */
+/* Buttons for adding and deleting rows and columns, shown above the right corner of the table being edited. */
 .table-bar {
   position: fixed;
   z-index: 60;
@@ -2857,6 +2857,10 @@
   .code-lang-layer,
   .comment-layer,
   .selection-toolbar,
+  .slash-menu,
+  .page-preview,
+  .table-bar,
+  .page-block-sizes,
   .document-end {
     display: none !important;
   }
@@ -2866,6 +2870,17 @@
   }
 
   .sticky-group {
+    break-inside: avoid;
+  }
+
+  /* Tables are kept whole inside a sticky group; elsewhere a table may continue on the next */
+  /* page, but a row is never cut in half. */
+  .sticky-group table,
+  .sticky-group tr {
+    break-inside: avoid;
+  }
+
+  tr {
     break-inside: avoid;
   }
 

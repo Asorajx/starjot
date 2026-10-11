@@ -1,7 +1,7 @@
 import { iconMarkup, type IconName } from '../../components/Icon';
 import { categoryName, getNote, updatedLabel } from '../store';
 import { highlight } from './code';
-import { caretAtEdge, closestAtCaret, emptyParagraph, isEmptyContent, placeCaret } from './dom';
+import { caretAtEdge, caretElement, closestAtCaret, emptyParagraph, isEmptyContent, placeCaret } from './dom';
 
 
 /* =========================
@@ -281,6 +281,31 @@ export function removeColumn(table: HTMLTableElement, index: number) {
   return Boolean(table.rows[0]?.cells.length);
 }
 
+/* The line just above or below another line (such as a table): its neighbour in the document, */
+/* outside any sticky group it ends, or in structured mode the neighbouring block. Null at either end. */
+function neighbourLine(line: Element, below: boolean): Element | null {
+  const sibling = (node: Element) => (below ? node.nextElementSibling : node.previousElementSibling);
+  let node: Element = line;
+  while (!sibling(node) && node.parentElement && !node.parentElement.matches('#note-body, .block-content')) node = node.parentElement;
+  if (sibling(node)) return sibling(node);
+
+  const block = line.closest('.editable-block');
+  const blocks = Array.from(block?.closest('#note-body')?.querySelectorAll('.editable-block') ?? []);
+  return block ? blocks[blocks.indexOf(block) + (below ? 1 : -1)]?.querySelector('.block-content') ?? null : null;
+}
+
+/* The empty line right under a table, adding one when there is none. In structured mode the */
+/* next line may sit in the next block. created tells the editor whether the note changed. */
+export function lineBelowTable(table: HTMLElement) {
+  const nextBlock = table.closest('.editable-block')?.nextElementSibling;
+  const next = table.nextElementSibling
+    ?? (nextBlock?.matches('.editable-block') ? nextBlock.querySelector('.block-content')?.firstElementChild : null);
+  if (next instanceof HTMLParagraphElement && isEmptyContent(next)) return { line: next, created: false };
+  const paragraph = emptyParagraph();
+  table.after(paragraph);
+  return { line: paragraph, created: true };
+}
+
 
 /* =========================
    Keys Inside Tables and Toggles
@@ -306,8 +331,124 @@ function insertBreak() {
   selection.addRange(range);
 }
 
+/* True when the caret is on the first (top) or last (bottom) line of text in a cell or line. */
+/* The text is measured rather than the box, because a cell can be taller than its text when a */
+/* neighbouring cell has more lines. Empty cells cannot be measured but have one line, so they count as both. */
+function caretOnEdgeLine(element: HTMLElement, edge: 'top' | 'bottom') {
+  const selection = window.getSelection();
+  if (!selection?.rangeCount) return true;
+  try {
+    const box = selection.getRangeAt(0).getClientRects()[0];
+    const content = document.createRange();
+    content.selectNodeContents(element);
+    const lines = Array.from(content.getClientRects()).filter(rect => rect.height > 0);
+    if (!box || !lines.length) return true;
+    const half = (parseFloat(getComputedStyle(element).lineHeight) || 20) / 2;
+    return edge === 'top'
+      ? box.top - Math.min(...lines.map(rect => rect.top)) < half
+      : Math.max(...lines.map(rect => rect.bottom)) - box.bottom < half;
+  } catch {
+    return true;
+  }
+}
+
+/* Move into a cell above or below, keeping the caret's left-right position when the browser can find it. */
+function moveIntoCell(cell: HTMLElement, fromBelow: boolean) {
+  const selection = window.getSelection();
+  let x = 0;
+  try {
+    x = selection?.rangeCount ? selection.getRangeAt(0).getClientRects()[0]?.left ?? 0 : 0;
+  } catch {
+    x = 0;
+  }
+  const bounds = cell.getBoundingClientRect();
+  const point = x && document.caretRangeFromPoint ? document.caretRangeFromPoint(x, fromBelow ? bounds.bottom - 12 : bounds.top + 12) : null;
+  if (point && cell.contains(point.startContainer)) {
+    selection?.removeAllRanges();
+    selection?.addRange(point);
+  } else {
+    placeCaret(cell, fromBelow);
+  }
+}
+
+/* Arrow keys move between cells. Leaving the table goes to the line above or below it; a line */
+/* is added below when the table is the last thing in the note. */
+function cellArrowKeys(event: KeyboardEvent, cell: HTMLTableCellElement, table: HTMLTableElement): KeyResult | null {
+  if (event.shiftKey || event.altKey || event.ctrlKey || event.metaKey || !window.getSelection()?.isCollapsed) return null;
+  const row = cell.parentElement as HTMLTableRowElement;
+  const cells = Array.from(table.querySelectorAll<HTMLTableCellElement>('th, td'));
+  const index = cells.indexOf(cell);
+  const leave = (below: boolean): KeyResult | null => {
+    const line = neighbourLine(table, below);
+    if (!line && !below) return null;
+    event.preventDefault();
+    if (!line) return { kind: 'lines', focus: lineBelowTable(table).line, atEnd: false };
+    placeCaret(line, !below);
+    return { kind: 'blocked' };
+  };
+
+  if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
+    const up = event.key === 'ArrowUp';
+    if (!caretOnEdgeLine(cell, up ? 'top' : 'bottom')) return null;
+    const target = table.rows[row.rowIndex + (up ? -1 : 1)];
+    if (!target) return leave(!up);
+    event.preventDefault();
+    moveIntoCell(target.cells[Math.min(cell.cellIndex, target.cells.length - 1)], up);
+    return { kind: 'blocked' };
+  }
+
+  if (event.key === 'ArrowRight' && caretAtEdge(cell, 'end')) {
+    if (!cells[index + 1]) return leave(true);
+    event.preventDefault();
+    placeCaret(cells[index + 1]);
+    return { kind: 'blocked' };
+  }
+  if (event.key === 'ArrowLeft' && caretAtEdge(cell, 'start')) {
+    if (!cells[index - 1]) return leave(false);
+    event.preventDefault();
+    placeCaret(cells[index - 1], true);
+    return { kind: 'blocked' };
+  }
+  return null;
+}
+
+/* Up or Down from the line next to a table goes into the cell nearest the caret, */
+/* in the table's last row (from below) or first row (from above). */
+function enterTableKeys(event: KeyboardEvent): KeyResult | null {
+  if ((event.key !== 'ArrowUp' && event.key !== 'ArrowDown') || event.shiftKey || event.altKey || event.ctrlKey || event.metaKey) return null;
+  const below = event.key === 'ArrowDown';
+
+  /* The whole line holding the caret. In structured mode that is a line inside the block, not the block itself. */
+  const element = caretElement();
+  const content = element?.closest('.block-content');
+  const line = content
+    ? (element === content ? content.firstElementChild : element?.closest('.block-content > *'))
+    : element?.closest('#note-body > *, .sticky-group > *');
+  const neighbour = line ? neighbourLine(line, below) : null;
+  const table = neighbour?.matches('table') ? neighbour as HTMLTableElement : neighbour?.querySelector<HTMLTableElement>(':scope > table');
+  if (!line || !table || !window.getSelection()?.isCollapsed || !caretOnEdgeLine(line as HTMLElement, below ? 'bottom' : 'top')) return null;
+
+  let x = 0;
+  try {
+    x = window.getSelection()?.getRangeAt(0).getClientRects()[0]?.left ?? 0;
+  } catch {
+    x = 0;
+  }
+  const row = table.rows[below ? 0 : table.rows.length - 1];
+  const cells = Array.from(row?.cells ?? []);
+  const cell = cells.find(item => {
+    const bounds = item.getBoundingClientRect();
+    return x >= bounds.left && x <= bounds.right;
+  }) ?? cells[0];
+  if (!cell) return null;
+  event.preventDefault();
+  moveIntoCell(cell, !below);
+  return { kind: 'blocked' };
+}
+
 function cellKeys(event: KeyboardEvent, cell: HTMLTableCellElement): KeyResult | null {
   const table = cell.closest('table') as HTMLTableElement;
+  if (event.key.startsWith('Arrow')) return cellArrowKeys(event, cell, table);
 
   /* Tab moves between cells; Tab in the last cell adds a row. */
   if (event.key === 'Tab' && !event.altKey && !event.ctrlKey && !event.metaKey) {
@@ -381,5 +522,5 @@ function toggleKeys(event: KeyboardEvent): KeyResult | null {
 export function handleBlockKeys(event: KeyboardEvent, root: HTMLElement): KeyResult | null {
   const cell = closestAtCaret<HTMLTableCellElement>('td, th');
   if (cell && root.contains(cell)) return cellKeys(event, cell);
-  return toggleKeys(event);
+  return enterTableKeys(event) ?? toggleKeys(event);
 }
