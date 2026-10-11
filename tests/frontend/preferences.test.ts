@@ -59,4 +59,14 @@ describe('preferences', () => {
     preferences = await openApp();
     expect(preferences.getPreferences().contentsScroll).toBe('instant');
   });
+
+  it('hides the page bar while typing by default, and remembers turning that off', async () => {
+    let preferences = await openApp();
+    expect(preferences.getPreferences().hideHeaderWhileTyping).toBe(true);
+    preferences.updatePreferences({ hideHeaderWhileTyping: false });
+
+    vi.resetModules();
+    preferences = await openApp();
+    expect(preferences.getPreferences().hideHeaderWhileTyping).toBe(false);
+  });
 });

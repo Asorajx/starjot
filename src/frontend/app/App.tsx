@@ -4,10 +4,13 @@ import { MobileNav, Sidebar, Topbar } from './Shell';
 import { CategoryPage } from '../notespace/CategoryPage';
 import { NotesHome, type NoteFilter } from '../notespace/NotesHome';
 import { NoteEditor } from '../notespace/editor/NoteEditor';
-import { categoryName, createNote, flushSave, getNote } from '../notespace/store';
+import { PageBar, placeExists, placeLabel, type PageHistory } from '../notespace/PageBar';
+import { createNote, flushSave } from '../notespace/store';
 import { Settings, type SettingsSection } from '../settings/Settings';
 import { Workboard } from '../workboard/Workboard';
 import type { BoardTab } from '../../shared/types/task';
+import { closeTab, currentPlace, goTo, newTab, step, stepPlace, type NoteTab, type Place } from './noteTabs';
+import { WindowBar } from './WindowBar';
 import { workspaceLabel, type WorkspaceId } from './workspaces';
 
 
@@ -18,13 +21,12 @@ import { workspaceLabel, type WorkspaceId } from './workspaces';
 /* Only navigation lives here; note content belongs to the Notespace store. */
 export function App() {
   const [workspace, setWorkspace] = useState<WorkspaceId>('notes');
-  const [openNoteId, setOpenNoteId] = useState<string | null>(null);
 
-  /* Notes opened from inside other notes (a sub-page or breadcrumb link), so Back can return to them. */
-  const [noteTrail, setNoteTrail] = useState<string[]>([]);
-
-  /* The category page being shown, or null for the notes home. */
-  const [openCategoryId, setOpenCategoryId] = useState<string | null>(null);
+  /* The open tabs in Notespace, each with its own back and forward history, and the one being shown. */
+  const [tabState, setTabState] = useState(() => {
+    const first = newTab({ kind: 'home' });
+    return { tabs: [first], active: first.id };
+  });
   const [workTab, setWorkTab] = useState<BoardTab>('todo');
   const [settingsSection, setSettingsSection] = useState<SettingsSection>('general');
   const [noteFilter, setNoteFilter] = useState<NoteFilter>('all');
@@ -34,48 +36,55 @@ export function App() {
   const [peeking, setPeeking] = useState(false);
   const peekTimer = useRef<number | undefined>(undefined);
 
+  const activeTab = tabState.tabs.find(tab => tab.id === tabState.active) ?? tabState.tabs[0];
+  const place = currentPlace(activeTab);
+
+  /* Change the active tab, saving pending edits first and starting the new page at its top. */
+  function updateActiveTab(change: (tab: NoteTab) => NoteTab | null) {
+    const next = change(activeTab);
+    if (!next || next === activeTab) return;
+    flushSave();
+    setTabState(state => ({ ...state, tabs: state.tabs.map(tab => (tab.id === next.id ? next : tab)) }));
+    scrollToTop();
+  }
+
+  function go(next: Place) {
+    setWorkspace('notes');
+    updateActiveTab(tab => goTo(tab, next));
+  }
+
   function navigate(next: WorkspaceId) {
     flushSave();
     setWorkspace(next);
-    if (next === 'notes') {
-      setOpenNoteId(null);
-      setNoteTrail([]);
-      setOpenCategoryId(null);
-    }
+    if (next === 'notes') go({ kind: 'home' });
   }
 
   function scrollToTop() {
-    document.getElementById('main-scroll')?.scrollTo(0, 0);
+    requestAnimationFrame(() => document.getElementById('main-scroll')?.scrollTo(0, 0));
   }
 
-  /* Opening a note from a list starts a fresh trail. */
-  function openNote(id: string) {
-    setWorkspace('notes');
-    setOpenNoteId(id);
-    setNoteTrail([]);
-    scrollToTop();
-  }
+  const goBack = () => updateActiveTab(tab => step(tab, -1, placeExists));
+  const goForward = () => updateActiveTab(tab => step(tab, 1, placeExists));
+  const history: PageHistory = {
+    back: stepPlace(activeTab, -1, placeExists),
+    forward: stepPlace(activeTab, 1, placeExists),
+    onBack: goBack,
+    onForward: goForward
+  };
 
-  /* Opening a note from inside another note remembers the one being left. */
-  function openLinkedNote(id: string) {
-    flushSave();
-    if (openNoteId && openNoteId !== id) setNoteTrail(trail => [...trail, openNoteId]);
-    setOpenNoteId(id);
-    scrollToTop();
-  }
+  const openNote = (id: string) => go({ kind: 'note', id });
+  const openCategory = (id: string) => go({ kind: 'category', id });
+  const openHome = () => go({ kind: 'home' });
 
-  /* Back returns to the previous note, or to the category page or notes home it was opened from. */
-  function closeNote() {
-    flushSave();
-    const trail = noteTrail.filter(id => getNote(id));
-    setOpenNoteId(trail[trail.length - 1] ?? null);
-    setNoteTrail(trail.slice(0, -1));
-    scrollToTop();
+  /* Leaving a page (Escape, or deleting the note) goes back, or to the notes home when there is no back. */
+  function closePage() {
+    if (history.back) goBack();
+    else openHome();
   }
 
   /* A sub-page added from the slash menu opens straight away with its title selected. */
   function openNewPage(id: string) {
-    openLinkedNote(id);
+    openNote(id);
     focusTitle();
   }
 
@@ -88,25 +97,36 @@ export function App() {
     });
   }
 
-  function openCategory(id: string) {
-    flushSave();
-    setWorkspace('notes');
-    setOpenNoteId(null);
-    setNoteTrail([]);
-    setOpenCategoryId(id);
-    scrollToTop();
-  }
-
   /* A new note starts in the category being viewed or filtered, if there is one. */
   function newNote(category?: string) {
     flushSave();
     const filtered = noteFilter === 'all' ? '' : noteFilter;
-    openNote(createNote(category ?? openCategoryId ?? filtered).id);
+    const viewed = place.kind === 'category' ? place.id : '';
+    openNote(createNote(category ?? (viewed || filtered)).id);
     focusTitle();
   }
 
+  /* The + beside the tabs starts a new note in a new tab. */
+  function newNoteTab() {
+    flushSave();
+    const tab = newTab({ kind: 'note', id: createNote().id });
+    setTabState(state => ({ tabs: [...state.tabs, tab], active: tab.id }));
+    focusTitle();
+  }
+
+  function selectTab(id: string) {
+    flushSave();
+    setTabState(state => ({ ...state, active: id }));
+  }
+
+  function removeTab(id: string) {
+    flushSave();
+    setTabState(state => closeTab(state.tabs, state.active, id));
+  }
+
+  /* In Notespace the window bar names the browser tab after the open page instead. */
   useEffect(() => {
-    document.title = `${workspaceLabel(workspace)} — Starjot`;
+    if (workspace !== 'notes') document.title = `${workspaceLabel(workspace)} — Starjot`;
   }, [workspace]);
 
   /* The short delays stop the sidebar from popping up when the pointer only passes the edge, */
@@ -153,24 +173,40 @@ export function App() {
 
   let screen;
   if (workspace === 'notes') {
-    if (openNoteId) {
-      const previous = getNote(noteTrail[noteTrail.length - 1] ?? '');
-      const backLabel = previous ? previous.title || 'Untitled note' : openCategoryId ? categoryName(openCategoryId) : 'All notes';
+    if (place.kind === 'note') {
       screen = (
         <NoteEditor
-          key={openNoteId}
-          noteId={openNoteId}
-          onClose={closeNote}
-          onOpenNote={openLinkedNote}
+          key={place.id}
+          noteId={place.id}
+          history={history}
+          onClose={closePage}
+          onOpenNote={openNote}
           onOpenCategory={openCategory}
           onOpenNewPage={openNewPage}
-          backLabel={backLabel}
         />
       );
-    } else if (openCategoryId) {
-      screen = <CategoryPage categoryId={openCategoryId} onBack={() => setOpenCategoryId(null)} onOpen={openNote} onCreate={newNote} />;
+    } else if (place.kind === 'category') {
+      screen = (
+        <>
+          <PageBar history={history}>
+            <nav className="editor-breadcrumb" aria-label="Breadcrumb">
+              <button type="button" className="editor-crumb-link" onClick={openHome}>All notes</button>
+              <span className="editor-breadcrumb-separator">/</span>
+              <span className="editor-crumb-current">{placeLabel(place)}</span>
+            </nav>
+          </PageBar>
+          <CategoryPage key={place.id} categoryId={place.id} onBack={closePage} onOpen={openNote} onCreate={newNote} />
+        </>
+      );
     } else {
-      screen = <NotesHome filter={noteFilter} onFilterChange={setNoteFilter} onOpen={openNote} onOpenCategory={openCategory} onCreate={() => newNote()} />;
+      screen = (
+        <>
+          <PageBar history={history}>
+            <nav className="editor-breadcrumb" aria-label="Breadcrumb"><span className="editor-crumb-current">All notes</span></nav>
+          </PageBar>
+          <NotesHome filter={noteFilter} onFilterChange={setNoteFilter} onOpen={openNote} onOpenCategory={openCategory} onCreate={() => newNote()} />
+        </>
+      );
     }
   } else if (workspace === 'workboard') {
     screen = <Workboard tab={workTab} onTabChange={setWorkTab} />;
@@ -183,7 +219,7 @@ export function App() {
       {sidebarCollapsed && <div className="sidebar-hover-zone" aria-hidden="true" onMouseEnter={startPeek} onMouseLeave={cancelPeek} />}
       <Sidebar
         workspace={workspace}
-        openNoteId={workspace === 'notes' ? openNoteId : null}
+        openNoteId={workspace === 'notes' && place.kind === 'note' ? place.id : null}
         onNavigate={navigate}
         onOpenNote={openNote}
         onMouseEnter={cancelPeek}
@@ -191,6 +227,7 @@ export function App() {
       />
       <div className="main-column">
         <Topbar workspace={workspace} />
+        {workspace === 'notes' && <WindowBar tabs={tabState.tabs} active={activeTab.id} onSelect={selectTab} onClose={removeTab} onNew={newNoteTab} />}
         <div className="main-scroll" id="main-scroll">{screen}</div>
       </div>
       <MobileNav workspace={workspace} onNavigate={navigate} />

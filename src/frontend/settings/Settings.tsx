@@ -27,6 +27,15 @@ function Toggle({ on = true }: { on?: boolean }) {
   return <span className={`preview-switch ${on ? 'preview-switch--on' : ''}`} aria-hidden="true"><span /></span>;
 }
 
+/* The same switch as Toggle, but one that really turns a setting on and off. */
+function Switch({ label, on, onChange }: { label: string; on: boolean; onChange: (on: boolean) => void }) {
+  return (
+    <button type="button" role="switch" aria-checked={on} aria-label={label} className={`preview-switch setting-switch ${on ? 'preview-switch--on' : ''}`} onClick={() => onChange(!on)}>
+      <span />
+    </button>
+  );
+}
+
 function Row({ title, description, children }: { title: ReactNode; description: string; children: ReactNode }) {
   return (
     <div className="setting-row">
@@ -75,7 +84,7 @@ function FakeSelect({ children }: { children: ReactNode }) {
    ========================= */
 
 function SettingsPanel({ section }: { section: SettingsSection }) {
-  const { theme, contentsScroll } = usePreferences();
+  const { theme, contentsScroll, hideHeaderWhileTyping } = usePreferences();
   const set = (changes: Partial<Preferences>) => updatePreferences(changes);
 
   if (section === 'general') {
@@ -98,6 +107,9 @@ function SettingsPanel({ section }: { section: SettingsSection }) {
               options={[{ value: 'smooth', label: 'Smooth' }, { value: 'instant', label: 'Instant' }]}
               onChange={value => set({ contentsScroll: value })}
             />
+          </Row>
+          <Row title="Hide the page bar while typing" description="The bar above a note fades away while you type and comes back when you move the mouse.">
+            <Switch label="Hide the page bar while typing" on={hideHeaderWhileTyping} onChange={value => set({ hideHeaderWhileTyping: value })} />
           </Row>
         </Group>
       </>
@@ -219,7 +231,7 @@ export function Settings({ section, onSectionChange }: SettingsProps) {
         </aside>
         <section className="settings-content" aria-label={`${current.label} preferences`}>
           <SettingsPanel section={section} />
-          <div className="settings-disclaimer"><Icon name="info" size={15} /> Theme and Contents scrolling are saved. The other options are previews and do not change anything yet.</div>
+          <div className="settings-disclaimer"><Icon name="info" size={15} /> Theme, Contents scrolling and Hide the page bar while typing are saved. The other options are previews and do not change anything yet.</div>
         </section>
       </div>
     </div>

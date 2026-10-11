@@ -233,6 +233,16 @@
   transform: translateX(15px);
 }
 
+/* A switch that really changes a setting is a button, so it loses the button border and can be clicked. */
+.setting-switch {
+  border: 0;
+  cursor: pointer;
+}
+
+.setting-switch>span {
+  transition: transform .15s ease;
+}
+
 .color-options {
   display: flex;
   gap: 8px;

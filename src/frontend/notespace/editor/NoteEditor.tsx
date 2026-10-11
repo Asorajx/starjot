@@ -3,8 +3,8 @@ import { changeZoom, usePreferences } from '../../app/preferences';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
 import { Icon } from '../../components/Icon';
 import {
-  childrenOf, deleteNote, flushSave, getNote, isLocked, isStorageAvailable, isTemporarilyUnlocked, lockNow, markOpened, unlockForAWhile, updateNote,
-  updatedLabel, useCategories, useNote, useSaveStatus
+  childrenOf, deleteNote, flushSave, getNote, isLocked, isTemporarilyUnlocked, lockNow, markOpened, setPinned, unlockForAWhile, updateNote,
+  updatedLabel, useCategories, useNote
 } from '../store';
 import type { NoteMode } from '../../../shared/types/note';
 import { CodeLanguagePickers } from './CodeLanguagePickers';
@@ -16,6 +16,7 @@ import { SlashMenu } from './SlashMenu';
 import { TableTools } from './TableTools';
 import { BlockWidgets } from './BlockWidgets';
 import { NoteBreadcrumb } from './NoteBreadcrumb';
+import { PageBar, SaveStatus, type PageHistory } from '../PageBar';
 import { NoteHeader } from './NoteHeader';
 import { EditorSession, useSessionValue } from './session';
 import { StructuredEditor } from './StructuredEditor';
@@ -24,15 +25,17 @@ type Panel = 'toc' | 'options' | null;
 
 type NoteEditorProps = {
   noteId: string;
+
+  /* Where the page bar's back and forward arrows lead. */
+  history: PageHistory;
+
+  /* Leaves the note (Escape, or after deleting it). */
   onClose: () => void;
   onOpenNote: (id: string) => void;
   onOpenCategory: (id: string) => void;
 
   /* Opens a sub-page just added with the slash menu, ready to be named. */
   onOpenNewPage: (id: string) => void;
-
-  /* The page the back button returns to, such as "All notes" or a category name. */
-  backLabel: string;
 };
 
 
@@ -47,7 +50,7 @@ type LockStatusProps = {
   unlockedUntil: string | null;
 };
 
-/* A lock icon above the title of a locked note; its tooltip says whether the note is locked or how */
+/* A lock icon in the page bar of a locked note; its tooltip says whether the note is locked or how */
 /* long it stays unlocked. Clicking it unlocks the note for a few minutes (it locks itself again after */
 /* that long without an edit) or for good (lock it again in Page options), or locks it straight away. */
 function LockStatus({ noteId, temporary, unlockedUntil }: LockStatusProps) {
@@ -61,8 +64,20 @@ function LockStatus({ noteId, temporary, unlockedUntil }: LockStatusProps) {
     function handleMouseDown(event: MouseEvent) {
       if (!(event.target as Element).closest?.('.lock-status')) setOpen(false);
     }
+
+    /* Escape closes only the menu. Listening early (capture) lets it run before the editor's own */
+    /* Escape, which would otherwise leave the note. */
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key !== 'Escape') return;
+      event.preventDefault();
+      setOpen(false);
+    }
     document.addEventListener('mousedown', handleMouseDown);
-    return () => document.removeEventListener('mousedown', handleMouseDown);
+    document.addEventListener('keydown', handleKeyDown, true);
+    return () => {
+      document.removeEventListener('mousedown', handleMouseDown);
+      document.removeEventListener('keydown', handleKeyDown, true);
+    };
   }, [open]);
 
   const choose = (action: () => void) => {
@@ -74,13 +89,13 @@ function LockStatus({ noteId, temporary, unlockedUntil }: LockStatusProps) {
     <span className="lock-status">
       <button
         type="button"
-        className={`page-locked ${temporary ? 'is-open' : ''}`}
-        title={label}
+        className={`page-bar-button page-locked ${temporary ? 'is-open' : ''}`}
+        data-tooltip={open ? undefined : label}
         aria-label={label}
         aria-expanded={open}
         onClick={() => setOpen(value => !value)}
       >
-        <Icon name={temporary ? 'unlock' : 'lock'} size={13} />
+        <Icon name={temporary ? 'unlock' : 'lock'} size={17} />
       </button>
       {open && (
         <span className="page-menu lock-menu" role="menu">
@@ -107,15 +122,12 @@ function LockStatus({ noteId, temporary, unlockedUntil }: LockStatusProps) {
    Note Editor Screen
    ========================= */
 
-export function NoteEditor({ noteId, onClose, onOpenNote, onOpenCategory, onOpenNewPage, backLabel }: NoteEditorProps) {
+export function NoteEditor({ noteId, history, onClose, onOpenNote, onOpenCategory, onOpenNewPage }: NoteEditorProps) {
   const note = useNote(noteId);
-
-  /* Re-render after each save, so the warning appears if the browser stops accepting saves. */
-  useSaveStatus();
 
   /* Re-render when categories are renamed, so the breadcrumb stays current. */
   useCategories();
-  const { zoom } = usePreferences();
+  const { zoom, hideHeaderWhileTyping } = usePreferences();
   const [panel, setPanel] = useState<Panel>(null);
   const [switching, setSwitching] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -201,6 +213,32 @@ export function NoteEditor({ noteId, onClose, onOpenNote, onOpenCategory, onOpen
     return () => canvas?.removeEventListener('wheel', handleWheel);
   }, []);
 
+  /* While typing, the page bar fades away so only the note is in view; moving the mouse brings it */
+  /* back. It keeps its space, so the page does not jump. (An app setting, on by default.) */
+  const [typing, setTyping] = useState(false);
+  useEffect(() => {
+    if (!hideHeaderWhileTyping) return;
+    let lastPointer = '';
+    function handleInput(event: Event) {
+      if ((event.target as Element).closest?.('.editor-canvas')) setTyping(true);
+    }
+
+    /* Some browsers send a mouse move when the page changes under a still pointer, so only a real */
+    /* change of position counts. */
+    function handleMouseMove(event: MouseEvent) {
+      const pointer = `${event.screenX},${event.screenY}`;
+      if (pointer !== lastPointer) setTyping(false);
+      lastPointer = pointer;
+    }
+    document.addEventListener('input', handleInput);
+    document.addEventListener('mousemove', handleMouseMove);
+    return () => {
+      document.removeEventListener('input', handleInput);
+      document.removeEventListener('mousemove', handleMouseMove);
+      setTyping(false);
+    };
+  }, [hideHeaderWhileTyping]);
+
   /* Clicking outside an open panel closes it. */
   useEffect(() => {
     if (!panel) return;
@@ -233,17 +271,16 @@ export function NoteEditor({ noteId, onClose, onOpenNote, onOpenCategory, onOpen
 
   return (
     <div className={`editor-wrap ${locked ? 'is-locked' : ''}`}>
-      <div className="editor-toolbar">
-        <button className="back-button" type="button" onClick={onClose}><Icon name="arrow-left" size={17} /> {backLabel}</button>
+      <PageBar history={history} className={`editor-page-bar ${typing && !panel ? 'is-hidden' : ''}`}>
         <NoteBreadcrumb note={note} onOpenNote={onOpenNote} onOpenCategory={onOpenCategory} />
-        <span className="editor-toolbar-fill" />
-        {!isStorageAvailable() && <span className="saved-pill is-warning" id="note-save-state" role="status">Not saved</span>}
+        <span className="page-bar-fill" />
+        <SaveStatus />
 
-        <span className="note-history-buttons" role="group" aria-label="Undo and redo">
-          <button type="button" className="btn note-toolbar-button note-icon-button" aria-label="Undo (Ctrl + Z)" disabled={!canUndo || locked} onMouseDown={keepSelection} onClick={() => session.undo()}>
+        <span className="page-bar-group" role="group" aria-label="Undo and redo">
+          <button type="button" className="page-bar-button" data-tooltip="Undo (Ctrl + Z)" aria-label="Undo (Ctrl + Z)" disabled={!canUndo || locked} onMouseDown={keepSelection} onClick={() => session.undo()}>
             <Icon name="undo" size={17} />
           </button>
-          <button type="button" className="btn note-toolbar-button note-icon-button" aria-label="Redo (Ctrl + Y)" disabled={!canRedo || locked} onMouseDown={keepSelection} onClick={() => session.redo()}>
+          <button type="button" className="page-bar-button" data-tooltip="Redo (Ctrl + Y)" aria-label="Redo (Ctrl + Y)" disabled={!canRedo || locked} onMouseDown={keepSelection} onClick={() => session.redo()}>
             <Icon name="redo" size={17} />
           </button>
         </span>
@@ -251,21 +288,37 @@ export function NoteEditor({ noteId, onClose, onOpenNote, onOpenCategory, onOpen
         {/* Turns red ("Unstick") when the selection is inside one sticky group. */}
         <button
           type="button"
-          className={`btn note-toolbar-button note-sticky-button ${sticky === 'unstick' ? 'is-unstick' : ''}`}
+          className={`page-bar-button note-sticky-button ${sticky === 'unstick' ? 'is-unstick' : ''}`}
           aria-pressed={sticky === 'unstick'}
+          data-tooltip={sticky === 'unstick' ? 'Unstick' : 'Sticky'}
           aria-label={sticky === 'unstick' ? 'Unstick the selected group' : 'Sticky: keep the selected content together'}
           disabled={sticky === 'none' || locked}
           onMouseDown={keepSelection}
           onClick={() => session.toggleSticky()}
         >
-          <Icon name="link" size={17} /><span>{sticky === 'unstick' ? 'Unstick' : 'Sticky'}</span>
+          <Icon name="link" size={17} />
         </button>
 
-        <button type="button" data-panel-toggle className={`btn note-toolbar-button ${panel === 'toc' ? 'selected' : ''}`} aria-expanded={panel === 'toc'} aria-controls="note-toc-panel" onClick={() => togglePanel('toc')}>
-          <Icon name="list" size={17} /><span>Contents</span>
+        <button type="button" data-panel-toggle className={`page-bar-button ${panel === 'toc' ? 'selected' : ''}`} data-tooltip={panel === 'toc' ? undefined : 'Contents'} aria-label="Contents" aria-expanded={panel === 'toc'} aria-controls="note-toc-panel" onClick={() => togglePanel('toc')}>
+          <Icon name="list" size={17} />
         </button>
-        <button type="button" data-panel-toggle className={`btn note-toolbar-button ${panel === 'options' ? 'selected' : ''}`} aria-expanded={panel === 'options'} aria-controls="note-preferences-panel" onClick={() => togglePanel('options')}>
-          <Icon name="sliders-horizontal" size={17} /><span>Page options</span>
+
+        {/* Starred notes are listed in the sidebar and on the notes home page. */}
+        <button
+          type="button"
+          className={`page-bar-button star-button ${note.pinned ? 'is-starred' : ''}`}
+          aria-pressed={note.pinned}
+          data-tooltip={note.pinned ? 'Unstar' : 'Star'}
+          aria-label={note.pinned ? 'Unstar' : 'Star'}
+          onClick={() => setPinned(note.id, !note.pinned)}
+        >
+          <Icon name="star" size={17} />
+        </button>
+
+        {note.locked && <LockStatus noteId={note.id} temporary={temporary} unlockedUntil={note.unlockedUntil} />}
+
+        <button type="button" data-panel-toggle data-tooltip-align="end" className={`page-bar-button ${panel === 'options' ? 'selected' : ''}`} data-tooltip={panel === 'options' ? undefined : 'Page options'} aria-label="Page options" aria-expanded={panel === 'options'} aria-controls="note-preferences-panel" onClick={() => togglePanel('options')}>
+          <Icon name="sliders-horizontal" size={17} />
         </button>
 
         <TableOfContents content={note.content} open={panel === 'toc'} onClose={() => setPanel(null)} />
@@ -280,7 +333,7 @@ export function NoteEditor({ noteId, onClose, onOpenNote, onOpenCategory, onOpen
           onLockChange={value => updateNote(note.id, { locked: value })}
           onDelete={() => { setPanel(null); setConfirmDelete(true); }}
         />
-      </div>
+      </PageBar>
 
       <div className="editor-layout">
         <main className="editor-canvas" id="note-top" ref={canvasRef}>
@@ -288,7 +341,6 @@ export function NoteEditor({ noteId, onClose, onOpenNote, onOpenCategory, onOpen
           <div className="editor-width" style={{ zoom }}>
             <div className="editor-meta">
               <span className="page-type"><Icon name="file-text" size={14} /> DOCUMENT</span>
-              {note.locked && <><span className="meta-dot">•</span><LockStatus noteId={note.id} temporary={temporary} unlockedUntil={note.unlockedUntil} /></>}
               <span className="meta-dot">•</span>
               <span id="note-updated-label">{updatedLabel(note)}</span>
             </div>

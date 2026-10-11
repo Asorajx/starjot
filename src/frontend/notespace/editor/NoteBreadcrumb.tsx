@@ -41,8 +41,6 @@ export function NoteBreadcrumb({ note, onOpenNote, onOpenCategory }: NoteBreadcr
     <nav className="editor-breadcrumb" aria-label="Note breadcrumb">
       {folded.length > 0 && (
         <>
-          <span className="editor-breadcrumb-separator">/</span>
-
           {/* The full path appears while the pointer or keyboard focus is on "…". */}
           <span
             className="editor-crumb-folded"
@@ -74,17 +72,17 @@ export function NoteBreadcrumb({ note, onOpenNote, onOpenCategory }: NoteBreadcr
               </span>
             )}
           </span>
+          <span className="editor-breadcrumb-separator">/</span>
         </>
       )}
 
       {shown.map(crumb => (
         <span key={crumb.key} className="editor-crumb-step">
-          <span className="editor-breadcrumb-separator">/</span>
           <button type="button" className="editor-crumb-link editor-crumb-parent" onClick={crumb.open}>{crumb.label}</button>
+          <span className="editor-breadcrumb-separator">/</span>
         </span>
       ))}
 
-      <span className="editor-breadcrumb-separator">/</span>
       <span id="editor-crumb-title" className="editor-crumb-current">{title}</span>
     </nav>
   );

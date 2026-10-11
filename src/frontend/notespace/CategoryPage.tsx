@@ -23,7 +23,7 @@ export function CategoryPage({ categoryId, onBack, onOpen, onCreate }: CategoryP
   const name = categoryName(categoryId);
   const shown = newestFirst(notes.filter(note => note.category === categoryId));
 
-  /* Escape returns to the notes home page, like it does from a note. */
+  /* Escape goes back, like it does from a note. */
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key !== 'Escape' || event.defaultPrevented) return;
@@ -41,10 +41,6 @@ export function CategoryPage({ categoryId, onBack, onOpen, onCreate }: CategoryP
 
   return (
     <div className="content-pad notes-home category-page">
-      <button className="btn btn-sm btn-tertiary category-back" type="button" onClick={onBack}>
-        <Icon name="arrow-left" size={14} /> All notes
-      </button>
-
       <div className="page-intro">
         <div>
           <h1><Icon name="folder" size={22} /> {name}</h1>

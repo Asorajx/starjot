@@ -141,48 +141,6 @@
   flex-direction: column;
 }
 
-.editor-toolbar {
-  height: 58px;
-  min-height: 58px;
-  display: flex;
-  align-items: center;
-  padding: 0 32px;
-  gap: 16px;
-  border-bottom: 1px solid var(--line);
-}
-
-.back-button {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background: none;
-  border: none;
-  color: #5d6f8a;
-  padding: 8px 4px;
-  font-size: 11px;
-  font-weight: 700;
-}
-
-.back-button:hover {
-  color: var(--blue);
-}
-
-.editor-toolbar-fill {
-  flex: 1;
-}
-
-.saved-pill {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: #56a48b;
-  background: #f1faf5;
-  padding: 8px 12px;
-  border-radius: 4px;
-  font-size: 10px;
-  font-weight: 690;
-}
-
 .editor-layout {
   display: grid;
   grid-template-columns: 188px minmax(0,1fr) 256px;
@@ -549,15 +507,6 @@
   max-width: 805px;
 }
 
-.editor-wrap .editor-toolbar {
-  position: sticky;
-  top: 0;
-  z-index: 22;
-  gap: 12px;
-  padding: 0 28px;
-  background: #fff;
-}
-
 .note-title-input {
   display: block;
   width: 100%;
@@ -610,59 +559,112 @@
   margin: 24px 0 12px;
 }
 
-.note-toolbar-button {
-  display: inline-flex;
+/* =========================
+   Page Bar
+   ========================= */
+
+/* The bar at the top of each page. It has no border and shares the page's background, so it reads */
+/* as part of the page rather than a separate toolbar. It stays in view while the page scrolls. */
+.page-bar {
+  position: sticky;
+  top: 0;
+  z-index: 22;
+  display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
-  border: 1px solid transparent;
-  border-radius: 4px;
-  background: transparent;
-  color: #71829b;
-  white-space: nowrap;
-  font-size: 11px;
-  font-weight: 700;
+  gap: 4px;
+  height: 48px;
+  min-height: 48px;
+  padding: 0 20px 0 12px;
+  background: #f7f9fc;
+  transition: opacity .2s ease;
 }
 
-.note-toolbar-button:hover,
-.note-toolbar-button.selected {
-  color: #3878e4;
-  background: #edf4ff;
-  border-color: #dbe7ff;
+.editor-page-bar {
+  background: #fff;
 }
 
-/* Keep short toolbar labels on one line; the breadcrumb shrinks instead when space is tight. */
-.editor-wrap .back-button,
-.editor-wrap .saved-pill {
-  flex-shrink: 0;
-  white-space: nowrap;
+/* Faded away while typing. It keeps its space, so the note does not jump when it comes back. */
+.page-bar.is-hidden {
+  opacity: 0;
+  pointer-events: none;
 }
 
-/* Only shown when the browser refuses to save, so edits may be lost. */
-.saved-pill.is-warning {
-  color: #b45309;
-  background: #fff7ed;
+.page-bar .editor-breadcrumb {
+  margin-left: 8px;
 }
 
-.note-toolbar-button:disabled {
-  opacity: .4;
-  cursor: default;
+.page-bar-fill {
+  flex: 1;
 }
 
-.note-toolbar-button:disabled:hover {
-  background: transparent;
-  border-color: transparent;
-  color: #71829b;
-}
-
-/* Undo and redo sit together as a compact pair of icon buttons. */
-.note-history-buttons {
+.page-bar-group {
   display: inline-flex;
   gap: 2px;
 }
 
-.note-icon-button {
-  padding: 8px;
+.page-bar-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: #71829b;
+}
+
+.page-bar-button:hover:not(:disabled),
+.page-bar-button.selected {
+  color: #3878e4;
+  background: #edf4ff;
+}
+
+.page-bar-button:disabled {
+  opacity: .4;
+  cursor: default;
+}
+
+/* A starred note shows a filled yellow star, like the stars in the note lists. */
+.star-button.is-starred,
+.star-button.is-starred:hover {
+  color: #e2a520;
+}
+
+.star-button.is-starred svg {
+  fill: currentColor;
+}
+
+/* Saved shows a green tick, saving a spinning loader, and a refused save an orange warning. */
+.save-status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 4px;
+  color: #56a48b;
+}
+
+.save-status.is-saving {
+  color: #8792a3;
+}
+
+.save-status.is-saving svg {
+  animation: save-spin .9s linear infinite;
+}
+
+.save-status.is-unsaved {
+  color: #b45309;
+}
+
+@keyframes save-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* Red "Unstick" state: the selection is inside an existing sticky group. */
@@ -673,7 +675,7 @@
   border-color: #f8d2d2;
 }
 
-.note-toolbar-button:focus-visible,
+.page-bar-button:focus-visible,
 .flyout-close:focus-visible,
 .note-toc-links button:focus-visible {
   outline: 2px solid #5591ed;
@@ -815,26 +817,6 @@
 }
 
 @media (max-width: 700px) {
-  .editor-wrap .editor-toolbar {
-    gap: 4px;
-    padding: 0 12px;
-  }
-
-  .note-toolbar-button {
-    width: 34px;
-    height: 34px;
-    justify-content: center;
-    padding: 8px;
-  }
-
-  .note-toolbar-button span {
-    display: none;
-  }
-
-  .note-icon-button {
-    width: 30px;
-  }
-
   .editor-wrap .editor-canvas {
     padding: 36px 24px 64px;
   }
@@ -1881,10 +1863,6 @@
 }
 
 /* The category page reuses the notes home layout, with a back link above the title. */
-.category-back {
-  margin: 0 0 12px -12px;
-}
-
 .category-page h1 {
   display: flex;
   align-items: center;
@@ -3258,42 +3236,25 @@
 }
 
 /* The page block menu (right-click) uses the same look as the table menu, with icons beside each action. */
-/* The lock label above the title opens a small menu for unlocking or locking again. */
+/* The lock button in the page bar opens a small menu for unlocking or locking again. */
 .lock-status {
   position: relative;
   display: inline-flex;
 }
 
 .lock-status .page-locked {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 22px;
-  height: 22px;
-  padding: 0;
-  margin: -4px -4px;
-  border: 0;
-  border-radius: 4px;
-  background: transparent;
-  color: inherit;
-  font: inherit;
-  cursor: pointer;
-}
-
-.lock-status .page-locked:hover {
-  background: var(--blue-soft);
-  color: var(--blue);
+  color: #b0861a;
 }
 
 .lock-status .page-locked.is-open {
   color: #b45309;
 }
 
-/* The menu opens under the label, inside the note, rather than at the pointer. */
+/* The menu opens under the button, lined up with its right edge, rather than at the pointer. */
 .lock-menu {
   position: absolute;
   top: calc(100% + 4px);
-  left: -4px;
+  right: 0;
   min-width: 200px;
   text-transform: none;
   letter-spacing: normal;
@@ -3383,7 +3344,7 @@
   .sidebar,
   .mobile-nav,
   .topbar,
-  .editor-toolbar,
+  .page-bar,
   .editor-meta,
   .block-controls,
   .code-lang-layer,

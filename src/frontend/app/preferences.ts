@@ -18,6 +18,9 @@ export type Preferences = {
   sidebarCollapsed: boolean;
   contentsScroll: ContentsScroll;
   notesSort: NotesSort;
+
+  /* Fade the page bar above a note while typing, until the mouse moves. */
+  hideHeaderWhileTyping: boolean;
 };
 
 export const ZOOM_MIN = 0.5;
@@ -33,14 +36,15 @@ const listeners = new Set<() => void>();
 
 /* Light mode is the default; once a theme is chosen in Settings it is remembered between visits. */
 function load(): Preferences {
-  const defaults: Preferences = { theme: 'light', zoom: 1, sidebarCollapsed: false, contentsScroll: 'smooth', notesSort: 'edited' };
+  const defaults: Preferences = { theme: 'light', zoom: 1, sidebarCollapsed: false, contentsScroll: 'smooth', notesSort: 'edited', hideHeaderWhileTyping: true };
   const saved = readPreferences();
   return {
     theme: saved.theme === 'dark' || saved.theme === 'light' ? saved.theme : defaults.theme,
     zoom: typeof saved.zoom === 'number' ? clampZoom(saved.zoom) : defaults.zoom,
     sidebarCollapsed: saved.sidebarCollapsed === true,
     contentsScroll: saved.contentsScroll === 'instant' ? 'instant' : 'smooth',
-    notesSort: saved.notesSort === 'opened' || saved.notesSort === 'title' ? saved.notesSort : defaults.notesSort
+    notesSort: saved.notesSort === 'opened' || saved.notesSort === 'title' ? saved.notesSort : defaults.notesSort,
+    hideHeaderWhileTyping: saved.hideHeaderWhileTyping !== false
   };
 }
 

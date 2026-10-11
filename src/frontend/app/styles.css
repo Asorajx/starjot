@@ -532,6 +532,187 @@ p {
 
 
 /* =========================
+   Window Bar
+   ========================= */
+
+/* The strip above Notespace pages, styled like a window's title bar. The active tab has the colour */
+/* of the page below it, so the two join up the way a browser tab joins its page. */
+.window-bar {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  flex-shrink: 0;
+  height: 40px;
+  padding: 0 12px;
+  background: #edf0f5;
+}
+
+.window-tabs {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  min-width: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+.window-tab {
+  display: flex;
+  align-items: center;
+  flex: 0 1 220px;
+  min-width: 72px;
+  height: 32px;
+  border-radius: 4px 4px 0 0;
+  color: #66748a;
+}
+
+.window-tab:hover {
+  background: #e2e7ee;
+}
+
+.window-tab.is-active {
+  background: #f7f9fc;
+  color: var(--ink);
+}
+
+.window-tab.is-active.is-note {
+  background: #fff;
+}
+
+.window-tab-main {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  padding: 0 4px 0 12px;
+  border: 0;
+  background: none;
+  color: inherit;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.window-tab-main span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.window-tab-main .icon {
+  flex-shrink: 0;
+}
+
+/* The close button only shows on the active tab and the tab under the pointer, to keep tabs calm. */
+.window-tab-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  margin-right: 8px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: #8792a3;
+  opacity: 0;
+}
+
+.window-tab:hover .window-tab-close,
+.window-tab.is-active .window-tab-close,
+.window-tab-close:focus-visible {
+  opacity: 1;
+}
+
+.window-tab-close:hover {
+  background: #dfe5ee;
+  color: var(--ink);
+}
+
+.window-new-tab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  margin-bottom: 2px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: #66748a;
+}
+
+.window-new-tab:hover {
+  background: #e2e7ee;
+  color: var(--ink);
+}
+
+
+/* =========================
+   Tooltips
+   ========================= */
+
+/* Any element with a data-tooltip attribute shows that text in a small dark label below it, after */
+/* a short pause on hover (or straight away on keyboard focus). Icon-only buttons use these so their */
+/* names are easy to find. data-tooltip-align="start" or "end" lines the label up with the left or */
+/* right edge instead, for buttons near the sides of the window. */
+[data-tooltip] {
+  position: relative;
+}
+
+[data-tooltip]:hover::after,
+[data-tooltip]:focus-visible::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 50%;
+  z-index: 80;
+  transform: translateX(-50%);
+  padding: 4px 8px;
+  border-radius: 4px;
+  background: #202c43;
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(16, 24, 40, .16);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 16px;
+  white-space: nowrap;
+  pointer-events: none;
+  animation: tooltip-in .12s ease .4s both;
+}
+
+[data-tooltip]:focus-visible::after {
+  animation-delay: 0s;
+}
+
+[data-tooltip][data-tooltip-align="start"]::after {
+  left: 0;
+  transform: none;
+}
+
+[data-tooltip][data-tooltip-align="end"]::after {
+  left: auto;
+  right: 0;
+  transform: none;
+}
+
+@keyframes tooltip-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+
+/* =========================
    Shared Page Styles
    ========================= */
 
