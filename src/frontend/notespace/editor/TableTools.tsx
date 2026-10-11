@@ -1,9 +1,10 @@
-import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
+import { useEffect, useRef, useState, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent } from 'react';
 import { Icon, type IconName } from '../../components/Icon';
-import { emptyParagraph } from './dom';
+import { emptyParagraph, placeCaret } from './dom';
 import { useSessionValue, type EditorSession } from './session';
 import {
-  insertColumn, insertRow, isFitToWidth, moveColumn, moveRow, removeColumn, removeRow, setFitToWidth, setHeaders, tableHeaders
+  cellRange, cellsInRange, ensureColumns, hasMergedCells, insertColumn, insertRow, isFitToWidth, mergeCells, moveColumn, moveRow, removeColumn,
+  removeRow, resizeColumn, setFitToWidth, setHeaders, setRowHeight, tableGrid, tableHeaders, unmergeCell, type CellRange
 } from './tables';
 
 type TableToolsProps = {
@@ -22,13 +23,25 @@ type Hover = { table: HTMLTableElement; row: number; column: number };
 /* A row or column being dragged from position "from" to position "to". */
 type Drag = { part: 'row' | 'column'; table: HTMLTableElement; from: number; to: number };
 type Press = { part: 'row' | 'column'; table: HTMLTableElement; index: number; x: number; y: number };
+
+/* Several cells chosen by selecting text across them, which can be merged into one. */
+type CellChoice = { table: HTMLTableElement; range: CellRange };
+
+/* A column or row border near the pointer, which can be dragged to resize. at is its screen position. */
+type Edge = { table: HTMLTableElement; kind: 'column' | 'row'; index: number; at: number };
+
+/* A border being dragged: where the drag started, the sizes before it, and where the pointer is now. */
+type Sizing = Edge & { start: number; pointer: number; widths: number[]; height: number };
+
+/* How close (in pixels) the pointer must be to a border to grab it. */
+const EDGE_REACH = 4;
 type Box = { top: number; left: number; width: number; height: number };
 
 type MenuItem = {
   label: string;
   icon?: IconName;
 
-  /* Items with checked set are on/off switches, shown with a tick. */
+  /* Items with checked set are on/off switches. */
   checked?: boolean;
   disabled?: boolean;
   danger?: boolean;
@@ -56,8 +69,56 @@ function partBox(table: HTMLTableElement, part: Part, index: number): Box | null
     const row = table.rows[index];
     return row ? { ...whole, top: boxOf(row).top, height: boxOf(row).height } : null;
   }
-  const cell = table.rows[0]?.cells[index];
+
+  /* A column is measured from a cell that covers only that column, since merged cells are wider. */
+  const column = tableGrid(table).grid.map(line => line[index]).filter(Boolean);
+  const cell = column.find(item => item.colSpan <= 1) ?? column[0];
   return cell ? { ...whole, left: boxOf(cell).left, width: boxOf(cell).width } : null;
+}
+
+/* Where a column's right border or a row's bottom border is on screen right now. */
+function borderAt(table: HTMLTableElement, kind: 'column' | 'row', index: number) {
+  if (kind === 'row') return table.rows[index]?.getBoundingClientRect().bottom ?? 0;
+  for (const [cell, place] of tableGrid(table).places) {
+    if (place.column + place.columns - 1 === index) return cell.getBoundingClientRect().right;
+  }
+  return 0;
+}
+
+/* The column or row border near the pointer. The table's left and top edges are left out, */
+/* because the row and column grips sit there. */
+function findEdge(table: HTMLTableElement, x: number, y: number): Edge | null {
+  const whole = table.getBoundingClientRect();
+  if (x < whole.left || x > whole.right + EDGE_REACH || y < whole.top || y > whole.bottom + EDGE_REACH) return null;
+
+  const rights = new Map<number, number>();
+  tableGrid(table).places.forEach((place, cell) => {
+    const column = place.column + place.columns - 1;
+    if (!rights.has(column)) rights.set(column, cell.getBoundingClientRect().right);
+  });
+  for (const [index, at] of rights) {
+    if (Math.abs(x - at) <= EDGE_REACH) return { table, kind: 'column', index, at };
+  }
+  const rows = Array.from(table.rows);
+  for (let index = 0; index < rows.length; index += 1) {
+    const at = rows[index].getBoundingClientRect().bottom;
+    if (Math.abs(y - at) <= EDGE_REACH) return { table, kind: 'row', index, at };
+  }
+  return null;
+}
+
+/* The screen area covered by a range of cells. */
+function rangeBox(table: HTMLTableElement, range: CellRange): Box | null {
+  const boxes = cellsInRange(table, range).map(cell => cell.getBoundingClientRect());
+  if (!boxes.length) return null;
+  const top = Math.min(...boxes.map(box => box.top));
+  const left = Math.min(...boxes.map(box => box.left));
+  return { top, left, width: Math.max(...boxes.map(box => box.right)) - left, height: Math.max(...boxes.map(box => box.bottom)) - top };
+}
+
+function cellAt(node: Node | null | undefined) {
+  const element = node instanceof Element ? node : node?.parentElement;
+  return element?.closest<HTMLTableCellElement>('td, th') ?? null;
 }
 
 /* The row or column under the pointer while dragging; past either end, the first or last one. */
@@ -82,14 +143,22 @@ export function TableTools({ session, locked }: TableToolsProps) {
   const [commenting, setCommenting] = useState(false);
   const [comment, setComment] = useState('');
 
+  /* Cells selected for merging, or the merged cell holding the caret (which can be unmerged). */
+  const [choice, setChoice] = useState<CellChoice | null>(null);
+  const [mergedCell, setMergedCell] = useState<HTMLTableCellElement | null>(null);
+
+  /* The border under the pointer, and the border being dragged. */
+  const [edge, setEdge] = useState<Edge | null>(null);
+  const [sizing, setSizing] = useState<Sizing | null>(null);
+
   /* Typing, scrolling and resizing can move a table, so each of them redraws the grips. */
   useSessionValue(session, snapshot => snapshot.layout);
   const [, setTick] = useState(0);
   const redraw = () => setTick(tick => tick + 1);
 
   const press = useRef<Press | null>(null);
-  const latest = useRef({ pick, locked });
-  latest.current = { pick, locked };
+  const latest = useRef({ pick, locked, sizing, hoverTable: hover?.table ?? null });
+  latest.current = { pick, locked, sizing, hoverTable: hover?.table ?? null };
   const actions = useRef({ choose, clear, removePart });
   actions.current = { choose, clear, removePart };
 
@@ -99,13 +168,21 @@ export function TableTools({ session, locked }: TableToolsProps) {
     /* Show the grips for the cell under the pointer, and keep them while the pointer moves out */
     /* of the table towards a grip. */
     function handleMouseMove(event: MouseEvent) {
-      if (latest.current.locked || press.current) return;
+      if (latest.current.locked || press.current || latest.current.sizing) return;
       const target = event.target as Element;
       if (target.closest?.('.table-tools')) return;
       const cell = target.closest?.<HTMLTableCellElement>('td, th');
       const table = cell?.closest('table');
+
+      /* A border close to the pointer shows a resize handle. */
+      const near = table ?? latest.current.hoverTable;
+      const found = near?.isConnected && body()?.contains(near) ? findEdge(near, event.clientX, event.clientY) : null;
+      setEdge(current => (current?.table === found?.table && current?.kind === found?.kind && current?.index === found?.index
+        && current?.at === found?.at ? current : found));
+
       if (cell && table && body()?.contains(table)) {
-        const next = { table, row: (cell.parentElement as HTMLTableRowElement).rowIndex, column: cell.cellIndex };
+        const place = tableGrid(table).places.get(cell);
+        const next = { table, row: place?.row ?? 0, column: place?.column ?? 0 };
         setHover(current => (current?.table === next.table && current.row === next.row && current.column === next.column ? current : next));
         return;
       }
@@ -141,7 +218,26 @@ export function TableTools({ session, locked }: TableToolsProps) {
       else actions.current.removePart(current);
     }
 
+    /* Selecting text across two or more cells of one table offers to merge them; a caret inside a */
+    /* merged cell offers to unmerge it. */
+    function handleSelectionChange() {
+      const selection = window.getSelection();
+      const from = cellAt(selection?.anchorNode);
+      const to = cellAt(selection?.focusNode);
+      const table = from?.closest('table');
+      const usable = !latest.current.locked && table && body()?.contains(table);
+      if (usable && selection && !selection.isCollapsed && to && from !== to && to.closest('table') === table) {
+        const range = from ? cellRange(table, from, to) : null;
+        setChoice(range ? { table, range } : null);
+        setMergedCell(null);
+        return;
+      }
+      setChoice(null);
+      setMergedCell(usable && selection?.isCollapsed && from && (from.rowSpan > 1 || from.colSpan > 1) ? from : null);
+    }
+
     const scroller = document.getElementById('main-scroll');
+    document.addEventListener('selectionchange', handleSelectionChange);
     document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('click', handleClick);
     document.addEventListener('mousedown', handleMouseDown);
@@ -149,6 +245,7 @@ export function TableTools({ session, locked }: TableToolsProps) {
     window.addEventListener('resize', redraw);
     scroller?.addEventListener('scroll', redraw);
     return () => {
+      document.removeEventListener('selectionchange', handleSelectionChange);
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('click', handleClick);
       document.removeEventListener('mousedown', handleMouseDown);
@@ -194,6 +291,55 @@ export function TableTools({ session, locked }: TableToolsProps) {
     session.linesChanged(paragraph, false);
   }
 
+  /* Dragging a border: columns get stored widths (measured from the screen when the drag starts), */
+  /* rows get a stored height. The whole drag is one undo step. */
+  function startSizing(event: ReactPointerEvent<HTMLDivElement>) {
+    if (!edge) return;
+    event.preventDefault();
+    event.currentTarget.setPointerCapture(event.pointerId);
+    session.checkpoint();
+    const start = edge.kind === 'column' ? event.clientX : event.clientY;
+    const widths = edge.kind === 'column' ? ensureColumns(edge.table) : [];
+    const height = edge.kind === 'row' ? edge.table.rows[edge.index].getBoundingClientRect().height : 0;
+    setSizing({ ...edge, start, pointer: start, widths, height });
+  }
+
+  function moveSizing(event: ReactPointerEvent<HTMLDivElement>) {
+    if (!sizing) return;
+    const pointer = sizing.kind === 'column' ? event.clientX : event.clientY;
+    if (sizing.kind === 'column') resizeColumn(sizing.table, sizing.index, sizing.widths, pointer - sizing.start);
+    else setRowHeight(sizing.table.rows[sizing.index], sizing.height + pointer - sizing.start);
+    setSizing({ ...sizing, pointer });
+  }
+
+  function endSizing() {
+    if (!sizing) return;
+    setSizing(null);
+    setEdge(null);
+    session.commit();
+  }
+
+  /* Merge the selected cells; the caret goes to the end of the merged cell. */
+  function merge() {
+    if (!choice) return;
+    session.checkpoint();
+    const merged = mergeCells(choice.table, choice.range);
+    if (!merged) return;
+    placeCaret(merged, true);
+    session.commit();
+    setChoice(null);
+  }
+
+  function unmerge() {
+    const table = mergedCell?.closest('table');
+    if (!mergedCell || !table) return;
+    session.checkpoint();
+    unmergeCell(table, mergedCell);
+    placeCaret(mergedCell, true);
+    session.commit();
+    setMergedCell(null);
+  }
+
   /* Move a whole table above or below its neighbouring line (continuous mode). */
   function moveTable(table: HTMLTableElement, up: boolean) {
     const neighbour = up ? table.previousElementSibling : table.nextElementSibling;
@@ -204,15 +350,18 @@ export function TableTools({ session, locked }: TableToolsProps) {
   function menuItems({ table, part, index }: Pick): MenuItem[] {
     const headers = tableHeaders(table);
     const rows = table.rows.length;
-    const columns = table.rows[0]?.cells.length ?? 0;
+    const columns = tableGrid(table).width;
     const remove = () => removePart({ table, part, index });
+
+    /* Rows and columns cannot be moved while the table has merged cells. */
+    const merged = hasMergedCells(table);
 
     if (part === 'row') {
       return [
         { label: 'Insert above', icon: 'plus', run: () => { change(() => insertRow(table, index, 'above')); setPick({ table, part, index: index + 1 }); } },
         { label: 'Insert below', icon: 'plus', run: () => change(() => insertRow(table, index, 'below')) },
-        { label: 'Move up', icon: 'arrow-up', disabled: index === 0, run: () => { change(() => moveRow(table, index, index - 1)); setPick({ table, part, index: index - 1 }); } },
-        { label: 'Move down', icon: 'arrow-down', disabled: index === rows - 1, run: () => { change(() => moveRow(table, index, index + 1)); setPick({ table, part, index: index + 1 }); } },
+        { label: 'Move up', icon: 'arrow-up', disabled: merged || index === 0, run: () => { change(() => moveRow(table, index, index - 1)); setPick({ table, part, index: index - 1 }); } },
+        { label: 'Move down', icon: 'arrow-down', disabled: merged || index === rows - 1, run: () => { change(() => moveRow(table, index, index + 1)); setPick({ table, part, index: index + 1 }); } },
         { label: 'Delete row', icon: 'trash', danger: true, run: remove }
       ];
     }
@@ -220,8 +369,8 @@ export function TableTools({ session, locked }: TableToolsProps) {
       return [
         { label: 'Insert left', icon: 'plus', run: () => { change(() => insertColumn(table, index, 'left')); setPick({ table, part, index: index + 1 }); } },
         { label: 'Insert right', icon: 'plus', run: () => change(() => insertColumn(table, index, 'right')) },
-        { label: 'Move left', icon: 'arrow-left', disabled: index === 0, run: () => { change(() => moveColumn(table, index, index - 1)); setPick({ table, part, index: index - 1 }); } },
-        { label: 'Move right', icon: 'arrow-right', disabled: index === columns - 1, run: () => { change(() => moveColumn(table, index, index + 1)); setPick({ table, part, index: index + 1 }); } },
+        { label: 'Move left', icon: 'arrow-left', disabled: merged || index === 0, run: () => { change(() => moveColumn(table, index, index - 1)); setPick({ table, part, index: index - 1 }); } },
+        { label: 'Move right', icon: 'arrow-right', disabled: merged || index === columns - 1, run: () => { change(() => moveColumn(table, index, index + 1)); setPick({ table, part, index: index + 1 }); } },
         { label: 'Delete column', icon: 'trash', danger: true, run: remove }
       ];
     }
@@ -248,9 +397,11 @@ export function TableTools({ session, locked }: TableToolsProps) {
     press.current = { part, table, index, x: event.clientX, y: event.clientY };
   }
 
+  /* A table with merged cells cannot have its rows or columns moved, so its grips only open the menu. */
   function movePress(event: ReactPointerEvent<HTMLButtonElement>) {
     const current = press.current;
-    if (!current || (!drag && Math.hypot(event.clientX - current.x, event.clientY - current.y) < DRAG_DISTANCE)) return;
+    if (!current || hasMergedCells(current.table)) return;
+    if (!drag && Math.hypot(event.clientX - current.x, event.clientY - current.y) < DRAG_DISTANCE) return;
     const to = dropIndex(current.table, current.part, event.clientX, event.clientY);
     setDrag({ part: current.part, table: current.table, from: current.index, to });
   }
@@ -270,10 +421,67 @@ export function TableTools({ session, locked }: TableToolsProps) {
   }
 
   if (locked) return null;
+
+  /* The Merge cells button sits under the selected cells; the Unmerge button sits inside the merged */
+  /* cell's top-right corner, so it never covers the row above. */
+  const choiceBox = choice?.table.isConnected ? rangeBox(choice.table, choice.range) : null;
+  const mergedBox = mergedCell?.isConnected ? boxOf(mergedCell) : null;
+  const keepSelection = (event: ReactMouseEvent) => event.preventDefault();
+
+  const handle = sizing ?? (edge?.table.isConnected ? edge : null);
+  const handleBox = handle ? boxOf(handle.table) : null;
+
+  /* While dragging, the line sits on the real border rather than under the pointer, so it stops at */
+  /* the smallest size (and at a row's text) even if the pointer keeps going. */
+  const handleAt = sizing ? borderAt(sizing.table, sizing.kind, sizing.index) : handle?.at ?? 0;
+  const cellTools = (
+    <>
+      {handle && handleBox && (
+        <div
+          className={`table-tools table-resize is-${handle.kind} ${sizing ? 'is-active' : ''}`}
+          style={handle.kind === 'column'
+            ? { left: handleAt - EDGE_REACH, top: handleBox.top, width: EDGE_REACH * 2, height: handleBox.height }
+            : { top: handleAt - EDGE_REACH, left: handleBox.left, width: handleBox.width, height: EDGE_REACH * 2 }}
+          aria-hidden="true"
+          onPointerDown={startSizing}
+          onPointerMove={moveSizing}
+          onPointerUp={endSizing}
+          onPointerCancel={endSizing}
+        />
+      )}
+
+      {choiceBox && (
+        <>
+          <div className="table-tools table-range" style={choiceBox} />
+          <button
+            type="button"
+            className="table-tools table-cell-action"
+            style={{ top: choiceBox.top + choiceBox.height + 6, left: choiceBox.left + choiceBox.width, transform: 'translateX(-100%)' }}
+            onMouseDown={keepSelection}
+            onClick={merge}
+          >
+            <Icon name="table" size={13} /> Merge cells
+          </button>
+        </>
+      )}
+      {!choiceBox && mergedBox && (
+        <button
+          type="button"
+          className="table-tools table-cell-action"
+          style={{ top: mergedBox.top + 4, left: mergedBox.left + mergedBox.width - 4, transform: 'translateX(-100%)' }}
+          onMouseDown={keepSelection}
+          onClick={unmerge}
+        >
+          <Icon name="grid" size={13} /> Unmerge
+        </button>
+      )}
+    </>
+  );
+
   const shownHover = hover?.table.isConnected ? hover : null;
   const shownPick = pick?.table.isConnected ? pick : null;
   const table = drag?.table ?? shownPick?.table ?? shownHover?.table;
-  if (!table) return null;
+  if (!table) return cellTools;
 
   const whole = boxOf(table);
   const structured = Boolean(table.closest('.block-content'));
@@ -303,6 +511,8 @@ export function TableTools({ session, locked }: TableToolsProps) {
 
   return (
     <>
+      {cellTools}
+
       {/* Continuous mode has no block grips, so the table gets one beside its top-left corner. */}
       {!structured && !drag && (
         <button
@@ -366,22 +576,32 @@ export function TableTools({ session, locked }: TableToolsProps) {
             aria-label={`${shownPick.part[0].toUpperCase()}${shownPick.part.slice(1)} options`}
             style={{ top: menuAbove ? menuTop - 40 : menuTop, left: Math.max(8, menuLeft), transform: menuAbove ? 'translateY(-100%)' : undefined }}
           >
-            {!commenting && menuItems(shownPick).map(item => (
+            {/* On/off options are shown as switches at the top, with the actions below them. */}
+            {!commenting && menuItems(shownPick).map((item, index, items) => (item.checked !== undefined ? (
               <button
                 key={item.label}
                 type="button"
-                role={item.checked === undefined ? 'menuitem' : 'menuitemcheckbox'}
+                role="menuitemcheckbox"
                 aria-checked={item.checked}
+                className={`table-menu-item is-switch ${items[index + 1]?.checked === undefined ? 'is-last-switch' : ''}`}
+                onClick={item.run}
+              >
+                {item.label}
+                <span className={`table-switch ${item.checked ? 'is-on' : ''}`} aria-hidden="true"><span /></span>
+              </button>
+            ) : (
+              <button
+                key={item.label}
+                type="button"
+                role="menuitem"
                 className={`table-menu-item ${item.danger ? 'is-danger' : ''}`}
                 disabled={item.disabled}
                 onClick={item.run}
               >
-                <span className="table-menu-icon">
-                  {item.checked !== undefined ? (item.checked && <Icon name="check" size={14} />) : item.icon && <Icon name={item.icon} size={14} />}
-                </span>
+                <span className="table-menu-icon">{item.icon && <Icon name={item.icon} size={14} />}</span>
                 {item.label}
               </button>
-            ))}
+            )))}
 
             {commenting && (
               <div className="table-menu-comment">

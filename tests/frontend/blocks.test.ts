@@ -77,11 +77,18 @@ describe('slash command lines', () => {
     expect(body.innerHTML).toBe('<ul><li>One</li></ul><blockquote><p>Two</p></blockquote><ul><li>Three</li></ul>');
   });
 
+  it('starts new tables with every option off', () => {
+    const table = createTable();
+    expect(table.className).toBe('fit-content');
+    expect(table.querySelectorAll('th')).toHaveLength(0);
+    expect(table.querySelectorAll('td')).toHaveLength(9);
+  });
+
   it('replaces an empty line with a table and puts the caret in the first cell', () => {
     const body = editor('<p><br></p>');
     const change = insertBlock(body.querySelector('p') as HTMLElement, createTable());
     expect(body.querySelector('table')?.rows.length).toBe(3);
-    expect(change.focus.tagName).toBe('TH');
+    expect(change.focus.tagName).toBe('TD');
     expect(body.lastElementChild?.outerHTML).toBe('<p><br></p>');
   });
 
@@ -124,7 +131,7 @@ describe('table and toggle keys', () => {
   it('Tab moves to the next cell, and adds a row from the last cell', () => {
     const body = editor('');
     body.appendChild(createTable(2, 1));
-    const cells = body.querySelectorAll('th');
+    const cells = body.querySelectorAll('td');
     placeCaret(cells[1], 0);
     expect(handleBlockKeys(press('Tab'), body)).toEqual({ kind: 'changed' });
     expect(body.querySelector('table')?.rows.length).toBe(2);
@@ -140,7 +147,7 @@ describe('table and toggle keys', () => {
     const table = createTable(2, 2);
     addColumn(table, 0);
     expect(table.rows[0].cells.length).toBe(3);
-    expect(table.rows[0].cells[1].tagName).toBe('TH');
+    expect(table.rows[0].cells[1].tagName).toBe('TD');
     expect(removeColumn(table, 0)).toBe(true);
     expect(table.rows[1].cells.length).toBe(2);
   });

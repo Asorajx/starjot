@@ -1,7 +1,7 @@
 import { iconMarkup, type IconName } from '../../components/Icon';
 import { categoryName, getNote, updatedLabel } from '../store';
 import { highlight } from './code';
-import { addRow } from './tables';
+import { addRow, cellsInRow, tableGrid } from './tables';
 import { caretAtEdge, caretElement, closestAtCaret, emptyParagraph, isEmptyContent, placeCaret } from './dom';
 
 
@@ -126,12 +126,15 @@ export function createToggle(headingLevel = 0) {
 }
 
 /* A table with a header row and two body rows, three columns wide. */
+/* A new table starts with every option off: no header row or column, and not stretched to the */
+/* page width (its columns grow with their text). All of these can be switched on in the table menu. */
 export function createTable(columns = 3, rows = 3) {
   const table = document.createElement('table');
+  table.className = 'fit-content';
   const body = table.appendChild(document.createElement('tbody'));
   for (let row = 0; row < rows; row += 1) {
     const line = body.appendChild(document.createElement('tr'));
-    for (let column = 0; column < columns; column += 1) line.appendChild(withBreak(document.createElement(row === 0 ? 'th' : 'td')));
+    for (let column = 0; column < columns; column += 1) line.appendChild(withBreak(document.createElement('td')));
   }
   return table;
 }
@@ -391,13 +394,23 @@ function moveIntoCell(cell: HTMLElement, fromBelow: boolean) {
   }
 }
 
+/* The cell beside another on screen: to its right (step 1) or left (step -1). At the end of a row it */
+/* continues on the next row's first cell (or the previous row's last cell). The grid is used because */
+/* with merged cells, the cell next to another in the page code is not always the one beside it. */
+function sideCell(table: HTMLTableElement, cell: HTMLTableCellElement, step: 1 | -1) {
+  const { grid, places } = tableGrid(table);
+  const place = places.get(cell);
+  if (!place) return null;
+  const beside = grid[place.row]?.[step > 0 ? place.column + place.columns : place.column - 1];
+  if (beside) return beside;
+  const row = grid[step > 0 ? place.row + place.rows : place.row - 1];
+  return (step > 0 ? row?.[0] : row?.[row.length - 1]) ?? null;
+}
+
 /* Arrow keys move between cells. Leaving the table goes to the line above or below it; a line */
 /* is added below when the table is the last thing in the note. */
 function cellArrowKeys(event: KeyboardEvent, cell: HTMLTableCellElement, table: HTMLTableElement): KeyResult | null {
   if (event.shiftKey || event.altKey || event.ctrlKey || event.metaKey || !window.getSelection()?.isCollapsed) return null;
-  const row = cell.parentElement as HTMLTableRowElement;
-  const cells = Array.from(table.querySelectorAll<HTMLTableCellElement>('th, td'));
-  const index = cells.indexOf(cell);
   const leave = (below: boolean): KeyResult | null => {
     const line = neighbourLine(table, below);
     if (!line && !below) return null;
@@ -410,23 +423,31 @@ function cellArrowKeys(event: KeyboardEvent, cell: HTMLTableCellElement, table: 
   if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
     const up = event.key === 'ArrowUp';
     if (!caretOnEdgeLine(cell, up ? 'top' : 'bottom')) return null;
-    const target = table.rows[row.rowIndex + (up ? -1 : 1)];
+
+    /* The grid is used so a merged cell above or below is found by its column, not its position in the row. */
+    const { grid, places } = tableGrid(table);
+    const place = places.get(cell);
+    const row = place ? (up ? place.row - 1 : place.row + place.rows) : -1;
+    const line = grid[row];
+    const target = place && line ? line[place.column] ?? line[line.length - 1] : undefined;
     if (!target) return leave(!up);
     event.preventDefault();
-    moveIntoCell(target.cells[Math.min(cell.cellIndex, target.cells.length - 1)], up);
+    moveIntoCell(target, up);
     return { kind: 'blocked' };
   }
 
   if (event.key === 'ArrowRight' && caretAtEdge(cell, 'end')) {
-    if (!cells[index + 1]) return leave(true);
+    const next = sideCell(table, cell, 1);
+    if (!next) return leave(true);
     event.preventDefault();
-    placeCaret(cells[index + 1]);
+    placeCaret(next);
     return { kind: 'blocked' };
   }
   if (event.key === 'ArrowLeft' && caretAtEdge(cell, 'start')) {
-    if (!cells[index - 1]) return leave(false);
+    const previous = sideCell(table, cell, -1);
+    if (!previous) return leave(false);
     event.preventDefault();
-    placeCaret(cells[index - 1], true);
+    placeCaret(previous, true);
     return { kind: 'blocked' };
   }
   return null;
@@ -454,8 +475,7 @@ function enterTableKeys(event: KeyboardEvent): KeyResult | null {
   } catch {
     x = 0;
   }
-  const row = table.rows[below ? 0 : table.rows.length - 1];
-  const cells = Array.from(row?.cells ?? []);
+  const cells = cellsInRow(table, below ? 0 : table.rows.length - 1);
   const cell = cells.find(item => {
     const bounds = item.getBoundingClientRect();
     return x >= bounds.left && x <= bounds.right;
@@ -473,9 +493,7 @@ function cellKeys(event: KeyboardEvent, cell: HTMLTableCellElement): KeyResult |
   /* Tab moves between cells; Tab in the last cell adds a row. */
   if (event.key === 'Tab' && !event.altKey && !event.ctrlKey && !event.metaKey) {
     event.preventDefault();
-    const cells = Array.from(table.querySelectorAll<HTMLTableCellElement>('th, td'));
-    const index = cells.indexOf(cell);
-    let next = cells[index + (event.shiftKey ? -1 : 1)];
+    let next = sideCell(table, cell, event.shiftKey ? -1 : 1);
     const adding = !next && !event.shiftKey;
     if (adding) next = addRow(table).cells[0];
     if (next) placeCaret(next, true);

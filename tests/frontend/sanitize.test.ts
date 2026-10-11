@@ -59,6 +59,16 @@ describe('page blocks, toggles and tables', () => {
 });
 
 describe('table options', () => {
+  it('keeps how far merged table cells stretch, within sensible limits', () => {
+    const html = cleanHtml('<table><tbody><tr><td colspan="2" rowspan="3">A</td><td colspan="1" rowspan="500">B</td></tr></tbody></table>');
+    expect(html).toBe('<table><tbody><tr><td colspan="2" rowspan="3">A</td><td>B</td></tr></tbody></table>');
+  });
+
+  it('keeps stored table column widths and row heights, but not inline styles', () => {
+    const html = cleanHtml('<table style="width:9px"><colgroup><col data-width="120" style="width:120px"><col data-width="9"></colgroup><tbody><tr data-height="60" style="height:60px"><td>A</td><td>B</td></tr></tbody></table>');
+    expect(html).toBe('<table><colgroup><col data-width="120"><col></colgroup><tbody><tr data-height="60"><td>A</td><td>B</td></tr></tbody></table>');
+  });
+
   it('keeps toggle headings', () => {
     const html = '<div class="toggle-block"><h4 class="toggle-summary">T</h4><div class="toggle-body"><p>A</p></div></div>';
     expect(cleanHtml(html)).toBe(html);

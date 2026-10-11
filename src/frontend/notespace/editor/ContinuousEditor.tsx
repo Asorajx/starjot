@@ -2,6 +2,7 @@ import { memo, useEffect, useLayoutEffect, useRef, type ClipboardEvent, type For
 import { cleanHtml } from '../sanitize';
 import { getRange, setOffset, setRange } from './caret';
 import { handleBlockKeys, hydratePages } from './blocks';
+import { hydrateTables } from './tables';
 import { highlight, highlightAll, insertNewline, preAtCaret } from './code';
 import { caretAtEdge, closestAtCaret, emptyParagraph, placeCaret, selectContents, wrapLooseLines } from './dom';
 import { applyMarkdownShortcut } from './markdown';
@@ -50,6 +51,7 @@ export const ContinuousEditor = memo(function ContinuousEditor({ session, conten
     wrapLooseLines(body);
     highlightAll(body);
     hydratePages(body);
+    hydrateTables(body);
     if (session.pendingCaret !== null) {
       setOffset(body, session.pendingCaret);
       session.pendingCaret = null;

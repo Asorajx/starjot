@@ -5,7 +5,7 @@
 /* Only these document tags are kept; anything else is unwrapped and its text kept. */
 const ALLOWED_TAGS = new Set([
   'P', 'DIV', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'HR', 'UL', 'OL', 'LI', 'STRONG', 'B', 'EM', 'I', 'U', 'S', 'STRIKE', 'A',
-  'BLOCKQUOTE', 'BR', 'SPAN', 'PRE', 'CODE', 'TABLE', 'THEAD', 'TBODY', 'TR', 'TH', 'TD'
+  'BLOCKQUOTE', 'BR', 'SPAN', 'PRE', 'CODE', 'TABLE', 'COLGROUP', 'COL', 'THEAD', 'TBODY', 'TR', 'TH', 'TD'
 ]);
 const DROPPED_TAGS = new Set(['SCRIPT', 'STYLE', 'IFRAME', 'SVG', 'FORM', 'OBJECT']);
 const MAX_CONTENT = 250000;
@@ -29,7 +29,8 @@ export function safeHref(href: string | null) {
   return /^(https?:|mailto:)/i.test(value) ? value : null;
 }
 
-/* Copy the few attributes Notespace uses: link addresses, linked page ids, page block sizes and widths, and comment ids. */
+/* Copy the few attributes Notespace uses: link addresses, linked page ids, page block sizes and widths, */
+/* table column widths and row heights, how many rows and columns a merged table cell covers, and comment ids. */
 function copyAttributes(node: Element, copy: Element) {
   if (node.tagName === 'A') {
     const href = safeHref(node.getAttribute('href'));
@@ -41,6 +42,14 @@ function copyAttributes(node: Element, copy: Element) {
   if (node.tagName === 'SPAN' && size && ['small', 'medium', 'large'].includes(size)) copy.setAttribute('data-size', size);
   const width = Number(node.getAttribute('data-width'));
   if (node.tagName === 'SPAN' && Number.isInteger(width) && width >= 25 && width <= 100) copy.setAttribute('data-width', String(width));
+  const columnWidth = node.tagName === 'COL' ? Number(node.getAttribute('data-width')) : 0;
+  if (Number.isInteger(columnWidth) && columnWidth >= 24 && columnWidth <= 4000) copy.setAttribute('data-width', String(columnWidth));
+  const height = node.tagName === 'TR' ? Number(node.getAttribute('data-height')) : 0;
+  if (Number.isInteger(height) && height >= 20 && height <= 4000) copy.setAttribute('data-height', String(height));
+  ['colspan', 'rowspan'].forEach(name => {
+    const span = Number(node.getAttribute(name));
+    if ((node.tagName === 'TD' || node.tagName === 'TH') && Number.isInteger(span) && span > 1 && span <= 50) copy.setAttribute(name, String(span));
+  });
   const comment = node.getAttribute('data-comment');
   if ((node.tagName === 'SPAN' || node.tagName === 'TABLE') && comment && /^c[a-z0-9]+$/.test(comment)) copy.setAttribute('data-comment', comment);
 }

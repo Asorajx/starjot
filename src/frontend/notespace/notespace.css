@@ -2879,18 +2879,19 @@
   font-weight: 650;
 }
 
-/* Fit to width off: columns are only as wide as their text needs. */
+/* Fit to width off: columns are only as wide as their text needs, but wide enough to click into when empty. */
+/* Once a border has been dragged, the stored widths are used exactly, so this minimum no longer applies. */
 .note-editable table.fit-content,
 .block-content table.fit-content {
   width: auto;
   table-layout: auto;
 }
 
-.note-editable table.fit-content th,
-.note-editable table.fit-content td,
-.block-content table.fit-content th,
-.block-content table.fit-content td {
-  min-width: 64px;
+.note-editable table.fit-content:not(:has(> colgroup)) th,
+.note-editable table.fit-content:not(:has(> colgroup)) td,
+.block-content table.fit-content:not(:has(> colgroup)) th,
+.block-content table.fit-content:not(:has(> colgroup)) td {
+  min-width: 96px;
 }
 
 /* The grip beside a table in continuous mode, and the grips on the edge of a row or column. */
@@ -2973,6 +2974,85 @@
   width: 3px;
 }
 
+/* A border that can be dragged to resize a column or row: a blue line appears while hovering or dragging. */
+.table-resize {
+  position: fixed;
+  z-index: 54;
+  touch-action: none;
+}
+
+.table-resize.is-column {
+  cursor: col-resize;
+}
+
+.table-resize.is-row {
+  cursor: row-resize;
+}
+
+.table-resize::after {
+  content: "";
+  position: absolute;
+  background: #a7c5f5;
+}
+
+.table-resize.is-active::after {
+  background: var(--blue);
+}
+
+.table-resize.is-column::after {
+  top: 0;
+  bottom: 0;
+  left: calc(50% - 1px);
+  width: 2px;
+}
+
+.table-resize.is-row::after {
+  left: 0;
+  right: 0;
+  top: calc(50% - 1px);
+  height: 2px;
+}
+
+/* A table with stored column widths keeps them exactly, even with Fit to width off. */
+.note-editable table:has(> colgroup),
+.block-content table:has(> colgroup) {
+  table-layout: fixed;
+}
+
+/* Cells selected for merging, and the Merge cells / Unmerge button. */
+.table-range {
+  position: fixed;
+  z-index: 50;
+  border: 2px dashed var(--blue);
+  border-radius: 4px;
+  pointer-events: none;
+}
+
+.table-cell-action {
+  position: fixed;
+  z-index: 57;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 26px;
+  padding: 0 8px;
+  border: 1px solid #dfe7f3;
+  border-radius: 4px;
+  background: #ffffff;
+  box-shadow: 0 6px 18px rgba(28, 54, 96, .12);
+  color: #2c3d58;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 650;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.table-cell-action:hover {
+  border-color: #a7c5f5;
+  color: var(--blue);
+}
+
 .table-menu {
   position: fixed;
   z-index: 60;
@@ -3015,6 +3095,48 @@
 
 .table-menu-item.is-danger {
   color: #c2410c;
+}
+
+/* On/off options: the label on the left and a switch on the right, like the switches in Settings. */
+.table-menu-item.is-switch {
+  justify-content: space-between;
+  gap: 16px;
+  padding-left: 12px;
+}
+
+.table-menu-item.is-last-switch {
+  margin-bottom: 4px;
+  border-bottom: 1px solid #edf1f7;
+  border-radius: 4px 4px 0 0;
+}
+
+.table-switch {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  width: 30px;
+  height: 18px;
+  padding: 2px;
+  border-radius: 18px;
+  background: #e1e8f0;
+  transition: background .15s ease;
+}
+
+.table-switch > span {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgba(28, 54, 96, .3);
+  transition: transform .15s ease;
+}
+
+.table-switch.is-on {
+  background: var(--blue);
+}
+
+.table-switch.is-on > span {
+  transform: translateX(12px);
 }
 
 .table-menu-icon {
