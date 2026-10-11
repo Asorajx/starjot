@@ -15,7 +15,7 @@ export type DocBlock = {
   version: number;
 };
 
-export type BlockType = 'heading' | 'list' | 'quote' | 'code' | 'table' | 'toggle' | 'page' | 'paragraph';
+export type BlockType = 'heading' | 'list' | 'quote' | 'code' | 'table' | 'toggle' | 'paragraph';
 
 let nextId = 1;
 
@@ -36,7 +36,6 @@ export function blockType(html: string): BlockType {
   if (tag === 'PRE') return 'code';
   if (tag === 'TABLE') return 'table';
   if (/^\s*<div class="toggle-block/.test(html)) return 'toggle';
-  if (/^\s*<div class="page-block/.test(html)) return 'page';
   return 'paragraph';
 }
 

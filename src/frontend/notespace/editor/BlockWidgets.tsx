@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Icon } from '../../components/Icon';
 import { categoryName, getNote, updatedLabel, useNotes } from '../store';
-import { hydratePages, lineBelowTable, type PageSize } from './blocks';
+import { hydratePages, lineBelowTable, pageBlockIsCut, setPageWidth, type PageSize } from './blocks';
 import { placeCaret } from './dom';
 import type { EditorSession } from './session';
 
@@ -11,7 +11,8 @@ type BlockWidgetsProps = {
   onOpenNote: (id: string) => void;
 };
 
-type Preview = { id: string; top: number; left: number; above: boolean };
+/* block: the preview is for a page block (opened with a click) rather than a page link (Ctrl + click). */
+type Preview = { id: string; top: number; left: number; above: boolean; block: boolean };
 
 
 /* =========================
@@ -25,6 +26,9 @@ export function BlockWidgets({ session, locked, onOpenNote }: BlockWidgetsProps)
   const notes = useNotes();
   const [preview, setPreview] = useState<Preview | null>(null);
   const hideTimer = useRef<number | undefined>(undefined);
+
+  /* The page block whose width is being dragged. */
+  const resizing = useRef<HTMLElement | null>(null);
   const latest = useRef({ locked, onOpenNote });
   latest.current = { locked, onOpenNote };
 
@@ -41,6 +45,10 @@ export function BlockWidgets({ session, locked, onOpenNote }: BlockWidgetsProps)
       if (!body()?.contains(target)) return;
       const { locked: isLocked, onOpenNote: open } = latest.current;
       const block = target.closest<HTMLElement>('.page-block');
+      if (target.closest('.page-block-resize')) {
+        event.preventDefault();
+        return;
+      }
       const sizeButton = target.closest<HTMLElement>('[data-size-option]');
 
       /* S / M / L buttons change how much of the page the block shows. */
@@ -81,6 +89,35 @@ export function BlockWidgets({ session, locked, onOpenNote }: BlockWidgetsProps)
       }
     }
 
+    /* Dragging the right edge of a page block makes it narrower or wider. */
+    function handlePointerDown(event: PointerEvent) {
+      const handle = (event.target as Element).closest?.('.page-block-resize');
+      const block = handle?.closest<HTMLElement>('.page-block');
+      if (!block || latest.current.locked || event.button !== 0) return;
+      event.preventDefault();
+      session.checkpoint();
+      resizing.current = block;
+      block.classList.add('is-resizing');
+      setPreview(null);
+    }
+
+    function handlePointerMove(event: PointerEvent) {
+      const block = resizing.current;
+      const line = block?.parentElement;
+      if (!block || !line) return;
+      /* The width is measured against the whole line, so 100% fills it. */
+      const bounds = block.getBoundingClientRect();
+      setPageWidth(block, ((event.clientX - bounds.left) / line.getBoundingClientRect().width) * 100);
+    }
+
+    function handlePointerUp() {
+      const block = resizing.current;
+      if (!block) return;
+      resizing.current = null;
+      block.classList.remove('is-resizing');
+      session.commit();
+    }
+
     /* Clicking just under a table puts the caret on the line below it, adding that line when */
     /* the table is the last thing in the note or is followed by another block. */
     function handleMouseDown(event: MouseEvent) {
@@ -103,36 +140,51 @@ export function BlockWidgets({ session, locked, onOpenNote }: BlockWidgetsProps)
       session.linesChanged(line, false);
     }
 
-    /* Hovering a page link shows a preview of that page under it. */
+    /* Hovering a page link shows a preview of that page under it. A page block shows the same */
+    /* preview, but only when part of its title or description is hidden by its size or width. */
     function handleMouseOver(event: MouseEvent) {
       const target = event.target as Element;
-      const link = target.closest?.<HTMLElement>('a.page-link');
       if (target.closest?.('.page-preview')) {
         window.clearTimeout(hideTimer.current);
         return;
       }
-      if (!link || !body()?.contains(link)) return;
+      const link = target.closest?.<HTMLElement>('a.page-link');
+      const block = target.closest?.<HTMLElement>('.page-block');
+      const anchor = link ?? (block && !resizing.current && !target.closest('.page-block-sizes, .page-block-resize') && pageBlockIsCut(block) ? block : null);
+      if (!anchor || !body()?.contains(anchor)) return;
       window.clearTimeout(hideTimer.current);
 
-      /* The preview opens under the link, or above it near the bottom of the window. */
-      const bounds = link.getBoundingClientRect();
+      /* The preview opens under the link or block, or above it near the bottom of the window. */
+      const bounds = anchor.getBoundingClientRect();
       const above = bounds.bottom + 240 > window.innerHeight && bounds.top > 240;
-      setPreview({ id: link.dataset.page ?? '', top: above ? bounds.top - 6 : bounds.bottom + 6, left: Math.min(bounds.left, window.innerWidth - 320), above });
+      setPreview({
+        id: anchor.dataset.page ?? '',
+        top: above ? bounds.top - 6 : bounds.bottom + 6,
+        left: Math.min(bounds.left, window.innerWidth - 320),
+        above,
+        block: anchor === block
+      });
     }
 
     function handleMouseOut(event: MouseEvent) {
       const target = event.target as Element;
-      if (!target.closest?.('a.page-link, .page-preview')) return;
+      if (!target.closest?.('a.page-link, .page-block, .page-preview')) return;
       window.clearTimeout(hideTimer.current);
       hideTimer.current = window.setTimeout(() => setPreview(null), 200);
     }
 
     document.addEventListener('click', handleClick);
+    document.addEventListener('pointerdown', handlePointerDown);
+    document.addEventListener('pointermove', handlePointerMove);
+    document.addEventListener('pointerup', handlePointerUp);
     document.addEventListener('mousedown', handleMouseDown);
     document.addEventListener('mouseover', handleMouseOver);
     document.addEventListener('mouseout', handleMouseOut);
     return () => {
       document.removeEventListener('click', handleClick);
+      document.removeEventListener('pointerdown', handlePointerDown);
+      document.removeEventListener('pointermove', handlePointerMove);
+      document.removeEventListener('pointerup', handlePointerUp);
       document.removeEventListener('mousedown', handleMouseDown);
       document.removeEventListener('mouseover', handleMouseOver);
       document.removeEventListener('mouseout', handleMouseOut);
@@ -156,7 +208,7 @@ export function BlockWidgets({ session, locked, onOpenNote }: BlockWidgetsProps)
               <span className="page-preview-meta">{category && `${category} · `}{updatedLabel(note)}</span>
               <span className="page-preview-text">{note.subtitle || note.preview || 'This page is empty.'}</span>
               <span className="page-preview-footer">
-                <span>{locked ? 'Click to open' : 'Ctrl + click to open'}</span>
+                <span>{locked || preview.block ? 'Click to open' : 'Ctrl + click to open'}</span>
                 <button type="button" className="btn btn-sm btn-secondary" onClick={() => onOpenNote(note.id)}>
                   Open <Icon name="arrow-right" size={13} />
                 </button>

@@ -49,7 +49,7 @@ export const SLASH_COMMANDS: SlashCommand[] = [
 ];
 
 type CommandContext = {
-  /* Table cells and toggle titles only hold text, so only the inline link fits there. */
+  /* Table cells and toggle titles cannot hold new lines, so only the link and sub-page (which sit in text) fit there. */
   inlineOnly: boolean;
   canAddPage: boolean;
 };
@@ -58,7 +58,7 @@ type CommandContext = {
 export function matchCommands(query: string, context: CommandContext) {
   const text = query.trim().toLowerCase();
   return SLASH_COMMANDS
-    .filter(command => (context.inlineOnly ? command.id === 'link' : command.id !== 'page' || context.canAddPage))
+    .filter(command => (command.id !== 'page' || context.canAddPage) && (!context.inlineOnly || command.id === 'link' || command.id === 'page'))
     .filter(command => !text || `${command.label} ${command.keywords}`.toLowerCase().includes(text))
     .sort((a, b) => Number(b.label.toLowerCase().startsWith(text)) - Number(a.label.toLowerCase().startsWith(text)));
 }
@@ -136,8 +136,9 @@ export function createTable(columns = 3, rows = 3) {
   return table;
 }
 
+/* A sub-page shown as a small card inside the text, so words can come before and after it. */
 export function createPageBlock(noteId: string) {
-  const block = document.createElement('div');
+  const block = document.createElement('span');
   block.className = 'page-block';
   block.dataset.page = noteId;
   block.dataset.size = 'small';
@@ -191,23 +192,28 @@ export function insertBlock(line: HTMLElement, element: HTMLElement): LineChange
   return { focus: firstCell ?? paragraph, atEnd: false };
 }
 
-/* Insert a link to another page at the caret. Its text can be changed like any other text. */
-export function insertPageLink(range: Range, noteId: string) {
-  const note = getNote(noteId);
-  const link = document.createElement('a');
-  link.className = 'page-link';
-  link.dataset.page = noteId;
-  link.textContent = note?.title || 'Untitled note';
+/* Insert something at the caret, such as a page link or page block, with a space after it */
+/* so the caret has a place to continue typing. */
+export function insertInline(range: Range, element: HTMLElement) {
   const space = document.createTextNode(' ');
   range.deleteContents();
   range.insertNode(space);
-  range.insertNode(link);
+  range.insertNode(element);
 
   const selection = window.getSelection();
   const caret = document.createRange();
   caret.setStart(space, 1);
   selection?.removeAllRanges();
   selection?.addRange(caret);
+}
+
+/* Insert a link to another page at the caret. Its text can be changed like any other text. */
+export function insertPageLink(range: Range, noteId: string) {
+  const link = document.createElement('a');
+  link.className = 'page-link';
+  link.dataset.page = noteId;
+  link.textContent = getNote(noteId)?.title || 'Untitled note';
+  insertInline(range, link);
 }
 
 
@@ -217,6 +223,36 @@ export function insertPageLink(range: Range, noteId: string) {
 
 export type PageSize = 'small' | 'medium' | 'large';
 export const PAGE_SIZES: PageSize[] = ['small', 'medium', 'large'];
+
+/* A page block can be dragged narrower, down to this share of the line (in percent). */
+export const MIN_PAGE_WIDTH = 25;
+
+/* The block's width in percent of the line, or null when it has not been resized */
+/* (it is then only as wide as its title needs). */
+export function pageWidth(block: HTMLElement) {
+  const width = Number(block.dataset.width);
+  return width >= MIN_PAGE_WIDTH && width <= 100 ? Math.round(width) : null;
+}
+
+/* Set the width from a dragged edge position, in steps of 5%. A block wider than the space left */
+/* on its line moves down to the next line, like a long word would. */
+export function setPageWidth(block: HTMLElement, percent: number | null) {
+  const width = percent === null ? null : Math.min(100, Math.max(MIN_PAGE_WIDTH, Math.round(percent / 5) * 5));
+  if (width === null) delete block.dataset.width;
+  else block.dataset.width = String(width);
+  block.style.width = width === null ? '' : `${width}%`;
+  if (!block.getAttribute('style')) block.removeAttribute('style');
+  return width;
+}
+
+/* True when part of the page's title or description is hidden by the block's size or width. */
+export function pageBlockIsCut(block: HTMLElement) {
+  const title = block.querySelector<HTMLElement>('.page-block-text strong');
+  const description = block.querySelector<HTMLElement>('.page-block-text small');
+  if (!title || !description) return false;
+  const hidden = getComputedStyle(description).display === 'none';
+  return hidden || title.scrollWidth > title.clientWidth + 1 || description.scrollHeight > description.clientHeight + 1;
+}
 
 function escapeHtml(text: string) {
   return text.replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[character] ?? character));
@@ -233,6 +269,7 @@ export function hydratePages(root: Element | null) {
     const size = PAGE_SIZES.includes(block.dataset.size as PageSize) ? block.dataset.size as PageSize : 'small';
     block.contentEditable = 'false';
     block.classList.toggle('is-missing', !note);
+    setPageWidth(block, pageWidth(block));
 
     const sizes = PAGE_SIZES.map(option => (
       `<button type="button" class="page-block-size${option === size ? ' is-active' : ''}" data-size-option="${option}" aria-label="${option} size" title="${option[0].toUpperCase()}${option.slice(1)}">${option[0].toUpperCase()}</button>`
@@ -244,6 +281,7 @@ export function hydratePages(root: Element | null) {
         + `<small>${escapeHtml(note.subtitle || note.preview || 'Empty page')}</small>`
         + `<span class="page-block-meta">${category ? `${escapeHtml(category)} · ` : ''}${escapeHtml(updatedLabel(note))}</span></span>`
         + `<span class="page-block-sizes" role="group" aria-label="Block size">${sizes}</span>`
+        + '<span class="page-block-resize" title="Drag to change the width" aria-hidden="true"></span>'
       : `<span class="page-block-icon">${iconMarkup('file', 18)}</span><span class="page-block-text"><strong>Page not found</strong><small>The page was deleted.</small></span>`;
     if (drawn.get(block) === html && block.firstChild) return;
     block.innerHTML = html;

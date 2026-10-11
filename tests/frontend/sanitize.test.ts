@@ -37,10 +37,17 @@ describe('cleanHtml', () => {
 });
 
 describe('page blocks, toggles and tables', () => {
-  it('stores page blocks empty, with only a valid page id and size', () => {
-    const html = cleanHtml('<div class="page-block" data-page="note_1" data-size="large" contenteditable="false"><span>Title</span><button>S</button></div>');
-    expect(html).toBe('<div class="page-block" data-page="note_1" data-size="large"></div>');
-    expect(cleanHtml('<div class="page-block" data-page="bad id!" data-size="huge"></div>')).toBe('<div class="page-block"></div>');
+  it('stores page blocks empty, with only a valid page id, size and width', () => {
+    const html = cleanHtml('<p>See <span class="page-block" data-page="note_1" data-size="large" contenteditable="false"><span>Title</span><button>S</button></span> here</p>');
+    expect(html).toBe('<p>See <span class="page-block" data-page="note_1" data-size="large"></span> here</p>');
+    expect(cleanHtml('<p><span class="page-block" data-page="bad id!" data-size="huge"></span></p>')).toBe('<p><span class="page-block"></span></p>');
+    expect(cleanHtml('<p><span class="page-block" data-page="a" data-width="40" style="width: 40%"></span></p>')).toBe('<p><span class="page-block" data-page="a" data-width="40"></span></p>');
+    expect(cleanHtml('<p><span class="page-block" data-page="a" data-width="5"></span></p>')).toBe('<p><span class="page-block" data-page="a"></span></p>');
+  });
+
+  it('turns an older page block line into a line holding the new inline block', () => {
+    expect(cleanHtml('<div class="page-block" data-page="a" data-size="medium"></div><p>Next</p>'))
+      .toBe('<p><span class="page-block" data-page="a" data-size="medium"></span></p><p>Next</p>');
   });
 
   it('keeps page links, toggle lists and tables', () => {

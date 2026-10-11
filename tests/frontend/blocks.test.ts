@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
-  convertLine, createPageBlock, createTable, embeddedPageIds, handleBlockKeys, insertBlock, lineBelowTable, matchCommands
+  convertLine, createPageBlock, createTable, embeddedPageIds, handleBlockKeys, insertBlock, insertInline, lineBelowTable, matchCommands, pageWidth,
+  setPageWidth
 } from '../../src/frontend/notespace/editor/blocks';
 import { addColumn, removeColumn } from '../../src/frontend/notespace/editor/tables';
 import { parseBlocks } from '../../src/frontend/notespace/editor/blockModel';
@@ -45,9 +46,9 @@ describe('slash command list', () => {
     expect(ids).toEqual(['h1', 'h2', 'h3', 'h4', 'h5', 'toggle-h1', 'toggle-h2', 'toggle-h3', 'toggle-h4', 'toggle-h5']);
   });
 
-  it('hides Sub-page at the deepest level and only offers links inside table cells', () => {
+  it('hides Sub-page at the deepest level, and offers only links and sub-pages inside table cells', () => {
     expect(matchCommands('', { inlineOnly: false, canAddPage: false }).some(command => command.id === 'page')).toBe(false);
-    expect(matchCommands('', { inlineOnly: true, canAddPage: true }).map(command => command.id)).toEqual(['link']);
+    expect(matchCommands('', { inlineOnly: true, canAddPage: true }).map(command => command.id)).toEqual(['page', 'link']);
   });
 });
 
@@ -84,11 +85,13 @@ describe('slash command lines', () => {
     expect(body.lastElementChild?.outerHTML).toBe('<p><br></p>');
   });
 
-  it('adds a page block below a line with text, followed by an empty line', () => {
-    const body = editor('<p>Intro</p>');
-    const change = insertBlock(body.querySelector('p') as HTMLElement, createPageBlock('child'));
-    expect(body.innerHTML).toBe('<p>Intro</p><div class="page-block" data-page="child" data-size="small"></div><p><br></p>');
-    expect(change.focus).toBe(body.lastElementChild);
+  it('places a page block inside the text at the caret, with room to keep typing after it', () => {
+    const body = editor('<p>Before after</p>');
+    const range = document.createRange();
+    range.setStart(body.querySelector('p')?.firstChild as Node, 7);
+    insertInline(range, createPageBlock('child'));
+    expect(body.innerHTML).toBe('<p>Before <span class="page-block" data-page="child" data-size="small"></span> after</p>');
+    expect(window.getSelection()?.focusNode?.textContent).toBe(' ');
     expect(embeddedPageIds(body.innerHTML)).toEqual(new Set(['child']));
   });
 
@@ -223,5 +226,25 @@ describe('table arrow keys and the line below a table', () => {
     expect(below.line).toBe(body.lastElementChild);
     body.lastElementChild?.remove();
     expect(lineBelowTable(body.querySelector('table') as HTMLElement).created).toBe(true);
+  });
+});
+
+
+/* =========================
+   Page Block Width
+   ========================= */
+
+describe('page block width', () => {
+  it('snaps to steps of 5% between 25% and the full line, and can go back to fitting its title', () => {
+    const block = createPageBlock('child');
+    expect(pageWidth(block)).toBeNull();
+    expect(setPageWidth(block, 47)).toBe(45);
+    expect(block.dataset.width).toBe('45');
+    expect(block.style.width).toBe('45%');
+    expect(setPageWidth(block, 5)).toBe(25);
+    expect(setPageWidth(block, 140)).toBe(100);
+    setPageWidth(block, null);
+    expect(block.hasAttribute('data-width')).toBe(false);
+    expect(block.hasAttribute('style')).toBe(false);
   });
 });

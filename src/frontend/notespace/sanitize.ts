@@ -14,7 +14,8 @@ const MAX_CONTENT = 250000;
 /* and comment marks are stored as classes. */
 function keepsClass(tag: string, name: string) {
   if (name === 'document-tagline' || name === 'overline') return true;
-  if (tag === 'DIV' && ['sticky-group', 'toggle-block', 'is-open', 'toggle-body', 'page-block'].includes(name)) return true;
+  if (tag === 'DIV' && ['sticky-group', 'toggle-block', 'is-open', 'toggle-body'].includes(name)) return true;
+  if (tag === 'SPAN' && name === 'page-block') return true;
   if (/^(P|H[1-5])$/.test(tag) && name === 'toggle-summary') return true;
   if (tag === 'A' && name === 'page-link') return true;
   if (tag === 'TABLE' && name === 'fit-content') return true;
@@ -28,23 +29,37 @@ export function safeHref(href: string | null) {
   return /^(https?:|mailto:)/i.test(value) ? value : null;
 }
 
-/* Copy the few attributes Notespace uses: link addresses, linked page ids, page block sizes and comment ids. */
+/* Copy the few attributes Notespace uses: link addresses, linked page ids, page block sizes and widths, and comment ids. */
 function copyAttributes(node: Element, copy: Element) {
   if (node.tagName === 'A') {
     const href = safeHref(node.getAttribute('href'));
     if (href) copy.setAttribute('href', href);
   }
   const page = node.getAttribute('data-page');
-  if ((node.tagName === 'A' || node.tagName === 'DIV') && page && /^[a-zA-Z0-9_-]{1,90}$/.test(page)) copy.setAttribute('data-page', page);
+  if ((node.tagName === 'A' || node.tagName === 'SPAN') && page && /^[a-zA-Z0-9_-]{1,90}$/.test(page)) copy.setAttribute('data-page', page);
   const size = node.getAttribute('data-size');
-  if (node.tagName === 'DIV' && size && ['small', 'medium', 'large'].includes(size)) copy.setAttribute('data-size', size);
+  if (node.tagName === 'SPAN' && size && ['small', 'medium', 'large'].includes(size)) copy.setAttribute('data-size', size);
+  const width = Number(node.getAttribute('data-width'));
+  if (node.tagName === 'SPAN' && Number.isInteger(width) && width >= 25 && width <= 100) copy.setAttribute('data-width', String(width));
   const comment = node.getAttribute('data-comment');
   if ((node.tagName === 'SPAN' || node.tagName === 'TABLE') && comment && /^c[a-z0-9]+$/.test(comment)) copy.setAttribute('data-comment', comment);
+}
+
+/* Page blocks used to be lines of their own (<div>). They now sit inside text as a <span>, */
+/* so an older one becomes a line holding the new kind of block. */
+function upgradePageBlock(node: Element) {
+  const block = document.createElement('span');
+  Array.from(node.attributes).forEach(attribute => block.setAttribute(attribute.name, attribute.value));
+  const line = document.createElement('p');
+  const cleaned = cleanNode(block);
+  if (cleaned) line.appendChild(cleaned);
+  return line;
 }
 
 function cleanNode(node: Node): Node | null {
   if (node.nodeType === Node.TEXT_NODE) return document.createTextNode(node.textContent ?? '');
   if (!(node instanceof Element) || DROPPED_TAGS.has(node.tagName)) return null;
+  if (node.tagName === 'DIV' && node.classList.contains('page-block')) return upgradePageBlock(node);
 
   /* A page block's title and buttons are drawn when it is shown, so only the empty block is stored. */
   const children = document.createDocumentFragment();

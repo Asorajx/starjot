@@ -2514,15 +2514,20 @@
    Page Blocks and Links
    ========================= */
 
-/* A sub-page shown inside the note. It is one line of the note and opens the page when clicked. */
+/* A sub-page shown inside the note as a card within the text, so words can come before and after */
+/* it. Clicking it opens the page. */
 .note-editable .page-block,
 .block-content .page-block {
   position: relative;
-  display: flex;
+  display: inline-flex;
+  box-sizing: border-box;
   align-items: flex-start;
   gap: 12px;
-  margin: 4px 0 12px;
+  margin: 2px 0;
   padding: 8px 12px;
+  vertical-align: middle;
+  text-align: left;
+  line-height: normal;
   border: 1px solid #e2e8f1;
   border-radius: 4px;
   background: #ffffff;
@@ -2576,8 +2581,61 @@
 }
 
 .page-block-meta {
+  overflow: hidden;
   color: #a4adbb;
   font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The right edge of a page block can be dragged to change its width. A block too wide for the */
+/* space left on its line moves to the next line. */
+.note-editable .page-block,
+.block-content .page-block {
+  max-width: 100%;
+  min-width: 160px;
+}
+
+/* Until it is resized, a block is only as wide as its title needs, up to a compact card. */
+.note-editable .page-block:not([data-width]),
+.block-content .page-block:not([data-width]) {
+  max-width: min(100%, 360px);
+}
+
+.page-block-resize {
+  position: absolute;
+  top: 0;
+  right: -4px;
+  bottom: 0;
+  width: 8px;
+  cursor: ew-resize;
+  touch-action: none;
+}
+
+.page-block-resize::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 3px;
+  width: 2px;
+  height: 20px;
+  border-radius: 2px;
+  background: transparent;
+  transform: translateY(-50%);
+}
+
+.page-block:hover .page-block-resize::after,
+.page-block.is-resizing .page-block-resize::after {
+  background: #a7c5f5;
+}
+
+.page-block.is-resizing {
+  border-color: #a7c5f5;
+  cursor: ew-resize;
+}
+
+.editor-wrap.is-locked .page-block-resize {
+  display: none;
 }
 
 /* Small shows only the title; medium adds the description; large shows more of it and the details. */
@@ -2685,17 +2743,16 @@
 
 .page-preview-title {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 8px;
   color: #2c3d58;
   font-size: 14px;
 }
 
+/* The preview shows the whole title, since it is often used to read a title cut off elsewhere. */
 .page-preview-title strong {
   min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
 }
 
 .page-preview-meta {

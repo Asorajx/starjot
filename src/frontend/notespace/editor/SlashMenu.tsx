@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, 
 import { Icon } from '../../components/Icon';
 import { canAddSubpage, createSubpage, useNotes } from '../store';
 import {
-  caretIsInlineOnly, convertLine, createPageBlock, createTable, hydratePages, insertBlock, insertPageLink, lineAtCaret, matchCommands,
+  caretIsInlineOnly, convertLine, createPageBlock, createTable, hydratePages, insertBlock, insertInline, insertPageLink, lineAtCaret, matchCommands,
   type LineChange, type SlashCommand
 } from './blocks';
 import { closestAtCaret } from './dom';
@@ -200,6 +200,18 @@ export function SlashMenu({ session, noteId, locked, onOpenNewPage }: SlashMenuP
 
     close();
     session.checkpoint();
+
+    /* A sub-page is placed right where "/" was typed, as a card inside the text. */
+    if (command.id === 'page') {
+      const page = createSubpage(noteId);
+      if (!page) return;
+      insertInline(range, createPageBlock(page.id));
+      hydratePages(body);
+      session.commit();
+      onOpenNewPage(page.id);
+      return;
+    }
+
     range.deleteContents();
     window.getSelection()?.removeAllRanges();
     window.getSelection()?.addRange(range);
@@ -212,15 +224,7 @@ export function SlashMenu({ session, noteId, locked, onOpenNewPage }: SlashMenuP
     let change: LineChange;
     if (command.id === 'divider') change = insertBlock(line, document.createElement('hr'));
     else if (command.id === 'table') change = insertBlock(line, createTable());
-    else if (command.id === 'page') {
-      const page = createSubpage(noteId);
-      if (!page) return;
-      change = insertBlock(line, createPageBlock(page.id));
-      hydratePages(body);
-      session.linesChanged(change.focus, change.atEnd);
-      onOpenNewPage(page.id);
-      return;
-    } else change = convertLine(line, command.id);
+    else change = convertLine(line, command.id);
     session.linesChanged(change.focus, change.atEnd);
   };
 
