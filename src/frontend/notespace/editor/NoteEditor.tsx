@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent } from 'react';
+import { useEffect, useId, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent } from 'react';
 import { changeZoom, usePreferences } from '../../app/preferences';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
 import { Icon } from '../../components/Icon';
@@ -10,7 +10,7 @@ import type { NoteMode } from '../../../shared/types/note';
 import { CodeLanguagePickers } from './CodeLanguagePickers';
 import { CommentLayer } from './CommentLayer';
 import { ContinuousEditor } from './ContinuousEditor';
-import { PageOptions, TableOfContents } from './EditorPanels';
+import { PageOptions, TableOfContents, type ViewControls } from './EditorPanels';
 import { SelectionToolbar } from './SelectionToolbar';
 import { SlashMenu } from './SlashMenu';
 import { TableTools } from './TableTools';
@@ -29,6 +29,13 @@ type NoteEditorProps = {
 
   /* Where the page bar's back and forward arrows lead. */
   history: PageHistory;
+
+  /* Splitting and stacking the tab group this note is shown in. */
+  view: ViewControls;
+
+  /* True for the active tab of the focused group. Only that note answers keyboard shortcuts such as */
+  /* Ctrl + Z, because a split window or a stack can show several notes at once. */
+  active: boolean;
 
   /* Leaves the note (Escape, or after deleting it). */
   onClose: () => void;
@@ -126,7 +133,7 @@ function LockStatus({ noteId, temporary, unlockedUntil }: LockStatusProps) {
    Note Editor Screen
    ========================= */
 
-export function NoteEditor({ noteId, history, onClose, onOpenNote, onOpenNoteInNewTab, onOpenCategory, onOpenNewPage }: NoteEditorProps) {
+export function NoteEditor({ noteId, history, view, active, onClose, onOpenNote, onOpenNoteInNewTab, onOpenCategory, onOpenNewPage }: NoteEditorProps) {
   const note = useNote(noteId);
 
   /* Re-render when categories are renamed, so the breadcrumb stays current. */
@@ -137,6 +144,9 @@ export function NoteEditor({ noteId, history, onClose, onOpenNote, onOpenNoteInN
   const [confirmDelete, setConfirmDelete] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLElement>(null);
+
+  /* Ids that link the panel buttons to their panels; each open note needs its own. */
+  const panelId = useId();
 
   /* A locked note may be unlocked for a short time; it locks itself again when that time is up, */
   /* so the lock is checked again every few seconds while the countdown runs. */
@@ -154,6 +164,9 @@ export function NoteEditor({ noteId, history, onClose, onOpenNote, onOpenNoteInN
   const { canUndo, canRedo, sticky } = useSessionValue(session, snapshot => snapshot);
   const revision = useSessionValue(session, snapshot => snapshot.revision);
 
+  /* Show edits made to this note in another pane. */
+  useEffect(() => session.watch(), [session]);
+
   /* Remember when the note was opened, and save pending edits when leaving it. */
   useEffect(() => {
     markOpened(noteId);
@@ -163,10 +176,10 @@ export function NoteEditor({ noteId, history, onClose, onOpenNote, onOpenNoteInN
   /* Keyboard shortcuts for the whole editor screen. */
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
-      if (event.defaultPrevented || event.isComposing) return;
+      if (!active || event.defaultPrevented || event.isComposing) return;
       const target = event.target as HTMLElement;
       const inField = Boolean(target.closest?.('input, textarea, select, [data-remarks]'));
-      const inEditor = Boolean(target.closest?.('#note-body'));
+      const inEditor = Boolean(session.body()?.contains(target));
       const key = event.key.toLowerCase();
       const command = (event.ctrlKey || event.metaKey) && !event.altKey;
 
@@ -203,7 +216,7 @@ export function NoteEditor({ noteId, history, onClose, onOpenNote, onOpenNoteInN
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [panel, session, onClose, locked]);
+  }, [active, panel, session, onClose, locked]);
 
   /* Ctrl + mouse wheel over the note zooms it. The listener is not passive so the page does not zoom. */
   useEffect(() => {
@@ -224,7 +237,7 @@ export function NoteEditor({ noteId, history, onClose, onOpenNote, onOpenNoteInN
     if (!hideHeaderWhileTyping) return;
     let lastPointer = '';
     function handleInput(event: Event) {
-      if ((event.target as Element).closest?.('.editor-canvas')) setTyping(true);
+      if (canvasRef.current?.contains(event.target as Node)) setTyping(true);
     }
 
     /* Some browsers send a mouse move when the page changes under a still pointer, so only a real */
@@ -303,7 +316,7 @@ export function NoteEditor({ noteId, history, onClose, onOpenNote, onOpenNoteInN
           <Icon name="link" size={17} />
         </button>
 
-        <button type="button" data-panel-toggle className={`page-bar-button ${panel === 'toc' ? 'selected' : ''}`} data-tooltip={panel === 'toc' ? undefined : 'Contents'} aria-label="Contents" aria-expanded={panel === 'toc'} aria-controls="note-toc-panel" onClick={() => togglePanel('toc')}>
+        <button type="button" data-panel-toggle className={`page-bar-button ${panel === 'toc' ? 'selected' : ''}`} data-tooltip={panel === 'toc' ? undefined : 'Contents'} aria-label="Contents" aria-expanded={panel === 'toc'} aria-controls={`${panelId}-toc`} onClick={() => togglePanel('toc')}>
           <Icon name="list" size={17} />
         </button>
 
@@ -321,15 +334,17 @@ export function NoteEditor({ noteId, history, onClose, onOpenNote, onOpenNoteInN
 
         {note.locked && <LockStatus noteId={note.id} temporary={temporary} unlockedUntil={note.unlockedUntil} />}
 
-        <button type="button" data-panel-toggle data-tooltip-align="end" className={`page-bar-button ${panel === 'options' ? 'selected' : ''}`} data-tooltip={panel === 'options' ? undefined : 'Page options'} aria-label="Page options" aria-expanded={panel === 'options'} aria-controls="note-preferences-panel" onClick={() => togglePanel('options')}>
+        <button type="button" data-panel-toggle data-tooltip-align="end" className={`page-bar-button ${panel === 'options' ? 'selected' : ''}`} data-tooltip={panel === 'options' ? undefined : 'Page options'} aria-label="Page options" aria-expanded={panel === 'options'} aria-controls={`${panelId}-options`} onClick={() => togglePanel('options')}>
           <Icon name="sliders-horizontal" size={17} />
         </button>
 
-        <TableOfContents content={note.content} open={panel === 'toc'} onClose={() => setPanel(null)} />
+        <TableOfContents id={`${panelId}-toc`} session={session} content={note.content} open={panel === 'toc'} onClose={() => setPanel(null)} />
         <PageOptions
+          id={`${panelId}-options`}
           note={note}
           open={panel === 'options'}
           zoom={zoom}
+          view={view}
           onClose={() => setPanel(null)}
           onModeChange={changeMode}
           onStickyIndicatorChange={visible => updateNote(note.id, { stickyIndicator: visible })}
@@ -340,13 +355,13 @@ export function NoteEditor({ noteId, history, onClose, onOpenNote, onOpenNoteInN
       </PageBar>
 
       <div className="editor-layout">
-        <main className="editor-canvas" id="note-top" ref={canvasRef}>
+        <main className="editor-canvas" ref={canvasRef}>
           {/* Zoom scales everything in the note, using the CSS zoom property. */}
           <div className="editor-width" style={{ zoom }}>
             <div className="editor-meta">
               <span className="page-type"><Icon name="file-text" size={14} /> DOCUMENT</span>
               <span className="meta-dot">•</span>
-              <span id="note-updated-label">{updatedLabel(note)}</span>
+              <span>{updatedLabel(note)}</span>
             </div>
             <NoteHeader note={note} locked={locked} onOpenNote={onOpenNote} />
             <div className="article-rule" />
@@ -363,7 +378,7 @@ export function NoteEditor({ noteId, history, onClose, onOpenNote, onOpenNoteInN
               <CodeLanguagePickers session={session} containerRef={contentRef} locked={locked} />
               <CommentLayer session={session} comments={note.comments} containerRef={contentRef} />
             </div>
-            <div className="document-end" id="note-bottom"><span /> END OF DOCUMENT <span /></div>
+            <div className="document-end"><span /> END OF DOCUMENT <span /></div>
           </div>
         </main>
       </div>

@@ -167,7 +167,6 @@ export function NoteHeader({ note, locked, onOpenNote }: NoteHeaderProps) {
       )}
 
       <input
-        id="note-title"
         className="note-title-input"
         type="text"
         aria-label="Note title"

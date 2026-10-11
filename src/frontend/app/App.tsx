@@ -1,17 +1,95 @@
-import { useEffect, useRef, useState, type MouseEvent } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type DragEvent, type MouseEvent, type ReactNode } from 'react';
 import { usePreferences } from './preferences';
 import { MobileNav, Sidebar, Topbar } from './Shell';
 import { CategoryPage } from '../notespace/CategoryPage';
 import { NotesHome, type NoteFilter } from '../notespace/NotesHome';
+import type { ViewControls } from '../notespace/editor/EditorPanels';
 import { NoteEditor } from '../notespace/editor/NoteEditor';
 import { PageBar, placeExists, placeLabel, type PageHistory } from '../notespace/PageBar';
 import { createNote, flushSave } from '../notespace/store';
 import { Settings, type SettingsSection } from '../settings/Settings';
 import { Workboard } from '../workboard/Workboard';
 import type { BoardTab } from '../../shared/types/task';
-import { closeTab, currentPlace, goTo, newTab, step, stepPlace, type NoteTab, type Place } from './noteTabs';
-import { WindowBar } from './WindowBar';
+import {
+  activeTab, addTab, canAddTab, canStack, closeTab, currentPlace, focusedGroup, focusGroup, goTo, isOpenInStack, isSplit, moveTab, newTab,
+  newWorkspace, selectTab, splitWorkspace, stackGroup, step, stepPlace, unsplit, updateTab, type NoteTab, type Place, type TabGroup,
+  type Workspace
+} from './noteTabs';
+import { DocumentTitle, StackSpine, TAB_DRAG_TYPE, WindowBar } from './WindowBar';
 import { workspaceLabel, type WorkspaceId } from './workspaces';
+
+
+/* =========================
+   Tab Group Frame
+   ========================= */
+
+/* Below this width a stacked group has no room for two open tabs, so only its active tab is open. */
+const TWO_OPEN_WIDTH = 760;
+
+type TabGroupFrameProps = {
+  group: TabGroup;
+  focused: boolean;
+  onFocus: () => void;
+
+  /* A tab was dropped on this group: dropped on a tab (or its strip), it goes before that tab. */
+  onDropTab: (fromGroupId: string, tabId: string, beforeTabId: string | null) => void;
+  children: ReactNode;
+};
+
+/* The element around one tab group. It measures its own width (CSS cannot do this here: a CSS */
+/* container would also move the note's floating toolbars), and marks itself narrow when needed. */
+/* It also takes tabs dragged from either group. Drops are caught before they reach the note, so */
+/* the editor never treats a dragged tab as text. */
+function TabGroupFrame({ group, focused, onFocus, onDropTab, children }: TabGroupFrameProps) {
+  const ref = useRef<HTMLElement>(null);
+  const [narrow, setNarrow] = useState(false);
+  const [dropping, setDropping] = useState(false);
+  useLayoutEffect(() => {
+    const element = ref.current;
+    if (!element) return;
+    const observer = new ResizeObserver(() => setNarrow(element.clientWidth < TWO_OPEN_WIDTH));
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
+
+  const isTabDrag = (event: DragEvent) => event.dataTransfer.types.includes(TAB_DRAG_TYPE);
+
+  function handleDragOver(event: DragEvent) {
+    if (!isTabDrag(event)) return;
+    event.preventDefault();
+    event.stopPropagation();
+    event.dataTransfer.dropEffect = 'move';
+    setDropping(true);
+  }
+
+  function handleDragLeave(event: DragEvent) {
+    if (!ref.current?.contains(event.relatedTarget as Node | null)) setDropping(false);
+  }
+
+  function handleDrop(event: DragEvent) {
+    if (!isTabDrag(event)) return;
+    event.preventDefault();
+    event.stopPropagation();
+    setDropping(false);
+    const { groupId, tabId } = JSON.parse(event.dataTransfer.getData(TAB_DRAG_TYPE)) as { groupId: string; tabId: string };
+    const before = (event.target as Element).closest?.<HTMLElement>('[data-tab-id]')?.dataset.tabId ?? null;
+    onDropTab(groupId, tabId, before);
+  }
+
+  return (
+    <section
+      ref={ref}
+      className={`tab-group ${focused ? 'is-focused' : ''} ${group.stacked ? 'is-stacked' : ''} ${narrow ? 'is-narrow' : ''} ${dropping ? 'is-drop-target' : ''}`}
+      onMouseDownCapture={onFocus}
+      onFocusCapture={onFocus}
+      onDragOverCapture={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDropCapture={handleDrop}
+    >
+      {children}
+    </section>
+  );
+}
 
 
 /* =========================
@@ -22,11 +100,8 @@ import { workspaceLabel, type WorkspaceId } from './workspaces';
 export function App() {
   const [workspace, setWorkspace] = useState<WorkspaceId>('notes');
 
-  /* The open tabs in Notespace, each with its own back and forward history, and the one being shown. */
-  const [tabState, setTabState] = useState(() => {
-    const first = newTab({ kind: 'home' });
-    return { tabs: [first], active: first.id };
-  });
+  /* Notespace's tab groups (one, or two after a split), each with its tabs and their histories. */
+  const [tabs, setTabs] = useState<Workspace>(() => newWorkspace({ kind: 'home' }));
   const [workTab, setWorkTab] = useState<BoardTab>('todo');
   const [settingsSection, setSettingsSection] = useState<SettingsSection>('general');
   const [noteFilter, setNoteFilter] = useState<NoteFilter>('all');
@@ -36,21 +111,29 @@ export function App() {
   const [peeking, setPeeking] = useState(false);
   const peekTimer = useRef<number | undefined>(undefined);
 
-  const activeTab = tabState.tabs.find(tab => tab.id === tabState.active) ?? tabState.tabs[0];
-  const place = currentPlace(activeTab);
+  const group = focusedGroup(tabs);
+  const place = currentPlace(activeTab(group));
 
-  /* Change the active tab, saving pending edits first and starting the new page at its top. */
-  function updateActiveTab(change: (tab: NoteTab) => NoteTab | null) {
-    const next = change(activeTab);
-    if (!next || next === activeTab) return;
+  /* Change one tab, saving pending edits first and starting the new page at its top. */
+  function changeTab(groupId: string, tabId: string, change: (tab: NoteTab) => NoteTab | null) {
+    const tab = tabs.groups.find(item => item.id === groupId)?.tabs.find(item => item.id === tabId);
+    const next = tab ? change(tab) : null;
+    if (!next || next === tab) return;
     flushSave();
-    setTabState(state => ({ ...state, tabs: state.tabs.map(tab => (tab.id === next.id ? next : tab)) }));
-    scrollToTop();
+    setTabs(current => updateTab(current, groupId, next));
+    scrollToTop(tabId);
   }
 
-  function go(next: Place) {
+  /* Change the tab groups as a whole (split, stack, close or switch tabs). */
+  function changeTabs(change: (current: Workspace) => Workspace) {
+    flushSave();
+    setTabs(change);
+  }
+
+  /* Pages opened from outside a tab (the sidebar, Ctrl + N) open in the focused group's active tab. */
+  function go(next: Place, groupId = group.id, tabId = activeTab(group).id) {
     setWorkspace('notes');
-    updateActiveTab(tab => goTo(tab, next));
+    changeTab(groupId, tabId, tab => goTo(tab, next));
   }
 
   function navigate(next: WorkspaceId) {
@@ -59,82 +142,56 @@ export function App() {
     if (next === 'notes') go({ kind: 'home' });
   }
 
-  function scrollToTop() {
-    requestAnimationFrame(() => document.getElementById('main-scroll')?.scrollTo(0, 0));
+  function scrollToTop(tabId: string) {
+    requestAnimationFrame(() => document.querySelector(`[data-tab="${tabId}"]`)?.scrollTo(0, 0));
   }
-
-  const goBack = () => updateActiveTab(tab => step(tab, -1, placeExists));
-  const goForward = () => updateActiveTab(tab => step(tab, 1, placeExists));
-  const history: PageHistory = {
-    back: stepPlace(activeTab, -1, placeExists),
-    forward: stepPlace(activeTab, 1, placeExists),
-    onBack: goBack,
-    onForward: goForward
-  };
 
   const openNote = (id: string) => go({ kind: 'note', id });
-  const openCategory = (id: string) => go({ kind: 'category', id });
-  const openHome = () => go({ kind: 'home' });
-
-  /* Leaving a page (Escape, or deleting the note) goes back, or to the notes home when there is no back. */
-  function closePage() {
-    if (history.back) goBack();
-    else openHome();
-  }
-
-  /* A sub-page added from the slash menu opens straight away with its title selected. */
-  function openNewPage(id: string) {
-    openNote(id);
-    focusTitle();
-  }
 
   /* Select the placeholder title so typing replaces it straight away. */
-  function focusTitle() {
+  function focusTitle(tabId = activeTab(group).id) {
     requestAnimationFrame(() => {
-      const title = document.getElementById('note-title') as HTMLInputElement | null;
+      const title = document.querySelector<HTMLInputElement>(`[data-tab="${tabId}"] .note-title-input`);
       title?.focus();
       title?.select();
     });
   }
 
   /* A new note starts in the category being viewed or filtered, if there is one. */
-  function newNote(category?: string) {
+  function newNote(category?: string, groupId = group.id, tab = activeTab(group)) {
     flushSave();
     const filtered = noteFilter === 'all' ? '' : noteFilter;
-    const viewed = place.kind === 'category' ? place.id : '';
-    openNote(createNote(category ?? (viewed || filtered)).id);
-    focusTitle();
+    const shown = currentPlace(tab);
+    const viewed = shown.kind === 'category' ? shown.id : '';
+    go({ kind: 'note', id: createNote(category ?? (viewed || filtered)).id }, groupId, tab.id);
+    focusTitle(tab.id);
   }
 
-  /* The + beside the tabs starts a new note in a new tab. */
-  function newNoteTab() {
-    flushSave();
+  /* The + beside a group's tabs starts a new note in a new tab of that group. */
+  function newNoteTab(groupId: string) {
+    const target = tabs.groups.find(item => item.id === groupId);
+    if (!target || !canAddTab(target)) return;
     const tab = newTab({ kind: 'note', id: createNote().id });
-    setTabState(state => ({ tabs: [...state.tabs, tab], active: tab.id }));
-    focusTitle();
+    changeTabs(current => addTab(current, groupId, tab));
+    focusTitle(tab.id);
   }
 
-  /* Ctrl + click or double-click on a page link opens the page in a new tab beside this one. */
+  /* Ctrl + click or double-click on a page link opens the page in a new tab beside the active one. */
+  /* A full stack has no room for another tab, so the page opens in the active tab instead. */
   function openNoteInNewTab(id: string) {
-    flushSave();
-    const tab = newTab({ kind: 'note', id });
-    setTabState(state => {
-      const index = state.tabs.findIndex(item => item.id === state.active);
-      return { tabs: [...state.tabs.slice(0, index + 1), tab, ...state.tabs.slice(index + 1)], active: tab.id };
-    });
+    if (!canAddTab(group)) {
+      openNote(id);
+      return;
+    }
+    changeTabs(current => addTab(current, group.id, newTab({ kind: 'note', id }), true));
   }
 
-  function selectTab(id: string) {
-    flushSave();
-    setTabState(state => ({ ...state, active: id }));
+  /* Clicking or tabbing into a group makes it the focused group. */
+  function focusOn(groupId: string) {
+    if (tabs.focus !== groupId) setTabs(current => focusGroup(current, groupId));
   }
 
-  function removeTab(id: string) {
-    flushSave();
-    setTabState(state => closeTab(state.tabs, state.active, id));
-  }
-
-  /* In Notespace the window bar names the browser tab after the open page instead. */
+  /* In Notespace, DocumentTitle names the browser tab after the focused page instead. */
   useEffect(() => {
     if (workspace !== 'notes') document.title = `${workspaceLabel(workspace)} — Starjot`;
   }, [workspace]);
@@ -181,32 +238,70 @@ export function App() {
     };
   });
 
-  let screen;
-  if (workspace === 'notes') {
-    if (place.kind === 'note') {
+  /* Everything one tab needs: its own history and navigation, and the controls for splitting and stacking. */
+  function renderTab(tabGroup: TabGroup, tab: NoteTab) {
+    const shown = currentPlace(tab);
+    const goHere = (next: Place) => go(next, tabGroup.id, tab.id);
+    const goBack = () => changeTab(tabGroup.id, tab.id, item => step(item, -1, placeExists));
+    const history: PageHistory = {
+      back: stepPlace(tab, -1, placeExists),
+      forward: stepPlace(tab, 1, placeExists),
+      onBack: goBack,
+      onForward: () => changeTab(tabGroup.id, tab.id, item => step(item, 1, placeExists))
+    };
+
+    /* Each action starts from this tab, so it splits or stacks the page shown here. */
+    const fromHere = (change: (current: Workspace) => Workspace) => changeTabs(current => change(selectTab(current, tabGroup.id, tab.id)));
+    const view: ViewControls = {
+      split: isSplit(tabs) ? tabs.direction : null,
+      stacked: tabGroup.stacked,
+      tabCount: tabGroup.tabs.length,
+      canStack: canStack(tabGroup),
+      canUnsplit: isSplit(tabs) || tabGroup.stacked,
+      onSplit: direction => fromHere(current => splitWorkspace(current, direction)),
+      onStack: () => fromHere(stackGroup),
+      onUnsplit: () => changeTabs(unsplit)
+    };
+    const openHere = (id: string) => goHere({ kind: 'note', id });
+    const openCategory = (id: string) => goHere({ kind: 'category', id });
+    const openHome = () => goHere({ kind: 'home' });
+
+    /* Leaving a page (Escape, or deleting the note) goes back, or to the notes home when there is no back. */
+    const closePage = () => (history.back ? goBack() : openHome());
+
+    /* A sub-page added from the slash menu opens straight away with its title selected. */
+    const openNewPage = (id: string) => {
+      openHere(id);
+      focusTitle(tab.id);
+    };
+
+    let screen: ReactNode;
+    if (shown.kind === 'note') {
       screen = (
         <NoteEditor
-          key={place.id}
-          noteId={place.id}
+          key={shown.id}
+          noteId={shown.id}
           history={history}
+          view={view}
+          active={tabGroup.id === tabs.focus && tab.id === tabGroup.active}
           onClose={closePage}
-          onOpenNote={openNote}
+          onOpenNote={openHere}
           onOpenNoteInNewTab={openNoteInNewTab}
           onOpenCategory={openCategory}
           onOpenNewPage={openNewPage}
         />
       );
-    } else if (place.kind === 'category') {
+    } else if (shown.kind === 'category') {
       screen = (
         <>
           <PageBar history={history}>
             <nav className="editor-breadcrumb" aria-label="Breadcrumb">
               <button type="button" className="editor-crumb-link" onClick={openHome}>All notes</button>
               <span className="editor-breadcrumb-separator">/</span>
-              <span className="editor-crumb-current">{placeLabel(place)}</span>
+              <span className="editor-crumb-current">{placeLabel(shown)}</span>
             </nav>
           </PageBar>
-          <CategoryPage key={place.id} categoryId={place.id} onBack={closePage} onOpen={openNote} onCreate={newNote} />
+          <CategoryPage key={shown.id} categoryId={shown.id} onBack={closePage} onOpen={openHere} onCreate={category => newNote(category, tabGroup.id, tab)} />
         </>
       );
     } else {
@@ -215,14 +310,73 @@ export function App() {
           <PageBar history={history}>
             <nav className="editor-breadcrumb" aria-label="Breadcrumb"><span className="editor-crumb-current">All notes</span></nav>
           </PageBar>
-          <NotesHome filter={noteFilter} onFilterChange={setNoteFilter} onOpen={openNote} onOpenCategory={openCategory} onCreate={() => newNote()} />
+          <NotesHome filter={noteFilter} onFilterChange={setNoteFilter} onOpen={openHere} onOpenCategory={openCategory} onCreate={() => newNote(undefined, tabGroup.id, tab)} />
         </>
       );
     }
+    return <div className="main-scroll" data-tab={tab.id}>{screen}</div>;
+  }
+
+  /* Each tab group has its own tab strip above its pages. A normal group shows its active tab; a */
+  /* stacked group shows every tab as a strip with its title (and a close button), with two of them */
+  /* open beside their strips. Tabs are keyed by id in every layout, so stacking keeps the open note */
+  /* as it is, undo history included, and a folded stacked tab stays open behind its strip. */
+  /* Window buttons (close, minimise), once the app has them, belong only in the tab strip at the */
+  /* top-right of the window, not in every group's strip. */
+  let screen;
+  if (workspace === 'notes') {
+    screen = (
+      <div className={`tab-layout is-split-${tabs.direction}`}>
+        {tabs.groups.map(tabGroup => (
+          <TabGroupFrame
+            key={tabGroup.id}
+            group={tabGroup}
+            focused={tabGroup.id === tabs.focus}
+            onFocus={() => focusOn(tabGroup.id)}
+            onDropTab={(fromId, tabId, beforeId) => changeTabs(current => moveTab(current, fromId, tabId, tabGroup.id, beforeId))}
+          >
+            <WindowBar
+              group={tabGroup}
+              onSelect={id => changeTabs(current => selectTab(current, tabGroup.id, id))}
+              onClose={id => changeTabs(current => closeTab(current, tabGroup.id, id))}
+              onNew={() => newNoteTab(tabGroup.id)}
+            />
+            <div className="tab-group-body">
+              {tabGroup.tabs.map((tab, index) => {
+                const isActive = tab.id === tabGroup.active;
+                if (!tabGroup.stacked && !isActive) return null;
+                const folded = tabGroup.stacked && !isOpenInStack(tabGroup, index);
+                return (
+                  <div
+                    key={tab.id}
+                    className={`group-tab ${isActive ? 'is-active' : ''} ${folded ? 'is-folded' : ''}`}
+                    onMouseDownCapture={() => {
+                      if (!isActive || tabs.focus !== tabGroup.id) setTabs(current => selectTab(current, tabGroup.id, tab.id));
+                    }}
+                  >
+                    {tabGroup.stacked && (
+                      <StackSpine
+                        groupId={tabGroup.id}
+                        tabId={tab.id}
+                        place={currentPlace(tab)}
+                        active={isActive}
+                        onSelect={() => changeTabs(current => selectTab(current, tabGroup.id, tab.id))}
+                        onClose={() => changeTabs(current => closeTab(current, tabGroup.id, tab.id))}
+                      />
+                    )}
+                    {renderTab(tabGroup, tab)}
+                  </div>
+                );
+              })}
+            </div>
+          </TabGroupFrame>
+        ))}
+      </div>
+    );
   } else if (workspace === 'workboard') {
-    screen = <Workboard tab={workTab} onTabChange={setWorkTab} />;
+    screen = <div className="main-scroll"><Workboard tab={workTab} onTabChange={setWorkTab} /></div>;
   } else {
-    screen = <Settings section={settingsSection} onSectionChange={setSettingsSection} />;
+    screen = <div className="main-scroll"><Settings section={settingsSection} onSectionChange={setSettingsSection} /></div>;
   }
 
   return (
@@ -238,8 +392,8 @@ export function App() {
       />
       <div className="main-column">
         <Topbar workspace={workspace} />
-        {workspace === 'notes' && <WindowBar tabs={tabState.tabs} active={activeTab.id} onSelect={selectTab} onClose={removeTab} onNew={newNoteTab} />}
-        <div className="main-scroll" id="main-scroll">{screen}</div>
+        {workspace === 'notes' && <DocumentTitle place={place} />}
+        {screen}
       </div>
       <MobileNav workspace={workspace} onNavigate={navigate} />
     </div>

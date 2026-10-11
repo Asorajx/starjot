@@ -2,7 +2,10 @@
    Notespace Home
    ========================= */
 
+/* The list is a container, so its columns follow its own width (a split pane can be narrow in a */
+/* wide window). */
 .recent-table {
+  container-type: inline-size;
   border: 1px solid var(--line);
   border-radius: 4px;
   overflow: hidden;
@@ -309,17 +312,58 @@
   color: #455775;
 }
 
-.side-setting>p {
-  font-size: 10px;
-  line-height: 1.75;
-  color: #a1acba;
-  margin: 8px 0 16px;
-}
-
 .editor-mode-options {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  margin-top: 12px;
+}
+
+/* Split right, split down, stack and unsplit, two to a row. */
+.pane-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.pane-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 8px;
+  border: 1px solid #e9edf3;
+  border-radius: 4px;
+  background: #fff;
+  color: #586b86;
+  font: inherit;
+  font-size: 10px;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+}
+
+.pane-option:hover:not(:disabled) {
+  border-color: #c3d5f4;
+}
+
+.pane-option.selected {
+  border-color: #8bb3fb;
+  background: #f7faff;
+  color: #4d7ee3;
+}
+
+.pane-option:disabled {
+  color: #b7c0cd;
+  cursor: default;
+}
+
+.pane-option em {
+  margin-left: auto;
+  color: #8496af;
+  font-size: 9px;
+  font-style: normal;
 }
 
 .mode-option {
@@ -370,12 +414,6 @@
   white-space: nowrap;
 }
 
-.mode-option small {
-  font-size: 9px;
-  line-height: 1.4;
-  color: #a2adbb;
-}
-
 .mode-radio {
   width: 13px;
   height: 13px;
@@ -400,20 +438,6 @@
   background: #4781e5;
 }
 
-.settings-hint {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  color: #a0adbd;
-  line-height: 1.6;
-  font-size: 9px;
-  margin-top: 12px;
-}
-
-.settings-hint svg {
-  margin-top: 1px;
-}
-
 .side-setting--border {
   border-top: 1px solid #e9edf4;
   padding-top: 24px;
@@ -432,6 +456,10 @@
   color: #5c7db5;
   font-size: 10px;
   margin-bottom: 8px;
+}
+
+.side-setting > strong + .layout-option {
+  margin-top: 12px;
 }
 
 .layout-option span {
@@ -565,14 +593,16 @@
 
 /* The bar at the top of each page. It has no border and shares the page's background, so it reads */
 /* as part of the page rather than a separate toolbar. It stays in view while the page scrolls. */
+/* In a narrow pane (a split or stacked tab) the buttons wrap onto a second row instead of */
+/* spilling out of the pane. */
 .page-bar {
   position: sticky;
   top: 0;
   z-index: 22;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 4px;
-  height: 48px;
   min-height: 48px;
   padding: 0 20px 0 12px;
   background: #f7f9fc;
@@ -833,7 +863,9 @@
    ========================= */
 
 /* The editor is wider and starts closer to the toolbar without fixed side panels. */
+/* It is a container, so the note can follow the width of its pane in a split or stacked tab. */
 .editor-wrap .editor-layout {
+  container-type: inline-size;
   min-height: calc(100vh - 58px);
 }
 
@@ -841,6 +873,17 @@
 /* room for the block controls and a gap from the left edge, where a hidden sidebar can be revealed. */
 .editor-wrap .editor-canvas {
   padding: 28px clamp(72px, 7vw, 104px) 60px;
+}
+
+/* A narrow pane keeps just enough room for the block controls. */
+@container (max-width: 600px) {
+  .editor-wrap .editor-canvas {
+    padding: 24px 24px 56px 40px;
+  }
+
+  .note-details {
+    grid-template-columns: 90px minmax(0, 1fr);
+  }
 }
 
 .editor-wrap .editor-width {
@@ -1663,9 +1706,11 @@
    ========================= */
 
 /* The welcome panel: greeting and clock on the left, "where you left off" on the right. */
+/* The welcome text and the "Where you left off" card sit side by side, and wrap one above the */
+/* other when there is no room, such as in a split pane. */
 .home-hero {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(260px, 360px);
+  display: flex;
+  flex-wrap: wrap;
   gap: 24px;
   align-items: stretch;
   margin-bottom: 24px;
@@ -1698,7 +1743,13 @@
 }
 
 /* "Where you left off" sits in a tinted box so it reads as a separate shortcut. */
+.home-hero-intro {
+  flex: 999 1 320px;
+  min-width: 0;
+}
+
 .home-resume {
+  flex: 1 1 300px;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -1731,8 +1782,10 @@
 }
 
 /* The tabs on the left, and the Edit categories button on the right. */
+/* The action wraps below the tabs when there is no room beside them, such as in a split pane. */
 .home-tabs-header {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
@@ -1883,11 +1936,6 @@
   color: #94a1b3;
 }
 
-@media (max-width: 860px) {
-  .home-hero {
-    grid-template-columns: minmax(0, 1fr);
-  }
-}
 
 
 /* =========================
@@ -2006,7 +2054,7 @@
   fill: currentColor;
 }
 
-@media (max-width: 700px) {
+@container (max-width: 560px) {
   .note-row-columns {
     grid-template-columns: minmax(0, 1fr) 40px;
   }
@@ -2016,7 +2064,9 @@
   }
 
   .note-row-open .recent-category,
-  .note-row-open .recent-time {
+  .note-row-open .recent-time,
+  .note-row-columns > span:nth-child(2),
+  .note-row-columns > span:nth-child(3) {
     display: none;
   }
 }
@@ -3429,6 +3479,10 @@
   .app-shell,
   .main-column,
   .main-scroll,
+  .tab-layout,
+  .tab-group,
+  .tab-group-body,
+  .group-tab,
   .editor-wrap,
   .editor-layout {
     display: block;
@@ -3450,7 +3504,12 @@
   .page-preview,
   .table-tools,
   .page-block-sizes,
-  .document-end {
+  .document-end,
+  .link-tools,
+  .window-bar,
+  .stack-spine,
+  .tab-group:not(.is-focused),
+  .group-tab:not(.is-active) {
     display: none !important;
   }
 

@@ -30,6 +30,12 @@ export const ContinuousEditor = memo(function ContinuousEditor({ session, conten
   /* The last selection inside the note, kept so toolbar clicks know what was selected. */
   const savedRange = useRef<Range | null>(null);
 
+  /* The session finds this editor's text through it (overlays, undo, the slash menu). */
+  useLayoutEffect(() => {
+    session.setBody(bodyRef.current);
+    return () => session.setBody(null);
+  }, [session]);
+
   /* Read the document from the page, tidy it, and save it. */
   function commit() {
     const body = bodyRef.current;
@@ -253,8 +259,7 @@ export const ContinuousEditor = memo(function ContinuousEditor({ session, conten
   return (
     <div
       ref={bodyRef}
-      id="note-body"
-      className="article-body continuous-document note-editable"
+      className="note-body article-body continuous-document note-editable"
       data-note-editable=""
       contentEditable={!locked}
       suppressContentEditableWarning

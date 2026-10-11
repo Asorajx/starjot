@@ -526,8 +526,155 @@ p {
 
 .main-scroll {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
+}
+
+
+/* =========================
+   Tab Groups
+   ========================= */
+
+/* Notespace shows one tab group, or two after a split (side by side or one above the other). */
+/* Each group has its own tab strip above its pages. */
+.tab-layout {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+.tab-layout.is-split-down {
+  flex-direction: column;
+}
+
+.tab-group {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+
+.tab-layout.is-split-right .tab-group + .tab-group {
+  border-left: 1px solid var(--line);
+}
+
+.tab-layout.is-split-down .tab-group + .tab-group {
+  border-top: 1px solid var(--line);
+}
+
+/* A tab dragged over a group outlines it; dropping moves the tab into it. */
+.tab-group.is-drop-target {
+  box-shadow: inset 0 0 0 2px var(--blue);
+}
+
+.tab-group.is-drop-target > .window-bar {
+  background: var(--blue-soft);
+}
+
+.tab-group-body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+.group-tab {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+
+/* A stacked group shows its tabs side by side, each with a strip on its left. Two are open; the */
+/* active one is larger. A folded tab stays open (keeping its place and undo history) but shows */
+/* only its strip. */
+.tab-group.is-stacked .group-tab {
+  flex: 2 1 0;
+  flex-direction: row;
+}
+
+.tab-group.is-stacked .group-tab.is-active {
+  flex-grow: 3;
+}
+
+.tab-group.is-stacked .group-tab.is-folded {
+  flex: 0 0 36px;
+}
+
+.group-tab.is-folded > .main-scroll {
+  display: none;
+}
+
+/* A narrow stacked group (a split window, or a phone) opens only its active tab. */
+.tab-group.is-stacked.is-narrow .group-tab:not(.is-active) {
+  flex: 0 0 36px;
+}
+
+.tab-group.is-stacked.is-narrow .group-tab:not(.is-active) > .main-scroll {
+  display: none;
+}
+
+.tab-group.is-stacked .group-tab + .group-tab {
+  border-left: 1px solid var(--line);
+}
+
+/* The strip of a stacked tab: a close button at the top, then the page's icon and title written */
+/* downwards. */
+.stack-spine {
+  display: flex;
+  flex: 0 0 36px;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 0;
+  background: #edf0f5;
+  color: #66748a;
+}
+
+.stack-spine.is-active {
+  background: #f7f9fc;
+  color: var(--ink);
+}
+
+.stack-spine .window-tab-close {
+  margin: 0;
+  opacity: 1;
+}
+
+.stack-spine-main {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 0;
+  padding: 4px 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.stack-spine-main:hover {
+  color: var(--blue);
+}
+
+.stack-spine-main .icon {
+  flex-shrink: 0;
+}
+
+.stack-spine-main span {
+  overflow: hidden;
+  max-height: 100%;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  writing-mode: vertical-rl;
 }
 
 
@@ -632,6 +779,11 @@ p {
   color: var(--ink);
 }
 
+.window-new-tab:disabled {
+  opacity: .4;
+  cursor: default;
+}
+
 .window-new-tab {
   display: inline-flex;
   align-items: center;
@@ -688,6 +840,14 @@ p {
 
 [data-tooltip]:focus-visible::after {
   animation-delay: 0s;
+}
+
+/* Longer explanations (such as in Page options) wrap onto several lines. */
+[data-tooltip][data-tooltip-wrap]::after {
+  width: max-content;
+  max-width: 240px;
+  white-space: normal;
+  text-align: left;
 }
 
 [data-tooltip][data-tooltip-align="start"]::after {

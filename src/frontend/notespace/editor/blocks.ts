@@ -396,11 +396,11 @@ export function embeddedPageIds(html: string) {
 function neighbourLine(line: Element, below: boolean): Element | null {
   const sibling = (node: Element) => (below ? node.nextElementSibling : node.previousElementSibling);
   let node: Element = line;
-  while (!sibling(node) && node.parentElement && !node.parentElement.matches('#note-body, .block-content')) node = node.parentElement;
+  while (!sibling(node) && node.parentElement && !node.parentElement.matches('.note-body, .block-content')) node = node.parentElement;
   if (sibling(node)) return sibling(node);
 
   const block = line.closest('.editable-block');
-  const blocks = Array.from(block?.closest('#note-body')?.querySelectorAll('.editable-block') ?? []);
+  const blocks = Array.from(block?.closest('.note-body')?.querySelectorAll('.editable-block') ?? []);
   return block ? blocks[blocks.indexOf(block) + (below ? 1 : -1)]?.querySelector('.block-content') ?? null : null;
 }
 
@@ -551,7 +551,7 @@ function enterTableKeys(event: KeyboardEvent): KeyResult | null {
   const content = element?.closest('.block-content');
   const line = content
     ? (element === content ? content.firstElementChild : element?.closest('.block-content > *'))
-    : element?.closest('#note-body > *, .sticky-group > *');
+    : element?.closest('.note-body > *, .sticky-group > *');
   const neighbour = line ? neighbourLine(line, below) : null;
   const table = neighbour?.matches('table') ? neighbour as HTMLTableElement : neighbour?.querySelector<HTMLTableElement>(':scope > table');
   if (!line || !table || !window.getSelection()?.isCollapsed || !caretOnEdgeLine(line as HTMLElement, below ? 'bottom' : 'top')) return null;

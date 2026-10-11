@@ -64,7 +64,7 @@ export function SaveStatus() {
   const icon = unavailable ? 'alert-triangle' : status === 'saving' ? 'loader' : 'check';
 
   return (
-    <span className={`save-status is-${unavailable ? 'unsaved' : status}`} id="note-save-state" role="status" tabIndex={0} data-tooltip={label} aria-label={label}>
+    <span className={`save-status is-${unavailable ? 'unsaved' : status}`} role="status" tabIndex={0} data-tooltip={label} aria-label={label}>
       <Icon name={icon} size={15} />
     </span>
   );

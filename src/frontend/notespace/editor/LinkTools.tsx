@@ -75,7 +75,8 @@ export function LinkTools({ session, locked, onOpenNote, onOpenNoteInNewTab }: L
   latest.current = { locked, editing, onOpenNote, onOpenNoteInNewTab };
 
   useEffect(() => {
-    const body = () => document.getElementById('note-body');
+    const body = () => session.body();
+    const scroller = session.scroller();
     const linkAt = (target: EventTarget | null) => {
       const found = (target as Element | null)?.closest?.<HTMLAnchorElement>(LINK_SELECTOR) ?? null;
       return found && body()?.contains(found) ? found : null;
@@ -142,14 +143,14 @@ export function LinkTools({ session, locked, onOpenNote, onOpenNoteInNewTab }: L
     document.addEventListener('click', handleClick);
     document.addEventListener('mousedown', handleMouseDown);
     document.addEventListener('dblclick', handleDoubleClick);
-    document.getElementById('main-scroll')?.addEventListener('scroll', handleScroll);
+    scroller?.addEventListener('scroll', handleScroll);
     return () => {
       document.removeEventListener('mouseover', handleMouseOver);
       document.removeEventListener('mouseout', handleMouseOut);
       document.removeEventListener('click', handleClick);
       document.removeEventListener('mousedown', handleMouseDown);
       document.removeEventListener('dblclick', handleDoubleClick);
-      document.getElementById('main-scroll')?.removeEventListener('scroll', handleScroll);
+      scroller?.removeEventListener('scroll', handleScroll);
       window.clearTimeout(showTimer.current);
       window.clearTimeout(hideTimer.current);
     };

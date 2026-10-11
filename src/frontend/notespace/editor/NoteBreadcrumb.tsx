@@ -83,7 +83,7 @@ export function NoteBreadcrumb({ note, onOpenNote, onOpenCategory }: NoteBreadcr
         </span>
       ))}
 
-      <span id="editor-crumb-title" className="editor-crumb-current">{title}</span>
+      <span className="editor-crumb-current">{title}</span>
     </nav>
   );
 }

@@ -163,7 +163,7 @@ export function TableTools({ session, locked }: TableToolsProps) {
   actions.current = { choose, clear, removePart };
 
   useEffect(() => {
-    const body = () => document.getElementById('note-body');
+    const body = () => session.body();
 
     /* Show the grips for the cell under the pointer, and keep them while the pointer moves out */
     /* of the table towards a grip. */
@@ -236,7 +236,7 @@ export function TableTools({ session, locked }: TableToolsProps) {
       setMergedCell(usable && selection?.isCollapsed && from && (from.rowSpan > 1 || from.colSpan > 1) ? from : null);
     }
 
-    const scroller = document.getElementById('main-scroll');
+    const scroller = session.scroller();
     document.addEventListener('selectionchange', handleSelectionChange);
     document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('click', handleClick);

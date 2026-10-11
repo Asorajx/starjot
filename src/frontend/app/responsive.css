@@ -119,6 +119,16 @@
 }
 
 @media (max-width:700px) {
+  /* Groups side by side are too narrow on a phone, so a split shows one above the other. */
+  .tab-layout.is-split-right {
+    flex-direction: column;
+  }
+
+  .tab-layout.is-split-right .tab-group + .tab-group {
+    border-top: 1px solid var(--line);
+    border-left: 0;
+  }
+
   .app-shell {
     min-height: 0;
   }

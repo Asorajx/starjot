@@ -1,5 +1,5 @@
 import { useSyncExternalStore } from 'react';
-import { getNote, scheduleSave, updateNote } from '../store';
+import { getNote, scheduleSave, subscribe, updateNote } from '../store';
 import { cleanHtml } from '../sanitize';
 import { markRange, newCommentId, unmark } from './comments';
 import { History, TypingSteps, type HistoryEntry } from './history';
@@ -47,6 +47,7 @@ export class EditorSession {
   private history: History;
   private typing = new TypingSteps();
   private adapter: EditorAdapter | null = null;
+  private bodyElement: HTMLElement | null = null;
   private listeners = new Set<() => void>();
   private snapshot: SessionSnapshot = { canUndo: false, canRedo: false, sticky: 'none', revision: 0, layout: 0 };
 
@@ -80,8 +81,44 @@ export class EditorSession {
     this.adapter = adapter;
   }
 
+  /* The editor registers its editable area here. A split tab can show two notes (or the same note */
+  /* twice), so each editor and its toolbars look up their own area instead of one id on the page. */
+  setBody(element: HTMLElement | null) {
+    this.bodyElement = element;
+  }
+
   body() {
-    return document.getElementById('note-body');
+    return this.bodyElement;
+  }
+
+  /* The scrolling area of the pane that shows this note. */
+  scroller() {
+    return this.bodyElement?.closest<HTMLElement>('.main-scroll') ?? null;
+  }
+
+  /* Another pane can show the same note. When the note's content is changed there, this editor */
+  /* shows the new content as well (as one more undo step), so neither pane saves over the other's */
+  /* edits. Checking waits for a short pause in typing. Returns a function that stops watching. */
+  watch() {
+    let timer: number | undefined;
+    const check = () => {
+      if (getNote(this.noteId)?.content === this.history.currentContent()) return;
+      window.clearTimeout(timer);
+      timer = window.setTimeout(() => {
+        const note = getNote(this.noteId);
+        if (!note || note.content === this.history.currentContent()) return;
+        this.history.checkpoint();
+        this.history.record(note.content, null, note.comments);
+        this.pendingCaret = null;
+        this.typing.reset();
+        this.update({ revision: this.snapshot.revision + 1 });
+      }, 300);
+    };
+    const stop = subscribe(check);
+    return () => {
+      stop();
+      window.clearTimeout(timer);
+    };
   }
 
   /* Called from the native beforeinput event, before the browser changes the text. */

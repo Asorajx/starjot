@@ -9,7 +9,7 @@ import { parseBlocks } from '../../src/frontend/notespace/editor/blockModel';
 /* An editable note body, like the continuous editor, added to the test page. */
 function editor(html: string) {
   const body = document.createElement('div');
-  body.id = 'note-body';
+  body.className = 'note-body';
   body.contentEditable = 'true';
   body.innerHTML = html;
   document.body.replaceChildren(body);

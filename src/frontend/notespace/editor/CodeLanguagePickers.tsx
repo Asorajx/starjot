@@ -34,7 +34,7 @@ export function CodeLanguagePickers({ session, containerRef, locked }: CodeLangu
     /* The note may be zoomed, so screen distances are divided by the zoom scale. */
     const base = container.getBoundingClientRect();
     const scale = base.width / (container.offsetWidth || 1);
-    const next = Array.from(container.querySelectorAll('#note-body pre')).map(pre => {
+    const next = Array.from(container.querySelectorAll('.note-body pre')).map(pre => {
       const bounds = pre.getBoundingClientRect();
       return { top: (bounds.top - base.top) / scale + 5, right: (base.right - bounds.right) / scale + 8, language: languageOf(pre) };
     });
@@ -57,7 +57,7 @@ export function CodeLanguagePickers({ session, containerRef, locked }: CodeLangu
   }, [session, containerRef]);
 
   function changeLanguage(index: number, language: LanguageId) {
-    const pre = containerRef.current?.querySelectorAll('#note-body pre')[index];
+    const pre = containerRef.current?.querySelectorAll('.note-body pre')[index];
     if (!pre) return;
     session.checkpoint();
     highlight(pre, language);

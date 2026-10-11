@@ -43,11 +43,12 @@ export function BlockWidgets({ session, locked, onOpenNote }: BlockWidgetsProps)
 
   /* Page blocks show the current title and description of the page they point to. */
   useEffect(() => {
-    hydratePages(document.getElementById('note-body'));
+    hydratePages(session.body());
   }, [notes]);
 
   useEffect(() => {
-    const body = () => document.getElementById('note-body');
+    const body = () => session.body();
+    const scroller = session.scroller();
 
     function handleClick(event: MouseEvent) {
       const target = event.target as Element;
@@ -221,7 +222,7 @@ export function BlockWidgets({ session, locked, onOpenNote }: BlockWidgetsProps)
     document.addEventListener('beforeinput', handleBeforeInput, true);
     document.addEventListener('contextmenu', handleContextMenu);
     document.addEventListener('mousedown', closeMenu);
-    document.getElementById('main-scroll')?.addEventListener('scroll', closeMenu);
+    scroller?.addEventListener('scroll', closeMenu);
     document.addEventListener('click', handleClick);
     document.addEventListener('pointerdown', handlePointerDown);
     document.addEventListener('pointermove', handlePointerMove);
@@ -233,7 +234,7 @@ export function BlockWidgets({ session, locked, onOpenNote }: BlockWidgetsProps)
       document.removeEventListener('beforeinput', handleBeforeInput, true);
       document.removeEventListener('contextmenu', handleContextMenu);
       document.removeEventListener('mousedown', closeMenu);
-      document.getElementById('main-scroll')?.removeEventListener('scroll', closeMenu);
+      scroller?.removeEventListener('scroll', closeMenu);
       document.removeEventListener('click', handleClick);
       document.removeEventListener('pointerdown', handlePointerDown);
       document.removeEventListener('pointermove', handlePointerMove);
@@ -247,7 +248,7 @@ export function BlockWidgets({ session, locked, onOpenNote }: BlockWidgetsProps)
 
   /* Take a page's blocks out of this note's text (one undo step), then delete or move the page. */
   function removeFromText(id: string) {
-    const note = document.getElementById('note-body');
+    const note = session.body();
     if (!note) return;
     session.checkpoint();
     removePageBlocks(note, id);

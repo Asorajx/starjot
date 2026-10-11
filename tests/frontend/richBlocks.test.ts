@@ -187,9 +187,10 @@ function caretAt(node: Node, offset: number) {
 describe('comments', () => {
   it('undoes deleting a comment, bringing back its text', () => {
     const body = holder('<p>Alpha beta</p>');
-    body.id = 'note-body';
+    body.className = 'note-body';
     body.dataset.noteEditable = '';
     const session = new EditorSession('weekly', body.innerHTML);
+    session.setBody(body);
     session.setAdapter({ commit: () => session.save(body.innerHTML), toggleSticky: () => undefined, selectAll: () => undefined, linesChanged: () => undefined });
     const range = document.createRange();
     range.selectNodeContents(body.querySelector('p') as Node);

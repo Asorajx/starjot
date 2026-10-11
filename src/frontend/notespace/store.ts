@@ -421,7 +421,8 @@ export function isStorageAvailable() {
    React Hooks
    ========================= */
 
-function subscribe(listener: () => void) {
+/* Call listener after every change to notes or categories; returns a function that stops it. */
+export function subscribe(listener: () => void) {
   listeners.add(listener);
   return () => listeners.delete(listener);
 }

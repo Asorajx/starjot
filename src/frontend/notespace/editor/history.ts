@@ -72,6 +72,11 @@ export class History {
     return next;
   }
 
+  /* The content of the step being shown. */
+  currentContent() {
+    return this.current.content;
+  }
+
   canUndo() {
     return this.undoStack.length > 0;
   }

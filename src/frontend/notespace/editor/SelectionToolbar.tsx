@@ -88,7 +88,7 @@ export function SelectionToolbar({ session, locked }: SelectionToolbarProps) {
     function update() {
       if (modeRef.current !== 'buttons') return;
       const selection = window.getSelection();
-      const body = document.getElementById('note-body');
+      const body = session.body();
       const range = selection?.rangeCount ? selection.getRangeAt(0) : null;
       if (!body || !range || range.collapsed || !body.contains(range.commonAncestorContainer) || !range.toString().trim()) {
         setAnchor(null);
@@ -107,7 +107,7 @@ export function SelectionToolbar({ session, locked }: SelectionToolbarProps) {
       setValue('');
     }
 
-    const scroller = document.getElementById('main-scroll');
+    const scroller = session.scroller();
     document.addEventListener('selectionchange', update);
     document.addEventListener('mousedown', handleMouseDown);
     scroller?.addEventListener('scroll', update);

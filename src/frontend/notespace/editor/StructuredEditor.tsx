@@ -69,6 +69,12 @@ export const StructuredEditor = memo(function StructuredEditor({ session, conten
     else elements.current.delete(id);
   }, []);
 
+  /* The session finds this editor's text through it (overlays, undo, the slash menu). */
+  useLayoutEffect(() => {
+    session.setBody(bodyRef.current);
+    return () => session.setBody(null);
+  }, [session]);
+
   /* The blocks with the latest typed HTML read from the page. */
   function liveBlocks() {
     return blocksRef.current.map(block => {
@@ -819,8 +825,7 @@ export const StructuredEditor = memo(function StructuredEditor({ session, conten
   return (
     <div
       ref={bodyRef}
-      className={`structured-document ${locked ? 'is-locked' : ''}`}
-      id="note-body"
+      className={`note-body structured-document ${locked ? 'is-locked' : ''}`}
       contentEditable={!locked}
       suppressContentEditableWarning
       tabIndex={-1}

@@ -129,7 +129,7 @@ export function SlashMenu({ session, noteId, locked, onOpenNewPage }: SlashMenuP
 
     /* A "/" typed at the start of a line or after a space opens the menu. Code keeps "/" as text. */
     function handleInput(event: Event) {
-      const body = document.getElementById('note-body');
+      const body = session.body();
       const caret = caretInText();
       if (!anchor.current && !latest.current.locked && (event as InputEvent).data === '/' && body && caret
         && body.contains(caret.node) && !closestAtCaret('pre, code, a')) {
@@ -185,7 +185,7 @@ export function SlashMenu({ session, noteId, locked, onOpenNewPage }: SlashMenuP
 
   /* Replace "/" and the filter text with the chosen block. */
   choose.current = (command: SlashCommand) => {
-    const body = document.getElementById('note-body');
+    const body = session.body();
     const range = commandRange();
     if (!body || !range) return;
 
@@ -230,7 +230,7 @@ export function SlashMenu({ session, noteId, locked, onOpenNewPage }: SlashMenuP
 
   function linkTo(id: string) {
     const range = linkRange.current;
-    const body = document.getElementById('note-body');
+    const body = session.body();
     close();
     if (!range || !body) return;
     body.focus({ preventScroll: true });
@@ -244,7 +244,7 @@ export function SlashMenu({ session, noteId, locked, onOpenNewPage }: SlashMenuP
     const range = linkRange.current;
     close();
     if (!range) return;
-    document.getElementById('note-body')?.focus({ preventScroll: true });
+    session.body()?.focus({ preventScroll: true });
     range.collapse(false);
     window.getSelection()?.removeAllRanges();
     window.getSelection()?.addRange(range);
