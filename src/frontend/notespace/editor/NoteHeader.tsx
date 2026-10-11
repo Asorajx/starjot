@@ -1,7 +1,9 @@
-import { useState } from 'react';
+import { useLayoutEffect, useRef, useState, type ClipboardEvent, type KeyboardEvent } from 'react';
 import { EmojiPicker } from '../../components/EmojiPicker';
 import { Icon } from '../../components/Icon';
 import { scheduleSave, updateNote, useCategories, useNotes } from '../store';
+import { isEmptyContent, wrapLooseLines } from './dom';
+import { applyMarkdownShortcut } from './markdown';
 import type { Note } from '../../../shared/types/note';
 
 type NoteHeaderProps = {
@@ -18,6 +20,61 @@ function formatDate(iso: string | null) {
 /* Every page inside a page, at any depth (only one level today, but older notes may have more). */
 function countPages(notes: Note[], parentId: string): number {
   return notes.filter(note => note.parentId === parentId).reduce((total, note) => total + 1 + countPages(notes, note.id), 0);
+}
+
+type RemarksFieldProps = {
+  note: Note;
+  locked: boolean;
+};
+
+/* Remarks are written like the note's own text: Markdown shortcuts (#, -, 1., >, ``` and ---) work, */
+/* and so do Ctrl + B / I / U. The field keeps its own undo, separate from the note's. */
+function RemarksField({ note, locked }: RemarksFieldProps) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [empty, setEmpty] = useState(!note.remarks);
+
+  /* Filled once per note; after that the browser owns the text while typing, like the note itself. */
+  useLayoutEffect(() => {
+    if (ref.current) ref.current.innerHTML = note.remarks;
+    setEmpty(!note.remarks);
+  }, [note.id]);
+
+  function save() {
+    const field = ref.current;
+    if (!field) return;
+    wrapLooseLines(field);
+    setEmpty(isEmptyContent(field));
+    updateNote(note.id, { remarks: isEmptyContent(field) ? '' : field.innerHTML }, false);
+    scheduleSave();
+  }
+
+  function handleKeyDown(event: KeyboardEvent<HTMLDivElement>) {
+    if (ref.current && applyMarkdownShortcut(event.nativeEvent, ref.current)) save();
+  }
+
+  /* Paste plain text only, like the note itself. */
+  function handlePaste(event: ClipboardEvent<HTMLDivElement>) {
+    event.preventDefault();
+    document.execCommand('insertText', false, event.clipboardData.getData('text/plain'));
+  }
+
+  return (
+    <div
+      ref={ref}
+      className={`note-remarks ${empty ? 'is-empty' : ''}`}
+      data-remarks=""
+      data-placeholder={locked ? 'No remarks' : 'Add remarks'}
+      contentEditable={!locked}
+      suppressContentEditableWarning
+      role="textbox"
+      aria-multiline="true"
+      aria-label="Remarks"
+      spellCheck
+      onKeyDown={handleKeyDown}
+      onInput={save}
+      onPaste={handlePaste}
+    />
+  );
 }
 
 type PageListProps = {
@@ -91,6 +148,13 @@ export function NoteHeader({ note, locked, onOpenNote }: NoteHeaderProps) {
         <button type="button" className="note-header-action" aria-expanded={!note.detailsHidden} onClick={() => updateNote(note.id, { detailsHidden: !note.detailsHidden })}>
           <Icon name={note.detailsHidden ? 'list' : 'x'} size={14} /> {note.detailsHidden ? 'Show details' : 'Hide details'}
         </button>
+
+        {/* How many comments are on the note's text (the speech-bubble markers beside the lines). */}
+        {comments > 0 && (
+          <span className="note-comment-count" title={`${comments} ${comments === 1 ? 'comment' : 'comments'} in this note`}>
+            <Icon name="message-square" size={14} /> {comments}
+          </span>
+        )}
       </div>
 
       {picking && (
@@ -148,8 +212,8 @@ export function NoteHeader({ note, locked, onOpenNote }: NoteHeaderProps) {
           <dt>Created</dt>
           <dd>{formatDate(note.createdAt)}</dd>
 
-          <dt>Comments</dt>
-          <dd>{comments || 'None'}</dd>
+          <dt className="note-remarks-label">Remarks</dt>
+          <dd className="note-remarks-cell"><RemarksField note={note} locked={locked} /></dd>
 
           {/* The page list can be folded on its own, so the other details stay visible. */}
           <dt className="note-pages-label">Pages</dt>

@@ -2225,6 +2225,104 @@
   color: #4b5b74;
 }
 
+/* Remarks look like the other detail fields, but can hold several lines and simple formatting. */
+.note-details dt.note-remarks-label {
+  align-self: start;
+  line-height: 30px;
+}
+
+.note-details dd.note-remarks-cell {
+  align-items: stretch;
+}
+
+.note-remarks {
+  position: relative;
+  width: 100%;
+  max-width: 560px;
+  min-height: 30px;
+  padding: 4px 8px;
+  margin-left: -8px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  color: #4b5b74;
+  font-size: 12px;
+  line-height: 1.7;
+  outline: none;
+  overflow-wrap: anywhere;
+}
+
+.note-remarks:hover:not([contenteditable="false"]) {
+  border-color: var(--line);
+}
+
+.note-remarks:focus {
+  border-color: #a7c5f5;
+}
+
+/* The placeholder sits on top of the empty field, so it never gets in the way of typing. */
+.note-remarks.is-empty::before {
+  content: attr(data-placeholder);
+  position: absolute;
+  top: 4px;
+  left: 8px;
+  color: #a4adbb;
+  pointer-events: none;
+}
+
+.note-remarks p,
+.note-remarks ul,
+.note-remarks ol,
+.note-remarks blockquote,
+.note-remarks pre {
+  margin: 0;
+}
+
+.note-remarks ul,
+.note-remarks ol {
+  padding-left: 20px;
+}
+
+.note-remarks h1,
+.note-remarks h2,
+.note-remarks h3,
+.note-remarks h4,
+.note-remarks h5 {
+  margin: 4px 0 0;
+  color: #2c3d58;
+  font-size: 13px;
+}
+
+.note-remarks blockquote {
+  padding-left: 8px;
+  border-left: 2px solid #e2e8f1;
+}
+
+.note-remarks pre {
+  padding: 4px 8px;
+  border-radius: 4px;
+  background: #f6f8fd;
+  font: 11px/1.6 ui-monospace, SFMono-Regular, Consolas, monospace;
+  white-space: pre-wrap;
+}
+
+.note-remarks hr {
+  margin: 4px 0;
+  border: 0;
+  border-top: 1px solid #e2e8f1;
+}
+
+/* The number of comments, next to Hide details. */
+.note-comment-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 26px;
+  padding: 0 8px;
+  color: #94a1b3;
+  font-size: 11px;
+  font-weight: 600;
+}
+
 /* The Pages row: a small fold button with the page count, then the pages side by side as small */
 /* chips that wrap onto more lines only when needed. A page's own sub-pages follow it, marked "↳". */
 /* The label stays level with the first line. */
@@ -3160,6 +3258,47 @@
 }
 
 /* The page block menu (right-click) uses the same look as the table menu, with icons beside each action. */
+/* The lock label above the title opens a small menu for unlocking or locking again. */
+.lock-status {
+  position: relative;
+  display: inline-flex;
+}
+
+.lock-status .page-locked {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  margin: -4px -4px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.lock-status .page-locked:hover {
+  background: var(--blue-soft);
+  color: var(--blue);
+}
+
+.lock-status .page-locked.is-open {
+  color: #b45309;
+}
+
+/* The menu opens under the label, inside the note, rather than at the pointer. */
+.lock-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: -4px;
+  min-width: 200px;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
 .page-menu-item .icon {
   flex-shrink: 0;
 }

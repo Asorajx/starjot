@@ -15,6 +15,11 @@ const ACCENTS: NoteAccent[] = ['indigo', 'mint', 'amber', 'rose'];
 
 const CATEGORY_NAME_LENGTH = 24;
 
+/* A locked note unlocked "for a while" locks itself again after this long without an edit. */
+export const TEMPORARY_UNLOCK_MINUTES = 5;
+const TEMPORARY_UNLOCK_MS = TEMPORARY_UNLOCK_MINUTES * 60 * 1000;
+const REMARKS_LENGTH = 20000;
+
 /* Pages can sit inside pages this many levels deep: a note and its sub-pages, which cannot have */
 /* sub-pages of their own. A note can hold any number of sub-pages. */
 export const MAX_PAGE_DEPTH = 2;
@@ -84,6 +89,8 @@ function normalizeNote(raw: unknown): Note | null {
     mode: record.mode === 'blocks' ? 'blocks' : 'continuous',
     stickyIndicator: record.stickyIndicator !== false,
     locked: record.locked === true,
+    unlockedUntil: typeof record.unlockedUntil === 'string' && !Number.isNaN(Date.parse(record.unlockedUntil)) ? record.unlockedUntil : null,
+    remarks: cleanHtml(String(record.remarks ?? '').slice(0, REMARKS_LENGTH)),
     detailsHidden: record.detailsHidden === true,
     pagesHidden: record.pagesHidden === true,
     parentId: /^[a-zA-Z0-9_-]+$/.test(String(record.parentId ?? '')) ? String(record.parentId) : '',
@@ -227,8 +234,18 @@ export function updateNote(id: string, changes: NoteChanges, persist = true) {
   }
   if (changes.mode === 'continuous' || changes.mode === 'blocks') next.mode = changes.mode;
   if (typeof changes.stickyIndicator === 'boolean') next.stickyIndicator = changes.stickyIndicator;
-  if (typeof changes.locked === 'boolean') next.locked = changes.locked;
+  if (changes.remarks !== undefined) next.remarks = cleanHtml(String(changes.remarks).slice(0, REMARKS_LENGTH));
   if (changes.comments) next.comments = normalizeComments(changes.comments);
+
+  /* Locking or unlocking from Page options ends any short unlock. */
+  if (typeof changes.locked === 'boolean') {
+    next.locked = changes.locked;
+    next.unlockedUntil = null;
+  }
+
+  /* An edit while the note is unlocked for a short time starts the countdown again. */
+  const edits = (['title', 'subtitle', 'category', 'icon', 'content', 'remarks', 'comments'] as const).some(key => changes[key] !== undefined);
+  if (edits && isTemporarilyUnlocked(current)) next.unlockedUntil = new Date(Date.now() + TEMPORARY_UNLOCK_MS).toISOString();
 
   setState({ notes: state.notes.map(note => (note.id === id ? next : note)) });
   if (persist) save();
@@ -238,6 +255,33 @@ export function updateNote(id: string, changes: NoteChanges, persist = true) {
 /* Pinning is not an edit, so it does not change the note's "last edited" time. */
 export function setPinned(id: string, pinned: boolean) {
   setState({ notes: state.notes.map(note => (note.id === id ? { ...note, pinned } : note)) });
+  save();
+}
+
+/* =========================
+   Locking
+   ========================= */
+
+/* True while a locked note is unlocked for a short time. */
+export function isTemporarilyUnlocked(note: Note, now = Date.now()) {
+  return note.locked && Boolean(note.unlockedUntil) && Date.parse(note.unlockedUntil as string) > now;
+}
+
+/* Whether the note can be edited right now. */
+export function isLocked(note: Note, now = Date.now()) {
+  return note.locked && !isTemporarilyUnlocked(note, now);
+}
+
+/* Unlock a locked note until it has gone a few minutes without an edit. Not an edit itself. */
+export function unlockForAWhile(id: string) {
+  const unlockedUntil = new Date(Date.now() + TEMPORARY_UNLOCK_MS).toISOString();
+  setState({ notes: state.notes.map(note => (note.id === id ? { ...note, unlockedUntil } : note)) });
+  save();
+}
+
+/* End a short unlock straight away. */
+export function lockNow(id: string) {
+  setState({ notes: state.notes.map(note => (note.id === id ? { ...note, unlockedUntil: null } : note)) });
   save();
 }
 

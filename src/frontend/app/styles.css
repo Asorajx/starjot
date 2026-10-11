@@ -464,6 +464,12 @@ p {
   background: #f3f7ff;
 }
 
+/* The light/dark mode switch sits above Notifications and looks the same. */
+.sidebar-theme {
+  margin-bottom: 0;
+  cursor: pointer;
+}
+
 .sidebar-notifications .notification-dot {
   position: static;
   margin-left: auto;

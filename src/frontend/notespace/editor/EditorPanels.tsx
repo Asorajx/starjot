@@ -118,7 +118,6 @@ export function PageOptions({ note, open, zoom, onClose, onModeChange, onStickyI
 
       <div className="side-setting side-setting--border">
         <strong>Zoom</strong>
-        <p>Make every note larger or smaller. Ctrl + = and Ctrl + − also work.</p>
         <div className="zoom-control" role="group" aria-label="Note zoom">
           <button type="button" className="zoom-button" aria-label="Zoom out" onClick={() => onZoom(-1)}><Icon name="minus" size={15} /></button>
           <button type="button" className="zoom-value" aria-label="Reset zoom to 100%" onClick={() => onZoom(0)}>{Math.round(zoom * 100)}%</button>

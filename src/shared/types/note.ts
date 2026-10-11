@@ -36,6 +36,9 @@ export type Note = {
   /* A locked note can be read, selected and commented on, but not edited. */
   locked: boolean;
 
+  /* While a locked note is unlocked for a short time, when it locks again (an ISO date), or null. */
+  unlockedUntil: string | null;
+
   /* Hides the details (category, description, dates, comments) under the title. */
   detailsHidden: boolean;
 
@@ -46,6 +49,10 @@ export type Note = {
   parentId: string;
   comments: NoteComment[];
   content: string;
+
+  /* Free remarks about the note, written in the details (sanitized HTML). They are not part of the */
+  /* note's text, so they never appear in previews. */
+  remarks: string;
 };
 
 /* A comment's text is stored here; the commented words are marked in the content */
@@ -58,7 +65,7 @@ export type NoteComment = {
 
 /* The fields an editor may change; everything else is managed by the store. */
 export type NoteChanges = Partial<Pick<Note,
-  'title' | 'subtitle' | 'category' | 'icon' | 'content' | 'mode' | 'stickyIndicator' | 'locked' | 'detailsHidden' | 'pagesHidden' | 'comments'>>;
+  'title' | 'subtitle' | 'category' | 'icon' | 'content' | 'mode' | 'stickyIndicator' | 'locked' | 'detailsHidden' | 'pagesHidden' | 'comments' | 'remarks'>>;
 
 /* A user-defined group of notes, such as "Work". Notes refer to it by id, so renaming is safe. */
 export type Category = {

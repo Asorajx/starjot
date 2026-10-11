@@ -248,3 +248,71 @@ describe('sub-pages', () => {
     expect(store.getNote('kept')?.parentId).toBe('atlas');
   });
 });
+
+
+/* =========================
+   Locking and Remarks
+   ========================= */
+
+describe('locking for a while', () => {
+  it('unlocks a locked note for a few minutes without counting as an edit', async () => {
+    const store = await openApp();
+    const note = store.createNote();
+    store.updateNote(note.id, { locked: true });
+    const editedAt = store.getNote(note.id)?.updatedAt;
+    expect(store.isLocked(store.getNote(note.id)!)).toBe(true);
+
+    store.unlockForAWhile(note.id);
+    const unlocked = store.getNote(note.id)!;
+    expect(store.isLocked(unlocked)).toBe(false);
+    expect(store.isTemporarilyUnlocked(unlocked)).toBe(true);
+    expect(unlocked.updatedAt).toBe(editedAt);
+    expect(store.isLocked(unlocked, Date.now() + (store.TEMPORARY_UNLOCK_MINUTES * 60 + 1) * 1000)).toBe(true);
+  });
+
+  it('starts the countdown again on every edit, but not on reopening', async () => {
+    vi.useFakeTimers();
+    let store = await openApp();
+    const note = store.createNote();
+    store.updateNote(note.id, { locked: true });
+    store.unlockForAWhile(note.id);
+    const first = store.getNote(note.id)!.unlockedUntil;
+
+    vi.advanceTimersByTime(60000);
+    vi.resetModules();
+    store = await openApp();
+    expect(store.getNote(note.id)?.unlockedUntil).toBe(first);
+
+    store.updateNote(note.id, { content: '<p>Edited</p>' });
+    expect(Date.parse(store.getNote(note.id)!.unlockedUntil!)).toBe(Date.parse(first!) + 60000);
+    vi.useRealTimers();
+  });
+
+  it('ends a short unlock when locked again, or when unlocked for good', async () => {
+    const store = await openApp();
+    const note = store.createNote();
+    store.updateNote(note.id, { locked: true });
+    store.unlockForAWhile(note.id);
+    store.lockNow(note.id);
+    expect(store.isLocked(store.getNote(note.id)!)).toBe(true);
+
+    store.unlockForAWhile(note.id);
+    store.updateNote(note.id, { locked: false });
+    expect(store.getNote(note.id)?.unlockedUntil).toBeNull();
+    expect(store.isLocked(store.getNote(note.id)!)).toBe(false);
+  });
+});
+
+describe('remarks', () => {
+  it('keeps remarks cleaned and out of the note preview', async () => {
+    let store = await openApp();
+    const note = store.createNote();
+    store.updateNote(note.id, { content: '<p>Body text</p>', remarks: '<ul><li>Check sources</li></ul><script>alert(1)</script>' });
+    expect(store.getNote(note.id)?.remarks).toBe('<ul><li>Check sources</li></ul>');
+    expect(store.getNote(note.id)?.preview).toBe('Body text');
+
+    vi.resetModules();
+    store = await openApp();
+    expect(store.getNote(note.id)?.remarks).toBe('<ul><li>Check sources</li></ul>');
+  });
+});

@@ -2,7 +2,10 @@ import { useEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEven
 import { changeZoom, usePreferences } from '../../app/preferences';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
 import { Icon } from '../../components/Icon';
-import { childrenOf, deleteNote, flushSave, getNote, isStorageAvailable, markOpened, updateNote, updatedLabel, useCategories, useNote, useSaveStatus } from '../store';
+import {
+  childrenOf, deleteNote, flushSave, getNote, isLocked, isStorageAvailable, isTemporarilyUnlocked, lockNow, markOpened, unlockForAWhile, updateNote,
+  updatedLabel, useCategories, useNote, useSaveStatus
+} from '../store';
 import type { NoteMode } from '../../../shared/types/note';
 import { CodeLanguagePickers } from './CodeLanguagePickers';
 import { CommentLayer } from './CommentLayer';
@@ -35,6 +38,72 @@ type NoteEditorProps = {
 
 
 /* =========================
+   Lock Status
+   ========================= */
+
+type LockStatusProps = {
+  noteId: string;
+  temporary: boolean;
+  unlockedUntil: string | null;
+};
+
+/* A lock icon above the title of a locked note; its tooltip says whether the note is locked or how */
+/* long it stays unlocked. Clicking it unlocks the note for a few minutes (it locks itself again after */
+/* that long without an edit) or for good (lock it again in Page options), or locks it straight away. */
+function LockStatus({ noteId, temporary, unlockedUntil }: LockStatusProps) {
+  const [open, setOpen] = useState(false);
+  const minutes = unlockedUntil ? Math.max(1, Math.ceil((Date.parse(unlockedUntil) - Date.now()) / 60000)) : 0;
+  const label = temporary ? `Unlocked · locks again in ${minutes} min` : 'Locked';
+
+  /* Clicking anywhere else closes the menu. */
+  useEffect(() => {
+    if (!open) return;
+    function handleMouseDown(event: MouseEvent) {
+      if (!(event.target as Element).closest?.('.lock-status')) setOpen(false);
+    }
+    document.addEventListener('mousedown', handleMouseDown);
+    return () => document.removeEventListener('mousedown', handleMouseDown);
+  }, [open]);
+
+  const choose = (action: () => void) => {
+    action();
+    setOpen(false);
+  };
+
+  return (
+    <span className="lock-status">
+      <button
+        type="button"
+        className={`page-locked ${temporary ? 'is-open' : ''}`}
+        title={label}
+        aria-label={label}
+        aria-expanded={open}
+        onClick={() => setOpen(value => !value)}
+      >
+        <Icon name={temporary ? 'unlock' : 'lock'} size={13} />
+      </button>
+      {open && (
+        <span className="page-menu lock-menu" role="menu">
+          {temporary ? (
+            <button type="button" role="menuitem" className="page-menu-item" onClick={() => choose(() => lockNow(noteId))}>
+              <Icon name="lock" size={14} /> Lock now
+            </button>
+          ) : (
+            <button type="button" role="menuitem" className="page-menu-item" onClick={() => choose(() => unlockForAWhile(noteId))}>
+              <Icon name="clock" size={14} /> Unlock for 5 minutes
+            </button>
+          )}
+          <button type="button" role="menuitem" className="page-menu-item" onClick={() => choose(() => updateNote(noteId, { locked: false }))}>
+            <Icon name="unlock" size={14} /> Unlock
+          </button>
+        </span>
+      )}
+    </span>
+  );
+}
+
+
+/* =========================
    Note Editor Screen
    ========================= */
 
@@ -52,7 +121,17 @@ export function NoteEditor({ noteId, onClose, onOpenNote, onOpenCategory, onOpen
   const [confirmDelete, setConfirmDelete] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLElement>(null);
-  const locked = note?.locked ?? false;
+
+  /* A locked note may be unlocked for a short time; it locks itself again when that time is up, */
+  /* so the lock is checked again every few seconds while the countdown runs. */
+  const temporary = note ? isTemporarilyUnlocked(note) : false;
+  const locked = note ? isLocked(note) : false;
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    if (!temporary) return;
+    const timer = window.setInterval(() => setTick(tick => tick + 1), 5000);
+    return () => window.clearInterval(timer);
+  }, [temporary]);
 
   /* One editing session per open note: undo history, Sticky state and editor actions. */
   const session = useMemo(() => new EditorSession(noteId, getNote(noteId)?.content ?? ''), [noteId]);
@@ -70,7 +149,7 @@ export function NoteEditor({ noteId, onClose, onOpenNote, onOpenCategory, onOpen
     function handleKeyDown(event: KeyboardEvent) {
       if (event.defaultPrevented || event.isComposing) return;
       const target = event.target as HTMLElement;
-      const inField = Boolean(target.closest?.('input, textarea, select'));
+      const inField = Boolean(target.closest?.('input, textarea, select, [data-remarks]'));
       const inEditor = Boolean(target.closest?.('#note-body'));
       const key = event.key.toLowerCase();
       const command = (event.ctrlKey || event.metaKey) && !event.altKey;
@@ -209,7 +288,7 @@ export function NoteEditor({ noteId, onClose, onOpenNote, onOpenCategory, onOpen
           <div className="editor-width" style={{ zoom }}>
             <div className="editor-meta">
               <span className="page-type"><Icon name="file-text" size={14} /> DOCUMENT</span>
-              {locked && <><span className="meta-dot">•</span><span className="page-locked"><Icon name="lock" size={12} /> Locked</span></>}
+              {note.locked && <><span className="meta-dot">•</span><LockStatus noteId={note.id} temporary={temporary} unlockedUntil={note.unlockedUntil} /></>}
               <span className="meta-dot">•</span>
               <span id="note-updated-label">{updatedLabel(note)}</span>
             </div>
