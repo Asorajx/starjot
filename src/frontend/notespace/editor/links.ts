@@ -1,4 +1,5 @@
 import { safeHref } from '../sanitize';
+import { getNote } from '../store';
 
 /* Where a link leads: a web or email address, or another page in Notespace. */
 export type LinkTarget = { kind: 'url'; href: string } | { kind: 'page'; id: string };
@@ -60,6 +61,123 @@ export function createLink(text: string, target: LinkTarget) {
   setLinkTarget(link, target);
   return link;
 }
+
+
+/* =========================
+   Page Addresses
+   ========================= */
+
+/* A page's own address, such as https://…/#note=note_abc. Copying a page's link copies this; */
+/* pasting it into a note makes a page link, and opening it in the browser opens the page. */
+export function pageAddress(id: string) {
+  return `${window.location.origin}${window.location.pathname}#note=${id}`;
+}
+
+/* Copy a link to a page: its address as plain text (opens the page in a browser, and pasted into */
+/* a note makes a page link), and the page link itself for apps that take formatted text. */
+export async function copyPageLink(id: string, words = getNote(id)?.title || 'Untitled note') {
+  const address = pageAddress(id);
+  if (typeof ClipboardItem === 'undefined') {
+    await navigator.clipboard.writeText(address);
+    return;
+  }
+  const html = `<a class="page-link" data-page="${id}" href="${address}">${words.replace(/&/g, '&amp;').replace(/</g, '&lt;')}</a>`;
+  await navigator.clipboard.write([new ClipboardItem({
+    'text/plain': new Blob([address], { type: 'text/plain' }),
+    'text/html': new Blob([html], { type: 'text/html' })
+  })]);
+}
+
+/* The page id in a page address, or null for any other text. Any site's address counts, so a */
+/* link copied from another copy of Starjot still finds the page when this browser has it. */
+export function pageIdFromAddress(text: string) {
+  const match = text.trim().match(/^https?:\/\/\S*#note=([a-zA-Z0-9_-]{1,90})$/);
+  return match ? match[1] : null;
+}
+
+
+/* =========================
+   Addresses in Text
+   ========================= */
+
+/* A web address written in text, starting with http://, https:// or www. */
+export const TEXT_ADDRESS = /(?:https?:\/\/|www\.)[^\s<>"'`]+/g;
+
+/* Text after an address that most likely ends the sentence, not the address: a full stop, comma */
+/* and so on, or a closing bracket the address did not open. Returns the address and that text. */
+export function trimAddress(text: string) {
+  let address = text;
+  while (address) {
+    const last = address.at(-1) as string;
+    const unopened = last === ')' && (address.match(/\(/g)?.length ?? 0) < (address.match(/\)/g)?.length ?? 0);
+    if (!'.,;:!?\'"'.includes(last) && !unopened) break;
+    address = address.slice(0, -1);
+  }
+  return { address, rest: text.slice(address.length) };
+}
+
+/* Common endings of web addresses typed without https:// or www., such as youtube.com. Words */
+/* with other endings (file.txt, Node.js) are left as text. */
+const COMMON_ENDINGS = 'com|org|net|io|dev|app|ai|co|edu|gov|me|info|biz|tv|xyz|tech|site|blog|news|uk|au|us|ca|de|fr|nz|sg|my|in|jp';
+
+/* A word that is a web address: starting with http://, https:// or www., or a name with a common ending. */
+const TYPED_ADDRESS = new RegExp(`^(?:https?:\\/\\/\\S+|www\\.\\S+|[a-z0-9-]+(?:\\.[a-z0-9-]+)*\\.(?:${COMMON_ENDINGS})(?:[/?#]\\S*)?)$`, 'i');
+
+/* When Space or Enter follows a typed web address, the address becomes a link (punctuation */
+/* typed right after it, such as a full stop, stays text). The key itself is then handled as */
+/* usual. Returns true when a link was made. */
+export function linkTypedAddress(root: Element) {
+  const selection = window.getSelection();
+  if (!selection?.isCollapsed || !selection.rangeCount) return false;
+  const { startContainer: node, startOffset: offset } = selection.getRangeAt(0);
+  const parent = node.parentElement;
+  if (node.nodeType !== Node.TEXT_NODE || !root.contains(node) || !parent || parent.closest('a, code, pre')) return false;
+
+  const word = (node.textContent ?? '').slice(0, offset).match(/\S+$/)?.[0];
+  const { address, rest } = trimAddress(word ?? '');
+  const href = TYPED_ADDRESS.test(address) ? normalizeAddress(address) : null;
+  if (!word || !href) return false;
+
+  const start = offset - word.length;
+  const range = document.createRange();
+  range.setStart(node, start);
+  range.setEnd(node, start + address.length);
+  const link = document.createElement('a');
+  link.setAttribute('href', href);
+  range.surroundContents(link);
+
+  /* The caret goes back to where it was: after the address and any punctuation typed after it. */
+  const caret = document.createRange();
+  const after = link.nextSibling;
+  if (rest && after?.nodeType === Node.TEXT_NODE) caret.setStart(after, rest.length);
+  else caret.setStartAfter(link);
+  selection.removeAllRanges();
+  selection.addRange(caret);
+  return true;
+}
+
+/* Plain text split into words and web addresses, for showing comments with clickable links. */
+export function textWithAddresses(text: string) {
+  const parts: ({ text: string } | { href: string; text: string })[] = [];
+  let last = 0;
+  for (const match of text.matchAll(TEXT_ADDRESS)) {
+    const index = match.index ?? 0;
+    const { address, rest } = trimAddress(match[0]);
+    const href = normalizeAddress(address);
+    if (index > last) parts.push({ text: text.slice(last, index) });
+    if (href) parts.push({ href, text: address });
+    else parts.push({ text: address });
+    if (rest) parts.push({ text: rest });
+    last = index + match[0].length;
+  }
+  if (last < text.length) parts.push({ text: text.slice(last) });
+  return parts;
+}
+
+
+/* =========================
+   Typing After Links
+   ========================= */
 
 /* The link that ends exactly at a collapsed caret: the caret is at the end of the link's own text, */
 /* or right after the link. */

@@ -18,7 +18,7 @@ const MAX_CONTENT = 250000;
 function keepsClass(tag: string, name: string) {
   if (name === 'document-tagline' || name === 'overline') return true;
   if (tag === 'DIV' && ['sticky-group', 'toggle-block', 'is-open', 'toggle-body'].includes(name)) return true;
-  if (tag === 'SPAN' && (name === 'page-block' || name === 'image-block')) return true;
+  if (tag === 'SPAN' && (name === 'page-block' || name === 'page-mention' || name === 'image-block')) return true;
   if (/^(P|H[1-5])$/.test(tag) && name === 'toggle-summary') return true;
   if (tag === 'A' && name === 'page-link') return true;
   if (tag === 'TABLE' && name === 'fit-content') return true;
@@ -84,7 +84,7 @@ function cleanNode(node: Node): Node | null {
 
   /* A page block's title and buttons, and an image's picture, are drawn when shown, so only the empty block is stored. */
   const children = document.createDocumentFragment();
-  const keepsChildren = !node.classList.contains('page-block') && !node.classList.contains('image-block');
+  const keepsChildren = !['page-block', 'page-mention', 'image-block'].some(name => node.classList.contains(name));
   if (keepsChildren) {
     node.childNodes.forEach(child => {
       const cleaned = cleanNode(child);

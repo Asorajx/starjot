@@ -15,6 +15,7 @@ import { getLength, getOffset, setOffset } from './caret';
 import { highlight, insertNewline, preAtCaret } from './code';
 import { caretAtEdge, closestAtCaret, emptyParagraph, isEmptyContent, placeCaret, selectContents, selectionInside, wrapLooseLines } from './dom';
 import { imageFiles, insertImageFiles } from './images';
+import { linkTypedAddress } from './links';
 import { applyMarkdownShortcut } from './markdown';
 import { deleteSelection, insertPasted, pastedMarkdown } from './paste';
 import type { EditorSession } from './session';
@@ -650,6 +651,9 @@ export const StructuredEditor = memo(function StructuredEditor({ session, conten
       return;
     }
     if (!editable || !id || !bodyRef.current?.contains(editable)) return;
+
+    /* A web address typed just before Space or Enter becomes a link first. */
+    if ((event.key === ' ' || event.key === 'Enter') && !event.altKey && !event.ctrlKey && !event.metaKey) linkTypedAddress(editable);
 
     /* Tab, Enter and Backspace work differently inside table cells and toggle lists. */
     const result = handleBlockKeys(native, editable);

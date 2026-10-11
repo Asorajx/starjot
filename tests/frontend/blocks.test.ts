@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import {
-  convertLine, createPageBlock, createTable, embeddedPageIds, handleBlockKeys, insertBlock, insertInline, lineBelowTable, matchCommands, pageWidth,
+  convertLine, createPageBlock, createPageMention, hydratePages, createTable, embeddedPageIds, handleBlockKeys, insertBlock, insertInline, lineBelowTable, matchCommands, pageWidth,
   setPageWidth
 } from '../../src/frontend/notespace/editor/blocks';
 import { addColumn, removeColumn } from '../../src/frontend/notespace/editor/tables';
 import { parseBlocks } from '../../src/frontend/notespace/editor/blockModel';
+import { cleanHtml } from '../../src/frontend/notespace/sanitize';
 
 /* An editable note body, like the continuous editor, added to the test page. */
 function editor(html: string) {
@@ -325,5 +326,29 @@ describe('page block width', () => {
     setPageWidth(block, null);
     expect(block.hasAttribute('data-width')).toBe(false);
     expect(block.hasAttribute('style')).toBe(false);
+  });
+});
+
+
+/* =========================
+   Page Mentions
+   ========================= */
+
+describe('page mentions', () => {
+  it('are stored empty, holding only the page id', () => {
+    const mention = createPageMention('atlas');
+    expect(cleanHtml(`<p>See ${mention.outerHTML}</p>`)).toBe('<p>See <span class="page-mention" data-page="atlas"></span></p>');
+    expect(cleanHtml('<span class="page-mention" data-page="atlas" contenteditable="false"><span>Old title</span></span>'))
+      .toBe('<span class="page-mention" data-page="atlas"></span>');
+  });
+
+  it("show the page's icon and current title as text that cannot be edited", () => {
+    const body = editor(`<p>${createPageMention('atlas').outerHTML}${createPageMention('gone').outerHTML}</p>`);
+    hydratePages(body);
+    const [found, missing] = Array.from(body.querySelectorAll<HTMLElement>('.page-mention'));
+    expect(found.contentEditable).toBe('false');
+    expect(found.querySelector('.page-mention-title')?.textContent).toBe('Project Atlas — Research brief');
+    expect(missing.classList.contains('is-missing')).toBe(true);
+    expect(missing.textContent).toBe('Page not found');
   });
 });

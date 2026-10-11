@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from 'react';
 import { Icon } from '../../components/Icon';
 import { getNote, useNotes } from '../store';
-import { linkTarget, normalizeAddress, setLinkTarget, unwrapLink, type LinkTarget } from './links';
+import { copyPageLink, linkTarget, normalizeAddress, setLinkTarget, unwrapLink, type LinkTarget } from './links';
+import { LinkPreviewCard } from './LinkPreview';
 import type { EditorSession } from './session';
 
 type LinkToolsProps = {
@@ -17,6 +18,9 @@ const PAGE_SUGGESTIONS = 5;
 /* A link in the note, or a link in a note's text that was copied. */
 const LINK_SELECTOR = 'a[href], a.page-link';
 
+/* The parts of a note whose links show a preview: its text, its remarks and its comments. */
+const LINK_AREAS = '.note-body, [data-remarks], .comment-popover';
+
 
 /* =========================
    Opening and Copying Links
@@ -28,23 +32,11 @@ function pageTitle(id: string) {
   return note ? note.title || 'Untitled note' : 'Page not found';
 }
 
-/* A page link is copied both as plain words and as a page link, so pasting it into a note makes the */
-/* same page link while pasting it anywhere else gives just its words. */
+/* A page link copies the page's address (see copyPageLink), so pasting it into a note makes the */
+/* same page link. */
 async function copyLink(link: HTMLAnchorElement, target: LinkTarget) {
-  if (target.kind === 'url') {
-    await navigator.clipboard.writeText(target.href);
-    return;
-  }
-  const words = link.textContent ?? '';
-  const html = `<a class="page-link" data-page="${target.id}">${words.replace(/&/g, '&amp;').replace(/</g, '&lt;')}</a>`;
-  if (typeof ClipboardItem === 'undefined') {
-    await navigator.clipboard.writeText(words);
-    return;
-  }
-  await navigator.clipboard.write([new ClipboardItem({
-    'text/plain': new Blob([words], { type: 'text/plain' }),
-    'text/html': new Blob([html], { type: 'text/html' })
-  })]);
+  if (target.kind === 'url') await navigator.clipboard.writeText(target.href);
+  else await copyPageLink(target.id, link.textContent ?? undefined);
 }
 
 
@@ -52,9 +44,11 @@ async function copyLink(link: HTMLAnchorElement, target: LinkTarget) {
    Link Tools
    ========================= */
 
-/* Hovering a link in the note shows a small bar saying where it leads, with buttons to copy or edit */
-/* it (removing it is part of editing). Double-click or Ctrl + click opens the link in a new tab (an */
-/* address in a new browser tab, a page in a new Notespace tab); on a locked note a normal click opens it too. */
+/* Hovering a link in the note, its remarks or its comments shows a preview of where it leads (see */
+/* LinkPreviewCard), with a button to copy it and, for links in the note's own text, to edit it */
+/* (removing it is part of editing). Double-click or Ctrl + click opens the link in a new tab (an */
+/* address in a new browser tab, a page in a new Notespace tab). A normal click opens it too where */
+/* the text cannot be edited: on a locked note, and in comments. */
 export function LinkTools({ session, locked, onOpenNote, onOpenNoteInNewTab }: LinkToolsProps) {
   const notes = useNotes();
   const [link, setLink] = useState<HTMLAnchorElement | null>(null);
@@ -75,11 +69,11 @@ export function LinkTools({ session, locked, onOpenNote, onOpenNoteInNewTab }: L
   latest.current = { locked, editing, onOpenNote, onOpenNoteInNewTab };
 
   useEffect(() => {
-    const body = () => session.body();
     const scroller = session.scroller();
     const linkAt = (target: EventTarget | null) => {
       const found = (target as Element | null)?.closest?.<HTMLAnchorElement>(LINK_SELECTOR) ?? null;
-      return found && body()?.contains(found) ? found : null;
+      const page = session.body()?.closest('.editor-wrap');
+      return found && page?.contains(found) && found.closest(LINK_AREAS) ? found : null;
     };
 
     function open(found: HTMLAnchorElement, newTab: boolean) {
@@ -117,7 +111,8 @@ export function LinkTools({ session, locked, onOpenNote, onOpenNoteInNewTab }: L
     function handleClick(event: MouseEvent) {
       const found = linkAt(event.target);
       const command = event.ctrlKey || event.metaKey;
-      if (!found || !(command || latest.current.locked)) return;
+      const readOnly = latest.current.locked || !found?.closest('[contenteditable="true"]');
+      if (!found || !(command || readOnly)) return;
       event.preventDefault();
       open(found, command);
     }
@@ -235,29 +230,25 @@ export function LinkTools({ session, locked, onOpenNote, onOpenNoteInNewTab }: L
 
   /* The bar sits under the link, or above it when there is no room below. */
   const bounds = shown.getBoundingClientRect();
-  const above = bounds.bottom + (editing ? 260 : 120) > window.innerHeight && bounds.top > 260;
+  const above = bounds.bottom + (editing ? 260 : 200) > window.innerHeight && bounds.top > 260;
   const style = {
     top: above ? bounds.top - 6 : bounds.bottom + 6,
     left: Math.max(8, Math.min(bounds.left, window.innerWidth - 348)),
     transform: above ? 'translateY(-100%)' : undefined
   };
-  const pageName = target.kind === 'page' ? pageTitle(target.id) : '';
+  /* Only links in the note's own text can be edited; links in remarks and comments are edited there. */
+  const editable = !locked && Boolean(session.body()?.contains(shown));
 
   return (
     <div className={`link-tools${editing ? ' is-editing' : ''}`} style={style} role="dialog" aria-label="Link" onKeyDown={handleKeyDown}>
       {!editing ? (
         <>
-          <span className="link-tools-target">
-            <Icon name={target.kind === 'url' ? 'globe' : 'file-text'} size={15} />
-            <span className="link-tools-text">
-              {target.kind === 'url' ? target.href.replace(/^(https?:\/\/|mailto:)/i, '').replace(/\/$/, '') : pageName}
-            </span>
-          </span>
+          <LinkPreviewCard target={target} />
           <span className="link-tools-buttons">
             <button type="button" className="page-bar-button" data-tooltip={copied ? 'Copied' : 'Copy link'} aria-label="Copy link" onClick={copy}>
               <Icon name={copied ? 'check' : 'copy'} size={16} />
             </button>
-            {!locked && <button type="button" className="btn btn-sm btn-tertiary" onClick={startEditing}>Edit</button>}
+            {editable && <button type="button" className="btn btn-sm btn-tertiary" onClick={startEditing}>Edit</button>}
           </span>
         </>
       ) : (

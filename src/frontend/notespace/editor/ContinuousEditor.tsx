@@ -6,6 +6,7 @@ import { hydrateTables } from './tables';
 import { highlight, highlightAll, insertNewline, preAtCaret } from './code';
 import { caretAtEdge, closestAtCaret, emptyParagraph, placeCaret, selectContents, wrapLooseLines } from './dom';
 import { imageFiles, insertImageFiles } from './images';
+import { linkTypedAddress } from './links';
 import { applyMarkdownShortcut } from './markdown';
 import { deleteSelection, insertPasted, pastedMarkdown } from './paste';
 import { stickyStateForRange, toggleStickyRange } from './stickyDom';
@@ -158,6 +159,9 @@ export const ContinuousEditor = memo(function ContinuousEditor({ session, conten
       commit();
       return;
     }
+
+    /* A web address typed just before Space or Enter becomes a link first. */
+    if ((event.key === ' ' || event.key === 'Enter') && !event.altKey && !event.ctrlKey && !event.metaKey) linkTypedAddress(body);
 
     /* Tab, Enter and Backspace work differently inside table cells and toggle lists. */
     const result = handleBlockKeys(native, body);

@@ -1,12 +1,30 @@
 import { useEffect, useLayoutEffect, useState, type RefObject } from 'react';
 import { Icon } from '../../components/Icon';
 import type { NoteComment } from '../../../shared/types/note';
+import { getNote } from '../store';
+import { pageIdFromAddress, textWithAddresses } from './links';
 import { useSessionValue, type EditorSession } from './session';
 
 type Marker = {
   comment: NoteComment;
   top: number;
 };
+
+/* A comment's text, with web addresses shown as links and page addresses as links to their page. */
+/* Hovering them shows the same preview as links in the note (see LinkTools). */
+function CommentText({ text }: { text: string }) {
+  return (
+    <>
+      {textWithAddresses(text).map((part, index) => {
+        if (!('href' in part)) return part.text;
+        const page = pageIdFromAddress(part.text);
+        const note = page ? getNote(page) : undefined;
+        if (page && note) return <a key={index} className="page-link" data-page={page}>{note.title || 'Untitled note'}</a>;
+        return <a key={index} href={part.href} target="_blank" rel="noopener noreferrer">{part.text}</a>;
+      })}
+    </>
+  );
+}
 
 type CommentLayerProps = {
   session: EditorSession;
@@ -93,7 +111,7 @@ export function CommentLayer({ session, comments, containerRef }: CommentLayerPr
           </button>
           {openId === comment.id && (
             <div className="comment-popover" role="dialog" aria-label="Comment">
-              <p>{comment.text}</p>
+              <p><CommentText text={comment.text} /></p>
               <div className="comment-popover-footer">
                 <span>{comment.createdAt ? new Date(comment.createdAt).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : ''}</span>
                 <button type="button" className="comment-delete" onClick={() => { session.removeComment(comment.id); setOpenId(null); }}>

@@ -327,6 +327,10 @@
   margin-top: 12px;
 }
 
+.option-grid.is-single {
+  grid-template-columns: 1fr;
+}
+
 .option-tile {
   display: flex;
   align-items: center;
@@ -1536,7 +1540,9 @@
    ========================= */
 
 .note-editable a,
-.block-content a {
+.block-content a,
+.note-remarks a,
+.comment-popover a {
   color: var(--blue);
   text-decoration: underline;
   text-underline-offset: 2px;
@@ -2041,7 +2047,6 @@
 .category-page h1 svg {
   color: #94a1b3;
 }
-
 
 
 /* =========================
@@ -2979,10 +2984,18 @@
 }
 
 /* S / M / L appear while the pointer is over the block. */
+/* The size buttons float over the card's right edge while it is hovered. Shown inside the card */
+/* they would widen it, which can push it onto the next line, away from the pointer. */
 .page-block-sizes {
+  position: absolute;
+  top: 50%;
+  right: 8px;
   display: none;
-  flex-shrink: 0;
   gap: 2px;
+  padding: 2px;
+  border-radius: 4px;
+  background: #ffffff;
+  transform: translateY(-50%);
 }
 
 .page-block:hover .page-block-sizes {
@@ -3018,6 +3031,32 @@
   color: var(--blue);
 }
 
+/* A page mention (from / → Link to page): the page's icon and title as text, which cannot be */
+/* edited. Clicking it opens the page; hovering shows its preview. */
+.note-editable .page-mention,
+.block-content .page-mention {
+  display: inline;
+  color: var(--blue);
+  font-weight: 600;
+  text-decoration: underline;
+  text-decoration-color: #b9cdf0;
+  text-underline-offset: 3px;
+  cursor: pointer;
+  user-select: all;
+}
+
+.page-mention-icon {
+  display: inline-block;
+  margin-right: 4px;
+  vertical-align: -2px;
+  text-decoration: none;
+}
+
+.page-mention.is-missing {
+  color: #94a1b3;
+  text-decoration-style: dashed;
+}
+
 /* The preview shown while hovering over a page block. */
 .page-preview {
   position: fixed;
@@ -3047,6 +3086,20 @@
   overflow-wrap: anywhere;
 }
 
+/* A web address under its site's name, cut short with an ellipsis when long. */
+.page-preview-address {
+  overflow: hidden;
+  color: #65738a;
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.page-preview-favicon {
+  flex-shrink: 0;
+  border-radius: 2px;
+}
+
 .page-preview-meta {
   color: #a4adbb;
   font-size: 11px;
@@ -3062,66 +3115,33 @@
   -webkit-line-clamp: 4;
 }
 
-.page-preview-footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  padding-top: 8px;
-  border-top: 1px solid #edf1f7;
-  color: #a4adbb;
-  font-size: 11px;
-}
 
 /* The bar shown while hovering over a link: where it leads, and buttons to open, copy, edit or remove it. */
+/* The card shown while hovering over a link: a preview of where it leads (the same as the */
+/* sub-page preview), with Copy and Edit underneath. */
 .link-tools {
   position: fixed;
   z-index: 72;
   display: flex;
-  align-items: center;
+  flex-direction: column;
   gap: 8px;
-  max-width: 340px;
-  padding: 4px 4px 4px 12px;
+  width: 300px;
+  padding: 12px;
   border: 1px solid #dfe7f3;
   border-radius: 4px;
   background: #ffffff;
   box-shadow: 0 10px 30px rgba(28, 54, 96, .18);
 }
 
-.link-tools.is-editing {
-  width: 300px;
-  padding: 12px;
-}
-
-.link-tools-target {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-width: 0;
-  color: #94a1b3;
-}
-
-.link-tools-target .icon {
-  flex-shrink: 0;
-}
-
-/* Long addresses are cut with an ellipsis; the whole address is in the edit box. */
-.link-tools-text {
-  overflow: hidden;
-  min-width: 0;
-  color: #2c3d58;
-  font-size: 12px;
-  font-weight: 600;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 
 .link-tools-buttons {
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  flex-shrink: 0;
+  justify-content: flex-end;
   gap: 2px;
+  margin: 0 -4px -4px;
+  padding-top: 4px;
+  border-top: 1px solid #edf1f7;
 }
 
 /* Removing sits apart from Cancel and Save, on the left. */

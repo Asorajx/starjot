@@ -50,6 +50,17 @@ describe('pastedMarkdown', () => {
     expect(markdown('[site](example.com)')).toBe('<p><a href="https://example.com">site</a></p>');
   });
 
+  it('turns web addresses written in the text into links, leaving punctuation after them', () => {
+    expect(markdown('Go to https://google.com/search?q=x now.'))
+      .toBe('<p>Go to <a href="https://google.com/search?q=x">https://google.com/search?q=x</a> now.</p>');
+    expect(markdown('www.example.org.')).toBe('<p><a href="https://www.example.org">www.example.org</a>.</p>');
+  });
+
+  it('turns a page address into a link to that page, named after it', () => {
+    expect(markdown('http://localhost:5173/#note=atlas')).toBe('<p><a class="page-link" data-page="atlas">Project Atlas — Research brief</a></p>');
+    expect(markdown('[the brief](http://localhost:5173/#note=atlas)')).toBe('<p><a class="page-link" data-page="atlas">the brief</a></p>');
+  });
+
   it('keeps links that could run script as plain text', () => {
     expect(markdown('[x](javascript:alert(1))')).toBeNull();
     expect(markdown('[x](javascript:alert(1)) and **bold**')).toBe('<p>[x](javascript:alert(1)) and <strong>bold</strong></p>');

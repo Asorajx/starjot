@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { getPreferences } from '../../app/preferences';
 import { STACK_LIMIT } from '../../app/noteTabs';
 import { Icon, type IconName } from '../../components/Icon';
@@ -100,6 +100,7 @@ type PageOptionsProps = {
   onZoom: (direction: -1 | 0 | 1) => void;
   onLockChange: (locked: boolean) => void;
   onPageChange: (changes: { layout?: PageLayout; pageSize?: PageSize; landscape?: boolean }) => void;
+  onCopyLink: () => Promise<void>;
   onDelete: () => void;
 };
 
@@ -120,7 +121,15 @@ const SPLITS: { id: 'right' | 'down'; title: string; tooltip: string; icon: Icon
   { id: 'down', title: 'Split down', tooltip: 'Open a second group of tabs below this one, showing this page again.', icon: 'split-down' }
 ];
 
-export function PageOptions({ id, note, open, zoom, view, onClose, onModeChange, onStickyIndicatorChange, onZoom, onLockChange, onPageChange, onDelete }: PageOptionsProps) {
+export function PageOptions({
+  id, note, open, zoom, view, onClose, onModeChange, onStickyIndicatorChange, onZoom, onLockChange, onPageChange, onCopyLink, onDelete
+}: PageOptionsProps) {
+  /* "Copied" shows until the panel is closed. */
+  const [copied, setCopied] = useState(false);
+  useEffect(() => {
+    if (!open) setCopied(false);
+  }, [open]);
+
   const stackTooltip = view.canStack
     ? `Stack this group's tabs side by side (up to ${STACK_LIMIT}), adding this page again. Two are open at a time; the others fold into strips with their titles.`
     : `A stack holds up to ${STACK_LIMIT} tabs.`;
@@ -151,6 +160,22 @@ export function PageOptions({ id, note, open, zoom, view, onClose, onModeChange,
               <span className="mode-radio" />
             </button>
           ))}
+        </div>
+      </div>
+
+      <div className="side-setting side-setting--border">
+        <strong>Link</strong>
+        <div className="option-grid is-single">
+          <button
+            type="button"
+            className={`option-tile ${copied ? 'selected' : ''}`}
+            data-tooltip="Copies this page's address. Pasted into a note it becomes a link to this page; opened in a browser it opens this page."
+            data-tooltip-align="start"
+            data-tooltip-wrap=""
+            onClick={() => onCopyLink().then(() => setCopied(true)).catch(() => undefined)}
+          >
+            <Icon name={copied ? 'check' : 'copy'} size={16} /> {copied ? 'Link copied' : 'Copy link to this page'}
+          </button>
         </div>
       </div>
 

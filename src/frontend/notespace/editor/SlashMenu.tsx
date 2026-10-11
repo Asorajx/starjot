@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, 
 import { Icon } from '../../components/Icon';
 import { canAddSubpage, createSubpage, useNotes } from '../store';
 import {
-  caretIsInlineOnly, convertLine, createPageBlock, createTable, hydratePages, insertBlock, insertInline, insertPageLink, lineAtCaret, matchCommands,
+  caretIsInlineOnly, convertLine, createPageBlock, createPageMention, createTable, hydratePages, insertBlock, insertInline, lineAtCaret, matchCommands,
   type LineChange, type SlashCommand
 } from './blocks';
 import { closestAtCaret } from './dom';
@@ -235,7 +235,8 @@ export function SlashMenu({ session, noteId, locked, onOpenNewPage }: SlashMenuP
     if (!range || !body) return;
     body.focus({ preventScroll: true });
     session.checkpoint();
-    insertPageLink(range, id);
+    insertInline(range, createPageMention(id));
+    hydratePages(body);
     session.commit();
   }
 

@@ -17,6 +17,7 @@ import { TableTools } from './TableTools';
 import { BlockWidgets } from './BlockWidgets';
 import { ImageTools } from './ImageTools';
 import { LinkTools } from './LinkTools';
+import { copyPageLink } from './links';
 import { NoteBreadcrumb } from './NoteBreadcrumb';
 import { PageBar, SaveStatus, type PageHistory } from '../PageBar';
 import { NoteHeader } from './NoteHeader';
@@ -387,6 +388,7 @@ export function NoteEditor({ noteId, history, view, active, onClose, onOpenNote,
           onZoom={changeZoom}
           onLockChange={value => updateNote(note.id, { locked: value })}
           onPageChange={changes => updateNote(note.id, changes)}
+          onCopyLink={() => copyPageLink(note.id)}
           onDelete={() => { setPanel(null); setConfirmDelete(true); }}
         />
       </PageBar>

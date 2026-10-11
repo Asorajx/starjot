@@ -2,7 +2,8 @@ import { cleanHtml } from '../sanitize';
 import { deleteKeepingPages } from './blocks';
 import { highlight } from './code';
 import { isEmptyContent } from './dom';
-import { copiedPageLink, createLink, normalizeAddress } from './links';
+import { getNote } from '../store';
+import { copiedPageLink, createLink, normalizeAddress, pageIdFromAddress, trimAddress, type LinkTarget } from './links';
 
 /* Code fence languages written in Markdown, and the code block language each one becomes. */
 const FENCE_LANGUAGES: Record<string, string> = {
@@ -13,13 +14,14 @@ const FENCE_LANGUAGES: Record<string, string> = {
 };
 
 /* Inline Markdown, in the order it is matched: an escaped character such as \*, `code`, */
-/* [words](address), **bold** or __bold__, ~~strike~~, and *italic* or _italic_. The address may */
-/* hold one level of brackets, as in many Wikipedia addresses. Underscores inside words */
-/* (file_name_here) are not italics. */
+/* [words](address), a web address written on its own (https://…, www.…), **bold** or __bold__, */
+/* ~~strike~~, and *italic* or _italic_. The address may hold one level of brackets, as in many */
+/* Wikipedia addresses. Underscores inside words (file_name_here) are not italics. */
 const INLINE = new RegExp([
   /\\([\\`*_~[\]()#>+\-.!|])/.source,
   /`([^`\n]+)`/.source,
   /\[([^[\]\n]+)\]\(([^()\s]+(?:\([^()\s]*\)[^()\s]*)*)\)/.source,
+  /((?:https?:\/\/|www\.)[^\s<>"'`]+)/.source,
   /\*\*(?=\S)(.+?)(?<=\S)\*\*/.source,
   /(?<!\w)__(?=\S)(.+?)(?<=\S)__(?!\w)/.source,
   /~~(?=\S)(.+?)(?<=\S)~~/.source,
@@ -51,6 +53,15 @@ function element(tag: string, children: (Node | string)[]) {
   return made;
 }
 
+/* Where an address leads: the page it names (see pageAddress) when this browser has that page, */
+/* or else the web address, or null when it is neither. */
+function addressTarget(address: string): LinkTarget | null {
+  const page = pageIdFromAddress(address);
+  if (page && getNote(page)) return { kind: 'page', id: page };
+  const href = normalizeAddress(address);
+  return href ? { kind: 'url', href } : null;
+}
+
 /* The words of one line with their inline Markdown turned into bold, italic, code and link elements. */
 function inlineNodes(text: string): (Node | string)[] {
   const nodes: (Node | string)[] = [];
@@ -58,7 +69,7 @@ function inlineNodes(text: string): (Node | string)[] {
 
   /* matchAll works on its own copy of the pattern, so the inner calls for nested formatting are safe. */
   for (const match of text.matchAll(INLINE)) {
-    const [whole, escaped, code, words, address, bold, boldLine, strike, italic, italicLine] = match;
+    const [whole, escaped, code, words, address, written, bold, boldLine, strike, italic, italicLine] = match;
     const index = match.index ?? 0;
     if (index > last) nodes.push(text.slice(last, index));
     last = index + whole.length;
@@ -68,14 +79,22 @@ function inlineNodes(text: string): (Node | string)[] {
     } else if (code !== undefined) {
       nodes.push(element('code', [code]));
     } else if (words !== undefined) {
-      const href = normalizeAddress(address);
-      if (!href) {
+      const target = addressTarget(address);
+      if (!target) {
         nodes.push(whole);
         continue;
       }
-      const link = createLink('', { kind: 'url', href });
+      const link = createLink('', target);
       link.append(...inlineNodes(words));
       nodes.push(link);
+    } else if (written !== undefined) {
+      /* A written address becomes a link showing the address, or the page's title for a page. */
+      /* Punctuation after it (such as a full stop) stays text. */
+      const { address: trimmed, rest } = trimAddress(written);
+      const target = addressTarget(trimmed);
+      if (!target) nodes.push(trimmed);
+      else nodes.push(createLink(target.kind === 'page' ? getNote(target.id)?.title || 'Untitled note' : trimmed, target));
+      if (rest) nodes.push(rest);
     } else if (bold !== undefined || boldLine !== undefined) {
       nodes.push(element('strong', inlineNodes(bold ?? boldLine)));
     } else if (strike !== undefined) {

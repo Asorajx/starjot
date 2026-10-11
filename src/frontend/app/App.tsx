@@ -6,7 +6,7 @@ import { NotesHome, type NoteFilter } from '../notespace/NotesHome';
 import type { ViewControls } from '../notespace/editor/EditorPanels';
 import { NoteEditor } from '../notespace/editor/NoteEditor';
 import { PageBar, placeExists, placeLabel, type PageHistory } from '../notespace/PageBar';
-import { createNote, flushSave } from '../notespace/store';
+import { createNote, flushSave, getNote } from '../notespace/store';
 import { Settings, type SettingsSection } from '../settings/Settings';
 import { Workboard } from '../workboard/Workboard';
 import type { BoardTab } from '../../shared/types/task';
@@ -101,7 +101,12 @@ export function App() {
   const [workspace, setWorkspace] = useState<WorkspaceId>('notes');
 
   /* Notespace's tab groups (one, or two after a split), each with its tabs and their histories. */
-  const [tabs, setTabs] = useState<Workspace>(() => newWorkspace({ kind: 'home' }));
+  /* A page's own address (#note=id, see pageAddress) opens that page; anything else opens the home. */
+  const [tabs, setTabs] = useState<Workspace>(() => {
+    const id = window.location.hash.match(/^#note=([a-zA-Z0-9_-]{1,90})$/)?.[1];
+    if (id) window.history.replaceState(null, '', window.location.pathname + window.location.search);
+    return newWorkspace(id && getNote(id) ? { kind: 'note', id } : { kind: 'home' });
+  });
   const [workTab, setWorkTab] = useState<BoardTab>('todo');
   const [settingsSection, setSettingsSection] = useState<SettingsSection>('general');
   const [noteFilter, setNoteFilter] = useState<NoteFilter>('all');
@@ -190,6 +195,18 @@ export function App() {
   function focusOn(groupId: string) {
     if (tabs.focus !== groupId) setTabs(current => focusGroup(current, groupId));
   }
+
+  /* A page address entered while the app is open opens that page in the focused tab. */
+  useEffect(() => {
+    function handleHashChange() {
+      const id = window.location.hash.match(/^#note=([a-zA-Z0-9_-]{1,90})$/)?.[1];
+      if (!id) return;
+      window.history.replaceState(null, '', window.location.pathname + window.location.search);
+      if (getNote(id)) openNote(id);
+    }
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  });
 
   /* In Notespace, DocumentTitle names the browser tab after the focused page instead. */
   useEffect(() => {

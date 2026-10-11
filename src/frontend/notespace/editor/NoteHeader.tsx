@@ -3,7 +3,9 @@ import { EmojiPicker } from '../../components/EmojiPicker';
 import { Icon } from '../../components/Icon';
 import { scheduleSave, updateNote, useCategories, useNotes } from '../store';
 import { isEmptyContent, wrapLooseLines } from './dom';
+import { linkTypedAddress } from './links';
 import { applyMarkdownShortcut } from './markdown';
+import { deleteSelection, insertPasted, pastedMarkdown } from './paste';
 import type { Note } from '../../../shared/types/note';
 
 type NoteHeaderProps = {
@@ -48,14 +50,29 @@ function RemarksField({ note, locked }: RemarksFieldProps) {
     scheduleSave();
   }
 
+  /* A web address typed just before Space or Enter becomes a link, like in the note. */
   function handleKeyDown(event: KeyboardEvent<HTMLDivElement>) {
-    if (ref.current && applyMarkdownShortcut(event.nativeEvent, ref.current)) save();
+    const field = ref.current;
+    if (!field) return;
+    const plainKey = (event.key === ' ' || event.key === 'Enter') && !event.altKey && !event.ctrlKey && !event.metaKey;
+    if (plainKey && linkTypedAddress(field)) save();
+    if (applyMarkdownShortcut(event.nativeEvent, field)) save();
   }
 
-  /* Paste plain text only, like the note itself. */
+  /* Paste plain text only, like the note itself: Markdown, web addresses and page addresses in */
+  /* the text are turned into formatting and links. */
   function handlePaste(event: ClipboardEvent<HTMLDivElement>) {
     event.preventDefault();
-    document.execCommand('insertText', false, event.clipboardData.getData('text/plain'));
+    const field = ref.current;
+    const text = event.clipboardData.getData('text/plain');
+    const lines = pastedMarkdown(text, event.clipboardData.getData('text/html'));
+    if (field && lines) {
+      deleteSelection(field);
+      insertPasted(field, lines);
+      save();
+      return;
+    }
+    document.execCommand('insertText', false, text);
   }
 
   return (

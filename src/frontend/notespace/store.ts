@@ -306,10 +306,20 @@ export function markOpened(id: string) {
 export function deleteNote(id: string) {
   const removed = getNote(id);
   if (SAMPLE_NOTES.some(note => note.id === id)) deletedIds = [...deletedIds, id];
+
+  /* The page's card is also taken out of the page it sat in, so no "Page not found" card is left. */
+  const withoutCard = (html: string) => {
+    const template = document.createElement('template');
+    template.innerHTML = html;
+    const cards = template.content.querySelectorAll(`.page-block[data-page="${CSS.escape(id)}"]`);
+    cards.forEach(card => card.remove());
+    return cards.length ? template.innerHTML : html;
+  };
   setState({
     notes: state.notes
       .filter(note => note.id !== id)
       .map(note => (note.parentId === id ? { ...note, parentId: removed?.parentId ?? '' } : note))
+      .map(note => (note.id === removed?.parentId ? { ...note, content: withoutCard(note.content) } : note))
   });
   save();
 }

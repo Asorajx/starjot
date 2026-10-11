@@ -1,12 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
 import { Icon } from '../../components/Icon';
-import { categoryName, childrenOf, deleteNote, getNote, separatePage, updatedLabel, useNotes } from '../store';
+import { childrenOf, deleteNote, getNote, separatePage, useNotes } from '../store';
 import {
-  deleteKeepingPages, hydratePages, lineBelowTable, pageBlockIsCut, pageBlocksIn, removePageBlocks, setPageWidth, stepOverPage, typeOutsideComment,
+  deleteKeepingPages, hydratePages, lineBelowTable, pageBlocksIn, removePageBlocks, setPageWidth, stepOverPage, typeOutsideComment,
   type PageSize
 } from './blocks';
 import { placeCaret } from './dom';
+import { LinkPreviewCard } from './LinkPreview';
+import { copyPageLink } from './links';
 import type { EditorSession } from './session';
 
 type BlockWidgetsProps = {
@@ -18,7 +20,7 @@ type BlockWidgetsProps = {
 /* A preview of a page, shown for a page block or a page listed in the note's details. */
 type Preview = { id: string; top: number; left: number; above: boolean };
 
-/* The menu opened by right-clicking a page block, at the pointer. */
+/* The menu opened by right-clicking a page block, or a page listed in the note's details, at the pointer. */
 type PageMenu = { id: string; top: number; left: number };
 
 
@@ -35,11 +37,12 @@ export function BlockWidgets({ session, locked, onOpenNote }: BlockWidgetsProps)
   const [pageMenu, setPageMenu] = useState<PageMenu | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
   const hideTimer = useRef<number | undefined>(undefined);
+  const showTimer = useRef<number | undefined>(undefined);
 
   /* The page block whose width is being dragged. */
   const resizing = useRef<HTMLElement | null>(null);
-  const latest = useRef({ locked, onOpenNote });
-  latest.current = { locked, onOpenNote };
+  const latest = useRef({ locked, onOpenNote, previewId: preview?.id ?? null });
+  latest.current = { locked, onOpenNote, previewId: preview?.id ?? null };
 
   /* Page blocks show the current title and description of the page they point to. */
   useEffect(() => {
@@ -54,7 +57,7 @@ export function BlockWidgets({ session, locked, onOpenNote }: BlockWidgetsProps)
       const target = event.target as Element;
       if (!body()?.contains(target)) return;
       const { locked: isLocked, onOpenNote: open } = latest.current;
-      const block = target.closest<HTMLElement>('.page-block');
+      const block = target.closest<HTMLElement>('.page-block, .page-mention');
       if (target.closest('.page-block-resize')) {
         event.preventDefault();
         return;
@@ -72,7 +75,7 @@ export function BlockWidgets({ session, locked, onOpenNote }: BlockWidgetsProps)
         return;
       }
 
-      /* A page block opens its page with a normal click. */
+      /* A page block or a page mention opens its page with a normal click. */
       if (block) {
         event.preventDefault();
         if (getNote(block.dataset.page ?? '')) open(block.dataset.page as string);
@@ -151,29 +154,44 @@ export function BlockWidgets({ session, locked, onOpenNote }: BlockWidgetsProps)
         window.clearTimeout(hideTimer.current);
         return;
       }
-      const block = target.closest?.<HTMLElement>('.page-block');
+      const block = target.closest?.<HTMLElement>('.page-block, .page-mention');
 
-      /* Pages listed in the note's details always show their preview. */
+      /* Pages listed in the note's details show the preview too. The size buttons and the width */
+      /* handle are left alone, so they are easy to use. */
       const listed = target.closest?.<HTMLElement>('[data-preview-page]');
-      const inNote = block && !resizing.current && !target.closest('.page-block-sizes, .page-block-resize') && pageBlockIsCut(block) ? block : null;
+      const inNote = block && !resizing.current && !target.closest('.page-block-sizes, .page-block-resize') ? block : null;
       const anchor = listed ?? (inNote && body()?.contains(inNote) ? inNote : null);
       if (!anchor) return;
       window.clearTimeout(hideTimer.current);
 
-      /* The preview opens under the block, or above it near the bottom of the window. */
-      const bounds = anchor.getBoundingClientRect();
-      const above = bounds.bottom + 240 > window.innerHeight && bounds.top > 240;
-      setPreview({
-        id: anchor.dataset.page ?? anchor.dataset.previewPage ?? '',
-        top: above ? bounds.top - 6 : bounds.bottom + 6,
-        left: Math.min(bounds.left, window.innerWidth - 320),
-        above
-      });
+      /* Already showing this page: the pointer only moved within it. */
+      const id = anchor.dataset.page ?? anchor.dataset.previewPage ?? '';
+      if (latest.current.previewId === id) return;
+      window.clearTimeout(showTimer.current);
+
+      /* After a short pause, so moving the pointer across the page does not flash previews, the */
+      /* preview opens under the page, or above it near the bottom of the window. */
+      showTimer.current = window.setTimeout(() => {
+        if (!anchor.isConnected) return;
+        const bounds = anchor.getBoundingClientRect();
+        const above = bounds.bottom + 200 > window.innerHeight && bounds.top > 200;
+        setPreview({
+          id,
+          top: above ? bounds.top - 6 : bounds.bottom + 6,
+          left: Math.min(bounds.left, window.innerWidth - 320),
+          above
+        });
+      }, 250);
     }
 
     function handleMouseOut(event: MouseEvent) {
       const target = event.target as Element;
-      if (!target.closest?.('.page-block, .page-preview, [data-preview-page]')) return;
+      if (!target.closest?.('.page-block, .page-mention, .page-preview, [data-preview-page]')) return;
+
+      /* Moving between a page and its preview (or within either) keeps the preview. */
+      const next = event.relatedTarget as Element | null;
+      if (next?.closest?.('.page-block, .page-mention, .page-preview, [data-preview-page]')) return;
+      window.clearTimeout(showTimer.current);
       window.clearTimeout(hideTimer.current);
       hideTimer.current = window.setTimeout(() => setPreview(null), 200);
     }
@@ -206,13 +224,19 @@ export function BlockWidgets({ session, locked, onOpenNote }: BlockWidgetsProps)
       session.commit();
     }
 
-    /* Right-clicking a page block opens its menu instead of the browser's. */
+    /* Right-clicking a page block, or a page listed in this note's details, opens the page menu */
+    /* instead of the browser's. */
     function handleContextMenu(event: MouseEvent) {
-      const block = (event.target as Element).closest?.<HTMLElement>('.page-block');
-      if (!block || !body()?.contains(block) || !block.dataset.page) return;
+      const target = event.target as Element;
+      const block = target.closest?.<HTMLElement>('.page-block');
+      const listed = target.closest?.<HTMLElement>('[data-preview-page]');
+      const inThisNote = listed && body()?.closest('.editor-wrap')?.contains(listed);
+      const id = block && body()?.contains(block) ? block.dataset.page : inThisNote ? listed.dataset.previewPage : undefined;
+      if (!id) return;
       event.preventDefault();
+      window.clearTimeout(showTimer.current);
       setPreview(null);
-      setPageMenu({ id: block.dataset.page, top: event.clientY, left: event.clientX });
+      setPageMenu({ id, top: event.clientY, left: event.clientX });
     }
 
     function closeMenu(event: Event) {
@@ -243,6 +267,7 @@ export function BlockWidgets({ session, locked, onOpenNote }: BlockWidgetsProps)
       document.removeEventListener('mouseover', handleMouseOver);
       document.removeEventListener('mouseout', handleMouseOut);
       window.clearTimeout(hideTimer.current);
+      window.clearTimeout(showTimer.current);
     };
   }, [session]);
 
@@ -268,8 +293,6 @@ export function BlockWidgets({ session, locked, onOpenNote }: BlockWidgetsProps)
     setDeleting(null);
   }
 
-  const note = preview ? getNote(preview.id) : undefined;
-  const category = note ? categoryName(note.category) : '';
   const menuNote = pageMenu ? getNote(pageMenu.id) : undefined;
   const deletingNote = deleting ? getNote(deleting) : undefined;
   const nested = deleting ? childrenOf(deleting).length : 0;
@@ -278,26 +301,12 @@ export function BlockWidgets({ session, locked, onOpenNote }: BlockWidgetsProps)
     <>
       {preview && (
         <div className="page-preview" style={{ top: preview.top, left: preview.left, transform: preview.above ? 'translateY(-100%)' : undefined }} role="tooltip">
-          {note ? (
-            <>
-              <span className="page-preview-title">
-                {note.icon ? <span aria-hidden="true">{note.icon}</span> : <Icon name="file-text" size={16} />}
-                <strong>{note.title || 'Untitled note'}</strong>
-              </span>
-              <span className="page-preview-meta">{category && `${category} · `}{updatedLabel(note)}</span>
-              <span className="page-preview-text">{note.subtitle || note.preview || 'This page is empty.'}</span>
-              <span className="page-preview-footer">
-                <span>Click to open</span>
-                <button type="button" className="btn btn-sm btn-secondary" onClick={() => onOpenNote(note.id)}>
-                  Open <Icon name="arrow-right" size={13} />
-                </button>
-              </span>
-            </>
-          ) : <span className="page-preview-text">This page was deleted.</span>}
+          <LinkPreviewCard target={{ kind: 'page', id: preview.id }} />
         </div>
       )}
 
-      {/* Separate page moves it out of this note (up one level); Delete removes it for good, after asking. */}
+      {/* Copy link copies the page's address. Separate page moves it out of this note (up one level); */}
+      {/* Delete removes it for good, after asking. */}
       {pageMenu && (
         <div
           className="page-menu"
@@ -310,6 +319,9 @@ export function BlockWidgets({ session, locked, onOpenNote }: BlockWidgetsProps)
         >
           <button type="button" role="menuitem" className="page-menu-item" disabled={!menuNote} onClick={() => { setPageMenu(null); onOpenNote(pageMenu.id); }}>
             <Icon name="arrow-right" size={14} /> Open page
+          </button>
+          <button type="button" role="menuitem" className="page-menu-item" disabled={!menuNote} onClick={() => { setPageMenu(null); copyPageLink(pageMenu.id).catch(() => undefined); }}>
+            <Icon name="copy" size={14} /> Copy link
           </button>
           {!locked && (
             <>

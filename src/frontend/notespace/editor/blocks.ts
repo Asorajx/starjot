@@ -250,13 +250,15 @@ export function insertInline(range: Range, element: HTMLElement) {
   selection?.addRange(caret);
 }
 
-/* Insert a link to another page at the caret. Its text can be changed like any other text. */
-export function insertPageLink(range: Range, noteId: string) {
-  const link = document.createElement('a');
-  link.className = 'page-link';
-  link.dataset.page = noteId;
-  link.textContent = getNote(noteId)?.title || 'Untitled note';
-  insertInline(range, link);
+/* A mention of another page (from / → Link to page): the page's icon and title, shown as text */
+/* that cannot be edited. It is stored empty and drawn by hydratePages, so it always shows the */
+/* page's current icon and title. Clicking it opens the page. (A page link pasted into the text */
+/* is a normal link instead, whose words can be edited.) */
+export function createPageMention(noteId: string) {
+  const mention = document.createElement('span');
+  mention.className = 'page-mention';
+  mention.dataset.page = noteId;
+  return mention;
 }
 
 
@@ -288,15 +290,6 @@ export function setPageWidth(block: HTMLElement, percent: number | null) {
   return width;
 }
 
-/* True when part of the page's title or description is hidden by the block's size or width. */
-export function pageBlockIsCut(block: HTMLElement) {
-  const title = block.querySelector<HTMLElement>('.page-block-text strong');
-  const description = block.querySelector<HTMLElement>('.page-block-text small');
-  if (!title || !description) return false;
-  const hidden = getComputedStyle(description).display === 'none';
-  return hidden || title.scrollWidth > title.clientWidth + 1 || description.scrollHeight > description.clientHeight + 1;
-}
-
 function escapeHtml(text: string) {
   return text.replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[character] ?? character));
 }
@@ -308,6 +301,16 @@ const drawn = new WeakMap<Element, string>();
 /* so they always match the page they point to. Images are stored empty too and drawn here as well. */
 export function hydratePages(root: Element | null) {
   hydrateImages(root);
+  root?.querySelectorAll<HTMLElement>('.page-mention').forEach(mention => {
+    const note = getNote(mention.dataset.page ?? '');
+    mention.contentEditable = 'false';
+    mention.classList.toggle('is-missing', !note);
+    const icon = note?.icon ? escapeHtml(note.icon) : iconMarkup(note ? 'file-text' : 'file', 14);
+    const html = `<span class="page-mention-icon">${icon}</span><span class="page-mention-title">${escapeHtml(note ? note.title || 'Untitled note' : 'Page not found')}</span>`;
+    if (drawn.get(mention) === html && mention.firstChild) return;
+    mention.innerHTML = html;
+    drawn.set(mention, html);
+  });
   root?.querySelectorAll<HTMLElement>('.page-block').forEach(block => {
     const note = getNote(block.dataset.page ?? '');
     const size = PAGE_SIZES.includes(block.dataset.size as PageSize) ? block.dataset.size as PageSize : 'small';
