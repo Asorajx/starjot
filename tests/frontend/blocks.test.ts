@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
-  addColumn, convertLine, createPageBlock, createTable, embeddedPageIds, handleBlockKeys, insertBlock, lineBelowTable, matchCommands, removeColumn
+  convertLine, createPageBlock, createTable, embeddedPageIds, handleBlockKeys, insertBlock, lineBelowTable, matchCommands
 } from '../../src/frontend/notespace/editor/blocks';
+import { addColumn, removeColumn } from '../../src/frontend/notespace/editor/tables';
 import { parseBlocks } from '../../src/frontend/notespace/editor/blockModel';
 
 /* An editable note body, like the continuous editor, added to the test page. */

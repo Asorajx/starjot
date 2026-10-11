@@ -37,9 +37,11 @@ export function markRange(range: Range, id: string) {
   return pieces.length > 0;
 }
 
-/* Remove a comment's marks, keeping the text they wrapped. */
+/* Remove a comment's marks, keeping the text they wrapped. A comment on a whole table is */
+/* stored as an attribute on the table, which is simply removed. */
 export function unmark(root: Element, id: string) {
-  root.querySelectorAll(`.comment-mark[data-comment="${id}"]`).forEach(mark => {
-    mark.replaceWith(...Array.from(mark.childNodes));
+  root.querySelectorAll(`[data-comment="${id}"]`).forEach(mark => {
+    if (mark.classList.contains('comment-mark')) mark.replaceWith(...Array.from(mark.childNodes));
+    else mark.removeAttribute('data-comment');
   });
 }

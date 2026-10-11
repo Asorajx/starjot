@@ -35,7 +35,7 @@ export function CommentLayer({ session, comments, containerRef }: CommentLayerPr
 
     const next: Marker[] = [];
     comments.forEach(comment => {
-      const mark = container.querySelector(`.comment-mark[data-comment="${comment.id}"]`);
+      const mark = container.querySelector(`[data-comment="${comment.id}"]`);
       if (!mark) return;
 
       /* Markers on the same line are stacked so they do not cover each other. */

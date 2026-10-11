@@ -1,8 +1,8 @@
-import { useEffect, useRef, useState, type MouseEvent as ReactMouseEvent } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Icon } from '../../components/Icon';
 import { categoryName, getNote, updatedLabel, useNotes } from '../store';
-import { addColumn, addRow, hydratePages, lineBelowTable, removeColumn, removeRow, type PageSize } from './blocks';
-import { emptyParagraph, placeCaret } from './dom';
+import { hydratePages, lineBelowTable, type PageSize } from './blocks';
+import { placeCaret } from './dom';
 import type { EditorSession } from './session';
 
 type BlockWidgetsProps = {
@@ -12,15 +12,6 @@ type BlockWidgetsProps = {
 };
 
 type Preview = { id: string; top: number; left: number; above: boolean };
-type TableBar = { top: number; right: number };
-type TableAction = 'row' | 'column' | 'remove-row' | 'remove-column';
-
-const TABLE_ACTIONS: { action: TableAction; label: string }[] = [
-  { action: 'row', label: 'Add row' },
-  { action: 'column', label: 'Add column' },
-  { action: 'remove-row', label: 'Delete row' },
-  { action: 'remove-column', label: 'Delete column' }
-];
 
 
 /* =========================
@@ -28,15 +19,12 @@ const TABLE_ACTIONS: { action: TableAction; label: string }[] = [
    ========================= */
 
 /* The parts of page blocks, page links, toggle lists and tables that need more than typing: */
-/* opening pages, block sizes, link previews, the toggle arrow and the table buttons. */
+/* opening pages, block sizes, link previews, the toggle arrow and the line under a table. */
+/* Table grips and menus are in TableTools. */
 export function BlockWidgets({ session, locked, onOpenNote }: BlockWidgetsProps) {
   const notes = useNotes();
   const [preview, setPreview] = useState<Preview | null>(null);
-  const [tableBar, setTableBar] = useState<TableBar | null>(null);
   const hideTimer = useRef<number | undefined>(undefined);
-
-  /* The table cell holding the caret, which the table buttons act on. */
-  const cell = useRef<HTMLTableCellElement | null>(null);
   const latest = useRef({ locked, onOpenNote });
   latest.current = { locked, onOpenNote };
 
@@ -139,79 +127,21 @@ export function BlockWidgets({ session, locked, onOpenNote }: BlockWidgetsProps)
       hideTimer.current = window.setTimeout(() => setPreview(null), 200);
     }
 
-    /* The table buttons appear above the table's right corner while the caret is in one of its cells, */
-    /* leaving the space under the table free for clicking to add a line. */
-    function updateTableBar() {
-      const node = window.getSelection()?.focusNode;
-      const element = node instanceof Element ? node : node?.parentElement;
-      const current = element?.closest<HTMLTableCellElement>('td, th') ?? null;
-      if (!current || latest.current.locked || !body()?.contains(current)) {
-        cell.current = null;
-        setTableBar(null);
-        return;
-      }
-      cell.current = current;
-      const bounds = (current.closest('table') as HTMLElement).getBoundingClientRect();
-      setTableBar({ top: bounds.top - 36, right: window.innerWidth - bounds.right });
-    }
-
-    const scroller = document.getElementById('main-scroll');
     document.addEventListener('click', handleClick);
     document.addEventListener('mousedown', handleMouseDown);
     document.addEventListener('mouseover', handleMouseOver);
     document.addEventListener('mouseout', handleMouseOut);
-    document.addEventListener('selectionchange', updateTableBar);
-    scroller?.addEventListener('scroll', updateTableBar);
     return () => {
       document.removeEventListener('click', handleClick);
       document.removeEventListener('mousedown', handleMouseDown);
       document.removeEventListener('mouseover', handleMouseOver);
       document.removeEventListener('mouseout', handleMouseOut);
-      document.removeEventListener('selectionchange', updateTableBar);
-      scroller?.removeEventListener('scroll', updateTableBar);
       window.clearTimeout(hideTimer.current);
     };
   }, [session]);
 
-  /* Add or delete a row or column next to the caret's cell. Deleting the last one removes the table. */
-  function runTableAction(action: TableAction) {
-    const current = cell.current;
-    const table = current?.closest('table');
-    const row = current?.parentElement as HTMLTableRowElement | undefined;
-    if (!current?.isConnected || !table || !row) return;
-    const column = current.cellIndex;
-    session.checkpoint();
-
-    let next: HTMLTableCellElement | null | undefined = current;
-    let remaining = true;
-    if (action === 'row') next = addRow(table, row).cells[column];
-    else if (action === 'column') {
-      addColumn(table, column);
-      next = row.cells[column + 1];
-    } else if (action === 'remove-row') {
-      const index = row.rowIndex;
-      remaining = removeRow(table, row);
-      next = table.rows[Math.min(index, table.rows.length - 1)]?.cells[column];
-    } else {
-      remaining = removeColumn(table, column);
-      next = row.cells[Math.min(column, row.cells.length - 1)];
-    }
-
-    if (!remaining) {
-      const paragraph = emptyParagraph();
-      table.replaceWith(paragraph);
-      session.linesChanged(paragraph, false);
-      return;
-    }
-    if (next) placeCaret(next, true);
-    session.commit();
-  }
-
   const note = preview ? getNote(preview.id) : undefined;
   const category = note ? categoryName(note.category) : '';
-
-  /* Keep the caret in the table while a button is pressed. */
-  const keepFocus = (event: ReactMouseEvent) => event.preventDefault();
 
   return (
     <>
@@ -233,16 +163,6 @@ export function BlockWidgets({ session, locked, onOpenNote }: BlockWidgetsProps)
               </span>
             </>
           ) : <span className="page-preview-text">This page was deleted.</span>}
-        </div>
-      )}
-
-      {tableBar && (
-        <div className="table-bar" style={{ top: tableBar.top, right: tableBar.right }} role="toolbar" aria-label="Table">
-          {TABLE_ACTIONS.map(item => (
-            <button key={item.action} type="button" className="table-bar-button" onMouseDown={keepFocus} onClick={() => runTableAction(item.action)}>
-              {item.action === 'row' || item.action === 'column' ? <Icon name="plus" size={13} /> : <Icon name="minus" size={13} />} {item.label}
-            </button>
-          ))}
         </div>
       )}
     </>

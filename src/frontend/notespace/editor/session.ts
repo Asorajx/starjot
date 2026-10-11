@@ -152,13 +152,14 @@ export class EditorSession {
     this.adapter?.linesChanged(focus, atEnd);
   }
 
-  /* Mark the selected text and store the comment. Works on locked notes too. */
-  addComment(range: Range, text: string) {
+  /* Mark the selected text (or a whole table) and store the comment. Works on locked notes too. */
+  addComment(target: Range | HTMLElement, text: string) {
     const note = getNote(this.noteId);
     const id = newCommentId();
     if (!note || !text.trim()) return;
     this.checkpoint();
-    if (!markRange(range, id)) return;
+    if (target instanceof HTMLElement) target.dataset.comment = id;
+    else if (!markRange(target, id)) return;
     updateNote(this.noteId, { comments: [...note.comments, { id, text: text.trim(), createdAt: new Date().toISOString() }] }, false);
     this.commit();
   }

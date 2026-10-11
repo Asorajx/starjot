@@ -10,6 +10,7 @@ import { ContinuousEditor } from './ContinuousEditor';
 import { PageOptions, TableOfContents } from './EditorPanels';
 import { SelectionToolbar } from './SelectionToolbar';
 import { SlashMenu } from './SlashMenu';
+import { TableTools } from './TableTools';
 import { BlockWidgets } from './BlockWidgets';
 import { NoteBreadcrumb } from './NoteBreadcrumb';
 import { NoteHeader } from './NoteHeader';
@@ -235,6 +236,7 @@ export function NoteEditor({ noteId, onClose, onOpenNote, onOpenCategory, onOpen
       <SelectionToolbar session={session} locked={locked} />
       <SlashMenu session={session} noteId={note.id} locked={locked} onOpenNewPage={onOpenNewPage} />
       <BlockWidgets session={session} locked={locked} onOpenNote={onOpenNote} />
+      <TableTools session={session} locked={locked} />
 
       {confirmDelete && (
         <ConfirmDialog title="Delete this note?" confirmLabel="Delete note" danger onConfirm={removeNote} onCancel={() => setConfirmDelete(false)}>

@@ -1,6 +1,7 @@
 import { iconMarkup, type IconName } from '../../components/Icon';
 import { categoryName, getNote, updatedLabel } from '../store';
 import { highlight } from './code';
+import { addRow } from './tables';
 import { caretAtEdge, caretElement, closestAtCaret, emptyParagraph, isEmptyContent, placeCaret } from './dom';
 
 
@@ -249,37 +250,8 @@ export function embeddedPageIds(html: string) {
 
 
 /* =========================
-   Tables
+   Lines Around Tables
    ========================= */
-
-export function addRow(table: HTMLTableElement, after: HTMLTableRowElement | null = null) {
-  const rows = Array.from(table.rows);
-  const source = after ?? rows[rows.length - 1];
-  const row = document.createElement('tr');
-  Array.from(source.cells).forEach(() => row.appendChild(withBreak(document.createElement('td'))));
-  source.after(row);
-  return row;
-}
-
-export function addColumn(table: HTMLTableElement, after: number) {
-  Array.from(table.rows).forEach((row, index) => {
-    const cell = withBreak(document.createElement(index === 0 && row.cells[0]?.tagName === 'TH' ? 'th' : 'td'));
-    const neighbour = row.cells[after];
-    if (neighbour) neighbour.after(cell);
-    else row.appendChild(cell);
-  });
-}
-
-/* Removing the last row or column removes the whole table. Returns false when the table is gone. */
-export function removeRow(table: HTMLTableElement, row: HTMLTableRowElement) {
-  row.remove();
-  return table.rows.length > 0;
-}
-
-export function removeColumn(table: HTMLTableElement, index: number) {
-  Array.from(table.rows).forEach(row => row.cells[index]?.remove());
-  return Boolean(table.rows[0]?.cells.length);
-}
 
 /* The line just above or below another line (such as a table): its neighbour in the document, */
 /* outside any sticky group it ends, or in structured mode the neighbouring block. Null at either end. */

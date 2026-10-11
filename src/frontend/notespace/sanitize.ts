@@ -17,6 +17,7 @@ function keepsClass(tag: string, name: string) {
   if (tag === 'DIV' && ['sticky-group', 'toggle-block', 'is-open', 'toggle-body', 'page-block'].includes(name)) return true;
   if (tag === 'P' && name === 'toggle-summary') return true;
   if (tag === 'A' && name === 'page-link') return true;
+  if (tag === 'TABLE' && name === 'fit-content') return true;
   if (tag === 'CODE' && /^language-[a-z]+$/.test(name)) return true;
   return tag === 'SPAN' && (/^tok-[a-z]+$/.test(name) || name === 'comment-mark');
 }
@@ -38,7 +39,7 @@ function copyAttributes(node: Element, copy: Element) {
   const size = node.getAttribute('data-size');
   if (node.tagName === 'DIV' && size && ['small', 'medium', 'large'].includes(size)) copy.setAttribute('data-size', size);
   const comment = node.getAttribute('data-comment');
-  if (node.tagName === 'SPAN' && comment && /^c[a-z0-9]+$/.test(comment)) copy.setAttribute('data-comment', comment);
+  if ((node.tagName === 'SPAN' || node.tagName === 'TABLE') && comment && /^c[a-z0-9]+$/.test(comment)) copy.setAttribute('data-comment', comment);
 }
 
 function cleanNode(node: Node): Node | null {

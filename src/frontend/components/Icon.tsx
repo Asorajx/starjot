@@ -15,6 +15,8 @@ const PATHS = {
   'chevron-right': '<path d="m9 18 6-6-6-6"/>',
   'arrow-right': '<path d="M5 12h14m-6-6 6 6-6 6"/>',
   'arrow-left': '<path d="M19 12H5m6 6-6-6 6-6"/>',
+  'arrow-up': '<path d="M12 19V5m-6 6 6-6 6 6"/>',
+  'arrow-down': '<path d="M12 5v14m6-6-6 6-6-6"/>',
   'bell': '<path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/>',
   'more-horizontal': '<circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/>',
   'file-text': '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6M8 13h8M8 17h6"/>',
