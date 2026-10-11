@@ -72,6 +72,7 @@ function normalizeNote(raw: unknown): Note | null {
     updated: text('updated', '', 60),
     updatedAt: typeof record.updatedAt === 'string' ? record.updatedAt : null,
     createdAt: typeof record.createdAt === 'string' ? record.createdAt : null,
+    openedAt: typeof record.openedAt === 'string' ? record.openedAt : null,
     date: text('date', '', 40),
     pinned: record.pinned === true,
 
@@ -189,7 +190,7 @@ export function createNote(category = '', parentId = '') {
   const note = normalizeNote({
     id: `note_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`,
     title: 'Untitled note', subtitle: '', preview: '', category, parentId,
-    updatedAt: now, createdAt: now, pinned: false, icon: '',
+    updatedAt: now, createdAt: now, openedAt: now, pinned: false, icon: '',
     accent: 'indigo', mode: 'continuous', content: ''
   }) as Note;
   setState({ notes: [note, ...state.notes] });
@@ -226,6 +227,13 @@ export function updateNote(id: string, changes: NoteChanges, persist = true) {
 export function setPinned(id: string, pinned: boolean) {
   setState({ notes: state.notes.map(note => (note.id === id ? { ...note, pinned } : note)) });
   save();
+}
+
+/* Remember when a note was opened. Like starring, this does not count as an edit. */
+export function markOpened(id: string) {
+  const openedAt = new Date().toISOString();
+  setState({ notes: state.notes.map(note => (note.id === id ? { ...note, openedAt } : note)) });
+  scheduleSave();
 }
 
 /* Remove a note permanently from this browser. Its sub-pages are kept and move up one level. */

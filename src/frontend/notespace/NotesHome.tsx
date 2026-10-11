@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { Icon } from '../components/Icon';
-import { editedText, newestFirst, NoteTable, NoteTile } from './NoteList';
+import { updatePreferences, usePreferences, type NotesSort } from '../app/preferences';
+import { editedText, newestFirst, NoteTable, NoteTile, sortNotes } from './NoteList';
 import {
   addCategory, canAddCategory, categoryName, removeCategory, renameCategory, useCategories, useNotes
 } from './store';
@@ -52,31 +53,10 @@ type CategoryBarProps = {
   onFilterChange: (filter: NoteFilter) => void;
 };
 
-/* Filter chips for each category. In edit mode the chips become name fields with a remove button. */
+/* Filter chips for each category, shown when the Filter button is opened. */
 function CategoryBar({ notes, filter, onFilterChange }: CategoryBarProps) {
   const categories = useCategories();
-  const [editing, setEditing] = useState(false);
-  const [removing, setRemoving] = useState<Category | null>(null);
   const count = (id: string) => notes.filter(note => note.category === id).length;
-
-  /* A new category starts with a placeholder name and is opened for renaming straight away. */
-  function add() {
-    let number = categories.length + 1;
-    while (categories.some(category => category.name === `Category ${number}`)) number += 1;
-    if (addCategory(`Category ${number}`)) setEditing(true);
-  }
-
-  /* An empty or duplicate name puts the old name back. */
-  function rename(category: Category, input: HTMLInputElement) {
-    if (!renameCategory(category.id, input.value)) input.value = category.name;
-  }
-
-  function confirmRemove() {
-    if (!removing) return;
-    if (filter === removing.id) onFilterChange('all');
-    removeCategory(removing.id);
-    setRemoving(null);
-  }
 
   const chip = (value: NoteFilter, label: string, total: number) => (
     <button
@@ -93,9 +73,52 @@ function CategoryBar({ notes, filter, onFilterChange }: CategoryBarProps) {
   return (
     <div className="category-bar" id="note-filters" role="toolbar" aria-label="Filter notes by category">
       {chip('all', 'All notes', notes.length)}
+      {categories.map(category => chip(category.id, category.name, count(category.id)))}
+    </div>
+  );
+}
 
-      {categories.map(category => (editing ? (
+
+/* =========================
+   Category Editor
+   ========================= */
+
+type CategoryEditorProps = {
+  notes: Note[];
+  filter: NoteFilter;
+  onFilterChange: (filter: NoteFilter) => void;
+};
+
+/* Shown in the Categories tab after pressing Edit categories: rename, remove or add categories. */
+function CategoryEditor({ notes, filter, onFilterChange }: CategoryEditorProps) {
+  const categories = useCategories();
+  const [removing, setRemoving] = useState<Category | null>(null);
+  const count = (id: string) => notes.filter(note => note.category === id).length;
+
+  /* A new category starts with a placeholder name, ready to be renamed. */
+  function add() {
+    let number = categories.length + 1;
+    while (categories.some(category => category.name === `Category ${number}`)) number += 1;
+    addCategory(`Category ${number}`);
+  }
+
+  /* An empty or duplicate name puts the old name back. */
+  function rename(category: Category, input: HTMLInputElement) {
+    if (!renameCategory(category.id, input.value)) input.value = category.name;
+  }
+
+  function confirmRemove() {
+    if (!removing) return;
+    if (filter === removing.id) onFilterChange('all');
+    removeCategory(removing.id);
+    setRemoving(null);
+  }
+
+  return (
+    <div className="category-editor" role="group" aria-label="Edit categories">
+      {categories.map(category => (
         <span key={category.id} className="category-edit">
+          <Icon name="folder" size={14} />
           <input
             className="category-name-input"
             aria-label={`Rename ${category.name}`}
@@ -110,18 +133,11 @@ function CategoryBar({ notes, filter, onFilterChange }: CategoryBarProps) {
             <Icon name="x" size={13} />
           </button>
         </span>
-      ) : chip(category.id, category.name, count(category.id))))}
+      ))}
 
-      <span className="category-actions">
-        {editing && (
-          <button type="button" className="btn btn-sm btn-tertiary" disabled={!canAddCategory()} onClick={add}>
-            <Icon name="plus" size={13} /> {canAddCategory() ? 'Add category' : '5 of 5 used'}
-          </button>
-        )}
-        <button type="button" className="btn btn-sm btn-tertiary" aria-pressed={editing} onClick={() => setEditing(value => !value)}>
-          {editing ? 'Done' : 'Edit categories'}
-        </button>
-      </span>
+      <button type="button" className="btn btn-sm btn-secondary" disabled={!canAddCategory()} onClick={add}>
+        <Icon name="plus" size={13} /> {canAddCategory() ? 'Add category' : '5 of 5 used'}
+      </button>
 
       {removing && (
         <ConfirmDialog title={`Remove "${removing.name}"?`} confirmLabel="Remove category" danger onConfirm={confirmRemove} onCancel={() => setRemoving(null)}>
@@ -170,7 +186,9 @@ function CategoryCard({ id, name, notes, onOpenCategory }: CategoryCardProps) {
 export function NotesHome({ filter, onFilterChange, onOpen, onOpenCategory, onCreate }: NotesHomeProps) {
   const notes = useNotes();
   const now = useNow();
+  const { notesSort } = usePreferences();
   const [showFilters, setShowFilters] = useState(filter !== 'all');
+  const [editingCategories, setEditingCategories] = useState(false);
 
   /* Re-render when categories are renamed, so each row shows the current name. */
   const categories = useCategories();
@@ -178,7 +196,7 @@ export function NotesHome({ filter, onFilterChange, onOpen, onOpenCategory, onCr
   const newest = newestFirst(notes);
   const starred = newest.filter(note => note.pinned);
   const lastEdited = newest[0];
-  const shown = newest.filter(note => filter === 'all' || note.category === filter);
+  const shown = sortNotes(notes.filter(note => filter === 'all' || note.category === filter), notesSort);
   const filterLabel = filter === 'all' ? 'All notes' : categoryName(filter);
 
   /* Starred opens first when there are starred notes; otherwise Recent. */
@@ -193,7 +211,10 @@ export function NotesHome({ filter, onFilterChange, onOpen, onOpenCategory, onCr
       aria-selected={tab === id}
       aria-controls="home-tab-panel"
       className={`home-tab ${tab === id ? 'is-active' : ''}`}
-      onClick={() => setTab(id)}
+      onClick={() => {
+        setTab(id);
+        if (id !== 'categories') setEditingCategories(false);
+      }}
     >
       <Icon name={icon} size={14} /> {label} {count !== undefined && <span className="category-count">{count}</span>}
     </button>
@@ -229,13 +250,29 @@ export function NotesHome({ filter, onFilterChange, onOpen, onOpenCategory, onCr
       </section>
 
       <section className="home-tabs-panel">
-        <div className="home-tabs" role="tablist" aria-label="Starred notes, recent notes and categories">
-          {tabButton('starred', 'Starred', 'star', starred.length)}
-          {tabButton('recent', 'Recent', 'clock')}
-          {tabButton('categories', 'Categories', 'folder', categories.length)}
+        <div className="home-tabs-header">
+          <div className="home-tabs" role="tablist" aria-label="Starred notes, recent notes and categories">
+            {tabButton('starred', 'Starred', 'star', starred.length)}
+            {tabButton('recent', 'Recent', 'clock')}
+            {tabButton('categories', 'Categories', 'folder', categories.length)}
+          </div>
+
+          {/* Editing happens in the Categories tab, so the button switches to it. */}
+          <button
+            type="button"
+            className="btn btn-sm btn-tertiary home-tabs-action"
+            aria-pressed={editingCategories}
+            onClick={() => {
+              setTab('categories');
+              setEditingCategories(value => !value);
+            }}
+          >
+            {editingCategories ? 'Done' : <><Icon name="sliders-horizontal" size={14} /> Edit categories</>}
+          </button>
         </div>
         <div className="note-tiles" id="home-tab-panel" role="tabpanel" aria-labelledby={`tab-${tab}`}>
-          {tab === 'categories' && (
+          {tab === 'categories' && editingCategories && <CategoryEditor notes={notes} filter={filter} onFilterChange={onFilterChange} />}
+          {tab === 'categories' && !editingCategories && (
             categories.map(category => (
               <CategoryCard key={category.id} id={category.id} name={category.name} notes={newest.filter(note => note.category === category.id)} onOpenCategory={onOpenCategory} />
             ))
@@ -249,6 +286,14 @@ export function NotesHome({ filter, onFilterChange, onOpen, onOpenCategory, onCr
       <section className="all-notes" aria-label="All notes">
         <div className="all-notes-heading">
           <h2>All notes <span className="category-count">{notes.length}</span></h2>
+          <label className="notes-sort">
+            <span>Sort by</span>
+            <select value={notesSort} aria-label="Sort all notes by" onChange={event => updatePreferences({ notesSort: event.target.value as NotesSort })}>
+              <option value="edited">Last edited</option>
+              <option value="opened">Last opened</option>
+              <option value="title">Name (A–Z)</option>
+            </select>
+          </label>
           <button
             type="button"
             className="btn btn-sm btn-secondary"
@@ -262,7 +307,7 @@ export function NotesHome({ filter, onFilterChange, onOpen, onOpenCategory, onCr
 
         {showFilters && <CategoryBar notes={notes} filter={filter} onFilterChange={onFilterChange} />}
 
-        <NoteTable notes={shown} onOpen={onOpen} />
+        <NoteTable notes={shown} onOpen={onOpen} showOpened={notesSort === 'opened'} />
       </section>
     </div>
   );

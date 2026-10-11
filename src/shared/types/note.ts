@@ -20,6 +20,9 @@ export type Note = {
   updated: string;
   updatedAt: string | null;
   createdAt: string | null;
+
+  /* When the note was last opened, used to sort notes by "Last opened". */
+  openedAt: string | null;
   date: string;
   pinned: boolean;
 

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEven
 import { changeZoom, usePreferences } from '../../app/preferences';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
 import { Icon } from '../../components/Icon';
-import { childrenOf, deleteNote, flushSave, getNote, isStorageAvailable, updateNote, updatedLabel, useCategories, useNote, useSaveStatus } from '../store';
+import { childrenOf, deleteNote, flushSave, getNote, isStorageAvailable, markOpened, updateNote, updatedLabel, useCategories, useNote, useSaveStatus } from '../store';
 import type { NoteMode } from '../../../shared/types/note';
 import { CodeLanguagePickers } from './CodeLanguagePickers';
 import { CommentLayer } from './CommentLayer';
@@ -58,8 +58,11 @@ export function NoteEditor({ noteId, onClose, onOpenNote, onOpenCategory, onOpen
   const { canUndo, canRedo, sticky } = useSessionValue(session, snapshot => snapshot);
   const revision = useSessionValue(session, snapshot => snapshot.revision);
 
-  /* Save pending edits when leaving the note. */
-  useEffect(() => () => flushSave(), [noteId]);
+  /* Remember when the note was opened, and save pending edits when leaving it. */
+  useEffect(() => {
+    markOpened(noteId);
+    return () => flushSave();
+  }, [noteId]);
 
   /* Keyboard shortcuts for the whole editor screen. */
   useEffect(() => {

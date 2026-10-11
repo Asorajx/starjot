@@ -7,6 +7,9 @@ export type Theme = 'light' | 'dark';
 /* How the page moves when a heading is chosen in Contents: a smooth slide, or an instant jump. */
 export type ContentsScroll = 'smooth' | 'instant';
 
+/* The order of the All notes list. */
+export type NotesSort = 'edited' | 'opened' | 'title';
+
 export type Preferences = {
   theme: Theme;
 
@@ -14,6 +17,7 @@ export type Preferences = {
   zoom: number;
   sidebarCollapsed: boolean;
   contentsScroll: ContentsScroll;
+  notesSort: NotesSort;
 };
 
 export const ZOOM_MIN = 0.5;
@@ -29,13 +33,14 @@ const listeners = new Set<() => void>();
 
 /* Light mode is the default; once a theme is chosen in Settings it is remembered between visits. */
 function load(): Preferences {
-  const defaults: Preferences = { theme: 'light', zoom: 1, sidebarCollapsed: false, contentsScroll: 'smooth' };
+  const defaults: Preferences = { theme: 'light', zoom: 1, sidebarCollapsed: false, contentsScroll: 'smooth', notesSort: 'edited' };
   const saved = readPreferences();
   return {
     theme: saved.theme === 'dark' || saved.theme === 'light' ? saved.theme : defaults.theme,
     zoom: typeof saved.zoom === 'number' ? clampZoom(saved.zoom) : defaults.zoom,
     sidebarCollapsed: saved.sidebarCollapsed === true,
-    contentsScroll: saved.contentsScroll === 'instant' ? 'instant' : 'smooth'
+    contentsScroll: saved.contentsScroll === 'instant' ? 'instant' : 'smooth',
+    notesSort: saved.notesSort === 'opened' || saved.notesSort === 'title' ? saved.notesSort : defaults.notesSort
   };
 }
 

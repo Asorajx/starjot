@@ -1732,11 +1732,25 @@
   background: var(--paper);
 }
 
+/* The tabs on the left, and the Edit categories button on the right. */
+.home-tabs-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-right: 12px;
+  border-bottom: 1px solid var(--line);
+}
+
 .home-tabs {
   display: flex;
   gap: 4px;
+  min-width: 0;
   padding: 0 16px;
-  border-bottom: 1px solid var(--line);
+}
+
+.home-tabs-action {
+  flex-shrink: 0;
 }
 
 /* The active tab is marked with a blue line along its bottom edge. */
@@ -1898,6 +1912,35 @@
   margin-bottom: 12px;
 }
 
+/* "Sort by" sits on the right, next to the Filter button. */
+.notes-sort {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+  color: #8795a9;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.notes-sort select {
+  height: 28px;
+  padding: 0 8px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--paper);
+  color: #2c3d58;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.notes-sort select:focus-visible {
+  border-color: #a7c5f5;
+  outline: none;
+}
+
 .all-notes-heading h2 {
   display: flex;
   align-items: center;
@@ -2033,19 +2076,30 @@
   color: inherit;
 }
 
+/* Categories being edited fill the whole Categories tab, one name field per category. */
+.category-editor {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
 .category-edit {
   display: inline-flex;
   align-items: center;
-  height: 30px;
+  height: 32px;
+  padding-left: 12px;
   border: 1px solid #c9d7ee;
   border-radius: 4px;
   background: var(--paper);
+  color: #8795a9;
 }
 
 .category-name-input {
   width: 110px;
   height: 100%;
-  padding: 0 4px 0 12px;
+  padding: 0 4px 0 8px;
   border: 0;
   background: transparent;
   color: var(--ink);
@@ -2068,12 +2122,6 @@
 
 .category-remove:hover {
   color: #d23f3f;
-}
-
-.category-actions {
-  display: inline-flex;
-  gap: 4px;
-  margin-left: auto;
 }
 
 .note-row-icon {
@@ -2349,10 +2397,6 @@
 @media (max-width: 700px) {
   .note-details {
     grid-template-columns: 90px minmax(0, 1fr);
-  }
-
-  .category-actions {
-    margin-left: 0;
   }
 }
 

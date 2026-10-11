@@ -56,6 +56,15 @@ describe('note store', () => {
     expect(store.getNote(note.id)?.pinned).toBe(false);
   });
 
+  it('remembers when a note was opened without changing when it was edited', async () => {
+    const store = await openApp();
+    const editedAt = store.getNote('atlas')?.updatedAt;
+    expect(store.getNote('atlas')?.openedAt).toBeNull();
+    store.markOpened('atlas');
+    expect(store.getNote('atlas')?.openedAt).not.toBeNull();
+    expect(store.getNote('atlas')?.updatedAt).toBe(editedAt);
+  });
+
   it('labels a note edited just now', async () => {
     const store = await openApp();
     const note = store.createNote();

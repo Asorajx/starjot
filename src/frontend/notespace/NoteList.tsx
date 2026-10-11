@@ -1,4 +1,5 @@
 import { Icon } from '../components/Icon';
+import type { NotesSort } from '../app/preferences';
 import { categoryName, getNote, setPinned, updatedLabel } from './store';
 import type { Note } from '../../shared/types/note';
 
@@ -18,6 +19,21 @@ export function editedText(note: Note) {
 /* Newest first, by the time each note was last edited. */
 export function newestFirst(notes: Note[]) {
   return [...notes].sort((a, b) => (b.updatedAt ?? '').localeCompare(a.updatedAt ?? ''));
+}
+
+/* Sort a list by last edited, last opened (never-opened notes go last) or title from A to Z. */
+export function sortNotes(notes: Note[], sort: NotesSort) {
+  if (sort === 'title') {
+    return [...notes].sort((a, b) => (a.title || 'Untitled note').localeCompare(b.title || 'Untitled note', undefined, { sensitivity: 'base', numeric: true }));
+  }
+  if (sort === 'opened') return [...notes].sort((a, b) => (b.openedAt ?? '').localeCompare(a.openedAt ?? ''));
+  return newestFirst(notes);
+}
+
+/* "Opened 5 min ago", or "Not opened yet" for notes that have never been opened here. */
+export function openedLabel(note: Note) {
+  if (!note.openedAt) return 'Not opened yet';
+  return updatedLabel({ ...note, updatedAt: note.openedAt });
 }
 
 
@@ -50,7 +66,7 @@ export function NoteTile({ note, onOpen }: { note: Note; onOpen: OpenNote }) {
 }
 
 /* One row of a note list. The star adds or removes the note from Starred without opening it. */
-function NoteRow({ note, onOpen }: { note: Note; onOpen: OpenNote }) {
+function NoteRow({ note, onOpen, time }: { note: Note; onOpen: OpenNote; time: string }) {
   return (
     <div className="recent-row note-row">
       <button type="button" className="note-row-open" onClick={() => onOpen(note.id)}>
@@ -62,7 +78,7 @@ function NoteRow({ note, onOpen }: { note: Note; onOpen: OpenNote }) {
           </span>
         </span>
         <span className="recent-category">{categoryName(note.category)}</span>
-        <span className="recent-time">{updatedLabel(note)}</span>
+        <span className="recent-time">{time}</span>
       </button>
       <button
         type="button"
@@ -77,13 +93,23 @@ function NoteRow({ note, onOpen }: { note: Note; onOpen: OpenNote }) {
   );
 }
 
-/* A table of notes with Name, Category and Last edited columns. */
-export function NoteTable({ notes, onOpen }: { notes: Note[]; onOpen: OpenNote }) {
+type NoteTableProps = {
+  notes: Note[];
+  onOpen: OpenNote;
+
+  /* Sorting by "Last opened" shows when each note was opened instead of when it was edited. */
+  showOpened?: boolean;
+};
+
+/* A table of notes with Name, Category and Last edited (or Last opened) columns. */
+export function NoteTable({ notes, onOpen, showOpened = false }: NoteTableProps) {
   return (
     <div className="recent-table">
-      <div className="recent-columns note-row-columns"><span>NAME</span><span>CATEGORY</span><span>LAST EDITED</span><span /></div>
+      <div className="recent-columns note-row-columns">
+        <span>NAME</span><span>CATEGORY</span><span>{showOpened ? 'LAST OPENED' : 'LAST EDITED'}</span><span />
+      </div>
       {notes.length
-        ? notes.map(note => <NoteRow key={note.id} note={note} onOpen={onOpen} />)
+        ? notes.map(note => <NoteRow key={note.id} note={note} onOpen={onOpen} time={showOpened ? openedLabel(note) : updatedLabel(note)} />)
         : <p className="notes-empty-list">No notes here yet.</p>}
     </div>
   );
