@@ -1,3 +1,6 @@
+import { safeImageAttributes } from './editor/images';
+
+
 /* =========================
    Safe Document HTML
    ========================= */
@@ -15,7 +18,7 @@ const MAX_CONTENT = 250000;
 function keepsClass(tag: string, name: string) {
   if (name === 'document-tagline' || name === 'overline') return true;
   if (tag === 'DIV' && ['sticky-group', 'toggle-block', 'is-open', 'toggle-body'].includes(name)) return true;
-  if (tag === 'SPAN' && name === 'page-block') return true;
+  if (tag === 'SPAN' && (name === 'page-block' || name === 'image-block')) return true;
   if (/^(P|H[1-5])$/.test(tag) && name === 'toggle-summary') return true;
   if (tag === 'A' && name === 'page-link') return true;
   if (tag === 'TABLE' && name === 'fit-content') return true;
@@ -32,6 +35,15 @@ export function safeHref(href: string | null) {
 /* Copy the few attributes Notespace uses: link addresses, linked page ids, page block sizes and widths, */
 /* table column widths and row heights, how many rows and columns a merged table cell covers, and comment ids. */
 function copyAttributes(node: Element, copy: Element) {
+  /* An image keeps only its id, its width in pixels and where it sits on its line. */
+  if (node.tagName === 'SPAN' && node.classList.contains('image-block')) {
+    Object.entries(safeImageAttributes(node)).forEach(([name, value]) => {
+      if (value) copy.setAttribute(`data-${name}`, value);
+    });
+    const comment = node.getAttribute('data-comment');
+    if (comment && /^c[a-z0-9]+$/.test(comment)) copy.setAttribute('data-comment', comment);
+    return;
+  }
   if (node.tagName === 'A') {
     const href = safeHref(node.getAttribute('href'));
     if (href) copy.setAttribute('href', href);
@@ -70,9 +82,9 @@ function cleanNode(node: Node): Node | null {
   if (!(node instanceof Element) || DROPPED_TAGS.has(node.tagName)) return null;
   if (node.tagName === 'DIV' && node.classList.contains('page-block')) return upgradePageBlock(node);
 
-  /* A page block's title and buttons are drawn when it is shown, so only the empty block is stored. */
+  /* A page block's title and buttons, and an image's picture, are drawn when shown, so only the empty block is stored. */
   const children = document.createDocumentFragment();
-  const keepsChildren = !node.classList.contains('page-block');
+  const keepsChildren = !node.classList.contains('page-block') && !node.classList.contains('image-block');
   if (keepsChildren) {
     node.childNodes.forEach(child => {
       const cleaned = cleanNode(child);

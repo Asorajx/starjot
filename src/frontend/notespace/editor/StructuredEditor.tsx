@@ -14,6 +14,7 @@ import { deleteKeepingPages, handleBlockKeys, hydratePages, joinLineOfToggle, pa
 import { getLength, getOffset, setOffset } from './caret';
 import { highlight, insertNewline, preAtCaret } from './code';
 import { caretAtEdge, closestAtCaret, emptyParagraph, isEmptyContent, placeCaret, selectContents, selectionInside, wrapLooseLines } from './dom';
+import { imageFiles, insertImageFiles } from './images';
 import { applyMarkdownShortcut } from './markdown';
 import { deleteSelection, insertPasted, pastedMarkdown } from './paste';
 import type { EditorSession } from './session';
@@ -728,6 +729,14 @@ export const StructuredEditor = memo(function StructuredEditor({ session, conten
   function handlePaste(event: ClipboardEvent<HTMLDivElement>) {
     event.preventDefault();
     if (locked) return;
+
+    /* A copied picture (or picture file) is added as an image. */
+    const images = imageFiles(event.clipboardData);
+    const block = closestAtCaret('.block-content');
+    if (images.length && !(block && preAtCaret(block))) {
+      insertImageFiles(session, images);
+      return;
+    }
     session.checkpoint();
     const text = event.clipboardData.getData('text/plain');
     const start = closestAtCaret('.block-content');

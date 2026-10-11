@@ -200,6 +200,10 @@ export function flushSave() {
   if (saveTimer !== undefined) save();
 }
 
+export function getNotes() {
+  return state.notes;
+}
+
 export function getNote(id: string) {
   return state.notes.find(note => note.id === id);
 }

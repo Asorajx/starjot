@@ -5,6 +5,7 @@ import { deleteKeepingPages, handleBlockKeys, hydratePages } from './blocks';
 import { hydrateTables } from './tables';
 import { highlight, highlightAll, insertNewline, preAtCaret } from './code';
 import { caretAtEdge, closestAtCaret, emptyParagraph, placeCaret, selectContents, wrapLooseLines } from './dom';
+import { imageFiles, insertImageFiles } from './images';
 import { applyMarkdownShortcut } from './markdown';
 import { deleteSelection, insertPasted, pastedMarkdown } from './paste';
 import { stickyStateForRange, toggleStickyRange } from './stickyDom';
@@ -212,6 +213,13 @@ export const ContinuousEditor = memo(function ContinuousEditor({ session, conten
     const body = bodyRef.current;
     event.preventDefault();
     if (!body || locked) return;
+
+    /* A copied picture (or picture file) is added as an image. */
+    const images = imageFiles(event.clipboardData);
+    if (images.length && !preAtCaret(body)) {
+      insertImageFiles(session, images);
+      return;
+    }
     session.checkpoint();
     const text = event.clipboardData.getData('text/plain');
     const pre = preAtCaret(body);

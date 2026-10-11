@@ -15,6 +15,7 @@ import { SelectionToolbar } from './SelectionToolbar';
 import { SlashMenu } from './SlashMenu';
 import { TableTools } from './TableTools';
 import { BlockWidgets } from './BlockWidgets';
+import { ImageTools } from './ImageTools';
 import { LinkTools } from './LinkTools';
 import { NoteBreadcrumb } from './NoteBreadcrumb';
 import { PageBar, SaveStatus, type PageHistory } from '../PageBar';
@@ -438,6 +439,7 @@ export function NoteEditor({ noteId, history, view, active, onClose, onOpenNote,
       <SlashMenu session={session} noteId={note.id} locked={locked} onOpenNewPage={onOpenNewPage} />
       <BlockWidgets session={session} locked={locked} onOpenNote={onOpenNote} />
       <LinkTools session={session} locked={locked} onOpenNote={onOpenNote} onOpenNoteInNewTab={onOpenNoteInNewTab} />
+      <ImageTools session={session} locked={locked} />
       <TableTools session={session} locked={locked} />
 
       {confirmDelete && (

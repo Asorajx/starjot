@@ -1,6 +1,7 @@
 import { iconMarkup, type IconName } from '../../components/Icon';
 import { categoryName, getNote, updatedLabel } from '../store';
 import { highlight } from './code';
+import { hydrateImages } from './images';
 import { addRow, cellsInRow, tableGrid } from './tables';
 import { caretAtEdge, caretElement, closestAtCaret, emptyParagraph, isEmptyContent, placeCaret } from './dom';
 
@@ -304,8 +305,9 @@ function escapeHtml(text: string) {
 const drawn = new WeakMap<Element, string>();
 
 /* Page blocks are stored empty; their title, description and size buttons are drawn when shown, */
-/* so they always match the page they point to. */
+/* so they always match the page they point to. Images are stored empty too and drawn here as well. */
 export function hydratePages(root: Element | null) {
+  hydrateImages(root);
   root?.querySelectorAll<HTMLElement>('.page-block').forEach(block => {
     const note = getNote(block.dataset.page ?? '');
     const size = PAGE_SIZES.includes(block.dataset.size as PageSize) ? block.dataset.size as PageSize : 'small';
