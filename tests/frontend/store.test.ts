@@ -168,38 +168,58 @@ describe('sub-pages', () => {
     expect(store.childrenOf(parent.id).map(note => note.id)).toEqual([child!.id]);
   });
 
-  it('lists the pages above a sub-page, top level first', async () => {
+  it('lists the page above a sub-page', async () => {
     const store = await openApp();
     const top = store.createNote();
-    const middle = store.createSubpage(top.id)!;
-    const bottom = store.createSubpage(middle.id)!;
+    const child = store.createSubpage(top.id)!;
 
-    expect(store.ancestorsOf(bottom.id).map(note => note.id)).toEqual([top.id, middle.id]);
-    expect(store.depthOf(bottom.id)).toBe(3);
+    expect(store.ancestorsOf(child.id).map(note => note.id)).toEqual([top.id]);
+    expect(store.depthOf(child.id)).toBe(2);
   });
 
-  it('stops adding sub-pages at the deepest level', async () => {
+  it('allows any number of sub-pages, but no sub-pages inside sub-pages', async () => {
     const store = await openApp();
     const top = store.createNote();
-    const middle = store.createSubpage(top.id)!;
-    const bottom = store.createSubpage(middle.id)!;
+    const children = Array.from({ length: 12 }, () => store.createSubpage(top.id));
 
-    expect(store.canAddSubpage(middle.id)).toBe(true);
-    expect(store.canAddSubpage(bottom.id)).toBe(false);
-    expect(store.createSubpage(bottom.id)).toBeNull();
+    expect(children.every(Boolean)).toBe(true);
+    expect(store.childrenOf(top.id)).toHaveLength(12);
+    expect(store.canAddSubpage(children[0]!.id)).toBe(false);
+    expect(store.createSubpage(children[0]!.id)).toBeNull();
   });
 
   it('moves sub-pages up one level when their parent is deleted', async () => {
     const store = await openApp();
     const top = store.createNote();
-    const middle = store.createSubpage(top.id)!;
-    const bottom = store.createSubpage(middle.id)!;
-
-    store.deleteNote(middle.id);
-    expect(store.getNote(bottom.id)?.parentId).toBe(top.id);
+    const child = store.createSubpage(top.id)!;
 
     store.deleteNote(top.id);
-    expect(store.getNote(bottom.id)?.parentId).toBe('');
+    expect(store.getNote(child.id)?.parentId).toBe('');
+  });
+
+  it('moves pages nested deeper than allowed up into their top-level note', async () => {
+    const page = (id: string, parentId: string) => ({ id, title: id, content: '<p></p>', mode: 'structured', parentId });
+    localStorage.setItem('strata-notespace-v1', JSON.stringify({
+      version: 1,
+      deleted: [],
+      notes: [page('top', ''), page('middle', 'top'), page('deep', 'middle'), page('deeper', 'deep')]
+    }));
+    const store = await openApp();
+
+    expect(store.getNote('middle')?.parentId).toBe('top');
+    expect(store.getNote('deep')?.parentId).toBe('top');
+    expect(store.getNote('deeper')?.parentId).toBe('top');
+  });
+
+  it('remembers whether the page list in the details is folded', async () => {
+    let store = await openApp();
+    const note = store.createNote();
+    expect(store.getNote(note.id)?.pagesHidden).toBe(false);
+    store.updateNote(note.id, { pagesHidden: true });
+
+    vi.resetModules();
+    store = await openApp();
+    expect(store.getNote(note.id)?.pagesHidden).toBe(true);
   });
 
   it('keeps sub-pages inside their parent after reopening', async () => {

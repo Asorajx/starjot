@@ -159,25 +159,29 @@ export function BlockWidgets({ session, locked, onOpenNote }: BlockWidgetsProps)
       }
       const link = target.closest?.<HTMLElement>('a.page-link');
       const block = target.closest?.<HTMLElement>('.page-block');
-      const anchor = link ?? (block && !resizing.current && !target.closest('.page-block-sizes, .page-block-resize') && pageBlockIsCut(block) ? block : null);
-      if (!anchor || !body()?.contains(anchor)) return;
+
+      /* Pages listed in the note's details always show their preview. */
+      const listed = target.closest?.<HTMLElement>('[data-preview-page]');
+      const inNote = link ?? (block && !resizing.current && !target.closest('.page-block-sizes, .page-block-resize') && pageBlockIsCut(block) ? block : null);
+      const anchor = listed ?? (inNote && body()?.contains(inNote) ? inNote : null);
+      if (!anchor) return;
       window.clearTimeout(hideTimer.current);
 
       /* The preview opens under the link or block, or above it near the bottom of the window. */
       const bounds = anchor.getBoundingClientRect();
       const above = bounds.bottom + 240 > window.innerHeight && bounds.top > 240;
       setPreview({
-        id: anchor.dataset.page ?? '',
+        id: anchor.dataset.page ?? anchor.dataset.previewPage ?? '',
         top: above ? bounds.top - 6 : bounds.bottom + 6,
         left: Math.min(bounds.left, window.innerWidth - 320),
         above,
-        block: anchor === block
+        block: anchor !== link
       });
     }
 
     function handleMouseOut(event: MouseEvent) {
       const target = event.target as Element;
-      if (!target.closest?.('a.page-link, .page-block, .page-preview')) return;
+      if (!target.closest?.('a.page-link, .page-block, .page-preview, [data-preview-page]')) return;
       window.clearTimeout(hideTimer.current);
       hideTimer.current = window.setTimeout(() => setPreview(null), 200);
     }

@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { EmojiPicker } from '../../components/EmojiPicker';
 import { Icon } from '../../components/Icon';
 import { scheduleSave, updateNote, useCategories, useNotes } from '../store';
-import { embeddedPageIds } from './blocks';
 import type { Note } from '../../../shared/types/note';
 
 type NoteHeaderProps = {
@@ -16,19 +15,48 @@ function formatDate(iso: string | null) {
   return new Date(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
+/* Every page inside a page, at any depth (only one level today, but older notes may have more). */
+function countPages(notes: Note[], parentId: string): number {
+  return notes.filter(note => note.parentId === parentId).reduce((total, note) => total + 1 + countPages(notes, note.id), 0);
+}
+
+type PageListProps = {
+  notes: Note[];
+  parentId: string;
+  onOpenNote: (id: string) => void;
+};
+
+/* The sub-pages of a page, oldest first (the order they were added), each with its own sub-pages */
+/* listed below it. Hovering one shows a preview. */
+function PageList({ notes, parentId, onOpenNote }: PageListProps) {
+  const pages = notes.filter(note => note.parentId === parentId).sort((a, b) => (a.createdAt ?? '').localeCompare(b.createdAt ?? ''));
+  if (!pages.length) return null;
+  return (
+    <ul className="note-page-list">
+      {pages.map(page => (
+        <li key={page.id}>
+          <button type="button" className="note-page-link" data-preview-page={page.id} onClick={() => onOpenNote(page.id)}>
+            {page.icon ? <span className="note-page-icon" aria-hidden="true">{page.icon}</span> : <Icon name="file-text" size={13} />}
+            <span className="note-page-title">{page.title || 'Untitled note'}</span>
+          </button>
+          <PageList notes={notes} parentId={page.id} onOpenNote={onOpenNote} />
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 
 /* =========================
    Note Header
    ========================= */
 
-/* The top of a note: its icon, title, details (category, description, dates, comments) and sub-pages. */
+/* The top of a note: its icon, title and details (category, description, dates, comments, sub-pages). */
 /* Details can be hidden per note; they can only be edited while the note is unlocked. */
 export function NoteHeader({ note, locked, onOpenNote }: NoteHeaderProps) {
   const categories = useCategories();
-
-  /* Sub-pages already shown as page blocks in the note are not listed again here. */
-  const embedded = embeddedPageIds(note.content);
-  const subpages = useNotes().filter(item => item.parentId === note.id && !embedded.has(item.id));
+  const notes = useNotes();
+  const pageCount = countPages(notes, note.id);
   const [picking, setPicking] = useState(false);
 
   /* Text fields save after a short pause, like typing in the note itself. */
@@ -122,18 +150,26 @@ export function NoteHeader({ note, locked, onOpenNote }: NoteHeaderProps) {
 
           <dt>Comments</dt>
           <dd>{comments || 'None'}</dd>
-        </dl>
-      )}
 
-      {subpages.length > 0 && (
-        <div className="note-subpages" aria-label="Sub-pages">
-          {subpages.map(page => (
-            <button key={page.id} type="button" className="note-subpage" onClick={() => onOpenNote(page.id)}>
-              {page.icon ? <span aria-hidden="true">{page.icon}</span> : <Icon name="file-text" size={14} />}
-              <span className="note-subpage-title">{page.title || 'Untitled note'}</span>
-            </button>
-          ))}
-        </div>
+          {/* The page list can be folded on its own, so the other details stay visible. */}
+          <dt className="note-pages-label">Pages</dt>
+          <dd className="note-pages">
+            {pageCount ? (
+              <>
+                <button
+                  type="button"
+                  className="note-pages-toggle"
+                  aria-expanded={!note.pagesHidden}
+                  onClick={() => updateNote(note.id, { pagesHidden: !note.pagesHidden })}
+                >
+                  <Icon name="chevron-right" size={13} className={note.pagesHidden ? '' : 'is-turned'} />
+                  {pageCount} {pageCount === 1 ? 'page' : 'pages'}
+                </button>
+                {!note.pagesHidden && <PageList notes={notes} parentId={note.id} onOpenNote={onOpenNote} />}
+              </>
+            ) : 'None'}
+          </dd>
+        </dl>
       )}
     </div>
   );

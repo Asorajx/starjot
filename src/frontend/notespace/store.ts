@@ -15,8 +15,9 @@ const ACCENTS: NoteAccent[] = ['indigo', 'mint', 'amber', 'rose'];
 
 const CATEGORY_NAME_LENGTH = 24;
 
-/* Pages can sit inside pages up to this many levels deep (a note, its sub-page, and one more). */
-export const MAX_PAGE_DEPTH = 3;
+/* Pages can sit inside pages this many levels deep: a note and its sub-pages, which cannot have */
+/* sub-pages of their own. A note can hold any number of sub-pages. */
+export const MAX_PAGE_DEPTH = 2;
 
 /* Category names used before categories could be edited, matched to today's default categories. */
 const OLD_CATEGORY_NAMES: Record<string, string> = {
@@ -84,6 +85,7 @@ function normalizeNote(raw: unknown): Note | null {
     stickyIndicator: record.stickyIndicator !== false,
     locked: record.locked === true,
     detailsHidden: record.detailsHidden === true,
+    pagesHidden: record.pagesHidden === true,
     parentId: /^[a-zA-Z0-9_-]+$/.test(String(record.parentId ?? '')) ? String(record.parentId) : '',
     comments: normalizeComments(record.comments),
     content: cleanHtml(record.content ?? SAMPLE_CONTENT[id] ?? '')
@@ -111,9 +113,11 @@ function normalizeCategories(raw: unknown[] | null): Category[] {
 }
 
 /* A sub-page whose parent is missing, or a loop of pages inside each other, becomes a top-level note. */
+/* A page nested deeper than allowed (saved before the limit was lowered) moves up to sit directly */
+/* inside its top-level note, so nothing written in it is lost. */
 function repairParents(notes: Note[]) {
   const byId = new Map(notes.map(note => [note.id, note]));
-  return notes.map(note => {
+  const fixed = notes.map(note => {
     const seen = new Set([note.id]);
     let parent = byId.get(note.parentId);
     while (parent) {
@@ -122,6 +126,13 @@ function repairParents(notes: Note[]) {
       parent = byId.get(parent.parentId);
     }
     return note.parentId && !byId.has(note.parentId) ? { ...note, parentId: '' } : note;
+  });
+
+  const fixedById = new Map(fixed.map(note => [note.id, note]));
+  return fixed.map(note => {
+    let top = fixedById.get(note.parentId);
+    while (top?.parentId) top = fixedById.get(top.parentId);
+    return top && top.id !== note.parentId ? { ...note, parentId: top.id } : note;
   });
 }
 
@@ -209,6 +220,7 @@ export function updateNote(id: string, changes: NoteChanges, persist = true) {
   if (changes.category !== undefined) next.category = normalizeCategory(changes.category);
   if (changes.icon !== undefined) next.icon = isEmoji(changes.icon) ? changes.icon : '';
   if (typeof changes.detailsHidden === 'boolean') next.detailsHidden = changes.detailsHidden;
+  if (typeof changes.pagesHidden === 'boolean') next.pagesHidden = changes.pagesHidden;
   if (changes.content !== undefined) {
     next.content = cleanHtml(changes.content);
     next.preview = htmlToText(next.content).trim().slice(0, 180);

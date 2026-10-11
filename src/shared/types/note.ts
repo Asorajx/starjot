@@ -39,6 +39,9 @@ export type Note = {
   /* Hides the details (category, description, dates, comments) under the title. */
   detailsHidden: boolean;
 
+  /* Folds the list of sub-pages in the details, while the other details stay visible. */
+  pagesHidden: boolean;
+
   /* The id of the page this note sits inside, or an empty string for a top-level note. */
   parentId: string;
   comments: NoteComment[];
@@ -55,7 +58,7 @@ export type NoteComment = {
 
 /* The fields an editor may change; everything else is managed by the store. */
 export type NoteChanges = Partial<Pick<Note,
-  'title' | 'subtitle' | 'category' | 'icon' | 'content' | 'mode' | 'stickyIndicator' | 'locked' | 'detailsHidden' | 'comments'>>;
+  'title' | 'subtitle' | 'category' | 'icon' | 'content' | 'mode' | 'stickyIndicator' | 'locked' | 'detailsHidden' | 'pagesHidden' | 'comments'>>;
 
 /* A user-defined group of notes, such as "Work". Notes refer to it by id, so renaming is safe. */
 export type Category = {

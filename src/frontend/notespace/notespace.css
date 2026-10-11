@@ -2202,42 +2202,6 @@
   color: var(--blue);
 }
 
-/* Sub-pages are listed under the details as small cards that open the page. */
-.note-subpages {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin: 12px 0 0;
-}
-
-.note-subpage {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  max-width: 240px;
-  height: 32px;
-  padding: 0 12px;
-  border: 1px solid #e2e8f1;
-  border-radius: 4px;
-  background: #ffffff;
-  color: #4b5b74;
-  font: inherit;
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.note-subpage:hover {
-  border-color: #a7c5f5;
-  color: var(--blue);
-}
-
-.note-subpage-title {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 /* Details are a two-column list: labels on the left, values on the right. */
 .note-details {
   display: grid;
@@ -2259,6 +2223,94 @@
   align-items: center;
   margin: 0;
   color: #4b5b74;
+}
+
+/* The Pages row: a small fold button with the page count, and below it a compact list of pages. */
+/* A page's own sub-pages are indented under it. The label stays level with the fold button. */
+.note-details dt.note-pages-label {
+  align-self: start;
+  line-height: 30px;
+}
+
+.note-details dd.note-pages {
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+}
+
+.note-pages-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 26px;
+  padding: 0 8px 0 4px;
+  margin-left: -4px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: #4b5b74;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.note-pages-toggle:hover {
+  background: var(--blue-soft);
+  color: var(--blue);
+}
+
+.note-pages-toggle .icon {
+  transition: transform .15s ease;
+}
+
+.note-pages-toggle .icon.is-turned {
+  transform: rotate(90deg);
+}
+
+.note-page-list {
+  width: 100%;
+  margin: 0 0 4px;
+  padding: 0;
+  list-style: none;
+}
+
+.note-page-list .note-page-list {
+  margin: 0;
+  padding-left: 16px;
+}
+
+.note-page-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
+  height: 26px;
+  padding: 0 8px;
+  margin-left: -4px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: #4b5b74;
+  font: inherit;
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.note-page-link:hover {
+  background: var(--blue-soft);
+  color: var(--blue);
+}
+
+.note-page-icon {
+  font-size: 13px;
+  line-height: 1;
+}
+
+.note-page-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .note-detail-field {
