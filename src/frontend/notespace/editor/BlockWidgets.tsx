@@ -3,7 +3,8 @@ import { ConfirmDialog } from '../../components/ConfirmDialog';
 import { Icon } from '../../components/Icon';
 import { categoryName, childrenOf, deleteNote, getNote, separatePage, updatedLabel, useNotes } from '../store';
 import {
-  deleteKeepingPages, hydratePages, lineBelowTable, pageBlockIsCut, pageBlocksIn, removePageBlocks, setPageWidth, stepOverPage, type PageSize
+  deleteKeepingPages, hydratePages, lineBelowTable, pageBlockIsCut, pageBlocksIn, removePageBlocks, setPageWidth, stepOverPage, typeOutsideComment,
+  type PageSize
 } from './blocks';
 import { placeCaret } from './dom';
 import type { EditorSession } from './session';
@@ -188,7 +189,8 @@ export function BlockWidgets({ session, locked, onOpenNote }: BlockWidgetsProps)
 
     /* Typing never deletes a page block. Backspace or Delete next to one steps over it, and */
     /* deleting a selection inside one line keeps the blocks in it. (Selections across blocks in */
-    /* structured mode are handled by that editor, which keeps them too.) */
+    /* structured mode are handled by that editor, which keeps them too.) Text typed at the edge */
+    /* of a comment goes outside it. */
     function handleBeforeInput(event: InputEvent) {
       const note = body();
       const selection = window.getSelection();
@@ -196,6 +198,11 @@ export function BlockWidgets({ session, locked, onOpenNote }: BlockWidgetsProps)
       if (!note || !range || latest.current.locked || !note.contains(range.commonAncestorContainer)) return;
       if (stepOverPage(event, note)) {
         event.preventDefault();
+        return;
+      }
+      if (typeOutsideComment(event)) {
+        event.preventDefault();
+        session.commit();
         return;
       }
 

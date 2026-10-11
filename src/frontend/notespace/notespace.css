@@ -2225,17 +2225,18 @@
   color: #4b5b74;
 }
 
-/* The Pages row: a small fold button with the page count, and below it a compact list of pages. */
-/* A page's own sub-pages are indented under it. The label stays level with the fold button. */
+/* The Pages row: a small fold button with the page count, then the pages side by side as small */
+/* chips that wrap onto more lines only when needed. A page's own sub-pages follow it, marked "↳". */
+/* The label stays level with the first line. */
 .note-details dt.note-pages-label {
   align-self: start;
   line-height: 30px;
 }
 
 .note-details dd.note-pages {
-  flex-direction: column;
-  align-items: flex-start;
-  justify-content: center;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 2px 0;
 }
 
 .note-pages-toggle {
@@ -2267,27 +2268,25 @@
   transform: rotate(90deg);
 }
 
+.note-page-list,
+.note-page-list li {
+  display: contents;
+}
+
 .note-page-list {
-  width: 100%;
-  margin: 0 0 4px;
+  margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.note-page-list .note-page-list {
-  margin: 0;
-  padding-left: 16px;
-}
-
 .note-page-link {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 8px;
-  max-width: 100%;
-  height: 26px;
+  gap: 4px;
+  max-width: 200px;
+  height: 24px;
   padding: 0 8px;
-  margin-left: -4px;
-  border: 0;
+  border: 1px solid #e2e8f1;
   border-radius: 4px;
   background: transparent;
   color: #4b5b74;
@@ -2298,8 +2297,14 @@
 }
 
 .note-page-link:hover {
+  border-color: #a7c5f5;
   background: var(--blue-soft);
   color: var(--blue);
+}
+
+.note-page-list .note-page-list .note-page-link::before {
+  content: "↳";
+  color: #a4adbb;
 }
 
 .note-page-icon {

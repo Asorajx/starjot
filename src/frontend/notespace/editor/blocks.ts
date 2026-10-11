@@ -660,9 +660,57 @@ function leavePageLink(event: KeyboardEvent) {
   selection.addRange(caret);
 }
 
+/* A comment belongs to the words that were selected. Pressing Enter at the start or end of those */
+/* words first moves the caret just outside them, so the new line is not part of the comment. */
+/* (Enter in the middle still splits the words, and both halves keep the comment.) */
+function leaveCommentMark(event: KeyboardEvent) {
+  const mark = event.key === 'Enter' ? closestAtCaret('.comment-mark') : null;
+  const selection = window.getSelection();
+  if (!mark || !selection?.isCollapsed) return;
+  const atStart = caretAtEdge(mark, 'start');
+  if (!atStart && !caretAtEdge(mark, 'end')) return;
+  const caret = document.createRange();
+  if (atStart) caret.setStartBefore(mark);
+  else caret.setStartAfter(mark);
+  selection.removeAllRanges();
+  selection.addRange(caret);
+}
+
+/* Text typed at the start or end of commented words goes just outside them, so it is not added to */
+/* the comment. The browser would otherwise keep typing inside the comment. Returns true when the */
+/* text was placed here (the caller then stops the browser from also typing it). */
+export function typeOutsideComment(event: InputEvent) {
+  const mark = event.inputType === 'insertText' && event.data ? closestAtCaret('.comment-mark') : null;
+  if (!mark || !window.getSelection()?.isCollapsed) return false;
+  const atStart = caretAtEdge(mark, 'start');
+  if (!atStart && !caretAtEdge(mark, 'end')) return false;
+
+  const data = event.data as string;
+  const neighbour = atStart ? mark.previousSibling : mark.nextSibling;
+  let node: Text;
+  let offset: number;
+  if (neighbour?.nodeType === Node.TEXT_NODE) {
+    node = neighbour as Text;
+    if (atStart) node.appendData(data);
+    else node.insertData(0, data);
+    offset = atStart ? node.length : data.length;
+  } else {
+    node = document.createTextNode(data);
+    if (atStart) mark.before(node);
+    else mark.after(node);
+    offset = data.length;
+  }
+  const caret = document.createRange();
+  caret.setStart(node, offset);
+  window.getSelection()?.removeAllRanges();
+  window.getSelection()?.addRange(caret);
+  return true;
+}
+
 /* Keys with special meaning in table cells and toggle lists. Returns null for every other key. */
 export function handleBlockKeys(event: KeyboardEvent, root: HTMLElement): KeyResult | null {
   leavePageLink(event);
+  leaveCommentMark(event);
   const cell = closestAtCaret<HTMLTableCellElement>('td, th');
   if (cell && root.contains(cell)) return cellKeys(event, cell);
   return enterTableKeys(event) ?? toggleKeys(event);

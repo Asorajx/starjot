@@ -26,8 +26,8 @@ type PageListProps = {
   onOpenNote: (id: string) => void;
 };
 
-/* The sub-pages of a page, oldest first (the order they were added), each with its own sub-pages */
-/* listed below it. Hovering one shows a preview. */
+/* The sub-pages of a page, oldest first (the order they were added), each followed by its own */
+/* sub-pages. They are shown side by side. Hovering one shows a preview. */
 function PageList({ notes, parentId, onOpenNote }: PageListProps) {
   const pages = notes.filter(note => note.parentId === parentId).sort((a, b) => (a.createdAt ?? '').localeCompare(b.createdAt ?? ''));
   if (!pages.length) return null;

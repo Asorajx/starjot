@@ -44,6 +44,18 @@ describe('History', () => {
    Typing Steps
    ========================= */
 
+describe('History with comments', () => {
+  it('brings back the comments that went with each step', () => {
+    const first = { id: 'c1', text: 'First', createdAt: '' };
+    const history = new History('a', [first]);
+    history.checkpoint();
+    history.record('b', 1, []);
+
+    expect(history.undo()?.comments).toEqual([first]);
+    expect(history.redo()?.comments).toEqual([]);
+  });
+});
+
 describe('TypingSteps', () => {
   /* Type characters one by one and return which ones started a new undo step. */
   function typeText(steps: TypingSteps, text: string) {

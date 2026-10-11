@@ -2,7 +2,7 @@ import { useSyncExternalStore } from 'react';
 import { getNote, scheduleSave, updateNote } from '../store';
 import { cleanHtml } from '../sanitize';
 import { markRange, newCommentId, unmark } from './comments';
-import { History, TypingSteps } from './history';
+import { History, TypingSteps, type HistoryEntry } from './history';
 import { charBesideCaret } from './dom';
 import { getOffset } from './caret';
 import type { StickyState } from './blockModel';
@@ -51,7 +51,7 @@ export class EditorSession {
 
   constructor(noteId: string, content: string) {
     this.noteId = noteId;
-    this.history = new History(content);
+    this.history = new History(content, getNote(noteId)?.comments ?? []);
   }
 
   /* React subscribes with useSyncExternalStore; each change creates a new snapshot object. */
@@ -105,7 +105,7 @@ export class EditorSession {
     const clean = cleanHtml(content);
     updateNote(this.noteId, { content: clean }, false);
     scheduleSave();
-    this.history.record(clean, caret);
+    this.history.record(clean, caret, getNote(this.noteId)?.comments ?? []);
     this.typing.afterInput(caret);
     this.update({ layout: this.snapshot.layout + 1 });
   }
@@ -122,9 +122,9 @@ export class EditorSession {
     this.restore(this.history.redo());
   }
 
-  private restore(entry: { content: string; caret: number | null } | null) {
+  private restore(entry: HistoryEntry | null) {
     if (!entry) return;
-    updateNote(this.noteId, { content: entry.content }, false);
+    updateNote(this.noteId, { content: entry.content, comments: entry.comments }, false);
     scheduleSave();
     this.pendingCaret = entry.caret;
     this.typing.reset();

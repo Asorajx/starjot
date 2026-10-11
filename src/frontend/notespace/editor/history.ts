@@ -1,10 +1,16 @@
+import type { NoteComment } from '../../../shared/types/note';
+
+
 /* =========================
    Undo History
    ========================= */
 
+/* A comment's words are marked in the content, but its text is stored with the note, so each step */
+/* keeps both: undoing a deleted comment brings back its text as well as its highlight. */
 export type HistoryEntry = {
   content: string;
   caret: number | null;
+  comments: NoteComment[];
 };
 
 const LIMIT = 300;
@@ -16,8 +22,8 @@ export class History {
   private current: HistoryEntry;
   private startNewStep = true;
 
-  constructor(content: string) {
-    this.current = { content, caret: null };
+  constructor(content: string, comments: NoteComment[] = []) {
+    this.current = { content, caret: null, comments };
   }
 
   /* Call before an edit that should become its own step; the caret is where undo returns to. */
@@ -26,10 +32,11 @@ export class History {
     if (caret !== null) this.current.caret = caret;
   }
 
-  /* Call after every edit with the new content. Returns false when nothing changed. */
-  record(content: string, caret: number | null) {
+  /* Call after every edit with the new content and comments. Returns false when nothing changed. */
+  record(content: string, caret: number | null, comments: NoteComment[] = this.current.comments) {
     if (content === this.current.content) {
       this.current.caret = caret ?? this.current.caret;
+      this.current.comments = comments;
       return false;
     }
     if (this.startNewStep) {
@@ -37,7 +44,7 @@ export class History {
       if (this.undoStack.length > LIMIT) this.undoStack.shift();
       this.startNewStep = false;
     }
-    this.current = { content, caret };
+    this.current = { content, caret, comments };
     this.redoStack = [];
     return true;
   }

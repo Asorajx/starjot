@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  convertLine, createPageBlock, deleteKeepingPages, hydratePages, insertBlock, removePageBlocks, stepOverPage
+  convertLine, createPageBlock, deleteKeepingPages, handleBlockKeys, hydratePages, insertBlock, removePageBlocks, stepOverPage, typeOutsideComment
 } from '../../src/frontend/notespace/editor/blocks';
 import { EditorSession } from '../../src/frontend/notespace/editor/session';
 import { createNote, createSubpage, getNote, separatePage } from '../../src/frontend/notespace/store';
@@ -169,5 +169,62 @@ describe('protecting page blocks', () => {
     expect(getNote(child.id)?.parentId).toBe('');
     separatePage(top.id);
     expect(getNote(top.id)?.parentId).toBe('');
+  });
+});
+
+
+/* =========================
+   Comments
+   ========================= */
+
+function caretAt(node: Node, offset: number) {
+  const range = document.createRange();
+  range.setStart(node, offset);
+  window.getSelection()?.removeAllRanges();
+  window.getSelection()?.addRange(range);
+}
+
+describe('comments', () => {
+  it('undoes deleting a comment, bringing back its text', () => {
+    const body = holder('<p>Alpha beta</p>');
+    body.id = 'note-body';
+    body.dataset.noteEditable = '';
+    const session = new EditorSession('weekly', body.innerHTML);
+    session.setAdapter({ commit: () => session.save(body.innerHTML), toggleSticky: () => undefined, selectAll: () => undefined, linesChanged: () => undefined });
+    const range = document.createRange();
+    range.selectNodeContents(body.querySelector('p') as Node);
+    session.addComment(range, 'Look again');
+    const id = getNote('weekly')?.comments.at(-1)?.id as string;
+
+    session.removeComment(id);
+    expect(getNote('weekly')?.comments.some(comment => comment.id === id)).toBe(false);
+    session.undo();
+    expect(getNote('weekly')?.comments.find(comment => comment.id === id)?.text).toBe('Look again');
+    expect(getNote('weekly')?.content).toContain(`data-comment="${id}"`);
+    session.undo();
+    expect(getNote('weekly')?.comments.some(comment => comment.id === id)).toBe(false);
+  });
+
+  it('types outside a comment at its start or end, but inside it in the middle', () => {
+    const body = holder('<p>A <span class="comment-mark" data-comment="c1">word</span></p>');
+    const mark = body.querySelector('.comment-mark') as HTMLElement;
+    const typed = (data: string) => ({ inputType: 'insertText', data }) as InputEvent;
+
+    caretAt(mark.firstChild as Node, 4);
+    expect(typeOutsideComment(typed('s'))).toBe(true);
+    caretAt(mark.firstChild as Node, 0);
+    expect(typeOutsideComment(typed('!'))).toBe(true);
+    caretAt(mark.firstChild as Node, 2);
+    expect(typeOutsideComment(typed('x'))).toBe(false);
+    expect(body.innerHTML).toBe('<p>A !<span class="comment-mark" data-comment="c1">word</span>s</p>');
+  });
+
+  it('moves the caret out of a comment before Enter at its end', () => {
+    const body = holder('<p>A <span class="comment-mark" data-comment="c1">word</span></p>');
+    const mark = body.querySelector('.comment-mark') as HTMLElement;
+    caretAt(mark.firstChild as Node, 4);
+    handleBlockKeys(new KeyboardEvent('keydown', { key: 'Enter', cancelable: true }), body);
+    const caret = window.getSelection()?.getRangeAt(0);
+    expect(mark.contains(caret?.startContainer as Node)).toBe(false);
   });
 });
