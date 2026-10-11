@@ -1013,14 +1013,20 @@
 }
 
 .note-editable h4,
-.note-editable h5,
-.note-editable h6,
-.block-content h4,
-.block-content h5,
-.block-content h6 {
+.block-content h4 {
   margin: 12px 0 8px;
   color: #394b66;
   font-size: 14px;
+}
+
+/* Heading 5 is the smallest heading; older notes may also have level 6, shown the same way. */
+.note-editable h5,
+.note-editable h6,
+.block-content h5,
+.block-content h6 {
+  margin: 12px 0 8px;
+  color: #4b5b74;
+  font-size: 13px;
 }
 
 .note-editable ol,
@@ -2729,14 +2735,19 @@
   position: relative;
   margin-bottom: 4px;
   padding-left: 24px;
+}
+
+.note-editable p.toggle-summary,
+.block-content p.toggle-summary {
   color: #2c3d58;
   font-weight: 600;
 }
 
+/* The arrow lines up with the middle of the title's first line, for paragraphs and headings alike. */
 .toggle-summary::before {
   content: "";
   position: absolute;
-  top: calc(.98em - 4px);
+  top: calc(.5lh - 4px);
   left: 6px;
   width: 0;
   height: 0;
@@ -2751,8 +2762,26 @@
   transform: rotate(90deg);
 }
 
+/* A thin line runs down the left of the lines inside an open toggle and turns at the end, */
+/* showing where the toggle finishes and normal lines start again. */
 .toggle-body {
-  padding-left: 24px;
+  position: relative;
+  margin-left: 8px;
+  padding-left: 16px;
+  border-left: 1px solid #e2e8f1;
+}
+
+.toggle-body::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: -1px;
+  width: 8px;
+  border-bottom: 1px solid #e2e8f1;
+}
+
+.toggle-body:empty {
+  min-height: 12px;
 }
 
 .toggle-block:not(.is-open) > .toggle-body {

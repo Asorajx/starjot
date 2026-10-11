@@ -40,6 +40,11 @@ describe('slash command list', () => {
     expect(matchCommands('ul', { inlineOnly: false, canAddPage: true })[0].id).toBe('bullet');
   });
 
+  it('offers headings 1 to 5, as plain headings and as toggle headings', () => {
+    const ids = matchCommands('heading', { inlineOnly: false, canAddPage: true }).map(command => command.id);
+    expect(ids).toEqual(['h1', 'h2', 'h3', 'h4', 'h5', 'toggle-h1', 'toggle-h2', 'toggle-h3', 'toggle-h4', 'toggle-h5']);
+  });
+
   it('hides Sub-page at the deepest level and only offers links inside table cells', () => {
     expect(matchCommands('', { inlineOnly: false, canAddPage: false }).some(command => command.id === 'page')).toBe(false);
     expect(matchCommands('', { inlineOnly: true, canAddPage: true }).map(command => command.id)).toEqual(['link']);
@@ -131,12 +136,27 @@ describe('table and toggle keys', () => {
     expect(body.querySelector('.toggle-body')?.firstElementChild?.outerHTML).toBe('<p><br></p>');
   });
 
-  it('Enter on an empty last line leaves the toggle', () => {
+  it('Enter on an empty last line stays inside the toggle', () => {
     const body = editor('<div class="toggle-block is-open"><p class="toggle-summary">T</p><div class="toggle-body"><p>A</p><p><br></p></div></div>');
     placeCaret(body.querySelectorAll('.toggle-body p')[1], 0);
-    const result = handleBlockKeys(press('Enter'), body);
+    expect(handleBlockKeys(press('Enter'), body)).toBeNull();
+  });
+
+  it('Backspace on an empty last line moves it out of the toggle', () => {
+    const body = editor('<div class="toggle-block is-open"><p class="toggle-summary">T</p><div class="toggle-body"><p>A</p><p><br></p></div></div>');
+    placeCaret(body.querySelectorAll('.toggle-body p')[1], 0);
+    const result = handleBlockKeys(press('Backspace'), body);
     expect(result?.kind).toBe('lines');
     expect(body.innerHTML).toBe('<div class="toggle-block is-open"><p class="toggle-summary">T</p><div class="toggle-body"><p>A</p></div></div><p><br></p>');
+  });
+
+  it('makes toggle headings, which stay headings when turned back into lines', () => {
+    const body = editor('<p>Plan</p>');
+    convertLine(body.querySelector('p') as HTMLElement, 'toggle-h2');
+    expect(body.querySelector('.toggle-summary')?.outerHTML).toBe('<h2 class="toggle-summary">Plan</h2>');
+    placeCaret(body.querySelector('h2')?.firstChild as Node, 0);
+    handleBlockKeys(press('Backspace'), body);
+    expect(body.innerHTML).toBe('<h2>Plan</h2>');
   });
 
   it('Backspace at the start of a toggle title turns it back into lines', () => {

@@ -9,7 +9,9 @@ import { caretAtEdge, caretElement, closestAtCaret, emptyParagraph, isEmptyConte
    Slash Commands
    ========================= */
 
-export type CommandId = 'text' | 'h1' | 'h2' | 'h3' | 'bullet' | 'numbered' | 'quote' | 'code' | 'divider' | 'toggle' | 'table' | 'page' | 'link';
+export type CommandId =
+  | 'text' | 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'bullet' | 'numbered' | 'quote' | 'code' | 'divider' | 'table' | 'page' | 'link'
+  | 'toggle' | 'toggle-h1' | 'toggle-h2' | 'toggle-h3' | 'toggle-h4' | 'toggle-h5';
 
 export type SlashCommand = {
   id: CommandId;
@@ -27,10 +29,17 @@ export const SLASH_COMMANDS: SlashCommand[] = [
   { id: 'text', label: 'Text', hint: '', icon: 'type', keywords: 'paragraph plain' },
   { id: 'h1', label: 'Heading 1', hint: '#', icon: 'type', keywords: 'title h1 big' },
   { id: 'h2', label: 'Heading 2', hint: '##', icon: 'type', keywords: 'subtitle h2' },
-  { id: 'h3', label: 'Heading 3', hint: '###', icon: 'type', keywords: 'h3 small' },
+  { id: 'h3', label: 'Heading 3', hint: '###', icon: 'type', keywords: 'h3' },
+  { id: 'h4', label: 'Heading 4', hint: '####', icon: 'type', keywords: 'h4 small' },
+  { id: 'h5', label: 'Heading 5', hint: '#####', icon: 'type', keywords: 'h5 smallest' },
   { id: 'bullet', label: 'Bulleted list', hint: '-', icon: 'list', keywords: 'ul unordered dots' },
   { id: 'numbered', label: 'Numbered list', hint: '1.', icon: 'list', keywords: 'ol ordered numbers' },
   { id: 'toggle', label: 'Toggle list', hint: '', icon: 'chevron-right', keywords: 'collapse expand details fold' },
+  { id: 'toggle-h1', label: 'Toggle heading 1', hint: '', icon: 'chevron-right', keywords: 'collapse fold h1 title' },
+  { id: 'toggle-h2', label: 'Toggle heading 2', hint: '', icon: 'chevron-right', keywords: 'collapse fold h2' },
+  { id: 'toggle-h3', label: 'Toggle heading 3', hint: '', icon: 'chevron-right', keywords: 'collapse fold h3' },
+  { id: 'toggle-h4', label: 'Toggle heading 4', hint: '', icon: 'chevron-right', keywords: 'collapse fold h4' },
+  { id: 'toggle-h5', label: 'Toggle heading 5', hint: '', icon: 'chevron-right', keywords: 'collapse fold h5' },
   { id: 'quote', label: 'Quote', hint: '>', icon: 'quote', keywords: 'blockquote citation' },
   { id: 'code', label: 'Code block', hint: '```', icon: 'file-code', keywords: 'pre snippet programming' },
   { id: 'table', label: 'Table', hint: '', icon: 'table', keywords: 'grid rows columns spreadsheet' },
@@ -80,7 +89,7 @@ export function lineAtCaret(root: HTMLElement) {
 
 /* Build a converted line and the element inside it that holds the text. */
 function buildLine(kind: CommandId): { element: HTMLElement; text: HTMLElement } {
-  if (kind === 'h1' || kind === 'h2' || kind === 'h3') {
+  if (/^h[1-5]$/.test(kind)) {
     const heading = document.createElement(kind);
     return { element: heading, text: heading };
   }
@@ -96,18 +105,19 @@ function buildLine(kind: CommandId): { element: HTMLElement; text: HTMLElement }
     const pre = document.createElement('pre');
     return { element: pre, text: pre.appendChild(document.createElement('code')) };
   }
-  if (kind === 'toggle') {
-    const toggle = createToggle();
+  if (kind.startsWith('toggle')) {
+    const toggle = createToggle(Number(kind.slice(-1)) || 0);
     return { element: toggle, text: toggle.querySelector('.toggle-summary') as HTMLElement };
   }
   const paragraph = document.createElement('p');
   return { element: paragraph, text: paragraph };
 }
 
-export function createToggle() {
+/* A toggle list's title is a paragraph, or a heading (levels 1 to 5) for a toggle heading. */
+export function createToggle(headingLevel = 0) {
   const toggle = document.createElement('div');
   toggle.className = 'toggle-block is-open';
-  const summary = toggle.appendChild(document.createElement('p'));
+  const summary = toggle.appendChild(document.createElement(headingLevel ? `h${headingLevel}` : 'p'));
   summary.className = 'toggle-summary';
   const body = toggle.appendChild(document.createElement('div'));
   body.className = 'toggle-body';
@@ -467,10 +477,11 @@ function toggleKeys(event: KeyboardEvent): KeyResult | null {
     return { kind: 'changed' };
   }
 
-  /* Backspace at the start of the title turns the toggle back into normal lines. */
+  /* Backspace at the start of the title turns the toggle back into normal lines (a toggle */
+  /* heading keeps its heading). */
   if (summary && event.key === 'Backspace' && window.getSelection()?.isCollapsed && caretAtEdge(summary, 'start')) {
     event.preventDefault();
-    const paragraph = document.createElement('p');
+    const paragraph = document.createElement(summary.tagName.toLowerCase());
     paragraph.append(...Array.from(summary.childNodes));
     withBreak(paragraph);
     const onlyEmpty = body.childElementCount === 1 && isEmptyContent(body.firstElementChild as Element);
@@ -478,11 +489,13 @@ function toggleKeys(event: KeyboardEvent): KeyResult | null {
     return { kind: 'lines', focus: paragraph, atEnd: false };
   }
 
-  /* Enter on an empty last line leaves the toggle, like ending a list. */
-  const line = closestAtCaret('p');
-  if (!summary && event.key === 'Enter' && !event.shiftKey && line && line.parentElement === body && !line.nextElementSibling && isEmptyContent(line)) {
+  /* Backspace on an empty last line moves it out of the toggle, to just below it. Enter keeps */
+  /* adding lines inside the toggle, so empty lines can be used for spacing. */
+  const line = closestAtCaret('.toggle-body > *');
+  if (!summary && event.key === 'Backspace' && line?.parentElement === body && !line.nextElementSibling && isEmptyContent(line)
+    && window.getSelection()?.isCollapsed) {
     event.preventDefault();
-    if (body.childElementCount > 1) line.remove();
+    line.remove();
     const paragraph = emptyParagraph();
     toggle.after(paragraph);
     return { kind: 'lines', focus: paragraph, atEnd: false };

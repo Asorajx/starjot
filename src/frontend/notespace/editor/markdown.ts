@@ -12,7 +12,7 @@ type Marker =
   | { kind: 'bullet' | 'numbered' | 'quote' | 'code' | 'divider' };
 
 function markerType(text: string): Marker | null {
-  if (/^#{1,6}$/.test(text)) return { kind: 'heading', level: text.length };
+  if (/^#{1,5}$/.test(text)) return { kind: 'heading', level: text.length };
   if (['-', '*', '+'].includes(text)) return { kind: 'bullet' };
   if (text === '1.') return { kind: 'numbered' };
   if (text === '>') return { kind: 'quote' };
@@ -91,6 +91,17 @@ export function applyMarkdownShortcut(event: KeyboardEvent, editable: HTMLElemen
   const marker = line ? getMarker(line, selection) : null;
   if (!line || !marker) return false;
   if (event.key === 'Enter' && marker.kind !== 'code' && marker.kind !== 'divider') return false;
+
+  /* In a toggle's title only "#" to "#####" work, turning it into a toggle heading. */
+  if (line.classList.contains('toggle-summary')) {
+    if (marker.kind !== 'heading') return false;
+    event.preventDefault();
+    const heading = emptyElement(`h${marker.level}`);
+    heading.className = 'toggle-summary';
+    line.replaceWith(heading);
+    placeCaret(heading);
+    return true;
+  }
 
   event.preventDefault();
   const { element, focus } = replacementFor(marker);

@@ -38,6 +38,23 @@ describe('Markdown shortcuts', () => {
     expect(body.innerHTML).toBe('<h1><br></h1>');
   });
 
+  it('stops at heading level 5', () => {
+    const body = editor('<p>######</p>');
+    placeCaret(body.querySelector('p')?.firstChild as Node, 6);
+    expect(applyMarkdownShortcut(press(' '), body)).toBe(false);
+  });
+
+  it('turns a toggle title into a toggle heading, and ignores other shortcuts there', () => {
+    const body = editor('<div class="toggle-block is-open"><p class="toggle-summary">###</p><div class="toggle-body"><p><br></p></div></div>');
+    placeCaret(body.querySelector('.toggle-summary')?.firstChild as Node, 3);
+    expect(applyMarkdownShortcut(press(' '), body)).toBe(true);
+    expect(body.querySelector('.toggle-summary')?.outerHTML).toBe('<h3 class="toggle-summary"><br></h3>');
+
+    const list = editor('<div class="toggle-block"><p class="toggle-summary">-</p><div class="toggle-body"></div></div>');
+    placeCaret(list.querySelector('.toggle-summary')?.firstChild as Node, 1);
+    expect(applyMarkdownShortcut(press(' '), list)).toBe(false);
+  });
+
   it('turns "-" and Space into a bulleted list', () => {
     const body = editor('<p>-</p>');
     placeCaret(body.querySelector('p')?.firstChild as Node, 1);

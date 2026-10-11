@@ -52,6 +52,11 @@ describe('page blocks, toggles and tables', () => {
 });
 
 describe('table options', () => {
+  it('keeps toggle headings', () => {
+    const html = '<div class="toggle-block"><h4 class="toggle-summary">T</h4><div class="toggle-body"><p>A</p></div></div>';
+    expect(cleanHtml(html)).toBe(html);
+  });
+
   it('keeps a table comment and the fit-content option, but not other classes', () => {
     const html = cleanHtml('<table class="fit-content wide" data-comment="cabc1" style="color:red"><tbody><tr><td>A</td></tr></tbody></table>');
     expect(html).toBe('<table class="fit-content" data-comment="cabc1"><tbody><tr><td>A</td></tr></tbody></table>');

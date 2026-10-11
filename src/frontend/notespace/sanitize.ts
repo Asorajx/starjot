@@ -15,7 +15,7 @@ const MAX_CONTENT = 250000;
 function keepsClass(tag: string, name: string) {
   if (name === 'document-tagline' || name === 'overline') return true;
   if (tag === 'DIV' && ['sticky-group', 'toggle-block', 'is-open', 'toggle-body', 'page-block'].includes(name)) return true;
-  if (tag === 'P' && name === 'toggle-summary') return true;
+  if (/^(P|H[1-5])$/.test(tag) && name === 'toggle-summary') return true;
   if (tag === 'A' && name === 'page-link') return true;
   if (tag === 'TABLE' && name === 'fit-content') return true;
   if (tag === 'CODE' && /^language-[a-z]+$/.test(name)) return true;
