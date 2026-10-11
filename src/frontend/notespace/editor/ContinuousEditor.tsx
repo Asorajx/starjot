@@ -1,7 +1,7 @@
 import { memo, useEffect, useLayoutEffect, useRef, type ClipboardEvent, type FormEvent, type KeyboardEvent, type MouseEvent } from 'react';
 import { cleanHtml } from '../sanitize';
 import { getRange, setOffset, setRange } from './caret';
-import { handleBlockKeys, hydratePages } from './blocks';
+import { deleteKeepingPages, handleBlockKeys, hydratePages } from './blocks';
 import { hydrateTables } from './tables';
 import { highlight, highlightAll, insertNewline, preAtCaret } from './code';
 import { caretAtEdge, closestAtCaret, emptyParagraph, placeCaret, selectContents, wrapLooseLines } from './dom';
@@ -207,6 +207,13 @@ export const ContinuousEditor = memo(function ContinuousEditor({ session, conten
     session.checkpoint();
     const text = event.clipboardData.getData('text/plain');
     const pre = preAtCaret(body);
+
+    /* Pasting over a selection that holds page blocks keeps the blocks. */
+    const selected = window.getSelection()?.rangeCount ? window.getSelection()?.getRangeAt(0) : null;
+    if (selected && !selected.collapsed && deleteKeepingPages(selected, body, text)) {
+      commit();
+      return;
+    }
 
     /* Inside code, insert the text directly so its line breaks stay as code lines. */
     if (pre || !document.execCommand('insertText', false, text)) {

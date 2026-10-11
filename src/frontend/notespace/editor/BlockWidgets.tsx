@@ -1,7 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
+import { ConfirmDialog } from '../../components/ConfirmDialog';
 import { Icon } from '../../components/Icon';
-import { categoryName, getNote, updatedLabel, useNotes } from '../store';
-import { hydratePages, lineBelowTable, pageBlockIsCut, setPageWidth, type PageSize } from './blocks';
+import { categoryName, childrenOf, deleteNote, getNote, separatePage, updatedLabel, useNotes } from '../store';
+import {
+  deleteKeepingPages, hydratePages, lineBelowTable, pageBlockIsCut, pageBlocksIn, removePageBlocks, setPageWidth, stepOverPage, type PageSize
+} from './blocks';
 import { placeCaret } from './dom';
 import type { EditorSession } from './session';
 
@@ -14,6 +17,9 @@ type BlockWidgetsProps = {
 /* block: the preview is for a page block (opened with a click) rather than a page link (Ctrl + click). */
 type Preview = { id: string; top: number; left: number; above: boolean; block: boolean };
 
+/* The menu opened by right-clicking a page block, at the pointer. */
+type PageMenu = { id: string; top: number; left: number };
+
 
 /* =========================
    Block Widgets
@@ -25,6 +31,8 @@ type Preview = { id: string; top: number; left: number; above: boolean; block: b
 export function BlockWidgets({ session, locked, onOpenNote }: BlockWidgetsProps) {
   const notes = useNotes();
   const [preview, setPreview] = useState<Preview | null>(null);
+  const [pageMenu, setPageMenu] = useState<PageMenu | null>(null);
+  const [deleting, setDeleting] = useState<string | null>(null);
   const hideTimer = useRef<number | undefined>(undefined);
 
   /* The page block whose width is being dragged. */
@@ -105,6 +113,7 @@ export function BlockWidgets({ session, locked, onOpenNote }: BlockWidgetsProps)
       const block = resizing.current;
       const line = block?.parentElement;
       if (!block || !line) return;
+
       /* The width is measured against the whole line, so 100% fills it. */
       const bounds = block.getBoundingClientRect();
       setPageWidth(block, ((event.clientX - bounds.left) / line.getBoundingClientRect().width) * 100);
@@ -173,6 +182,45 @@ export function BlockWidgets({ session, locked, onOpenNote }: BlockWidgetsProps)
       hideTimer.current = window.setTimeout(() => setPreview(null), 200);
     }
 
+    /* Typing never deletes a page block. Backspace or Delete next to one steps over it, and */
+    /* deleting a selection inside one line keeps the blocks in it. (Selections across blocks in */
+    /* structured mode are handled by that editor, which keeps them too.) */
+    function handleBeforeInput(event: InputEvent) {
+      const note = body();
+      const selection = window.getSelection();
+      const range = selection?.rangeCount ? selection.getRangeAt(0) : null;
+      if (!note || !range || latest.current.locked || !note.contains(range.commonAncestorContainer)) return;
+      if (stepOverPage(event, note)) {
+        event.preventDefault();
+        return;
+      }
+
+      const replaces = event.inputType.startsWith('delete') || event.inputType === 'insertText' || event.inputType === 'insertReplacementText';
+      const blockOf = (node: Node) => (node instanceof Element ? node : node.parentElement)?.closest('.block-content');
+      if (!replaces || range.collapsed || blockOf(range.startContainer) !== blockOf(range.endContainer) || !pageBlocksIn(range, note).length) return;
+      event.preventDefault();
+      session.checkpoint();
+      deleteKeepingPages(range, note, event.inputType === 'insertText' ? event.data ?? '' : '');
+      session.commit();
+    }
+
+    /* Right-clicking a page block opens its menu instead of the browser's. */
+    function handleContextMenu(event: MouseEvent) {
+      const block = (event.target as Element).closest?.<HTMLElement>('.page-block');
+      if (!block || !body()?.contains(block) || !block.dataset.page) return;
+      event.preventDefault();
+      setPreview(null);
+      setPageMenu({ id: block.dataset.page, top: event.clientY, left: event.clientX });
+    }
+
+    function closeMenu(event: Event) {
+      if (!(event.target as Element).closest?.('.page-menu')) setPageMenu(null);
+    }
+
+    document.addEventListener('beforeinput', handleBeforeInput, true);
+    document.addEventListener('contextmenu', handleContextMenu);
+    document.addEventListener('mousedown', closeMenu);
+    document.getElementById('main-scroll')?.addEventListener('scroll', closeMenu);
     document.addEventListener('click', handleClick);
     document.addEventListener('pointerdown', handlePointerDown);
     document.addEventListener('pointermove', handlePointerMove);
@@ -181,6 +229,10 @@ export function BlockWidgets({ session, locked, onOpenNote }: BlockWidgetsProps)
     document.addEventListener('mouseover', handleMouseOver);
     document.addEventListener('mouseout', handleMouseOut);
     return () => {
+      document.removeEventListener('beforeinput', handleBeforeInput, true);
+      document.removeEventListener('contextmenu', handleContextMenu);
+      document.removeEventListener('mousedown', closeMenu);
+      document.getElementById('main-scroll')?.removeEventListener('scroll', closeMenu);
       document.removeEventListener('click', handleClick);
       document.removeEventListener('pointerdown', handlePointerDown);
       document.removeEventListener('pointermove', handlePointerMove);
@@ -192,8 +244,33 @@ export function BlockWidgets({ session, locked, onOpenNote }: BlockWidgetsProps)
     };
   }, [session]);
 
+  /* Take a page's blocks out of this note's text (one undo step), then delete or move the page. */
+  function removeFromText(id: string) {
+    const note = document.getElementById('note-body');
+    if (!note) return;
+    session.checkpoint();
+    removePageBlocks(note, id);
+    session.commit();
+  }
+
+  function separate(id: string) {
+    setPageMenu(null);
+    removeFromText(id);
+    separatePage(id);
+  }
+
+  function confirmDelete() {
+    if (!deleting) return;
+    removeFromText(deleting);
+    deleteNote(deleting);
+    setDeleting(null);
+  }
+
   const note = preview ? getNote(preview.id) : undefined;
   const category = note ? categoryName(note.category) : '';
+  const menuNote = pageMenu ? getNote(pageMenu.id) : undefined;
+  const deletingNote = deleting ? getNote(deleting) : undefined;
+  const nested = deleting ? childrenOf(deleting).length : 0;
 
   return (
     <>
@@ -216,6 +293,49 @@ export function BlockWidgets({ session, locked, onOpenNote }: BlockWidgetsProps)
             </>
           ) : <span className="page-preview-text">This page was deleted.</span>}
         </div>
+      )}
+
+      {/* Separate page moves it out of this note (up one level); Delete removes it for good, after asking. */}
+      {pageMenu && (
+        <div
+          className="page-menu"
+          role="menu"
+          aria-label="Page options"
+          style={{ top: Math.min(pageMenu.top, window.innerHeight - 140), left: Math.min(pageMenu.left, window.innerWidth - 220) }}
+          onKeyDown={event => {
+            if (event.key === 'Escape') setPageMenu(null);
+          }}
+        >
+          <button type="button" role="menuitem" className="page-menu-item" disabled={!menuNote} onClick={() => { setPageMenu(null); onOpenNote(pageMenu.id); }}>
+            <Icon name="arrow-right" size={14} /> Open page
+          </button>
+          {!locked && (
+            <>
+              <button type="button" role="menuitem" className="page-menu-item" disabled={!menuNote} onClick={() => separate(pageMenu.id)}>
+                <Icon name="arrow-up" size={14} /> Separate page
+              </button>
+              <button
+                type="button"
+                role="menuitem"
+                className="page-menu-item is-danger"
+                onClick={() => {
+                  setPageMenu(null);
+                  if (menuNote) setDeleting(pageMenu.id);
+                  else removeFromText(pageMenu.id);
+                }}
+              >
+                <Icon name="trash" size={14} /> {menuNote ? 'Delete sub-page' : 'Remove from page'}
+              </button>
+            </>
+          )}
+        </div>
+      )}
+
+      {deleting && (
+        <ConfirmDialog title="Delete this sub-page?" confirmLabel="Delete sub-page" danger onConfirm={confirmDelete} onCancel={() => setDeleting(null)}>
+          <p><strong>{deletingNote?.title || 'Untitled note'}</strong> and everything written in it will be removed from this browser. This cannot be undone.</p>
+          {nested > 0 && <p>Its {nested} sub-page(s) will be kept and move into this note.</p>}
+        </ConfirmDialog>
       )}
     </>
   );

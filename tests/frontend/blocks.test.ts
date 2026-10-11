@@ -35,9 +35,9 @@ function press(key: string, shiftKey = false) {
 
 describe('slash command list', () => {
   it('filters by name and keywords, with names that start with the text first', () => {
-    const ids = matchCommands('sub', { inlineOnly: false, canAddPage: true }).map(command => command.id);
+    const ids = matchCommands('add', { inlineOnly: false, canAddPage: true }).map(command => command.id);
     expect(ids[0]).toBe('page');
-    expect(ids).toContain('h2');
+    expect(matchCommands('sub', { inlineOnly: false, canAddPage: true }).map(command => command.id)).toEqual(['h2', 'page']);
     expect(matchCommands('ul', { inlineOnly: false, canAddPage: true })[0].id).toBe('bullet');
   });
 

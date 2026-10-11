@@ -277,6 +277,15 @@ export function canAddSubpage(id: string) {
   return Boolean(getNote(id)) && depthOf(id) < MAX_PAGE_DEPTH;
 }
 
+/* Move a sub-page up one level, out of the page it sits in. Its own sub-pages stay inside it. */
+export function separatePage(id: string) {
+  const note = getNote(id);
+  const parent = getNote(note?.parentId ?? '');
+  if (!note || !parent) return;
+  setState({ notes: state.notes.map(item => (item.id === id ? { ...item, parentId: parent.parentId } : item)) });
+  save();
+}
+
 /* Returns the new sub-page, or null when the parent is already at the deepest level. */
 export function createSubpage(parentId: string) {
   const parent = getNote(parentId);

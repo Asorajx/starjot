@@ -44,7 +44,7 @@ export const SLASH_COMMANDS: SlashCommand[] = [
   { id: 'code', label: 'Code block', hint: '```', icon: 'file-code', keywords: 'pre snippet programming' },
   { id: 'table', label: 'Table', hint: '', icon: 'table', keywords: 'grid rows columns spreadsheet' },
   { id: 'divider', label: 'Divider', hint: '---', icon: 'minus', keywords: 'hr line rule separator' },
-  { id: 'page', label: 'Sub-page', hint: '', icon: 'file-text', keywords: 'new page subpage child' },
+  { id: 'page', label: 'Add page', hint: '', icon: 'file-text', keywords: 'new page sub-page subpage child' },
   { id: 'link', label: 'Link to page', hint: '', icon: 'link', keywords: 'mention reference note' }
 ];
 
@@ -289,6 +289,93 @@ export function hydratePages(root: Element | null) {
     if (drawn.get(block) === html && block.firstChild) return;
     block.innerHTML = html;
     drawn.set(block, html);
+  });
+}
+
+/* =========================
+   Keeping Page Blocks
+   ========================= */
+
+/* Page blocks touched by a range (fully or partly), in the order they appear. */
+export function pageBlocksIn(range: Range, root: Element) {
+  return Array.from(root.querySelectorAll<HTMLElement>('.page-block')).filter(block => range.intersectsNode(block));
+}
+
+/* A page block stands for a whole page, so typing never deletes it: only the right-click menu can. */
+/* Delete the text in a range but put back any page blocks it held, where the range started (after */
+/* any replacement text), each followed by a space. Returns false when the range held none. */
+export function deleteKeepingPages(range: Range, root: Element, text = '') {
+  const blocks = pageBlocksIn(range, root);
+  if (!blocks.length) return false;
+
+  /* Remember where the selection starts and which lines it starts and ends in, before deleting. */
+  const lineOf = (node: Node) => (node instanceof Element ? node : node.parentElement)?.closest<HTMLElement>('p, h1, h2, h3, h4, h5, h6, li, pre');
+  const startNode = range.startContainer;
+  const startOffset = range.startOffset;
+  const startLine = lineOf(startNode);
+  const endLine = lineOf(range.endContainer);
+  range.deleteContents();
+
+  /* Like normal deleting, the rest of the last line joins the first line. */
+  if (startLine && endLine && startLine !== endLine && startLine.isConnected && endLine.isConnected) {
+    startLine.append(...Array.from(endLine.childNodes));
+    endLine.remove();
+  }
+  if (startNode.isConnected) range.setStart(startNode, Math.min(startOffset, startNode.nodeType === Node.TEXT_NODE ? startNode.textContent?.length ?? 0 : startNode.childNodes.length));
+  range.collapse(true);
+
+  /* A partly selected block may have lost some of its drawn content; it is drawn again afterwards. */
+  blocks.forEach(block => block.replaceChildren());
+  const typed = text ? document.createTextNode(text) : null;
+  const fragment = document.createDocumentFragment();
+  if (typed) fragment.append(typed);
+  blocks.forEach(block => fragment.append(block, document.createTextNode(' ')));
+  range.insertNode(fragment);
+  hydratePages(root);
+
+  /* A selection across several lines leaves the first and last of them as empty shells; they are removed. */
+  root.querySelectorAll('p, h1, h2, h3, h4, h5, h6, li, blockquote').forEach(line => {
+    if (!line.firstChild) line.remove();
+  });
+  root.querySelectorAll('ul, ol').forEach(list => {
+    if (!list.firstElementChild) list.remove();
+  });
+
+  const caret = document.createRange();
+  if (typed) caret.setStartAfter(typed);
+  else caret.setStartBefore(blocks[0]);
+  window.getSelection()?.removeAllRanges();
+  window.getSelection()?.addRange(caret);
+  return true;
+}
+
+/* Backspace or Delete right next to a page block moves the caret past it instead of deleting it, */
+/* like stepping over one character. Returns true when the caret was moved. */
+export function stepOverPage(event: InputEvent, root: Element) {
+  const deleting = /^delete(Content|Word|SoftLine|HardLine)(Backward|Forward)$/.test(event.inputType);
+  const target = event.getTargetRanges?.()[0];
+  if (!deleting || !target || !window.getSelection()?.isCollapsed) return false;
+  const range = document.createRange();
+  range.setStart(target.startContainer, target.startOffset);
+  range.setEnd(target.endContainer, target.endOffset);
+  const blocks = pageBlocksIn(range, root);
+  if (!blocks.length) return false;
+
+  const backward = event.inputType.endsWith('Backward');
+  const caret = document.createRange();
+  if (backward) caret.setStartBefore(blocks[0]);
+  else caret.setStartAfter(blocks[blocks.length - 1]);
+  window.getSelection()?.removeAllRanges();
+  window.getSelection()?.addRange(caret);
+  return true;
+}
+
+/* Remove every block for one page from the note's content (when the page is deleted or moved out). */
+export function removePageBlocks(root: Element, id: string) {
+  root.querySelectorAll<HTMLElement>(`.page-block[data-page="${CSS.escape(id)}"]`).forEach(block => {
+    const after = block.nextSibling;
+    if (after?.nodeType === Node.TEXT_NODE && after.textContent?.startsWith(' ')) after.textContent = after.textContent.slice(1);
+    block.remove();
   });
 }
 

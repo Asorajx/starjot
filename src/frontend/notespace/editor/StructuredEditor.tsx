@@ -9,8 +9,8 @@ import {
   type DocBlock
 } from './blockModel';
 import { isRuleOnly, mergeContents, splitAtCaret } from './blockEditing';
-import { handleBlockKeys } from './blocks';
-import { setOffset } from './caret';
+import { deleteKeepingPages, handleBlockKeys, hydratePages, pageBlocksIn } from './blocks';
+import { getLength, setOffset } from './caret';
 import { highlight, insertNewline, preAtCaret } from './code';
 import { caretAtEdge, closestAtCaret, emptyParagraph, isEmptyContent, placeCaret, selectContents, selectionInside, wrapLooseLines } from './dom';
 import { applyMarkdownShortcut } from './markdown';
@@ -278,7 +278,9 @@ export const StructuredEditor = memo(function StructuredEditor({ session, conten
   /* Typed or pasted text replaces the selection. Returns false when the selection is inside one block. */
   function deleteAcross(text = '') {
     const current = window.getSelection();
-    const range = current?.rangeCount ? current.getRangeAt(0) : null;
+
+    /* A copy of the selection, because the browser may move the real selection while the blocks are edited. */
+    const range = current?.rangeCount ? current.getRangeAt(0).cloneRange() : null;
     const live = liveBlocks();
     const touched = range ? live.filter(block => {
       const element = elements.current.get(block.id);
@@ -291,6 +293,9 @@ export const StructuredEditor = memo(function StructuredEditor({ session, conten
     const firstElement = elements.current.get(first.id) as HTMLElement;
     const lastElement = elements.current.get(last.id) as HTMLElement;
 
+    /* Page blocks in the selection are kept: they go back where the selection started. */
+    const pages = bodyRef.current ? pageBlocksIn(range, bodyRef.current) : [];
+
     /* Remove the selected text from the end of the first block, then add any replacement text. */
     const tail = document.createRange();
     if (firstElement.contains(range.startContainer)) tail.setStart(range.startContainer, range.startOffset);
@@ -300,7 +305,25 @@ export const StructuredEditor = memo(function StructuredEditor({ session, conten
     if (!firstElement.firstElementChild && !firstElement.textContent) {
       tail.selectNodeContents(firstElement.appendChild(document.createElement('p')));
     }
-    if (text) tail.insertNode(document.createTextNode(text));
+
+    /* Typed text and kept page blocks go exactly where the selection started, inside that line's text. */
+    /* (After deleting, the browser puts the range after the line, so it cannot be used for this.) */
+    const insertAt = document.createRange();
+    if (firstElement.contains(range.startContainer)) insertAt.setStart(range.startContainer, range.startOffset);
+    else insertAt.setStart(tail.startContainer, tail.startOffset);
+
+    /* The caret goes after any typed text, before the kept page blocks (as in continuous mode). */
+    const caretOffset = getLength(firstElement) + text.length;
+    const kept = document.createDocumentFragment();
+    if (text) kept.append(document.createTextNode(text));
+    pages.forEach(page => {
+      page.replaceChildren();
+      kept.append(page, document.createTextNode(' '));
+    });
+    if (kept.childNodes.length) insertAt.insertNode(kept);
+
+    /* Draw the kept blocks again now, so the caret position counted below matches the redrawn note. */
+    hydratePages(firstElement);
 
     /* Remove the selected text from the start of the last block. */
     const head = document.createRange();
@@ -312,7 +335,7 @@ export const StructuredEditor = memo(function StructuredEditor({ session, conten
     const merged = mergeContents(firstElement, lastElement);
     const startIndex = live.indexOf(first);
     live.splice(startIndex, live.indexOf(last) - startIndex + 1, { ...first, html: merged.html, version: first.version + 1 });
-    applyBlocks(live, { id: first.id, position: merged.offset });
+    applyBlocks(live, { id: first.id, position: pages.length ? caretOffset : merged.offset });
     return true;
   }
 
@@ -667,6 +690,13 @@ export const StructuredEditor = memo(function StructuredEditor({ session, conten
 
     const editable = closestAtCaret('.block-content');
     if (!editable) return;
+
+    /* Pasting over a selection that holds page blocks keeps the blocks. */
+    const selected = window.getSelection()?.rangeCount ? window.getSelection()?.getRangeAt(0) : null;
+    if (selected && !selected.collapsed && deleteKeepingPages(selected, editable, text)) {
+      commitTyping();
+      return;
+    }
     const pre = preAtCaret(editable);
     if (pre || !document.execCommand('insertText', false, text)) {
       const range = window.getSelection()?.getRangeAt(0);

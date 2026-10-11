@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { convertLine, createPageBlock, hydratePages, insertBlock } from '../../src/frontend/notespace/editor/blocks';
+import {
+  convertLine, createPageBlock, deleteKeepingPages, hydratePages, insertBlock, removePageBlocks, stepOverPage
+} from '../../src/frontend/notespace/editor/blocks';
 import { EditorSession } from '../../src/frontend/notespace/editor/session';
-import { getNote } from '../../src/frontend/notespace/store';
+import { createNote, createSubpage, getNote, separatePage } from '../../src/frontend/notespace/store';
 
 /* A container for test content, added to the test page so the caret and layout helpers can work. */
 /* The note store (with its sample notes) stays loaded for the whole file, so tests compare counts */
@@ -94,5 +96,78 @@ describe('table comments', () => {
     const table = body.querySelector('table') as HTMLElement;
     session.addComment(table, '   ');
     expect(table.hasAttribute('data-comment')).toBe(false);
+  });
+});
+
+
+/* =========================
+   Protecting Page Blocks
+   ========================= */
+
+/* What a line holds, with each page block shown as [PAGE]. */
+function text(root: Element) {
+  return Array.from(root.querySelectorAll('p')).map(line => Array.from(line.childNodes)
+    .map(node => ((node as Element).classList?.contains('page-block') ? '[PAGE]' : node.textContent)).join(''));
+}
+
+/* A fake Backspace or Delete, as the browser describes it before deleting: what it is about to remove. */
+function deletion(inputType: string, start: [Node, number], end: [Node, number]) {
+  return { inputType, getTargetRanges: () => [{ startContainer: start[0], startOffset: start[1], endContainer: end[0], endOffset: end[1] }] } as unknown as InputEvent;
+}
+
+describe('protecting page blocks', () => {
+  it('keeps page blocks when a selection across lines is deleted', () => {
+    const body = holder('<p>One</p><p>Two <span class="page-block" data-page="atlas"></span> three</p><p>Four</p>');
+    const range = document.createRange();
+    range.setStart(body.querySelector('p')?.firstChild as Node, 1);
+    range.setEnd(body.querySelectorAll('p')[2].firstChild as Node, 2);
+    expect(deleteKeepingPages(range, body)).toBe(true);
+    expect(text(body)).toEqual(['O[PAGE] ur']);
+  });
+
+  it('puts typed text before the kept page blocks', () => {
+    const body = holder('<p>Say <span class="page-block" data-page="atlas"></span> bye</p>');
+    const range = document.createRange();
+    range.selectNodeContents(body.querySelector('p') as Node);
+    deleteKeepingPages(range, body, 'Hi');
+    expect(text(body)).toEqual(['Hi[PAGE] ']);
+  });
+
+  it('does nothing for a selection without page blocks', () => {
+    const body = holder('<p>Plain text</p>');
+    const range = document.createRange();
+    range.selectNodeContents(body.querySelector('p') as Node);
+    expect(deleteKeepingPages(range, body)).toBe(false);
+    expect(text(body)).toEqual(['Plain text']);
+  });
+
+  it('steps over a page block instead of deleting it', () => {
+    const body = holder('<p>A<span class="page-block" data-page="atlas"></span>B</p>');
+    const line = body.querySelector('p') as HTMLElement;
+    const caret = document.createRange();
+    caret.setStart(line, 2);
+    window.getSelection()?.removeAllRanges();
+    window.getSelection()?.addRange(caret);
+
+    expect(stepOverPage(deletion('deleteContentBackward', [line, 1], [line, 2]), body)).toBe(true);
+    const after = window.getSelection()?.getRangeAt(0);
+    expect([after?.startContainer, after?.startOffset]).toEqual([line, 1]);
+    expect(text(body)).toEqual(['A[PAGE]B']);
+    expect(stepOverPage(deletion('deleteContentBackward', [line.firstChild as Node, 0], [line.firstChild as Node, 1]), body)).toBe(false);
+  });
+
+  it('removes every block for a page, with the space after it', () => {
+    const body = holder('<p>A <span class="page-block" data-page="gone"></span> B</p>');
+    removePageBlocks(body, 'gone');
+    expect(text(body)).toEqual(['A B']);
+  });
+
+  it('moves a separated page up one level, keeping its own sub-pages', () => {
+    const top = createNote();
+    const child = createSubpage(top.id)!;
+    separatePage(child.id);
+    expect(getNote(child.id)?.parentId).toBe('');
+    separatePage(top.id);
+    expect(getNote(top.id)?.parentId).toBe('');
   });
 });
