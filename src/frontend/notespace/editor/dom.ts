@@ -1,7 +1,7 @@
 import { getRange, setRange } from './caret';
 
 /* Elements that form their own line in a document; anything else is inline text. */
-export const LINE_TAGS = new Set(['P', 'DIV', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'UL', 'OL', 'BLOCKQUOTE', 'PRE', 'HR']);
+export const LINE_TAGS = new Set(['P', 'DIV', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'UL', 'OL', 'BLOCKQUOTE', 'PRE', 'HR', 'TABLE']);
 
 
 /* =========================
@@ -53,7 +53,7 @@ export function caretAtEdge(element: Element, edge: 'start' | 'end') {
 
   const holder = document.createElement('div');
   holder.appendChild(range.cloneContents());
-  if (holder.textContent?.replace(/​/g, '') || holder.querySelector('hr, img')) return false;
+  if (holder.textContent?.replace(/​/g, '') || holder.querySelector('hr, img, table, .page-block')) return false;
 
   /* A final <br> only keeps an empty line open, so it does not count after the caret. */
   const breaks = Array.from(holder.querySelectorAll('br'));
@@ -82,7 +82,7 @@ export function charBesideCaret(direction: 'before' | 'after') {
 
 /* A line or block with no text left (only empty lines) counts as empty. */
 export function isEmptyContent(element: Element) {
-  return !element.textContent?.replace(/​/g, '') && !element.querySelector('hr, img');
+  return !element.textContent?.replace(/​/g, '') && !element.querySelector('hr, img, table, .page-block');
 }
 
 export function emptyParagraph() {

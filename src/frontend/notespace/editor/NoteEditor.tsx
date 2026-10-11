@@ -9,6 +9,8 @@ import { CommentLayer } from './CommentLayer';
 import { ContinuousEditor } from './ContinuousEditor';
 import { PageOptions, TableOfContents } from './EditorPanels';
 import { SelectionToolbar } from './SelectionToolbar';
+import { SlashMenu } from './SlashMenu';
+import { BlockWidgets } from './BlockWidgets';
 import { NoteBreadcrumb } from './NoteBreadcrumb';
 import { NoteHeader } from './NoteHeader';
 import { EditorSession, useSessionValue } from './session';
@@ -21,7 +23,9 @@ type NoteEditorProps = {
   onClose: () => void;
   onOpenNote: (id: string) => void;
   onOpenCategory: (id: string) => void;
-  onAddSubpage: (parentId: string) => void;
+
+  /* Opens a sub-page just added with the slash menu, ready to be named. */
+  onOpenNewPage: (id: string) => void;
 
   /* The page the back button returns to, such as "All notes" or a category name. */
   backLabel: string;
@@ -33,7 +37,7 @@ type NoteEditorProps = {
    Note Editor Screen
    ========================= */
 
-export function NoteEditor({ noteId, onClose, onOpenNote, onOpenCategory, onAddSubpage, backLabel }: NoteEditorProps) {
+export function NoteEditor({ noteId, onClose, onOpenNote, onOpenCategory, onOpenNewPage, backLabel }: NoteEditorProps) {
   const note = useNote(noteId);
 
   /* Re-render after each save, so the warning appears if the browser stops accepting saves. */
@@ -205,7 +209,7 @@ export function NoteEditor({ noteId, onClose, onOpenNote, onOpenCategory, onAddS
               <span className="meta-dot">•</span>
               <span id="note-updated-label">{updatedLabel(note)}</span>
             </div>
-            <NoteHeader note={note} locked={locked} onOpenNote={onOpenNote} onAddSubpage={() => onAddSubpage(note.id)} />
+            <NoteHeader note={note} locked={locked} onOpenNote={onOpenNote} />
             <div className="article-rule" />
 
             {/* The key re-creates the editor after undo/redo or a mode change, so it shows the saved content. */}
@@ -226,6 +230,8 @@ export function NoteEditor({ noteId, onClose, onOpenNote, onOpenCategory, onAddS
       </div>
 
       <SelectionToolbar session={session} locked={locked} />
+      <SlashMenu session={session} noteId={note.id} locked={locked} onOpenNewPage={onOpenNewPage} />
+      <BlockWidgets session={session} locked={locked} onOpenNote={onOpenNote} />
 
       {confirmDelete && (
         <ConfirmDialog title="Delete this note?" confirmLabel="Delete note" danger onConfirm={removeNote} onCancel={() => setConfirmDelete(false)}>

@@ -4,7 +4,7 @@ import { MobileNav, Sidebar, Topbar } from './Shell';
 import { CategoryPage } from '../notespace/CategoryPage';
 import { NotesHome, type NoteFilter } from '../notespace/NotesHome';
 import { NoteEditor } from '../notespace/editor/NoteEditor';
-import { categoryName, createNote, createSubpage, flushSave, getNote } from '../notespace/store';
+import { categoryName, createNote, flushSave, getNote } from '../notespace/store';
 import { Settings, type SettingsSection } from '../settings/Settings';
 import { Workboard } from '../workboard/Workboard';
 import type { BoardTab } from '../../shared/types/task';
@@ -73,10 +73,9 @@ export function App() {
     scrollToTop();
   }
 
-  function addSubpage(parentId: string) {
-    const page = createSubpage(parentId);
-    if (!page) return;
-    openLinkedNote(page.id);
+  /* A sub-page added from the slash menu opens straight away with its title selected. */
+  function openNewPage(id: string) {
+    openLinkedNote(id);
     focusTitle();
   }
 
@@ -164,7 +163,7 @@ export function App() {
           onClose={closeNote}
           onOpenNote={openLinkedNote}
           onOpenCategory={openCategory}
-          onAddSubpage={addSubpage}
+          onOpenNewPage={openNewPage}
           backLabel={backLabel}
         />
       );

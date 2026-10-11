@@ -1,6 +1,7 @@
 import { memo, useLayoutEffect, useRef, type DragEvent, type MouseEvent } from 'react';
 import { Icon } from '../../components/Icon';
 import { blockType, type DocBlock } from './blockModel';
+import { hydratePages } from './blocks';
 import { highlightAll } from './code';
 
 type RegisterElement = (id: string, element: HTMLDivElement | null) => void;
@@ -28,6 +29,7 @@ const BlockContent = memo(function BlockContent({ block, register }: BlockConten
     if (!element) return;
     element.innerHTML = block.html;
     highlightAll(element);
+    hydratePages(element);
     register(block.id, element);
     return () => register(block.id, null);
   }, [block.id, block.version, register]);

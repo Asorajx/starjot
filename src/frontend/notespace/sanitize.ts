@@ -3,14 +3,20 @@
    ========================= */
 
 /* Only these document tags are kept; anything else is unwrapped and its text kept. */
-const ALLOWED_TAGS = new Set(['P', 'DIV', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'HR', 'UL', 'OL', 'LI', 'STRONG', 'B', 'EM', 'I', 'U', 'S', 'STRIKE', 'A', 'BLOCKQUOTE', 'BR', 'SPAN', 'PRE', 'CODE']);
+const ALLOWED_TAGS = new Set([
+  'P', 'DIV', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'HR', 'UL', 'OL', 'LI', 'STRONG', 'B', 'EM', 'I', 'U', 'S', 'STRIKE', 'A',
+  'BLOCKQUOTE', 'BR', 'SPAN', 'PRE', 'CODE', 'TABLE', 'THEAD', 'TBODY', 'TR', 'TH', 'TD'
+]);
 const DROPPED_TAGS = new Set(['SCRIPT', 'STYLE', 'IFRAME', 'SVG', 'FORM', 'OBJECT']);
 const MAX_CONTENT = 250000;
 
-/* Sticky groups, code languages, code token colours and comment marks are stored as classes. */
+/* Sticky groups, toggle lists, page blocks, page links, code languages, code token colours */
+/* and comment marks are stored as classes. */
 function keepsClass(tag: string, name: string) {
   if (name === 'document-tagline' || name === 'overline') return true;
-  if (tag === 'DIV' && name === 'sticky-group') return true;
+  if (tag === 'DIV' && ['sticky-group', 'toggle-block', 'is-open', 'toggle-body', 'page-block'].includes(name)) return true;
+  if (tag === 'P' && name === 'toggle-summary') return true;
+  if (tag === 'A' && name === 'page-link') return true;
   if (tag === 'CODE' && /^language-[a-z]+$/.test(name)) return true;
   return tag === 'SPAN' && (/^tok-[a-z]+$/.test(name) || name === 'comment-mark');
 }
@@ -21,12 +27,16 @@ export function safeHref(href: string | null) {
   return /^(https?:|mailto:)/i.test(value) ? value : null;
 }
 
-/* Copy the few attributes Notespace uses: link addresses and comment ids. */
+/* Copy the few attributes Notespace uses: link addresses, linked page ids, page block sizes and comment ids. */
 function copyAttributes(node: Element, copy: Element) {
   if (node.tagName === 'A') {
     const href = safeHref(node.getAttribute('href'));
     if (href) copy.setAttribute('href', href);
   }
+  const page = node.getAttribute('data-page');
+  if ((node.tagName === 'A' || node.tagName === 'DIV') && page && /^[a-zA-Z0-9_-]{1,90}$/.test(page)) copy.setAttribute('data-page', page);
+  const size = node.getAttribute('data-size');
+  if (node.tagName === 'DIV' && size && ['small', 'medium', 'large'].includes(size)) copy.setAttribute('data-size', size);
   const comment = node.getAttribute('data-comment');
   if (node.tagName === 'SPAN' && comment && /^c[a-z0-9]+$/.test(comment)) copy.setAttribute('data-comment', comment);
 }
@@ -35,11 +45,15 @@ function cleanNode(node: Node): Node | null {
   if (node.nodeType === Node.TEXT_NODE) return document.createTextNode(node.textContent ?? '');
   if (!(node instanceof Element) || DROPPED_TAGS.has(node.tagName)) return null;
 
+  /* A page block's title and buttons are drawn when it is shown, so only the empty block is stored. */
   const children = document.createDocumentFragment();
-  node.childNodes.forEach(child => {
-    const cleaned = cleanNode(child);
-    if (cleaned) children.appendChild(cleaned);
-  });
+  const keepsChildren = !node.classList.contains('page-block');
+  if (keepsChildren) {
+    node.childNodes.forEach(child => {
+      const cleaned = cleanNode(child);
+      if (cleaned) children.appendChild(cleaned);
+    });
+  }
   if (!ALLOWED_TAGS.has(node.tagName)) return children;
 
   /* Copy the element without any attributes except approved classes and attributes. */
@@ -76,8 +90,9 @@ export function cleanHtml(input: unknown) {
 }
 
 /* Plain text version of stored HTML, used for previews. */
+/* A space is added after each line and table cell, so words from separate lines do not run together. */
 export function htmlToText(html: string) {
   const holder = document.createElement('div');
-  holder.innerHTML = html;
-  return holder.textContent ?? '';
+  holder.innerHTML = html.replace(/<\/(p|h[1-6]|li|td|th|pre|blockquote)>/gi, '$& ');
+  return (holder.textContent ?? '').replace(/\s+/g, ' ');
 }

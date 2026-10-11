@@ -9,6 +9,7 @@ import {
   type DocBlock
 } from './blockModel';
 import { isRuleOnly, mergeContents, splitAtCaret } from './blockEditing';
+import { handleBlockKeys } from './blocks';
 import { setOffset } from './caret';
 import { highlight, insertNewline, preAtCaret } from './code';
 import { caretAtEdge, closestAtCaret, emptyParagraph, isEmptyContent, placeCaret, selectContents, selectionInside, wrapLooseLines } from './dom';
@@ -22,7 +23,10 @@ type StructuredEditorProps = {
 };
 
 type CaretPosition = 'start' | 'end' | number;
-type FocusRequest = { id: string; position: CaretPosition };
+
+/* path: the position of one element inside the block (in document order), for a caret that */
+/* belongs in a specific place such as the first table cell, rather than the start of the block. */
+type FocusRequest = { id: string; position: CaretPosition; path?: number };
 type DropMark = { id: string; side: 'before' | 'after' };
 
 /* What the current text selection touches: the block with the caret, and every block in the selection. */
@@ -103,10 +107,14 @@ export const StructuredEditor = memo(function StructuredEditor({ session, conten
     return blocksRef.current.filter(item => item.group === block.group).map(item => item.id);
   }
 
-  function focusBlock(id: string, position: CaretPosition) {
+  function focusBlock(id: string, position: CaretPosition, path?: number) {
     const element = elements.current.get(id);
     if (!element) return;
-    if (typeof position === 'number') {
+    const target = path === undefined ? null : element.querySelectorAll('*')[path];
+    if (target) {
+      bodyRef.current?.focus({ preventScroll: true });
+      placeCaret(target, position === 'end');
+    } else if (typeof position === 'number') {
       setOffset(element, position);
     } else {
       bodyRef.current?.focus({ preventScroll: true });
@@ -119,7 +127,7 @@ export const StructuredEditor = memo(function StructuredEditor({ session, conten
     const request = focusRequest.current;
     if (!request) return;
     focusRequest.current = null;
-    focusBlock(request.id, request.position);
+    focusBlock(request.id, request.position, request.path);
     session.updateCaret();
   });
 
@@ -325,6 +333,35 @@ export const StructuredEditor = memo(function StructuredEditor({ session, conten
     current.addRange(range);
   }
 
+  /* New lines added inside one block (by a slash command, toggle or table) become blocks of their own. */
+  /* The element that should get the caret is marked with data-caret while the block is re-read. */
+  function splitLines(focus: HTMLElement | null, atEnd: boolean) {
+    focus?.setAttribute('data-caret', '');
+    const live = liveBlocks();
+    const index = live.findIndex(block => block.id === (blockIdOf(focus) ?? selectionRef.current.activeId));
+    focus?.removeAttribute('data-caret');
+    if (index < 0) {
+      commitTyping();
+      return;
+    }
+
+    const parts = parseBlocks(live[index].html).map(part => ({ ...part, group: live[index].group }));
+    const target = parts.find(part => part.html.includes('data-caret'));
+    const cleaned = parts.map(part => ({ ...part, html: part.html.replace(/ data-caret=""/g, '') }));
+    live.splice(index, 1, ...cleaned);
+    const position = atEnd ? 'end' : 'start';
+    if (!target) {
+      applyBlocks(live, { id: cleaned[cleaned.length - 1].id, position });
+      return;
+    }
+
+    /* Find the marked element's place inside its new block, so the caret can return to it. */
+    const holder = document.createElement('div');
+    holder.innerHTML = target.html;
+    const path = Array.from(holder.querySelectorAll('*')).findIndex(element => element.hasAttribute('data-caret'));
+    applyBlocks(live, { id: cleaned[parts.indexOf(target)].id, position, path: path >= 0 ? path : undefined });
+  }
+
   /* The first Ctrl + A selects the current block; pressing it again selects the whole note. */
   function selectAll() {
     const body = bodyRef.current;
@@ -366,7 +403,8 @@ export const StructuredEditor = memo(function StructuredEditor({ session, conten
         if (state === 'none') return;
         const group = live.find(block => block.id === ids[0])?.group ?? null;
         applyBlocks(state === 'unstick' && group ? unstickGroup(live, group) : stickBlocks(live, ids), null);
-      }
+      },
+      linesChanged: splitLines
     });
     return () => session.setAdapter(null);
   });
@@ -546,6 +584,16 @@ export const StructuredEditor = memo(function StructuredEditor({ session, conten
     }
     if (!editable || !id || !bodyRef.current?.contains(editable)) return;
 
+    /* Tab, Enter and Backspace work differently inside table cells and toggle lists. */
+    const result = handleBlockKeys(native, editable);
+    if (result) {
+      if (result.kind === 'blocked') return;
+      session.checkpoint();
+      if (result.kind === 'lines') splitLines(result.focus, result.atEnd);
+      else commitTyping();
+      return;
+    }
+
     if (event.key === 'Backspace' || event.key === 'Delete') {
       handleDeletion(event, editable, id);
       return;
@@ -581,6 +629,9 @@ export const StructuredEditor = memo(function StructuredEditor({ session, conten
       commitTyping();
       return;
     }
+
+    /* Lines inside a toggle list stay in the toggle's block. */
+    if (closestAtCaret('.toggle-body')) return;
 
     /* Lists keep the browser's normal Enter, so new items stay in the same list block. */
     const item = closestAtCaret('li');

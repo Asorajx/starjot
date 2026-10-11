@@ -2358,6 +2358,433 @@
 
 
 /* =========================
+   Slash Menu
+   ========================= */
+
+/* The menu of blocks that opens after typing "/". */
+.slash-menu {
+  position: fixed;
+  z-index: 75;
+  display: flex;
+  flex-direction: column;
+  width: 280px;
+  max-height: 340px;
+  padding: 4px;
+  overflow-y: auto;
+  border: 1px solid #dfe7f3;
+  border-radius: 4px;
+  background: #ffffff;
+  box-shadow: 0 10px 30px rgba(28, 54, 96, .18);
+}
+
+.slash-menu-label {
+  margin: 4px 8px 4px;
+  color: #94a1b3;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.slash-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 36px;
+  padding: 4px 8px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: #2c3d58;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+
+.slash-menu-item.is-active {
+  background: var(--blue-soft);
+  color: var(--blue);
+}
+
+/* Each block type has a small square icon, like a preview of the block. */
+.slash-menu-icon {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid #e2e8f1;
+  border-radius: 4px;
+  background: #ffffff;
+  color: #65738a;
+  font-size: 14px;
+}
+
+.slash-menu-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The Markdown shortcut that does the same thing. */
+.slash-menu-item kbd {
+  color: #a4adbb;
+  font: 11px ui-monospace, SFMono-Regular, Consolas, monospace;
+}
+
+.slash-menu-empty {
+  margin: 8px;
+  color: #94a1b3;
+  font-size: 12px;
+}
+
+.slash-menu-search {
+  height: 32px;
+  margin: 4px 4px 8px;
+  padding: 0 8px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: #ffffff;
+  color: var(--ink);
+  font: inherit;
+  font-size: 12px;
+}
+
+.slash-menu-search:focus {
+  border-color: #a7c5f5;
+  outline: none;
+}
+
+
+/* =========================
+   Page Blocks and Links
+   ========================= */
+
+/* A sub-page shown inside the note. It is one line of the note and opens the page when clicked. */
+.note-editable .page-block,
+.block-content .page-block {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin: 4px 0 12px;
+  padding: 8px 12px;
+  border: 1px solid #e2e8f1;
+  border-radius: 4px;
+  background: #ffffff;
+  cursor: pointer;
+  user-select: none;
+}
+
+.page-block:hover {
+  border-color: #a7c5f5;
+}
+
+.page-block-icon {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  color: #65738a;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.page-block-text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.page-block-text strong {
+  overflow: hidden;
+  color: #2c3d58;
+  font-size: 13px;
+  line-height: 24px;
+  text-decoration: underline;
+  text-decoration-color: #d5dde9;
+  text-underline-offset: 3px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.page-block-text small {
+  display: -webkit-box;
+  overflow: hidden;
+  color: #7a889d;
+  font-size: 12px;
+  line-height: 1.6;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.page-block-meta {
+  color: #a4adbb;
+  font-size: 11px;
+}
+
+/* Small shows only the title; medium adds the description; large shows more of it and the details. */
+.page-block[data-size="small"] small,
+.page-block[data-size="small"] .page-block-meta,
+.page-block[data-size="medium"] .page-block-meta {
+  display: none;
+}
+
+.page-block[data-size="small"] {
+  align-items: center;
+  padding: 4px 12px;
+}
+
+.page-block[data-size="large"] {
+  padding: 16px;
+}
+
+.page-block[data-size="large"] small {
+  -webkit-line-clamp: 5;
+}
+
+.page-block.is-missing {
+  border-style: dashed;
+  cursor: default;
+}
+
+.page-block.is-missing strong {
+  color: #94a1b3;
+  text-decoration: none;
+}
+
+/* S / M / L appear while the pointer is over the block. */
+.page-block-sizes {
+  display: none;
+  flex-shrink: 0;
+  gap: 2px;
+}
+
+.page-block:hover .page-block-sizes {
+  display: flex;
+}
+
+.editor-wrap.is-locked .page-block-sizes {
+  display: none;
+}
+
+.page-block-size {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: transparent;
+  color: #94a1b3;
+  font: inherit;
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.page-block-size:hover {
+  border-color: #e2e8f1;
+  color: #2c3d58;
+}
+
+.page-block-size.is-active {
+  background: var(--blue-soft);
+  color: var(--blue);
+}
+
+/* A link to another page looks like a link, with a page icon drawn before it. */
+.note-editable .page-link,
+.block-content .page-link {
+  color: #2c3d58;
+  font-weight: 600;
+  text-decoration: underline;
+  text-decoration-color: #b9c6da;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.note-editable .page-link::before,
+.block-content .page-link::before {
+  content: "↗ ";
+  color: #94a1b3;
+  font-weight: 500;
+}
+
+/* The preview shown while hovering over a page link. */
+.page-preview {
+  position: fixed;
+  z-index: 72;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 300px;
+  padding: 12px;
+  border: 1px solid #dfe7f3;
+  border-radius: 4px;
+  background: #ffffff;
+  box-shadow: 0 10px 30px rgba(28, 54, 96, .18);
+}
+
+.page-preview-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #2c3d58;
+  font-size: 14px;
+}
+
+.page-preview-title strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.page-preview-meta {
+  color: #a4adbb;
+  font-size: 11px;
+}
+
+.page-preview-text {
+  display: -webkit-box;
+  overflow: hidden;
+  color: #65738a;
+  font-size: 12px;
+  line-height: 1.6;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+}
+
+.page-preview-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-top: 8px;
+  border-top: 1px solid #edf1f7;
+  color: #a4adbb;
+  font-size: 11px;
+}
+
+
+/* =========================
+   Toggle Lists
+   ========================= */
+
+/* The arrow is drawn in the title's left padding; clicking it opens or closes the toggle. */
+.note-editable .toggle-summary,
+.block-content .toggle-summary {
+  position: relative;
+  margin-bottom: 4px;
+  padding-left: 24px;
+  color: #2c3d58;
+  font-weight: 600;
+}
+
+.toggle-summary::before {
+  content: "";
+  position: absolute;
+  top: calc(.98em - 4px);
+  left: 6px;
+  width: 0;
+  height: 0;
+  border-top: 4px solid transparent;
+  border-bottom: 4px solid transparent;
+  border-left: 6px solid #94a1b3;
+  cursor: pointer;
+  transition: transform .15s ease;
+}
+
+.toggle-block.is-open > .toggle-summary::before {
+  transform: rotate(90deg);
+}
+
+.toggle-body {
+  padding-left: 24px;
+}
+
+.toggle-block:not(.is-open) > .toggle-body {
+  display: none;
+}
+
+
+/* =========================
+   Tables
+   ========================= */
+
+.note-editable table,
+.block-content table {
+  width: 100%;
+  margin: 8px 0 16px;
+  border-collapse: collapse;
+  font-size: 12.6px;
+  table-layout: fixed;
+}
+
+.note-editable th,
+.note-editable td,
+.block-content th,
+.block-content td {
+  padding: 8px 12px;
+  border: 1px solid #e2e8f1;
+  color: #4b5b74;
+  line-height: 1.6;
+  text-align: left;
+  vertical-align: top;
+  overflow-wrap: anywhere;
+}
+
+.note-editable th,
+.block-content th {
+  background: #f6f8fc;
+  color: #2c3d58;
+  font-weight: 650;
+}
+
+/* Buttons for adding and deleting rows and columns, shown under the table being edited. */
+.table-bar {
+  position: fixed;
+  z-index: 60;
+  display: flex;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid #dfe7f3;
+  border-radius: 4px;
+  background: #ffffff;
+  box-shadow: 0 6px 18px rgba(28, 54, 96, .12);
+}
+
+.table-bar-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 26px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: #65738a;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.table-bar-button:hover {
+  background: var(--blue-soft);
+  color: var(--blue);
+}
+
+
+/* =========================
    Printing
    ========================= */
 

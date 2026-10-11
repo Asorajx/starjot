@@ -1,6 +1,7 @@
 import { memo, useEffect, useLayoutEffect, useRef, type ClipboardEvent, type FormEvent, type KeyboardEvent, type MouseEvent } from 'react';
 import { cleanHtml } from '../sanitize';
 import { getRange, setOffset, setRange } from './caret';
+import { handleBlockKeys, hydratePages } from './blocks';
 import { highlight, highlightAll, insertNewline, preAtCaret } from './code';
 import { caretAtEdge, closestAtCaret, emptyParagraph, placeCaret, selectContents, wrapLooseLines } from './dom';
 import { applyMarkdownShortcut } from './markdown';
@@ -48,6 +49,7 @@ export const ContinuousEditor = memo(function ContinuousEditor({ session, conten
     body.innerHTML = cleanHtml(content) || '<p><br></p>';
     wrapLooseLines(body);
     highlightAll(body);
+    hydratePages(body);
     if (session.pendingCaret !== null) {
       setOffset(body, session.pendingCaret);
       session.pendingCaret = null;
@@ -76,6 +78,10 @@ export const ContinuousEditor = memo(function ContinuousEditor({ session, conten
         if (selection) setRange(body, selection.start, selection.end);
         commit();
         refreshSticky();
+      },
+      linesChanged(focus, atEnd) {
+        if (focus) placeCaret(focus, atEnd);
+        commit();
       }
     });
     return () => session.setAdapter(null);
@@ -139,6 +145,16 @@ export const ContinuousEditor = memo(function ContinuousEditor({ session, conten
       } else {
         insertNewline(pre);
       }
+      commit();
+      return;
+    }
+
+    /* Tab, Enter and Backspace work differently inside table cells and toggle lists. */
+    const result = handleBlockKeys(native, body);
+    if (result) {
+      if (result.kind === 'blocked') return;
+      session.checkpoint();
+      if (result.kind === 'lines') placeCaret(result.focus, result.atEnd);
       commit();
       return;
     }

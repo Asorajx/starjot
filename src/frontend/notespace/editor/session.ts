@@ -13,6 +13,10 @@ export type EditorAdapter = {
   commit: () => void;
   toggleSticky: () => void;
   selectAll: () => void;
+
+  /* Lines were added or replaced (by a slash command, a toggle or a table); save them and */
+  /* put the caret in focus. Structured mode also splits the new lines into their own blocks. */
+  linesChanged: (focus: HTMLElement | null, atEnd: boolean) => void;
 };
 
 export type SessionSnapshot = {
@@ -142,6 +146,10 @@ export class EditorSession {
   /* Save after a change made outside the editor, such as choosing a code language. */
   commit() {
     this.adapter?.commit();
+  }
+
+  linesChanged(focus: HTMLElement | null, atEnd = false) {
+    this.adapter?.linesChanged(focus, atEnd);
   }
 
   /* Mark the selected text and store the comment. Works on locked notes too. */

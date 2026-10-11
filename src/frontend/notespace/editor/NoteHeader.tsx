@@ -1,14 +1,14 @@
 import { useState } from 'react';
 import { EmojiPicker } from '../../components/EmojiPicker';
 import { Icon } from '../../components/Icon';
-import { canAddSubpage, scheduleSave, updateNote, useCategories, useNotes } from '../store';
+import { scheduleSave, updateNote, useCategories, useNotes } from '../store';
+import { embeddedPageIds } from './blocks';
 import type { Note } from '../../../shared/types/note';
 
 type NoteHeaderProps = {
   note: Note;
   locked: boolean;
   onOpenNote: (id: string) => void;
-  onAddSubpage: () => void;
 };
 
 function formatDate(iso: string | null) {
@@ -23,9 +23,12 @@ function formatDate(iso: string | null) {
 
 /* The top of a note: its icon, title, details (category, description, dates, comments) and sub-pages. */
 /* Details can be hidden per note; they can only be edited while the note is unlocked. */
-export function NoteHeader({ note, locked, onOpenNote, onAddSubpage }: NoteHeaderProps) {
+export function NoteHeader({ note, locked, onOpenNote }: NoteHeaderProps) {
   const categories = useCategories();
-  const subpages = useNotes().filter(item => item.parentId === note.id);
+
+  /* Sub-pages already shown as page blocks in the note are not listed again here. */
+  const embedded = embeddedPageIds(note.content);
+  const subpages = useNotes().filter(item => item.parentId === note.id && !embedded.has(item.id));
   const [picking, setPicking] = useState(false);
 
   /* Text fields save after a short pause, like typing in the note itself. */
@@ -57,12 +60,6 @@ export function NoteHeader({ note, locked, onOpenNote, onAddSubpage }: NoteHeade
           </button>
         )}
 
-        {/* Hidden at the deepest level, because pages can only be nested a few levels deep. */}
-        {!locked && canAddSubpage(note.id) && (
-          <button type="button" className="note-header-action" onClick={onAddSubpage}>
-            <Icon name="file-text" size={14} /> Add sub-page
-          </button>
-        )}
         <button type="button" className="note-header-action" aria-expanded={!note.detailsHidden} onClick={() => updateNote(note.id, { detailsHidden: !note.detailsHidden })}>
           <Icon name={note.detailsHidden ? 'list' : 'x'} size={14} /> {note.detailsHidden ? 'Show details' : 'Hide details'}
         </button>

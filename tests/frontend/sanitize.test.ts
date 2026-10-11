@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { cleanHtml, safeHref } from '../../src/frontend/notespace/sanitize';
+import { cleanHtml, htmlToText, safeHref } from '../../src/frontend/notespace/sanitize';
 
 
 /* =========================
@@ -33,6 +33,27 @@ describe('cleanHtml', () => {
 
   it('removes empty sticky groups', () => {
     expect(cleanHtml('<div class="sticky-group"></div><p>x</p>')).toBe('<p>x</p>');
+  });
+});
+
+describe('page blocks, toggles and tables', () => {
+  it('stores page blocks empty, with only a valid page id and size', () => {
+    const html = cleanHtml('<div class="page-block" data-page="note_1" data-size="large" contenteditable="false"><span>Title</span><button>S</button></div>');
+    expect(html).toBe('<div class="page-block" data-page="note_1" data-size="large"></div>');
+    expect(cleanHtml('<div class="page-block" data-page="bad id!" data-size="huge"></div>')).toBe('<div class="page-block"></div>');
+  });
+
+  it('keeps page links, toggle lists and tables', () => {
+    const html = '<p>See <a class="page-link" data-page="atlas">Atlas</a></p>'
+      + '<div class="toggle-block is-open"><p class="toggle-summary">T</p><div class="toggle-body"><p>A</p></div></div>'
+      + '<table><tbody><tr><th>H</th></tr><tr><td>C</td></tr></tbody></table>';
+    expect(cleanHtml(html)).toBe(html);
+  });
+});
+
+describe('htmlToText', () => {
+  it('puts a space between lines and table cells', () => {
+    expect(htmlToText('<p>One</p><p>Two</p><table><tbody><tr><td>A</td><td>B</td></tr></tbody></table>').trim()).toBe('One Two A B');
   });
 });
 
