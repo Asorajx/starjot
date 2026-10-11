@@ -1041,6 +1041,16 @@
   font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
 }
 
+/* Code inside a line of text (`code` in Markdown) gets a soft background so it stands out. */
+.note-editable :not(pre) > code,
+.block-content :not(pre) > code {
+  padding: 1px 4px;
+  border-radius: 4px;
+  background: #eef2fa;
+  color: #273c5e;
+  font-size: .92em;
+}
+
 .note-editable hr,
 .block-content hr {
   margin: 16px 0;
@@ -2841,25 +2851,7 @@
   color: var(--blue);
 }
 
-/* A link to another page looks like a link, with a page icon drawn before it. */
-.note-editable .page-link,
-.block-content .page-link {
-  color: #2c3d58;
-  font-weight: 600;
-  text-decoration: underline;
-  text-decoration-color: #b9c6da;
-  text-underline-offset: 3px;
-  cursor: pointer;
-}
-
-.note-editable .page-link::before,
-.block-content .page-link::before {
-  content: "↗ ";
-  color: #94a1b3;
-  font-weight: 500;
-}
-
-/* The preview shown while hovering over a page link. */
+/* The preview shown while hovering over a page block. */
 .page-preview {
   position: fixed;
   z-index: 72;
@@ -2912,6 +2904,110 @@
   border-top: 1px solid #edf1f7;
   color: #a4adbb;
   font-size: 11px;
+}
+
+/* The bar shown while hovering over a link: where it leads, and buttons to open, copy, edit or remove it. */
+.link-tools {
+  position: fixed;
+  z-index: 72;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 340px;
+  padding: 4px 4px 4px 12px;
+  border: 1px solid #dfe7f3;
+  border-radius: 4px;
+  background: #ffffff;
+  box-shadow: 0 10px 30px rgba(28, 54, 96, .18);
+}
+
+.link-tools.is-editing {
+  width: 300px;
+  padding: 12px;
+}
+
+.link-tools-target {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  color: #94a1b3;
+}
+
+.link-tools-target .icon {
+  flex-shrink: 0;
+}
+
+/* Long addresses are cut with an ellipsis; the whole address is in the edit box. */
+.link-tools-text {
+  overflow: hidden;
+  min-width: 0;
+  color: #2c3d58;
+  font-size: 12px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+
+.link-tools-buttons {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  gap: 2px;
+}
+
+/* Removing sits apart from Cancel and Save, on the left. */
+.link-tools-remove {
+  margin-right: auto;
+}
+
+.link-tools-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.link-tools-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.link-tools-form label > span {
+  color: #71829b;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.link-tools-form .selection-input {
+  width: 100%;
+}
+
+.link-tools-chosen {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: #65738a;
+  font-size: 11px;
+}
+
+.link-tools-suggestions {
+  display: flex;
+  flex-direction: column;
+  margin: -4px 0 0;
+}
+
+.link-tools-error {
+  color: #c2410c;
+  font-size: 11px;
+}
+
+.link-tools-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
 }
 
 

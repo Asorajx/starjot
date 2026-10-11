@@ -5,6 +5,7 @@ import { markRange, newCommentId, unmark } from './comments';
 import { History, TypingSteps, type HistoryEntry } from './history';
 import { charBesideCaret } from './dom';
 import { getOffset } from './caret';
+import { typeAfterLink } from './links';
 import type { StickyState } from './blockModel';
 
 /* Each editor (continuous or structured) registers these actions with the session. */
@@ -91,6 +92,10 @@ export class EditorSession {
     if (this.typing.startsNewStep(event.inputType, event.data, caret, selection?.isCollapsed ?? true, deleted)) {
       this.history.checkpoint(caret);
     }
+
+    /* Text typed after a link is added outside the link by hand, so the browser's input event */
+    /* does not happen and the change is saved here. */
+    if (typeAfterLink(event)) this.adapter?.commit();
   }
 
   /* Call before structural edits (new block, merge, Sticky, paste) so they become their own step. */

@@ -15,8 +15,8 @@ type BlockWidgetsProps = {
   onOpenNote: (id: string) => void;
 };
 
-/* block: the preview is for a page block (opened with a click) rather than a page link (Ctrl + click). */
-type Preview = { id: string; top: number; left: number; above: boolean; block: boolean };
+/* A preview of a page, shown for a page block or a page listed in the note's details. */
+type Preview = { id: string; top: number; left: number; above: boolean };
 
 /* The menu opened by right-clicking a page block, at the pointer. */
 type PageMenu = { id: string; top: number; left: number };
@@ -27,8 +27,8 @@ type PageMenu = { id: string; top: number; left: number };
    ========================= */
 
 /* The parts of page blocks, page links, toggle lists and tables that need more than typing: */
-/* opening pages, block sizes, link previews, the toggle arrow and the line under a table. */
-/* Table grips and menus are in TableTools. */
+/* opening pages, block sizes, page previews, the toggle arrow and the line under a table. */
+/* Table grips and menus are in TableTools; links (page links included) are in LinkTools. */
 export function BlockWidgets({ session, locked, onOpenNote }: BlockWidgetsProps) {
   const notes = useNotes();
   const [preview, setPreview] = useState<Preview | null>(null);
@@ -75,14 +75,6 @@ export function BlockWidgets({ session, locked, onOpenNote }: BlockWidgetsProps)
       if (block) {
         event.preventDefault();
         if (getNote(block.dataset.page ?? '')) open(block.dataset.page as string);
-        return;
-      }
-
-      /* A page link is text, so it opens with Ctrl + click (or a normal click on a locked note). */
-      const link = target.closest<HTMLElement>('a.page-link');
-      if (link && (isLocked || event.ctrlKey || event.metaKey)) {
-        event.preventDefault();
-        if (getNote(link.dataset.page ?? '')) open(link.dataset.page as string);
         return;
       }
 
@@ -150,39 +142,37 @@ export function BlockWidgets({ session, locked, onOpenNote }: BlockWidgetsProps)
       session.linesChanged(line, false);
     }
 
-    /* Hovering a page link shows a preview of that page under it. A page block shows the same */
-    /* preview, but only when part of its title or description is hidden by its size or width. */
+    /* Hovering a page block shows a preview of its page, but only when part of its title or */
+    /* description is hidden by its size or width. */
     function handleMouseOver(event: MouseEvent) {
       const target = event.target as Element;
       if (target.closest?.('.page-preview')) {
         window.clearTimeout(hideTimer.current);
         return;
       }
-      const link = target.closest?.<HTMLElement>('a.page-link');
       const block = target.closest?.<HTMLElement>('.page-block');
 
       /* Pages listed in the note's details always show their preview. */
       const listed = target.closest?.<HTMLElement>('[data-preview-page]');
-      const inNote = link ?? (block && !resizing.current && !target.closest('.page-block-sizes, .page-block-resize') && pageBlockIsCut(block) ? block : null);
+      const inNote = block && !resizing.current && !target.closest('.page-block-sizes, .page-block-resize') && pageBlockIsCut(block) ? block : null;
       const anchor = listed ?? (inNote && body()?.contains(inNote) ? inNote : null);
       if (!anchor) return;
       window.clearTimeout(hideTimer.current);
 
-      /* The preview opens under the link or block, or above it near the bottom of the window. */
+      /* The preview opens under the block, or above it near the bottom of the window. */
       const bounds = anchor.getBoundingClientRect();
       const above = bounds.bottom + 240 > window.innerHeight && bounds.top > 240;
       setPreview({
         id: anchor.dataset.page ?? anchor.dataset.previewPage ?? '',
         top: above ? bounds.top - 6 : bounds.bottom + 6,
         left: Math.min(bounds.left, window.innerWidth - 320),
-        above,
-        block: anchor !== link
+        above
       });
     }
 
     function handleMouseOut(event: MouseEvent) {
       const target = event.target as Element;
-      if (!target.closest?.('a.page-link, .page-block, .page-preview, [data-preview-page]')) return;
+      if (!target.closest?.('.page-block, .page-preview, [data-preview-page]')) return;
       window.clearTimeout(hideTimer.current);
       hideTimer.current = window.setTimeout(() => setPreview(null), 200);
     }
@@ -296,7 +286,7 @@ export function BlockWidgets({ session, locked, onOpenNote }: BlockWidgetsProps)
               <span className="page-preview-meta">{category && `${category} · `}{updatedLabel(note)}</span>
               <span className="page-preview-text">{note.subtitle || note.preview || 'This page is empty.'}</span>
               <span className="page-preview-footer">
-                <span>{locked || preview.block ? 'Click to open' : 'Ctrl + click to open'}</span>
+                <span>Click to open</span>
                 <button type="button" className="btn btn-sm btn-secondary" onClick={() => onOpenNote(note.id)}>
                   Open <Icon name="arrow-right" size={13} />
                 </button>

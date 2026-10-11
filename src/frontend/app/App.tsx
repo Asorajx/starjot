@@ -114,6 +114,16 @@ export function App() {
     focusTitle();
   }
 
+  /* Ctrl + click or double-click on a page link opens the page in a new tab beside this one. */
+  function openNoteInNewTab(id: string) {
+    flushSave();
+    const tab = newTab({ kind: 'note', id });
+    setTabState(state => {
+      const index = state.tabs.findIndex(item => item.id === state.active);
+      return { tabs: [...state.tabs.slice(0, index + 1), tab, ...state.tabs.slice(index + 1)], active: tab.id };
+    });
+  }
+
   function selectTab(id: string) {
     flushSave();
     setTabState(state => ({ ...state, active: id }));
@@ -181,6 +191,7 @@ export function App() {
           history={history}
           onClose={closePage}
           onOpenNote={openNote}
+          onOpenNoteInNewTab={openNoteInNewTab}
           onOpenCategory={openCategory}
           onOpenNewPage={openNewPage}
         />

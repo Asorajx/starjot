@@ -15,6 +15,7 @@ import { SelectionToolbar } from './SelectionToolbar';
 import { SlashMenu } from './SlashMenu';
 import { TableTools } from './TableTools';
 import { BlockWidgets } from './BlockWidgets';
+import { LinkTools } from './LinkTools';
 import { NoteBreadcrumb } from './NoteBreadcrumb';
 import { PageBar, SaveStatus, type PageHistory } from '../PageBar';
 import { NoteHeader } from './NoteHeader';
@@ -32,6 +33,9 @@ type NoteEditorProps = {
   /* Leaves the note (Escape, or after deleting it). */
   onClose: () => void;
   onOpenNote: (id: string) => void;
+
+  /* Opens a page in a new tab (Ctrl + click or double-click on a page link). */
+  onOpenNoteInNewTab: (id: string) => void;
   onOpenCategory: (id: string) => void;
 
   /* Opens a sub-page just added with the slash menu, ready to be named. */
@@ -122,7 +126,7 @@ function LockStatus({ noteId, temporary, unlockedUntil }: LockStatusProps) {
    Note Editor Screen
    ========================= */
 
-export function NoteEditor({ noteId, history, onClose, onOpenNote, onOpenCategory, onOpenNewPage }: NoteEditorProps) {
+export function NoteEditor({ noteId, history, onClose, onOpenNote, onOpenNoteInNewTab, onOpenCategory, onOpenNewPage }: NoteEditorProps) {
   const note = useNote(noteId);
 
   /* Re-render when categories are renamed, so the breadcrumb stays current. */
@@ -367,6 +371,7 @@ export function NoteEditor({ noteId, history, onClose, onOpenNote, onOpenCategor
       <SelectionToolbar session={session} locked={locked} />
       <SlashMenu session={session} noteId={note.id} locked={locked} onOpenNewPage={onOpenNewPage} />
       <BlockWidgets session={session} locked={locked} onOpenNote={onOpenNote} />
+      <LinkTools session={session} locked={locked} onOpenNote={onOpenNote} onOpenNoteInNewTab={onOpenNoteInNewTab} />
       <TableTools session={session} locked={locked} />
 
       {confirmDelete && (

@@ -1,0 +1,329 @@
+import { cleanHtml } from '../sanitize';
+import { deleteKeepingPages } from './blocks';
+import { highlight } from './code';
+import { isEmptyContent } from './dom';
+import { copiedPageLink, createLink, normalizeAddress } from './links';
+
+/* Code fence languages written in Markdown, and the code block language each one becomes. */
+const FENCE_LANGUAGES: Record<string, string> = {
+  js: 'javascript', javascript: 'javascript', jsx: 'javascript', ts: 'typescript', typescript: 'typescript', tsx: 'typescript',
+  html: 'html', xml: 'html', css: 'css', json: 'json', py: 'python', python: 'python', java: 'java',
+  cs: 'csharp', csharp: 'csharp', 'c#': 'csharp', c: 'cpp', cpp: 'cpp', 'c++': 'cpp', sql: 'sql',
+  sh: 'bash', bash: 'bash', shell: 'bash', zsh: 'bash', console: 'bash'
+};
+
+/* Inline Markdown, in the order it is matched: an escaped character such as \*, `code`, */
+/* [words](address), **bold** or __bold__, ~~strike~~, and *italic* or _italic_. The address may */
+/* hold one level of brackets, as in many Wikipedia addresses. Underscores inside words */
+/* (file_name_here) are not italics. */
+const INLINE = new RegExp([
+  /\\([\\`*_~[\]()#>+\-.!|])/.source,
+  /`([^`\n]+)`/.source,
+  /\[([^[\]\n]+)\]\(([^()\s]+(?:\([^()\s]*\)[^()\s]*)*)\)/.source,
+  /\*\*(?=\S)(.+?)(?<=\S)\*\*/.source,
+  /(?<!\w)__(?=\S)(.+?)(?<=\S)__(?!\w)/.source,
+  /~~(?=\S)(.+?)(?<=\S)~~/.source,
+  /\*(?=[^\s*])([^*]+?)(?<=\S)\*/.source,
+  /(?<!\w)_(?=[^\s_])([^_]+?)(?<=\S)_(?!\w)/.source
+].join('|'), 'g');
+
+const FENCE = /^\s*(```+|~~~+)\s*([\w#+-]*)\s*$/;
+const HEADING = /^ {0,3}(#{1,6})\s+(.*?)(?:\s+#+)?\s*$/;
+const DIVIDER = /^ {0,3}([-*_])(?:\s*\1){2,}\s*$/;
+const LIST_ITEM = /^(\s*)([-*+]|\d{1,9}[.)])\s+(.*)$/;
+const QUOTE = /^ {0,3}>\s?(.*)$/;
+
+/* The caret's line: a paragraph, heading, list item or plain line, but not a wrapper such as a */
+/* sticky group or toggle list. */
+const LINE = 'p, h1, h2, h3, h4, h5, h6, li, div:not(.sticky-group):not(.toggle-block):not(.toggle-body)';
+
+/* Table cells and toggle titles hold a single line, so pasted lines are joined with line breaks there. */
+const SINGLE_LINE = 'td, th, .toggle-summary';
+
+
+/* =========================
+   Reading Pasted Markdown
+   ========================= */
+
+function element(tag: string, children: (Node | string)[]) {
+  const made = document.createElement(tag);
+  made.append(...children);
+  return made;
+}
+
+/* The words of one line with their inline Markdown turned into bold, italic, code and link elements. */
+function inlineNodes(text: string): (Node | string)[] {
+  const nodes: (Node | string)[] = [];
+  let last = 0;
+
+  /* matchAll works on its own copy of the pattern, so the inner calls for nested formatting are safe. */
+  for (const match of text.matchAll(INLINE)) {
+    const [whole, escaped, code, words, address, bold, boldLine, strike, italic, italicLine] = match;
+    const index = match.index ?? 0;
+    if (index > last) nodes.push(text.slice(last, index));
+    last = index + whole.length;
+
+    if (escaped !== undefined) {
+      nodes.push(escaped);
+    } else if (code !== undefined) {
+      nodes.push(element('code', [code]));
+    } else if (words !== undefined) {
+      const href = normalizeAddress(address);
+      if (!href) {
+        nodes.push(whole);
+        continue;
+      }
+      const link = createLink('', { kind: 'url', href });
+      link.append(...inlineNodes(words));
+      nodes.push(link);
+    } else if (bold !== undefined || boldLine !== undefined) {
+      nodes.push(element('strong', inlineNodes(bold ?? boldLine)));
+    } else if (strike !== undefined) {
+      nodes.push(element('s', inlineNodes(strike)));
+    } else {
+      nodes.push(element('em', inlineNodes(italic ?? italicLine)));
+    }
+  }
+  if (last < text.length) nodes.push(text.slice(last));
+  return nodes;
+}
+
+/* A line element holding the formatted words, kept open with a <br> when it has none. */
+function line(tag: string, text: string) {
+  const made = element(tag, inlineNodes(text));
+  if (!made.childNodes.length) made.append(document.createElement('br'));
+  return made;
+}
+
+/* How far a list item is indented; a tab counts as four spaces. */
+function indentOf(space: string) {
+  return space.replace(/\t/g, '    ').length;
+}
+
+/* Turn Markdown text into note lines: paragraphs, headings, lists (nested by indenting), quotes, */
+/* code blocks and dividers. Every line of text becomes its own line, as with plain pasting, but */
+/* blank lines are left out because in Markdown they only separate paragraphs. */
+function markdownLines(plain: string) {
+  const blocks: HTMLElement[] = [];
+  let lists: { indent: number; list: HTMLElement }[] = [];
+  let quote: HTMLElement | null = null;
+  const lines = plain.replace(/\r\n?/g, '\n').split('\n');
+
+  for (let index = 0; index < lines.length; index += 1) {
+    const text = lines[index];
+    const fence = text.match(FENCE);
+    const heading = text.match(HEADING);
+    const divider = DIVIDER.test(text);
+    const item = divider ? null : text.match(LIST_ITEM);
+    const quoted = text.match(QUOTE);
+
+    /* Lists continue past blank lines, so items separated by a blank line stay in one list. */
+    if (!text.trim()) {
+      quote = null;
+      continue;
+    }
+    if (!item) lists = [];
+    if (!quoted) quote = null;
+
+    if (fence) {
+      /* Code keeps every line exactly as written, until the closing fence or the end of the text. */
+      const code: string[] = [];
+      while (index + 1 < lines.length && !lines[index + 1].trim().startsWith(fence[1])) code.push(lines[++index]);
+      index += 1;
+      const language = FENCE_LANGUAGES[fence[2].toLowerCase()];
+      const codeElement = element('code', [code.join('\n')]);
+      if (language) codeElement.className = `language-${language}`;
+      blocks.push(element('pre', [codeElement]));
+    } else if (heading) {
+      blocks.push(line(`h${Math.min(heading[1].length, 5)}`, heading[2]));
+    } else if (divider) {
+      blocks.push(document.createElement('hr'));
+    } else if (item) {
+      const indent = indentOf(item[1]);
+      const kind = /\d/.test(item[2]) ? 'ol' : 'ul';
+      while (lists.length > 1 && lists[lists.length - 1].indent > indent) lists.pop();
+      const frame = lists[lists.length - 1];
+
+      /* A deeper item starts a list inside the previous item; a different kind of list at the same */
+      /* depth starts a new list beside it. */
+      if (!frame || indent > frame.indent || frame.list.tagName.toLowerCase() !== kind) {
+        const list = document.createElement(kind);
+        const deeper = Boolean(frame && indent > frame.indent);
+        const parent = deeper ? frame : lists[lists.length - 2];
+        if (parent) (parent.list.lastElementChild ?? parent.list).append(list);
+        else blocks.push(list);
+        if (deeper || !frame) lists.push({ indent, list });
+        else lists[lists.length - 1] = { indent, list };
+      }
+      lists[lists.length - 1].list.append(line('li', item[3]));
+    } else if (quoted) {
+      if (!quote) {
+        quote = document.createElement('blockquote');
+        blocks.push(quote);
+      }
+      quote.append(line('p', quoted[1]));
+    } else {
+      blocks.push(line('p', text));
+    }
+  }
+  return blocks;
+}
+
+/* Lines are only HTML the note allows; a template's contents are inert while they are read. */
+function cleaned(blocks: HTMLElement[]) {
+  const holder = document.createElement('template');
+  holder.innerHTML = cleanHtml(blocks.map(block => block.outerHTML).join(''));
+  return Array.from(holder.content.children) as HTMLElement[];
+}
+
+/* The note lines for pasted text, or null when it has no Markdown, so it is pasted as plain text. */
+/* A page link copied from a note (the clipboard's HTML) pastes as the same page link. */
+export function pastedMarkdown(plain: string, html = ''): HTMLElement[] | null {
+  const page = copiedPageLink(html, plain);
+  if (page) return cleaned([element('p', [createLink(plain, page)])]);
+
+  const blocks = markdownLines(plain);
+  const formatted = blocks.some(block => block.tagName !== 'P' || block.querySelector('*:not(br)'));
+  return formatted ? cleaned(blocks) : null;
+}
+
+
+/* =========================
+   Inserting Pasted Lines
+   ========================= */
+
+/* Each pasted line as inline content: one per paragraph, heading, list item, quote line or code line. */
+function inlineLines(blocks: HTMLElement[]) {
+  const lines: Node[][] = [];
+  blocks.forEach(block => {
+    if (block.tagName === 'PRE') {
+      (block.textContent ?? '').split('\n').forEach(text => lines.push([document.createTextNode(text)]));
+    } else if (['UL', 'OL', 'BLOCKQUOTE'].includes(block.tagName)) {
+      block.querySelectorAll('li, p').forEach(item => {
+        lines.push(Array.from(item.childNodes).filter(node => !['UL', 'OL', 'BR'].includes(node.nodeName)));
+      });
+    } else if (block.tagName !== 'HR') {
+      lines.push(Array.from(block.childNodes).filter(node => node.nodeName !== 'BR'));
+    }
+  });
+  return lines;
+}
+
+/* The innermost last line of a pasted block, where text after the caret can join it. */
+function lastLineOf(block: HTMLElement) {
+  let last: Element = block;
+  while (['UL', 'OL', 'BLOCKQUOTE', 'LI'].includes(last.tagName) && last.lastElementChild && ['UL', 'OL', 'LI', 'P'].includes(last.lastElementChild.tagName)) {
+    last = last.lastElementChild;
+  }
+  if (last.tagName === 'PRE') return last.querySelector('code') ?? last;
+  return last;
+}
+
+function hasContent(element: Element) {
+  return !isEmptyContent(element);
+}
+
+/* Remove any trailing <br> that only kept an empty line open, before text joins the line. */
+function trimBreak(element: Element) {
+  if (element.lastChild?.nodeName === 'BR') element.lastChild.remove();
+}
+
+/* Delete selected text before pasting over it, joining the lines it ran across like normal deleting. */
+/* Page blocks in the selection are kept, as with typing over a selection. */
+export function deleteSelection(root: HTMLElement) {
+  const selection = window.getSelection();
+  const range = selection?.rangeCount ? selection.getRangeAt(0) : null;
+  if (!range || range.collapsed || !root.contains(range.commonAncestorContainer)) return;
+  if (deleteKeepingPages(range, root)) return;
+  if (!document.execCommand('delete')) range.deleteContents();
+}
+
+/* Insert pasted lines at the caret, inside root. The first line joins the text before the caret and */
+/* the text after the caret joins the last line, like pasting in any editor. The caret goes to the end */
+/* of the pasted text. Returns the line that holds the caret, and whether new lines were added. */
+export function insertPasted(root: HTMLElement, blocks: HTMLElement[]) {
+  const selection = window.getSelection();
+  if (!selection?.rangeCount || !blocks.length) return null;
+  const range = selection.getRangeAt(0);
+  range.collapse(true);
+  const start = range.startContainer instanceof Element ? range.startContainer : range.startContainer.parentElement;
+  const found = start?.closest(LINE);
+  const current = found && found !== root && root.contains(found) ? found as HTMLElement : null;
+  const caret = document.createRange();
+
+  /* One line of text, or a place that holds a single line: the words go straight in at the caret. */
+  if (!current || start?.closest(SINGLE_LINE) || (blocks.length === 1 && blocks[0].tagName === 'P')) {
+    const fragment = document.createDocumentFragment();
+    inlineLines(blocks).forEach((nodes, index) => {
+      if (index) fragment.append(document.createElement('br'));
+      fragment.append(...nodes);
+    });
+    const last = fragment.lastChild;
+
+    /* An empty line only holds a <br> to keep it open, which the pasted words replace. */
+    if (current && !hasContent(current) && !start?.closest(SINGLE_LINE)) {
+      current.replaceChildren();
+      range.setStart(current, 0);
+      range.collapse(true);
+    }
+    range.insertNode(fragment);
+    if (last) caret.setStartAfter(last);
+    else caret.setStart(range.startContainer, range.startOffset);
+    selection.removeAllRanges();
+    selection.addRange(caret);
+    return { line: current ?? root, added: false };
+  }
+
+  /* Move the text after the caret into a copy of its line, so the pasted lines go between them. */
+  const tail = document.createRange();
+  tail.setStart(range.startContainer, range.startOffset);
+  tail.setEnd(current, current.childNodes.length);
+  const after = current.cloneNode(false) as HTMLElement;
+  after.append(tail.extractContents());
+
+  /* Inside a list, every pasted line becomes an item of that list. */
+  const pasted = current.tagName === 'LI'
+    ? inlineLines(blocks).map(nodes => element('li', nodes.length ? nodes : [document.createElement('br')]))
+    : blocks;
+
+  /* The first line joins the text before the caret when both are text lines (or both list items). */
+  const first = pasted[0];
+  if (first && (first.tagName === 'P' || first.tagName === 'LI')) {
+    if (!hasContent(current)) current.replaceChildren();
+    else trimBreak(current);
+    current.append(...Array.from(first.childNodes).filter(node => node.nodeName !== 'BR'));
+    if (!current.childNodes.length) current.append(document.createElement('br'));
+    pasted.shift();
+  }
+  current.after(...pasted);
+  const keepsCurrent = hasContent(current) || pasted.length === 0;
+
+  /* The text after the caret joins the last pasted line, unless that line is code or a divider. */
+  const lastBlock = pasted[pasted.length - 1];
+  const joined = lastBlock ? lastLineOf(lastBlock) : current;
+  const canJoin = joined.tagName !== 'HR' && joined.tagName !== 'CODE';
+  if (canJoin && hasContent(after)) {
+    if (!hasContent(joined)) joined.replaceChildren();
+    else trimBreak(joined);
+    caret.setStart(joined, joined.childNodes.length);
+    joined.append(...Array.from(after.childNodes));
+  } else if (hasContent(after) || !canJoin) {
+    /* After code or a divider, the caret goes to the start of the next line. */
+    if (!after.childNodes.length) after.append(document.createElement('br'));
+    (lastBlock ?? current).after(after);
+    if (canJoin) caret.setStart(joined, joined.childNodes.length);
+    else caret.setStart(after, 0);
+  } else {
+    caret.setStart(joined, joined.childNodes.length);
+  }
+  if (!keepsCurrent) current.remove();
+
+  blocks.forEach(block => {
+    if (block.tagName === 'PRE' && block.isConnected) highlight(block);
+  });
+
+  selection.removeAllRanges();
+  selection.addRange(caret);
+  const holder = caret.startContainer instanceof Element ? caret.startContainer : caret.startContainer.parentElement;
+  return { line: (holder?.closest(LINE) ?? holder ?? root) as HTMLElement, added: true };
+}

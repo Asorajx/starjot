@@ -2,6 +2,7 @@ import {
   memo, useCallback, useEffect, useLayoutEffect, useRef, useState,
   type ClipboardEvent, type DragEvent, type FormEvent, type KeyboardEvent, type MouseEvent, type ReactNode
 } from 'react';
+import { flushSync } from 'react-dom';
 import { cleanHtml } from '../sanitize';
 import { BlockRow } from './BlockRow';
 import {
@@ -10,10 +11,11 @@ import {
 } from './blockModel';
 import { isRuleOnly, mergeContents, splitAtCaret } from './blockEditing';
 import { deleteKeepingPages, handleBlockKeys, hydratePages, pageBlocksIn } from './blocks';
-import { getLength, setOffset } from './caret';
+import { getLength, getOffset, setOffset } from './caret';
 import { highlight, insertNewline, preAtCaret } from './code';
 import { caretAtEdge, closestAtCaret, emptyParagraph, isEmptyContent, placeCaret, selectContents, selectionInside, wrapLooseLines } from './dom';
 import { applyMarkdownShortcut } from './markdown';
+import { deleteSelection, insertPasted, pastedMarkdown } from './paste';
 import type { EditorSession } from './session';
 
 type StructuredEditorProps = {
@@ -56,6 +58,10 @@ export const StructuredEditor = memo(function StructuredEditor({ session, conten
   const elements = useRef(new Map<string, HTMLDivElement>());
   const focusRequest = useRef<FocusRequest | null>(null);
   const draggedIds = useRef<string[]>([]);
+
+  /* True while the second part of one edit is applied (a paste after deleting across blocks), */
+  /* so both parts are undone together. */
+  const continuingEdit = useRef(false);
   selectionRef.current = selection;
 
   const register = useCallback((id: string, element: HTMLDivElement | null) => {
@@ -83,7 +89,7 @@ export const StructuredEditor = memo(function StructuredEditor({ session, conten
 
   /* Apply a structural change: re-render the blocks, move the caret and save it as one undo step. */
   function applyBlocks(next: DocBlock[], focus: FocusRequest | null) {
-    session.checkpoint();
+    if (!continuingEdit.current) session.checkpoint();
     const normalized = normalizeGroups(next);
     blocksRef.current = normalized;
     setBlocks(normalized);
@@ -113,7 +119,8 @@ export const StructuredEditor = memo(function StructuredEditor({ session, conten
     const target = path === undefined ? null : element.querySelectorAll('*')[path];
     if (target) {
       bodyRef.current?.focus({ preventScroll: true });
-      placeCaret(target, position === 'end');
+      if (typeof position === 'number') setOffset(target, position);
+      else placeCaret(target, position === 'end');
     } else if (typeof position === 'number') {
       setOffset(element, position);
     } else {
@@ -358,7 +365,8 @@ export const StructuredEditor = memo(function StructuredEditor({ session, conten
 
   /* New lines added inside one block (by a slash command, toggle or table) become blocks of their own. */
   /* The element that should get the caret is marked with data-caret while the block is re-read. */
-  function splitLines(focus: HTMLElement | null, atEnd: boolean) {
+  /* offset: the caret's exact place in that element, when it is not at its start or end. */
+  function splitLines(focus: HTMLElement | null, atEnd: boolean, offset?: number) {
     focus?.setAttribute('data-caret', '');
     const live = liveBlocks();
     const index = live.findIndex(block => block.id === (blockIdOf(focus) ?? selectionRef.current.activeId));
@@ -372,7 +380,7 @@ export const StructuredEditor = memo(function StructuredEditor({ session, conten
     const target = parts.find(part => part.html.includes('data-caret'));
     const cleaned = parts.map(part => ({ ...part, html: part.html.replace(/ data-caret=""/g, '') }));
     live.splice(index, 1, ...cleaned);
-    const position = atEnd ? 'end' : 'start';
+    const position = offset ?? (atEnd ? 'end' : 'start');
     if (!target) {
       applyBlocks(live, { id: cleaned[cleaned.length - 1].id, position });
       return;
@@ -680,12 +688,19 @@ export const StructuredEditor = memo(function StructuredEditor({ session, conten
     commitTyping();
   }
 
-  /* Paste plain text only, so external HTML cannot bring in styles or scripts. */
+  /* Paste plain text only, so external HTML cannot bring in styles or scripts. Markdown in the */
+  /* text (links, bold, lists, headings and so on) is formatted, except when pasting into code. */
   function handlePaste(event: ClipboardEvent<HTMLDivElement>) {
     event.preventDefault();
     if (locked) return;
     session.checkpoint();
     const text = event.clipboardData.getData('text/plain');
+    const start = closestAtCaret('.block-content');
+    const lines = start && preAtCaret(start) ? null : pastedMarkdown(text, event.clipboardData.getData('text/html'));
+    if (lines) {
+      pasteLines(lines);
+      return;
+    }
     if (deleteAcross(text)) return;
 
     const editable = closestAtCaret('.block-content');
@@ -710,6 +725,23 @@ export const StructuredEditor = memo(function StructuredEditor({ session, conten
       window.getSelection()?.addRange(range);
       if (pre) highlight(pre);
       commitTyping();
+    }
+  }
+
+  /* Pasted Markdown lines go where the selection starts. A selection across blocks is deleted first, */
+  /* drawn at once (flushSync) so the caret is in the joined block; new lines then become blocks. */
+  function pasteLines(lines: HTMLElement[]) {
+    const deleted = flushSync(() => deleteAcross());
+    const editable = closestAtCaret('.block-content');
+    if (!editable) return;
+    deleteSelection(editable);
+    const pasted = insertPasted(editable, lines);
+    continuingEdit.current = deleted;
+    try {
+      if (pasted?.added) splitLines(pasted.line, true, getOffset(pasted.line) ?? undefined);
+      else commitTyping();
+    } finally {
+      continuingEdit.current = false;
     }
   }
 
@@ -742,14 +774,6 @@ export const StructuredEditor = memo(function StructuredEditor({ session, conten
     bodyRef.current?.focus({ preventScroll: true });
     window.getSelection()?.removeAllRanges();
     window.getSelection()?.addRange(range);
-  }
-
-  /* Links open in a new tab with Ctrl + click, or with a normal click on a locked note. */
-  function handleClick(event: MouseEvent<HTMLDivElement>) {
-    const link = (event.target as HTMLElement).closest<HTMLAnchorElement>('a[href]');
-    if (!link || !(locked || event.ctrlKey || event.metaKey)) return;
-    event.preventDefault();
-    window.open(link.href, '_blank', 'noopener');
   }
 
 
@@ -809,7 +833,6 @@ export const StructuredEditor = memo(function StructuredEditor({ session, conten
       onPaste={handlePaste}
       onCut={handleCut}
       onDoubleClick={handleDoubleClick}
-      onClick={handleClick}
     >
       {rows}
     </div>

@@ -6,6 +6,7 @@ import { hydrateTables } from './tables';
 import { highlight, highlightAll, insertNewline, preAtCaret } from './code';
 import { caretAtEdge, closestAtCaret, emptyParagraph, placeCaret, selectContents, wrapLooseLines } from './dom';
 import { applyMarkdownShortcut } from './markdown';
+import { deleteSelection, insertPasted, pastedMarkdown } from './paste';
 import { stickyStateForRange, toggleStickyRange } from './stickyDom';
 import type { EditorSession } from './session';
 
@@ -199,7 +200,8 @@ export const ContinuousEditor = memo(function ContinuousEditor({ session, conten
     commit();
   }
 
-  /* Paste plain text only, so external HTML cannot bring in styles or scripts. */
+  /* Paste plain text only, so external HTML cannot bring in styles or scripts. Markdown in the */
+  /* text (links, bold, lists, headings and so on) is formatted, except when pasting into code. */
   function handlePaste(event: ClipboardEvent<HTMLDivElement>) {
     const body = bodyRef.current;
     event.preventDefault();
@@ -207,6 +209,13 @@ export const ContinuousEditor = memo(function ContinuousEditor({ session, conten
     session.checkpoint();
     const text = event.clipboardData.getData('text/plain');
     const pre = preAtCaret(body);
+    const lines = pre ? null : pastedMarkdown(text, event.clipboardData.getData('text/html'));
+    if (lines) {
+      deleteSelection(body);
+      insertPasted(body, lines);
+      commit();
+      return;
+    }
 
     /* Pasting over a selection that holds page blocks keeps the blocks. */
     const selected = window.getSelection()?.rangeCount ? window.getSelection()?.getRangeAt(0) : null;
@@ -229,14 +238,6 @@ export const ContinuousEditor = memo(function ContinuousEditor({ session, conten
       if (pre) highlight(pre);
       commit();
     }
-  }
-
-  /* Links open in a new tab with Ctrl + click, or with a normal click on a locked note. */
-  function handleClick(event: MouseEvent<HTMLDivElement>) {
-    const link = (event.target as HTMLElement).closest<HTMLAnchorElement>('a[href]');
-    if (!link || !(locked || event.ctrlKey || event.metaKey)) return;
-    event.preventDefault();
-    window.open(link.href, '_blank', 'noopener');
   }
 
   /* Double-clicking the side of a sticky group selects the whole group. */
@@ -265,7 +266,6 @@ export const ContinuousEditor = memo(function ContinuousEditor({ session, conten
       onInput={handleInput}
       onPaste={handlePaste}
       onDoubleClick={handleDoubleClick}
-      onClick={handleClick}
     />
   );
 }, (previous, next) => previous.session === next.session && previous.locked === next.locked);
