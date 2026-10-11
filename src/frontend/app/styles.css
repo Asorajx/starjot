@@ -861,6 +861,14 @@ p {
   transform: none;
 }
 
+/* Buttons in a toolbar at the right side of a pane show their label to the left instead. */
+[data-tooltip][data-tooltip-side="left"]::after {
+  top: 50%;
+  left: auto;
+  right: calc(100% + 8px);
+  transform: translateY(-50%);
+}
+
 @keyframes tooltip-in {
   from {
     opacity: 0;

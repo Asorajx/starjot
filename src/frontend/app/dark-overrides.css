@@ -57,3 +57,9 @@
 [data-theme="dark"] .comment-mark.is-active {
   background: hsl(43 50% 25%);
 }
+
+/* The Ink colour swatch stays half dark, half light, since Ink follows the theme. */
+[data-theme="dark"] .drawing-color-dot.is-ink,
+[data-theme="dark"] .drawing-swatch.is-ink {
+  background: linear-gradient(135deg, #e6edf7 50%, #1c2c47 50%);
+}

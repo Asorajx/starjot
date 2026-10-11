@@ -15,6 +15,7 @@ import { SelectionToolbar } from './SelectionToolbar';
 import { SlashMenu } from './SlashMenu';
 import { TableTools } from './TableTools';
 import { BlockWidgets } from './BlockWidgets';
+import { DrawingLayer, DrawingTools } from './DrawingLayer';
 import { ImageTools } from './ImageTools';
 import { LinkTools } from './LinkTools';
 import { copyPageLink } from './links';
@@ -158,6 +159,7 @@ export function NoteEditor({ noteId, history, view, active, onClose, onOpenNote,
   const [confirmDelete, setConfirmDelete] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLElement>(null);
+  const drawingRef = useRef<HTMLDivElement>(null);
 
   /* Ids that link the panel buttons to their panels; each open note needs its own. */
   const panelId = useId();
@@ -172,6 +174,11 @@ export function NoteEditor({ noteId, history, view, active, onClose, onOpenNote,
     const timer = window.setInterval(() => setTick(tick => tick + 1), 5000);
     return () => window.clearInterval(timer);
   }, [temporary]);
+
+  /* Drawing mode (the pencil in the page bar) lets the mouse draw over the note. A locked note */
+  /* shows its drawing but cannot be drawn on. */
+  const [drawingMode, setDrawingMode] = useState(false);
+  const drawing = drawingMode && !locked;
 
   /* One editing session per open note: undo history, Sticky state and editor actions. */
   const session = useMemo(() => new EditorSession(noteId, getNote(noteId)?.content ?? ''), [noteId]);
@@ -220,10 +227,12 @@ export function NoteEditor({ noteId, history, view, active, onClose, onOpenNote,
       const key = event.key.toLowerCase();
       const command = (event.ctrlKey || event.metaKey) && !event.altKey;
 
-      /* Escape closes an open panel first, then returns to the Notespace home page. */
+      /* Escape closes an open panel first, then leaves drawing mode, then returns to the Notespace */
+      /* home page. */
       if (event.key === 'Escape') {
         event.preventDefault();
         if (panel) setPanel(null);
+        else if (drawing) setDrawingMode(false);
         else onClose();
         return;
       }
@@ -253,7 +262,7 @@ export function NoteEditor({ noteId, history, view, active, onClose, onOpenNote,
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [active, panel, session, onClose, locked]);
+  }, [active, panel, session, onClose, locked, drawing]);
 
   /* Ctrl + mouse wheel over the note zooms it. The listener is not passive so the page does not zoom. */
   useEffect(() => {
@@ -320,11 +329,20 @@ export function NoteEditor({ noteId, history, view, active, onClose, onOpenNote,
 
   const togglePanel = (name: Exclude<Panel, null>) => setPanel(current => (current === name ? null : name));
 
+  /* Drawing takes the mouse away from the text, so any text selection (and its toolbar) is cleared. */
+  function toggleDrawing() {
+    if (!drawing) {
+      window.getSelection()?.removeAllRanges();
+      (document.activeElement as HTMLElement | null)?.blur?.();
+    }
+    setDrawingMode(!drawing);
+  }
+
   /* Undo, redo and Sticky keep the editor's selection by ignoring the mouse press itself. */
   const keepSelection = (event: ReactMouseEvent) => event.preventDefault();
 
   return (
-    <div ref={wrapRef} className={`editor-wrap ${locked ? 'is-locked' : ''} ${geometry ? 'is-paginated' : ''}`}>
+    <div ref={wrapRef} className={`editor-wrap ${locked ? 'is-locked' : ''} ${geometry ? 'is-paginated' : ''} ${drawing ? 'is-drawing' : ''}`}>
       <PageBar history={history} className={`editor-page-bar ${typing && !panel ? 'is-hidden' : ''}`}>
         <NoteBreadcrumb note={note} onOpenNote={onOpenNote} onOpenCategory={onOpenCategory} />
         <span className="page-bar-fill" />
@@ -351,6 +369,18 @@ export function NoteEditor({ noteId, history, view, active, onClose, onOpenNote,
           onClick={() => session.toggleSticky()}
         >
           <Icon name="link" size={17} />
+        </button>
+
+        <button
+          type="button"
+          className={`page-bar-button ${drawing ? 'selected' : ''}`}
+          aria-pressed={drawing}
+          data-tooltip={drawing ? 'Stop drawing (Esc)' : 'Draw'}
+          aria-label={drawing ? 'Stop drawing' : 'Draw'}
+          disabled={locked}
+          onClick={toggleDrawing}
+        >
+          <Icon name="pencil" size={17} />
         </button>
 
         <button type="button" data-panel-toggle className={`page-bar-button ${panel === 'toc' ? 'selected' : ''}`} data-tooltip={panel === 'toc' ? undefined : 'Contents'} aria-label="Contents" aria-expanded={panel === 'toc'} aria-controls={`${panelId}-toc`} onClick={() => togglePanel('toc')}>
@@ -394,6 +424,7 @@ export function NoteEditor({ noteId, history, view, active, onClose, onOpenNote,
       </PageBar>
 
       <div className="editor-layout">
+        {drawing && <DrawingTools session={session} strokes={note.drawing} layerRef={drawingRef} onClose={() => setDrawingMode(false)} />}
         <main className={`editor-canvas ${geometry ? 'is-paginated' : ''}`} ref={canvasRef}>
           {/* Zoom scales everything in the note, using the CSS zoom property. A paginated note's */}
           {/* column is exactly one page wide, with the page margin as its padding, and as tall as */}
@@ -412,6 +443,7 @@ export function NoteEditor({ noteId, history, view, active, onClose, onOpenNote,
                 ))}
               </div>
             )}
+            <DrawingLayer strokes={note.drawing} inset={geometry?.margin ?? 0} layerRef={drawingRef} />
             <div className="editor-meta">
               <span className="page-type"><Icon name="file-text" size={14} /> DOCUMENT</span>
               <span className="meta-dot">•</span>

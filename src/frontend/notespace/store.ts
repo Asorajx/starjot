@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from 'react';
 import { cleanHtml, htmlToText } from './sanitize';
+import { normalizeDrawing } from './editor/drawing';
 import { DEFAULT_CATEGORIES, MAX_CATEGORIES } from '../../backend/data/defaultCategories';
 import { SAMPLE_CONTENT, SAMPLE_NOTES } from '../../backend/data/sampleNotes';
 import { readCategories, writeCategories } from '../../backend/storage/categoriesStorage';
@@ -98,6 +99,7 @@ function normalizeNote(raw: unknown): Note | null {
     pagesHidden: record.pagesHidden === true,
     parentId: /^[a-zA-Z0-9_-]+$/.test(String(record.parentId ?? '')) ? String(record.parentId) : '',
     comments: normalizeComments(record.comments),
+    drawing: normalizeDrawing(record.drawing),
     content: cleanHtml(record.content ?? SAMPLE_CONTENT[id] ?? '')
   };
 }
@@ -246,6 +248,7 @@ export function updateNote(id: string, changes: NoteChanges, persist = true) {
   if (typeof changes.landscape === 'boolean') next.landscape = changes.landscape;
   if (changes.remarks !== undefined) next.remarks = cleanHtml(String(changes.remarks).slice(0, REMARKS_LENGTH));
   if (changes.comments) next.comments = normalizeComments(changes.comments);
+  if (changes.drawing) next.drawing = normalizeDrawing(changes.drawing);
 
   /* Locking or unlocking from Page options ends any short unlock. */
   if (typeof changes.locked === 'boolean') {
@@ -254,7 +257,7 @@ export function updateNote(id: string, changes: NoteChanges, persist = true) {
   }
 
   /* An edit while the note is unlocked for a short time starts the countdown again. */
-  const edits = (['title', 'subtitle', 'category', 'icon', 'content', 'remarks', 'comments'] as const).some(key => changes[key] !== undefined);
+  const edits = (['title', 'subtitle', 'category', 'icon', 'content', 'remarks', 'comments', 'drawing'] as const).some(key => changes[key] !== undefined);
   if (edits && isTemporarilyUnlocked(current)) next.unlockedUntil = new Date(Date.now() + TEMPORARY_UNLOCK_MS).toISOString();
 
   setState({ notes: state.notes.map(note => (note.id === id ? next : note)) });

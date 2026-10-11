@@ -59,6 +59,9 @@ export type Note = {
   comments: NoteComment[];
   content: string;
 
+  /* Pen and highlighter strokes drawn over the note in drawing mode, oldest first. */
+  drawing: DrawingStroke[];
+
   /* Free remarks about the note, written in the details (sanitized HTML). They are not part of the */
   /* note's text, so they never appear in previews. */
   remarks: string;
@@ -72,10 +75,29 @@ export type NoteComment = {
   createdAt: string;
 };
 
+/* A pen draws solid lines; a highlighter draws wide see-through lines under the pen strokes. */
+export type DrawingTool = 'pen' | 'highlighter';
+
+/* One line drawn in drawing mode. */
+export type DrawingStroke = {
+  tool: DrawingTool;
+
+  /* A hex colour such as #e5484d, or "ink": the colour of the note's text, which follows light */
+  /* and dark mode. */
+  color: string;
+
+  /* The line's width in pixels. */
+  size: number;
+
+  /* The line's points as x, y, x, y… in pixels from the top-left corner of the note's text */
+  /* column, at 100% zoom. Drawings stay where they are drawn, whatever the text does. */
+  points: number[];
+};
+
 /* The fields an editor may change; everything else is managed by the store. */
 export type NoteChanges = Partial<Pick<Note,
   'title' | 'subtitle' | 'category' | 'icon' | 'content' | 'mode' | 'stickyIndicator' | 'layout' | 'pageSize' | 'landscape' | 'locked' | 'detailsHidden'
-  | 'pagesHidden' | 'comments' | 'remarks'>>;
+  | 'pagesHidden' | 'comments' | 'remarks' | 'drawing'>>;
 
 /* A user-defined group of notes, such as "Work". Notes refer to it by id, so renaming is safe. */
 export type Category = {

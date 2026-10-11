@@ -69,4 +69,14 @@ describe('preferences', () => {
     preferences = await openApp();
     expect(preferences.getPreferences().hideHeaderWhileTyping).toBe(false);
   });
+
+  it('remembers the drawing tools, ignoring broken colours and sizes', async () => {
+    localStorage.setItem('strata-preferences-v1', JSON.stringify({ drawing: { tool: 'eraser', pen: { color: 'red', size: 99 }, highlighter: { color: '#30a46c' } } }));
+    const preferences = await openApp();
+    expect(preferences.getPreferences().drawing).toEqual({
+      tool: 'eraser',
+      pen: { color: 'ink', size: 48 },
+      highlighter: { color: '#30a46c', size: 18 }
+    });
+  });
 });

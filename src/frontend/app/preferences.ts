@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from 'react';
 import { readPreferences, writePreferences } from '../../backend/storage/preferencesStorage';
+import { clampSize, HEX_COLOR, INK } from '../notespace/editor/drawing';
 
 /* App-wide preferences that apply to every note and screen; the backend saves them. */
 export type Theme = 'light' | 'dark';
@@ -9,6 +10,16 @@ export type ContentsScroll = 'smooth' | 'instant';
 
 /* The order of the All notes list. */
 export type NotesSort = 'edited' | 'opened' | 'title';
+
+/* What drawing mode draws with: the chosen tool, and the pen's and highlighter's own colour and */
+/* size. The eraser removes whole strokes. */
+export type DrawingToolName = 'pen' | 'highlighter' | 'eraser';
+export type PenSettings = { color: string; size: number };
+export type DrawingPreferences = {
+  tool: DrawingToolName;
+  pen: PenSettings;
+  highlighter: PenSettings;
+};
 
 export type Preferences = {
   theme: Theme;
@@ -21,6 +32,7 @@ export type Preferences = {
 
   /* Fade the page bar above a note while typing, until the mouse moves. */
   hideHeaderWhileTyping: boolean;
+  drawing: DrawingPreferences;
 };
 
 export const ZOOM_MIN = 0.5;
@@ -34,9 +46,31 @@ const listeners = new Set<() => void>();
    Loading and Saving
    ========================= */
 
+/* A saved pen's colour and size, or the defaults when they are missing or broken. */
+function loadPen(saved: unknown, defaults: PenSettings): PenSettings {
+  const record = (saved && typeof saved === 'object' ? saved : {}) as Record<string, unknown>;
+  const color = String(record.color ?? '');
+  return {
+    color: color === INK || HEX_COLOR.test(color) ? color : defaults.color,
+    size: typeof record.size === 'number' ? clampSize(record.size) : defaults.size
+  };
+}
+
+function loadDrawing(saved: unknown): DrawingPreferences {
+  const record = (saved && typeof saved === 'object' ? saved : {}) as Record<string, unknown>;
+  const tool = record.tool === 'highlighter' || record.tool === 'eraser' ? record.tool : 'pen';
+  return {
+    tool,
+    pen: loadPen(record.pen, { color: INK, size: 3 }),
+    highlighter: loadPen(record.highlighter, { color: '#ffd84d', size: 18 })
+  };
+}
+
 /* Light mode is the default; once a theme is chosen in Settings it is remembered between visits. */
 function load(): Preferences {
-  const defaults: Preferences = { theme: 'light', zoom: 1, sidebarCollapsed: false, contentsScroll: 'smooth', notesSort: 'edited', hideHeaderWhileTyping: true };
+  const defaults: Preferences = {
+    theme: 'light', zoom: 1, sidebarCollapsed: false, contentsScroll: 'smooth', notesSort: 'edited', hideHeaderWhileTyping: true, drawing: loadDrawing(null)
+  };
   const saved = readPreferences();
   return {
     theme: saved.theme === 'dark' || saved.theme === 'light' ? saved.theme : defaults.theme,
@@ -44,7 +78,8 @@ function load(): Preferences {
     sidebarCollapsed: saved.sidebarCollapsed === true,
     contentsScroll: saved.contentsScroll === 'instant' ? 'instant' : 'smooth',
     notesSort: saved.notesSort === 'opened' || saved.notesSort === 'title' ? saved.notesSort : defaults.notesSort,
-    hideHeaderWhileTyping: saved.hideHeaderWhileTyping !== false
+    hideHeaderWhileTyping: saved.hideHeaderWhileTyping !== false,
+    drawing: loadDrawing(saved.drawing)
   };
 }
 

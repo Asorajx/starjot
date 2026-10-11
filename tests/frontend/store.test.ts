@@ -316,3 +316,16 @@ describe('remarks', () => {
     expect(store.getNote(note.id)?.remarks).toBe('<ul><li>Check sources</li></ul>');
   });
 });
+
+describe('drawings', () => {
+  it('saves a note drawing and keeps it after reopening', async () => {
+    let store = await openApp();
+    const note = store.createNote();
+    store.updateNote(note.id, { drawing: [{ tool: 'pen', color: '#e5484d', size: 3, points: [1, 2, 3, 4] }] });
+
+    vi.resetModules();
+    store = await openApp();
+    expect(store.getNote(note.id)?.drawing).toEqual([{ tool: 'pen', color: '#e5484d', size: 3, points: [1, 2, 3, 4] }]);
+    expect(store.getNote('atlas')?.drawing).toEqual([]);
+  });
+});

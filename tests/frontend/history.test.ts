@@ -56,6 +56,19 @@ describe('History with comments', () => {
   });
 });
 
+describe('History with drawings', () => {
+  it('adds a step when only the drawing changes, and brings it back on undo', () => {
+    const before = [{ tool: 'pen' as const, color: 'ink', size: 2, points: [0, 0] }];
+    const history = new History('a', [], before);
+    history.checkpoint();
+    expect(history.record('a', null, [], before)).toBe(false);
+    expect(history.record('a', null, [], [])).toBe(true);
+
+    expect(history.undo()?.drawing).toBe(before);
+    expect(history.redo()?.drawing).toEqual([]);
+  });
+});
+
 describe('TypingSteps', () => {
   /* Type characters one by one and return which ones started a new undo step. */
   function typeText(steps: TypingSteps, text: string) {

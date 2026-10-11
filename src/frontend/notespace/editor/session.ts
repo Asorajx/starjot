@@ -7,6 +7,7 @@ import { charBesideCaret } from './dom';
 import { getOffset } from './caret';
 import { typeAfterLink } from './links';
 import type { StickyState } from './blockModel';
+import type { DrawingStroke } from '../../../shared/types/note';
 
 /* Each editor (continuous or structured) registers these actions with the session. */
 export type EditorAdapter = {
@@ -53,7 +54,8 @@ export class EditorSession {
 
   constructor(noteId: string, content: string) {
     this.noteId = noteId;
-    this.history = new History(content, getNote(noteId)?.comments ?? []);
+    const note = getNote(noteId);
+    this.history = new History(content, note?.comments ?? [], note?.drawing ?? []);
   }
 
   /* React subscribes with useSyncExternalStore; each change creates a new snapshot object. */
@@ -96,19 +98,23 @@ export class EditorSession {
     return this.bodyElement?.closest<HTMLElement>('.main-scroll') ?? null;
   }
 
-  /* Another pane can show the same note. When the note's content is changed there, this editor */
-  /* shows the new content as well (as one more undo step), so neither pane saves over the other's */
+  /* Another pane can show the same note. When the note's content or drawing is changed there, */
+  /* this editor shows the new content as well (as one more undo step), so neither pane saves over the other's */
   /* edits. Checking waits for a short pause in typing. Returns a function that stops watching. */
   watch() {
     let timer: number | undefined;
+    const changed = () => {
+      const note = getNote(this.noteId);
+      return Boolean(note) && (note?.content !== this.history.currentContent() || note?.drawing !== this.history.currentDrawing());
+    };
     const check = () => {
-      if (getNote(this.noteId)?.content === this.history.currentContent()) return;
+      if (!changed()) return;
       window.clearTimeout(timer);
       timer = window.setTimeout(() => {
         const note = getNote(this.noteId);
-        if (!note || note.content === this.history.currentContent()) return;
+        if (!note || !changed()) return;
         this.history.checkpoint();
-        this.history.record(note.content, null, note.comments);
+        this.history.record(note.content, null, note.comments, note.drawing);
         this.pendingCaret = null;
         this.typing.reset();
         this.update({ revision: this.snapshot.revision + 1 });
@@ -152,6 +158,17 @@ export class EditorSession {
     this.update({ layout: this.snapshot.layout + 1 });
   }
 
+  /* Save a new drawing (after a stroke is drawn or erased) as its own undo step. */
+  saveDrawing(drawing: DrawingStroke[]) {
+    const note = updateNote(this.noteId, { drawing }, false);
+    if (!note) return;
+    scheduleSave();
+    this.history.checkpoint();
+    this.history.record(note.content, this.history.currentCaret(), note.comments, note.drawing);
+    this.typing.reset();
+    this.update({});
+  }
+
   updateCaret() {
     this.history.updateCaret(getOffset(this.body()));
   }
@@ -166,7 +183,7 @@ export class EditorSession {
 
   private restore(entry: HistoryEntry | null) {
     if (!entry) return;
-    updateNote(this.noteId, { content: entry.content, comments: entry.comments }, false);
+    updateNote(this.noteId, { content: entry.content, comments: entry.comments, drawing: entry.drawing }, false);
     scheduleSave();
     this.pendingCaret = entry.caret;
     this.typing.reset();
