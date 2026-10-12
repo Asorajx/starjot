@@ -1,8 +1,8 @@
 import { useState, type MouseEvent, type ReactNode } from 'react';
-import { ConfirmDialog } from '../components/ConfirmDialog';
+import { DeleteNoteDialog } from './DeleteNoteDialog';
 import { Icon } from '../components/Icon';
 import { useDismiss } from '../lib/useDismiss';
-import { childrenOf, deleteNote, getNote } from './store';
+import { deleteNote, getNote } from './store';
 
 
 /* =========================
@@ -43,14 +43,12 @@ export function useNoteMenu({ onOpen, onOpenInNewTab }: NoteMenuActions): NoteMe
     action(open.id);
   }
 
-  function confirmDelete() {
-    if (deleting) deleteNote(deleting);
+  function confirmDelete(withSubNotes: boolean) {
+    if (deleting) deleteNote(deleting, withSubNotes);
     setDeleting(null);
   }
 
   const note = open ? getNote(open.id) : undefined;
-  const deletingNote = deleting ? getNote(deleting) : undefined;
-  const nested = deleting ? childrenOf(deleting).length : 0;
 
   const menu = (
     <>
@@ -81,12 +79,7 @@ export function useNoteMenu({ onOpen, onOpenInNewTab }: NoteMenuActions): NoteMe
         </div>
       )}
 
-      {deleting && (
-        <ConfirmDialog title="Delete this note?" confirmLabel="Delete note" danger onConfirm={confirmDelete} onCancel={() => setDeleting(null)}>
-          <p><strong>{deletingNote?.title || 'Untitled note'}</strong> will be removed from this browser. This cannot be undone.</p>
-          {nested > 0 && <p>Its {nested} sub-note(s) will be kept and move up one level.</p>}
-        </ConfirmDialog>
-      )}
+      {deleting && <DeleteNoteDialog noteId={deleting} onConfirm={confirmDelete} onCancel={() => setDeleting(null)} />}
     </>
   );
 

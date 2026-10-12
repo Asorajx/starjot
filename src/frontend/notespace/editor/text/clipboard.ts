@@ -1,6 +1,7 @@
 import { cleanHtml } from '../../sanitize';
 import { markdownOf } from '../../export/exportMarkdown';
 import { LINE_TAGS } from './dom';
+import { copiedTables, NOTE_TABLES, selectedCells, tableSlice, tableText } from '../tables/tableClipboard';
 
 /* A clipboard type only Starjot reads: the copied text as Markdown, so pasting it into a note */
 /* brings back its headings, lists, quotes, code and formatting. Other apps get plain text. */
@@ -40,20 +41,33 @@ export function selectionHtml(range: Range, root: Element) {
   return cleanHtml(holder.innerHTML);
 }
 
-/* Fill the clipboard when copying or cutting in a note: plain text (as the browser would), the */
-/* HTML, and the Markdown version for pasting back into a note. Returns false (leaving the browser */
-/* to copy) when nothing in the note is selected. */
+/* Put copied note HTML on the clipboard: the plain text, the HTML, the Markdown version for */
+/* pasting back into a note, and any tables in full (so they keep their look when pasted). */
+export function writeClipboard(data: DataTransfer, html: string, plain: string) {
+  const holder = document.createElement('div');
+  holder.innerHTML = html;
+  data.setData('text/plain', plain);
+  data.setData('text/html', html);
+  data.setData(NOTE_MARKDOWN, markdownOf(holder));
+  const tables = Array.from(holder.querySelectorAll('table'));
+  if (tables.length) data.setData(NOTE_TABLES, tables.map(table => table.outerHTML).join(''));
+}
+
+/* Fill the clipboard when copying or cutting in a note. A selection from one table cell to */
+/* another copies those cells as a table (tab-separated as plain text, as spreadsheets expect). */
+/* Returns false (leaving the browser to copy) when nothing in the note is selected. */
 export function writeSelection(event: ClipboardEvent, root: Element) {
   const selection = window.getSelection();
   const range = selection?.rangeCount ? selection.getRangeAt(0) : null;
   if (!selection || !range || range.collapsed || !event.clipboardData || !root.contains(range.commonAncestorContainer)) return false;
-  const html = selectionHtml(range, root);
-  const holder = document.createElement('div');
-  holder.innerHTML = html;
   event.preventDefault();
-  event.clipboardData.setData('text/plain', selection.toString());
-  event.clipboardData.setData('text/html', html);
-  event.clipboardData.setData(NOTE_MARKDOWN, markdownOf(holder));
+  const cells = selectedCells(range, root);
+  if (cells) {
+    const slice = tableSlice(cells.table, cells.cells);
+    writeClipboard(event.clipboardData, cleanHtml(slice.outerHTML), tableText(slice));
+  } else {
+    writeClipboard(event.clipboardData, selectionHtml(range, root), selection.toString());
+  }
   return true;
 }
 
@@ -61,4 +75,11 @@ export function writeSelection(event: ClipboardEvent, root: Element) {
 /* note, or else the plain text. */
 export function pastedSource(data: DataTransfer) {
   return data.getData(NOTE_MARKDOWN) || data.getData('text/plain');
+}
+
+/* Pasted lines with each table read from Markdown swapped for the same table as it was copied, */
+/* with its look (see NOTE_TABLES). */
+export function withCopiedTables(lines: HTMLElement[], data: DataTransfer) {
+  const tables = copiedTables(data);
+  return lines.map(line => (line.tagName === 'TABLE' ? tables.shift() ?? line : line));
 }

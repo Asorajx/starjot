@@ -1138,6 +1138,29 @@ p {
   line-height: 1.6;
 }
 
+.dialog-body p + p {
+  margin-top: 8px;
+}
+
+/* A choice inside a dialog, such as also deleting a note's sub-notes. */
+.dialog-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.dialog-check input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--blue);
+}
+
 .dialog-actions {
   display: flex;
   justify-content: flex-end;

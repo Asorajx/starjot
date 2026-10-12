@@ -1,0 +1,120 @@
+/* =========================
+   Find Bar
+   ========================= */
+
+/* The find bar opens under the note bar, on the right, like the note's other panels. */
+.find-bar {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 24px;
+  z-index: 31;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: min(440px, calc(100vw - 32px));
+  padding: 8px;
+  border: 1px solid #dfe7f3;
+  border-radius: 4px;
+  background: #fff;
+  box-shadow: 0 10px 30px rgba(28, 54, 96, .18);
+}
+
+.find-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.find-input {
+  flex: 1;
+  min-width: 0;
+  height: 32px;
+  padding: 0 8px;
+  border: 1px solid #dfe7f3;
+  border-radius: 4px;
+  background: #fff;
+  color: #1c2c47;
+  font: inherit;
+  font-size: 13px;
+}
+
+.find-count {
+  min-width: 64px;
+  color: #56657b;
+  font-size: 12px;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.find-button {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: #4f6280;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.find-button:hover:not(:disabled),
+.find-button.is-on {
+  background: var(--blue-soft);
+  color: var(--blue);
+}
+
+.find-button:disabled {
+  color: #66748a;
+  opacity: .5;
+  cursor: default;
+}
+
+.find-button .icon.is-turned {
+  transform: rotate(90deg);
+}
+
+/* The replace row lines its box up with the find box above it. */
+.find-spacer {
+  flex-shrink: 0;
+  width: 28px;
+}
+
+.find-scope {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 0 4px 0 32px;
+  color: #56657b;
+  font-size: 12px;
+}
+
+.find-link {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--blue);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* Matches are shown with the browser's highlights, so the note's text is never changed by finding. */
+::highlight(find-match) {
+  background-color: #fde68a;
+}
+
+::highlight(find-current) {
+  background-color: #f59e0b;
+  color: #1c2c47;
+}
+
+::highlight(find-scope) {
+  background-color: #e8f0ff;
+}

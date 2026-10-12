@@ -20,7 +20,8 @@ import { imageFiles, insertImageFiles } from '../images/images';
 import { linkTypedAddress } from '../links/links';
 import { applyMarkdownShortcut } from './markdown';
 import { deleteSelection, insertPasted, pastedMarkdown } from './paste';
-import { pastedSource, writeSelection } from './clipboard';
+import { pastedSource, withCopiedTables, writeSelection } from './clipboard';
+import { clearSelectedCells, pasteIntoTable } from '../tables/tableClipboard';
 import type { EditorSession } from '../session';
 
 type StructuredEditorProps = {
@@ -747,9 +748,16 @@ export const StructuredEditor = memo(function StructuredEditor({ session, conten
     session.checkpoint();
     const text = event.clipboardData.getData('text/plain');
     const start = closestAtCaret('.block-content');
-    const lines = start && preAtCaret(start) ? null : pastedMarkdown(pastedSource(event.clipboardData), event.clipboardData.getData('text/html'));
+    const inCode = Boolean(start && preAtCaret(start));
+    const lines = inCode ? null : pastedMarkdown(pastedSource(event.clipboardData), event.clipboardData.getData('text/html'));
+
+    /* In a table, copied cells go in cell by cell (see tableClipboard.ts). */
+    if (!inCode && bodyRef.current && pasteIntoTable(event.clipboardData, bodyRef.current, lines)) {
+      commitTyping();
+      return;
+    }
     if (lines) {
-      pasteLines(lines);
+      pasteLines(withCopiedTables(lines, event.clipboardData));
       return;
     }
     if (deleteAcross(text)) return;
@@ -811,7 +819,10 @@ export const StructuredEditor = memo(function StructuredEditor({ session, conten
       return;
     }
     if (!writeSelection(event.nativeEvent, body)) return;
-    if (selectionRef.current.picked.length >= 2) deleteAcross();
+
+    /* Cut table cells are emptied, keeping the table's shape. */
+    if (clearSelectedCells(body)) commitTyping();
+    else if (selectionRef.current.picked.length >= 2) deleteAcross();
     else document.execCommand('delete');
   }
 

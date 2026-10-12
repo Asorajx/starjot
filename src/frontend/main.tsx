@@ -13,6 +13,7 @@ import './notespace/editor/text/text.css';
 import './notespace/editor/code/code.css';
 import './notespace/editor/links/links.css';
 import './notespace/editor/format/format.css';
+import './notespace/editor/find/find.css';
 import './components/emoji-picker.css';
 import './notespace/editor/images/images.css';
 import './notespace/editor/tables/tables.css';

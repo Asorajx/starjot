@@ -1,9 +1,10 @@
 import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type MouseEvent as ReactMouseEvent } from 'react';
 import { changeZoom, usePreferences } from '../../app/preferences';
-import { ConfirmDialog } from '../../components/ConfirmDialog';
+import { DeleteNoteDialog } from '../DeleteNoteDialog';
+import { FindBar } from './find/FindBar';
 import { Icon } from '../../components/Icon';
 import {
-  childrenOf, deleteNote, flushSave, getNote, isLocked, isTemporarilyUnlocked, markOpened, setPinned, updateNote,
+  deleteNote, flushSave, getNote, isLocked, isTemporarilyUnlocked, markOpened, setPinned, updateNote,
   updatedLabel, useCategories, useNote
 } from '../store';
 import type { NoteMode } from '../../../shared/types/note';
@@ -89,6 +90,10 @@ export function NoteEditor({ noteId, history, view, active, onClose, onOpenNote,
   const [panel, setPanel] = useState<Panel>(null);
   const [switching, setSwitching] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+
+  /* The find bar, while open: the selected text it searches (or null for the whole note), and */
+  /* whether it opened with its replace row (Ctrl+H). */
+  const [finding, setFinding] = useState<{ within: Range | null; replacing: boolean } | null>(null);
   const [exporting, setExporting] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLElement>(null);
@@ -176,6 +181,17 @@ export function NoteEditor({ noteId, history, view, active, onClose, onOpenNote,
         return;
       }
 
+      /* Ctrl+F finds words in the note, and Ctrl+H replaces them, instead of the browser's own */
+      /* find. Text selected in the note limits the search to it. */
+      if (command && (key === 'f' || key === 'h')) {
+        event.preventDefault();
+        const selection = window.getSelection();
+        const range = selection?.rangeCount ? selection.getRangeAt(0) : null;
+        const selected = range && !range.collapsed && session.body()?.contains(range.commonAncestorContainer) ? range.cloneRange() : null;
+        setFinding(current => ({ within: selected ?? (inEditor || !current ? null : current.within), replacing: key === 'h' }));
+        return;
+      }
+
       /* Ctrl + = / Ctrl + − / Ctrl + 0 zoom the note instead of the whole window. */
       if (command && (key === '=' || key === '+' || key === '-' || key === '0')) {
         event.preventDefault();
@@ -260,9 +276,9 @@ export function NoteEditor({ noteId, history, view, active, onClose, onOpenNote,
     setSwitching(true);
   }
 
-  function removeNote() {
+  function removeNote(withSubNotes: boolean) {
     setConfirmDelete(false);
-    deleteNote(noteId);
+    deleteNote(noteId, withSubNotes);
     onClose();
   }
 
@@ -380,6 +396,18 @@ export function NoteEditor({ noteId, history, view, active, onClose, onOpenNote,
           <Icon name="sliders-horizontal" size={17} />
         </button>
 
+        {finding && (
+          <FindBar
+            session={session}
+            locked={locked}
+            content={note.content}
+            within={finding.within}
+            replacing={finding.replacing}
+            onClearWithin={() => setFinding(current => current && { ...current, within: null })}
+            onClose={() => setFinding(null)}
+          />
+        )}
+
         <TableOfContents id={`${panelId}-toc`} session={session} content={note.content} open={panel === 'toc'} onClose={() => setPanel(null)} />
         <PageOptions
           id={`${panelId}-options`}
@@ -465,12 +493,7 @@ export function NoteEditor({ noteId, history, view, active, onClose, onOpenNote,
 
       {exporting && <ExportDialog noteId={note.id} measure={measureForExport} onClose={() => setExporting(false)} />}
 
-      {confirmDelete && (
-        <ConfirmDialog title="Delete this note?" confirmLabel="Delete note" danger onConfirm={removeNote} onCancel={() => setConfirmDelete(false)}>
-          <p><strong>{note.title || 'Untitled note'}</strong> will be removed from this browser. This cannot be undone.</p>
-          {childrenOf(note.id).length > 0 && <p>Its {childrenOf(note.id).length} sub-note(s) will be kept and move up one level.</p>}
-        </ConfirmDialog>
-      )}
+      {confirmDelete && <DeleteNoteDialog noteId={note.id} onConfirm={removeNote} onCancel={() => setConfirmDelete(false)} />}
     </div>
   );
 }

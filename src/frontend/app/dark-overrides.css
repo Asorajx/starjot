@@ -136,3 +136,17 @@
 [data-theme="dark"] .bg-red {
   background: #4b2524;
 }
+
+/* The current find match keeps dark text on its orange, which light text would be hard to read on. */
+[data-theme="dark"] ::highlight(find-current) {
+  background-color: #f59e0b;
+  color: #111827;
+}
+
+[data-theme="dark"] ::highlight(find-match) {
+  background-color: #5c4a12;
+}
+
+[data-theme="dark"] ::highlight(find-scope) {
+  background-color: #1e2a3d;
+}

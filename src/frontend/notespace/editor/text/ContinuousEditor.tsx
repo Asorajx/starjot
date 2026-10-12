@@ -10,7 +10,8 @@ import { imageFiles, insertImageFiles } from '../images/images';
 import { linkTypedAddress } from '../links/links';
 import { applyMarkdownShortcut } from './markdown';
 import { deleteSelection, insertPasted, pastedMarkdown } from './paste';
-import { pastedSource, writeSelection } from './clipboard';
+import { pastedSource, withCopiedTables, writeSelection } from './clipboard';
+import { clearSelectedCells, pasteIntoTable } from '../tables/tableClipboard';
 import { stickyStateForRange, toggleStickyRange } from './stickyDom';
 import type { EditorSession } from '../session';
 
@@ -247,9 +248,15 @@ export const ContinuousEditor = memo(function ContinuousEditor({ session, conten
     const text = event.clipboardData.getData('text/plain');
     const pre = preAtCaret(body);
     const lines = pre ? null : pastedMarkdown(pastedSource(event.clipboardData), event.clipboardData.getData('text/html'));
+
+    /* In a table, copied cells go in cell by cell (see tableClipboard.ts). */
+    if (!pre && pasteIntoTable(event.clipboardData, body, lines)) {
+      commit();
+      return;
+    }
     if (lines) {
       deleteSelection(body);
-      insertPasted(body, lines);
+      insertPasted(body, withCopiedTables(lines, event.clipboardData));
       commit();
       return;
     }
@@ -290,7 +297,11 @@ export const ContinuousEditor = memo(function ContinuousEditor({ session, conten
       event.preventDefault();
       return;
     }
-    if (writeSelection(event.nativeEvent, body)) document.execCommand('delete');
+    if (!writeSelection(event.nativeEvent, body)) return;
+
+    /* Cut table cells are emptied, keeping the table's shape. */
+    if (clearSelectedCells(body)) commit();
+    else document.execCommand('delete');
   }
 
   /* Double-clicking the side of a sticky group selects the whole group. */

@@ -197,6 +197,19 @@ describe('sub-pages', () => {
     expect(store.getNote(child.id)?.parentId).toBe('');
   });
 
+  it('can delete a note with its sub-notes, keeping locked ones', async () => {
+    const store = await openApp();
+    const top = store.createNote();
+    const child = store.createSubpage(top.id)!;
+    const kept = store.createSubpage(top.id)!;
+    store.updateNote(kept.id, { locked: true });
+
+    store.deleteNote(top.id, true);
+    expect(store.getNote(top.id)).toBeUndefined();
+    expect(store.getNote(child.id)).toBeUndefined();
+    expect(store.getNote(kept.id)?.parentId).toBe('');
+  });
+
   it('moves pages nested deeper than allowed up into their top-level note', async () => {
     const page = (id: string, parentId: string) => ({ id, title: id, content: '<p></p>', mode: 'structured', parentId });
     localStorage.setItem('strata-notespace-v1', JSON.stringify({

@@ -43,11 +43,11 @@ export function openedLabel(note: Note) {
    Note Cards and Rows
    ========================= */
 
-/* Marks a sub-page in a list, so it is not mistaken for a top-level note. */
+/* Marks a sub-note in a list with the note it sits in, so it is not mistaken for a top-level note. */
 function SubpageTag({ note }: { note: Note }) {
   const parent = getNote(note.parentId);
   if (!parent) return null;
-  const label = `Sub-note of ${parent.title || 'Untitled note'}`;
+  const label = `In ‘${parent.title || 'Untitled note'}’`;
   return <span className="note-subpage-tag" title={label}>{label}</span>;
 }
 

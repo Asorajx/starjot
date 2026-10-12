@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
-import { ConfirmDialog } from '../../../components/ConfirmDialog';
+import { DeleteNoteDialog } from '../../DeleteNoteDialog';
 import { Icon } from '../../../components/Icon';
-import { childrenOf, deleteNote, getNote, separatePage, useNotes } from '../../store';
+import { deleteNote, getNote, separatePage, useNotes } from '../../store';
 import { deleteKeepingPages, hydratePages, pageBlocksIn, removePageBlocks, setPageWidth, stepOverPage, type PageSize } from './pageBlocks';
 import { lineBelowTable, typeOutsideComment } from './blockKeys';
 import { placeCaret } from './dom';
@@ -284,16 +284,14 @@ export function BlockWidgets({ session, locked, onOpenNote }: BlockWidgetsProps)
     separatePage(id);
   }
 
-  function confirmDelete() {
+  function confirmDelete(withSubNotes: boolean) {
     if (!deleting) return;
     removeFromText(deleting);
-    deleteNote(deleting);
+    deleteNote(deleting, withSubNotes);
     setDeleting(null);
   }
 
   const menuNote = pageMenu ? getNote(pageMenu.id) : undefined;
-  const deletingNote = deleting ? getNote(deleting) : undefined;
-  const nested = deleting ? childrenOf(deleting).length : 0;
 
   return (
     <>
@@ -343,12 +341,7 @@ export function BlockWidgets({ session, locked, onOpenNote }: BlockWidgetsProps)
         </div>
       )}
 
-      {deleting && (
-        <ConfirmDialog title="Delete this sub-note?" confirmLabel="Delete sub-note" danger onConfirm={confirmDelete} onCancel={() => setDeleting(null)}>
-          <p><strong>{deletingNote?.title || 'Untitled note'}</strong> and everything written in it will be removed from this browser. This cannot be undone.</p>
-          {nested > 0 && <p>Its {nested} sub-note(s) will be kept and move into this note.</p>}
-        </ConfirmDialog>
-      )}
+      {deleting && <DeleteNoteDialog noteId={deleting} sub onConfirm={confirmDelete} onCancel={() => setDeleting(null)} />}
     </>
   );
 }

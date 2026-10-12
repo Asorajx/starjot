@@ -308,7 +308,10 @@ export function markOpened(id: string) {
 }
 
 /* Remove a note permanently from this browser. Its sub-pages are kept and move up one level. */
-export function deleteNote(id: string) {
+/* Delete a note. Its sub-notes move up one level, unless withSubNotes is true: then they are */
+/* deleted too, except locked ones, which are kept (moving up) as a locked note cannot be deleted. */
+export function deleteNote(id: string, withSubNotes = false) {
+  if (withSubNotes) childrenOf(id).filter(child => !child.locked).forEach(child => deleteNote(child.id, true));
   const removed = getNote(id);
   if (SAMPLE_NOTES.some(note => note.id === id)) deletedIds = [...deletedIds, id];
 
