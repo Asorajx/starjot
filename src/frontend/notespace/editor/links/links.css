@@ -44,7 +44,7 @@
   border: 1px solid #f1d98a;
   border-radius: 4px;
   background: #fff8df;
-  color: #b0861a;
+  color: #937016;
   cursor: pointer;
 }
 
@@ -80,8 +80,8 @@
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  color: #97a4b6;
-  font-size: 10px;
+  color: #667891;
+  font-size: 11px;
 }
 
 .comment-delete {
@@ -94,7 +94,7 @@
   background: transparent;
   color: #d23f3f;
   font: inherit;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
   cursor: pointer;
 }

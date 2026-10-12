@@ -171,7 +171,7 @@
 /* Wrapped or in front of the text, before the Anchor button. */
 .drawing-wrap-choice {
   display: inline-flex;
-  gap: 2px;
+  gap: 4px;
   margin-right: 4px;
   padding-right: 4px;
   border-right: 1px solid #e0e8f4;
@@ -232,12 +232,12 @@
   border: 0;
   border-radius: 4px;
   background: transparent;
-  color: #71829b;
+  color: #667891;
 }
 
 .drawing-tool:hover:not(:disabled),
 .drawing-tool.selected {
-  color: #3878e4;
+  color: #2f72e3;
   background: #edf4ff;
 }
 
@@ -300,7 +300,7 @@
 }
 
 .drawing-menu-heading strong {
-  color: #71829b;
+  color: #667891;
   font-weight: 600;
 }
 
@@ -434,18 +434,18 @@
   border: 0;
   border-radius: 4px;
   background: transparent;
-  color: #71829b;
+  color: #667891;
 }
 
 .drawing-layer-add:hover:not(:disabled) {
-  color: #3878e4;
+  color: #2f72e3;
   background: #edf4ff;
 }
 
 .drawing-layer-list {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 4px;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -454,7 +454,7 @@
 .drawing-layer-row {
   display: flex;
   align-items: center;
-  gap: 2px;
+  gap: 4px;
   min-height: 32px;
   padding: 0 4px;
   border-radius: 4px;
@@ -468,7 +468,7 @@
   gap: 8px;
   padding: 0 8px;
   border: 1px dashed #d5deea;
-  color: #71829b;
+  color: #667891;
   font-size: 12px;
 }
 
@@ -489,7 +489,7 @@
 }
 
 .drawing-layer-row.is-active .drawing-layer-name {
-  color: #3878e4;
+  color: #2f72e3;
   font-weight: 700;
 }
 
@@ -521,11 +521,11 @@
   border: 0;
   border-radius: 4px;
   background: transparent;
-  color: #71829b;
+  color: #667891;
 }
 
 .drawing-layer-button:hover:not(:disabled) {
-  color: #3878e4;
+  color: #2f72e3;
   background: #dfeaff;
 }
 

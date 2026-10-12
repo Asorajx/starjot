@@ -15,9 +15,12 @@
   min-height: 44px;
 }
 
+/* The name keeps to one line on a phone; the choice beside it gives up the space instead. */
 .export-label {
+  flex-shrink: 0;
   color: #56657b;
   font-size: 13px;
+  white-space: nowrap;
 }
 
 .export-value {
@@ -55,14 +58,14 @@
 }
 
 .export-select select:disabled {
-  color: #94a1b3;
+  color: #66778f;
   cursor: default;
 }
 
 .export-select .icon {
   position: absolute;
   right: 6px;
-  color: #71829b;
+  color: #667891;
   pointer-events: none;
 }
 
@@ -98,9 +101,9 @@
 .export-check {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   color: #56657b;
-  font-size: 12.5px;
+  font-size: 13px;
   cursor: pointer;
 }
 

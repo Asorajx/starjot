@@ -240,7 +240,7 @@ export function NoteHeader({ note, locked, onOpenNote }: NoteHeaderProps) {
                   onClick={() => updateNote(note.id, { pagesHidden: !note.pagesHidden })}
                 >
                   <Icon name="chevron-right" size={13} className={note.pagesHidden ? '' : 'is-turned'} />
-                  {pageCount} {pageCount === 1 ? 'page' : 'pages'}
+                  {pageCount} {pageCount === 1 ? 'sub-note' : 'sub-notes'}
                 </button>
                 {!note.pagesHidden && <PageList notes={notes} parentId={note.id} onOpenNote={onOpenNote} />}
               </dd>

@@ -23,7 +23,7 @@
   padding: 12px 8px;
   margin-bottom: 8px;
   border-left: 2px solid transparent;
-  color: #98a5b4;
+  color: #66788c;
 }
 
 .outline-item:hover {
@@ -53,22 +53,22 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  font-size: 10px;
-  color: #9aa6b5;
-  margin-bottom: 20px;
+  font-size: 11px;
+  color: #67788c;
+  margin-bottom: 24px;
 }
 
 .page-type {
   display: flex;
   align-items: center;
   gap: 8px;
-  color: #708cc7;
+  color: #5374bc;
   font-weight: 780;
   letter-spacing: .85px;
 }
 
 .meta-dot {
-  color: #d0d6e0;
+  color: #647797;
 }
 
 .editor-width>h1 {
@@ -81,7 +81,7 @@
 }
 
 .article-rule {
-  margin: 32px 0 36px;
+  margin: 32px 0 32px;
   border-top: 1px solid #edf0f5;
 }
 
@@ -92,9 +92,9 @@
 
 .document-tagline,
 .overline {
-  font-size: 9px;
+  font-size: 11px;
   letter-spacing: 1.4px;
-  color: #83a1d8;
+  color: #4975c6;
   font-weight: 800;
   margin-bottom: 12px;
   display: block;
@@ -106,7 +106,7 @@
   letter-spacing: -.5px;
   font-weight: 770;
   color: #2b3d59;
-  margin: 20px 0 16px;
+  margin: 24px 0 16px;
   line-height: 1.36;
 }
 
@@ -116,7 +116,7 @@
 
 .article-body p,
 .block-content p {
-  font-size: 12.6px;
+  font-size: 13px;
   line-height: 1.96;
   color: #65738a;
   margin: 0 0 16px;
@@ -124,10 +124,10 @@
 
 .article-body ul,
 .block-content ul {
-  padding-left: 20px;
+  padding-left: 24px;
   margin: 4px 0 24px;
   color: #66758c;
-  font-size: 12.5px;
+  font-size: 13px;
   line-height: 1.9;
 }
 
@@ -145,24 +145,24 @@
 .block-content blockquote {
   border-left: 3px solid #bcd1ff;
   background: #f7faff;
-  padding: 12px 20px;
-  margin: 24px 0 28px;
+  padding: 12px 24px;
+  margin: 24px 0 32px;
   font-size: 12px;
   font-style: italic;
-  color: #6c84b6;
+  color: #5b76ae;
   line-height: 1.9;
-  border-radius: 0 8px 8px 0;
+  border-radius: 0 4px 4px 0;
 }
 
 .document-end {
   display: flex;
   align-items: center;
   gap: 12px;
-  color: #c1c9d5;
-  font-size: 9px;
+  color: #647794;
+  font-size: 11px;
   font-weight: 800;
   letter-spacing: 1.1px;
-  margin-top: 60px;
+  margin-top: 64px;
   white-space: nowrap;
 }
 
@@ -207,7 +207,7 @@
   background: #fff;
   color: #586b86;
   font: inherit;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
   text-align: left;
   cursor: pointer;
@@ -220,11 +220,11 @@
 .option-tile.selected {
   border-color: #8bb3fb;
   background: #f7faff;
-  color: #4d7ee3;
+  color: #3b71e0;
 }
 
 .option-tile:disabled {
-  color: #b7c0cd;
+  color: #667892;
   cursor: default;
 }
 
@@ -251,7 +251,7 @@
   background: #fff;
   color: #586b86;
   font: inherit;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
   cursor: pointer;
 }
@@ -263,13 +263,13 @@
 .option-chip.selected {
   border-color: #8bb3fb;
   background: #f7faff;
-  color: #4d7ee3;
+  color: #3b71e0;
 }
 
 .option-tile em {
   margin-left: auto;
-  color: #8496af;
-  font-size: 9px;
+  color: #627896;
+  font-size: 11px;
   font-style: normal;
 }
 
@@ -295,7 +295,7 @@
 }
 
 .mode-icon {
-  color: #8496af;
+  color: #627896;
   display: grid;
   place-items: center;
   width: 25px;
@@ -304,7 +304,7 @@
 }
 
 .mode-option.selected .mode-icon {
-  color: #4d7ee3;
+  color: #3b71e0;
 }
 
 .mode-option>span:nth-child(2) {
@@ -316,7 +316,7 @@
 }
 
 .mode-option strong {
-  font-size: 10px;
+  font-size: 11px;
   color: #586b86;
   white-space: nowrap;
 }
@@ -360,8 +360,8 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  color: #5c7db5;
-  font-size: 10px;
+  color: #5376b1;
+  font-size: 11px;
   margin-bottom: 8px;
 }
 
@@ -375,24 +375,24 @@
 
 .layout-option--disabled {
   border-color: #edf0f4;
-  color: #adb8c5;
+  color: #64788e;
 }
 
 .layout-option em {
   margin-left: auto;
-  color: #a3adbb;
-  font-size: 9px;
+  color: #68788d;
+  font-size: 11px;
   font-style: normal;
 }
 
 .structured-document {
-  padding-bottom: 20px;
+  padding-bottom: 24px;
 }
 
 .editable-block {
   position: relative;
   margin: 8px 0 12px;
-  padding: 4px 4px 4px 20px;
+  padding: 4px 4px 4px 24px;
   border-radius: 4px;
 }
 
@@ -404,11 +404,11 @@
   position: absolute;
   left: 0;
   top: 8px;
-  color: #a8b4c5;
+  color: #637895;
 }
 
 .block-content h2 {
-  margin: 2px 0 4px;
+  margin: 4px 0 4px;
 }
 
 .block-content p {
@@ -465,7 +465,7 @@
 }
 
 .note-title-input::placeholder {
-  color: #a5b5cb;
+  color: #5c789f;
 }
 
 .note-editable {
@@ -513,7 +513,7 @@
   align-items: center;
   gap: 4px;
   min-height: 48px;
-  padding: 0 20px 0 12px;
+  padding: 0 24px 0 12px;
   background: #f7f9fc;
   transition: opacity .2s ease;
 }
@@ -538,7 +538,7 @@
 
 .page-bar-group {
   display: inline-flex;
-  gap: 2px;
+  gap: 4px;
 }
 
 .page-bar-button {
@@ -552,12 +552,12 @@
   border: 0;
   border-radius: 4px;
   background: transparent;
-  color: #71829b;
+  color: #667891;
 }
 
 .page-bar-button:hover:not(:disabled),
 .page-bar-button.selected {
-  color: #3878e4;
+  color: #2f72e3;
   background: #edf4ff;
 }
 
@@ -569,7 +569,7 @@
 /* A starred note shows a filled yellow star, like the stars in the note lists. */
 .star-button.is-starred,
 .star-button.is-starred:hover {
-  color: #e2a520;
+  color: #986e14;
 }
 
 .star-button.is-starred svg {
@@ -585,11 +585,11 @@
   width: 32px;
   height: 32px;
   border-radius: 4px;
-  color: #56a48b;
+  color: #44816d;
 }
 
 .save-status.is-saving {
-  color: #8792a3;
+  color: #6a778a;
 }
 
 .save-status.is-saving svg {
@@ -635,7 +635,7 @@
   width: min(305px, calc(100vw - 35px));
   max-height: min(650px, 76vh);
   overflow-y: auto;
-  padding: 20px;
+  padding: 24px;
   background: #fff;
   border: 1px solid #e0e8f4;
   border-radius: 4px;
@@ -660,12 +660,12 @@
   border: 0;
   border-radius: 4px;
   background: transparent;
-  color: #95a3b7;
+  color: #647894;
 }
 
 .flyout-close:hover {
   background: #f2f6fd;
-  color: #4c78cb;
+  color: #4674c9;
 }
 
 .note-toc-links {
@@ -693,12 +693,12 @@
 }
 
 .note-toc-links .outline-item--nested {
-  padding-left: 28px;
+  padding-left: 32px;
 }
 
 .toc-empty {
   margin: 8px 4px;
-  color: #91a0b3;
+  color: #647891;
   font-size: 11px;
   line-height: 1.7;
 }
@@ -709,14 +709,14 @@
   margin-top: 24px;
   padding-top: 16px;
   border-top: 1px solid #edf1f7;
-  color: #9aa9bd;
-  font-size: 10px;
+  color: #617795;
+  font-size: 11px;
   line-height: 1.6;
 }
 
 .editor-flyout .side-setting--border {
   margin-top: 24px;
-  padding-top: 20px;
+  padding-top: 24px;
 }
 
 .note-switch-row {
@@ -757,7 +757,7 @@
 
 @media (max-width: 700px) {
   .editor-wrap .editor-canvas {
-    padding: 36px 24px 64px;
+    padding: 32px 24px 64px;
   }
 
   .editor-flyout {
@@ -833,8 +833,8 @@
   bottom: 40px;
   left: 0;
   right: 0;
-  color: #a4adbb;
-  font-size: 10px;
+  color: #69778d;
+  font-size: 11px;
   text-align: center;
 }
 
@@ -849,7 +849,7 @@
 /* A narrow pane keeps just enough room for the block controls. */
 @container (max-width: 600px) {
   .editor-wrap .editor-canvas:not(.is-paginated) {
-    padding: 24px 24px 56px 40px;
+    padding: 24px 24px 64px 48px;
   }
 
   .note-details {
@@ -874,7 +874,7 @@
 }
 
 .editor-wrap .article-rule {
-  margin: 20px 0 20px;
+  margin: 24px 0 24px;
 }
 
 /* The breadcrumb occupies the former category label area beside All notes. */
@@ -884,7 +884,7 @@
   gap: 12px;
   min-width: 0;
   max-width: min(48vw, 510px);
-  color: #8795a9;
+  color: #66778f;
   font-size: 11px;
 }
 
@@ -987,7 +987,7 @@
 }
 
 .editor-breadcrumb-separator {
-  color: #c7cfdb;
+  color: #627798;
 }
 
 .editor-crumb-current {
@@ -1004,7 +1004,7 @@
 .block-content h1 {
   margin: 16px 0 12px;
   color: #22344f;
-  font-size: 27px;
+  font-size: 28px;
   line-height: 1.3;
 }
 
@@ -1030,14 +1030,14 @@
   padding-left: 24px;
   margin: 8px 0 16px;
   color: #65738a;
-  font-size: 12.6px;
+  font-size: 13px;
   line-height: 1.9;
 }
 
 .note-editable pre,
 .block-content pre {
-  margin: 12px 0 20px;
-  padding: 40px 16px 16px;
+  margin: 12px 0 24px;
+  padding: 48px 16px 16px;
   overflow-x: auto;
   border: 1px solid #e2eaf6;
   border-radius: 4px;
@@ -1074,7 +1074,7 @@
 
 @media (max-width: 700px) {
   .editor-wrap .editor-canvas {
-    padding: 24px 16px 56px;
+    padding: 24px 16px 64px;
   }
 
   .editor-breadcrumb {
@@ -1198,7 +1198,7 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  color: #b0861a;
+  color: #937016;
   font-weight: 700;
 }
 
@@ -1215,7 +1215,7 @@
 .note-icon {
   display: block;
   margin: 0 0 8px -4px;
-  padding: 2px 4px;
+  padding: 4px 4px;
   border: 0;
   border-radius: 4px;
   background: transparent;
@@ -1247,7 +1247,7 @@
   border: 0;
   border-radius: 4px;
   background: transparent;
-  color: #94a1b3;
+  color: #66778f;
   font: inherit;
   font-size: 11px;
   font-weight: 600;
@@ -1264,13 +1264,13 @@
   display: grid;
   grid-template-columns: 110px minmax(0, 1fr);
   align-items: center;
-  gap: 2px 12px;
+  gap: 4px 12px;
   margin: 4px 0 0;
   font-size: 12px;
 }
 
 .note-details dt {
-  color: #94a1b3;
+  color: #66778f;
   font-weight: 600;
 }
 
@@ -1322,7 +1322,7 @@
   position: absolute;
   top: 4px;
   left: 8px;
-  color: #a4adbb;
+  color: #69778d;
   pointer-events: none;
 }
 
@@ -1336,7 +1336,7 @@
 
 .note-remarks ul,
 .note-remarks ol {
-  padding-left: 20px;
+  padding-left: 24px;
 }
 
 .note-remarks h1,
@@ -1375,7 +1375,7 @@
   gap: 4px;
   height: 26px;
   padding: 0 8px;
-  color: #94a1b3;
+  color: #66778f;
   font-size: 11px;
   font-weight: 600;
 }
@@ -1391,7 +1391,7 @@
 .note-details dd.note-pages {
   flex-wrap: wrap;
   gap: 4px;
-  padding: 2px 0;
+  padding: 4px 0;
 }
 
 .note-pages-toggle {
@@ -1461,7 +1461,7 @@
 
 .note-page-list .note-page-list .note-page-link::before {
   content: "↳";
-  color: #a4adbb;
+  color: #69778d;
 }
 
 .note-page-icon {
@@ -1489,6 +1489,12 @@
   font-size: 12px;
 }
 
+/* A drop-down list adds its own space before its text, so it gets less padding to line up with */
+/* the other details. */
+select.note-detail-field {
+  padding-left: 4px;
+}
+
 .note-detail-field:hover:not(:disabled):not([readonly]) {
   border-color: var(--line);
 }
@@ -1504,5 +1510,5 @@
 }
 
 .note-detail-field::placeholder {
-  color: #b2bccb;
+  color: #647794;
 }

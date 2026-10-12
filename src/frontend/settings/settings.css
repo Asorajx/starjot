@@ -24,19 +24,19 @@
 }
 
 .settings-nav-heading {
-  color: #a4afbd;
+  color: #66778d;
   letter-spacing: 1.2px;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 790;
   padding: 0 12px;
-  margin-bottom: 20px;
+  margin-bottom: 24px;
 }
 
 .settings-nav-item {
   width: 100%;
   border: 0;
   background: transparent;
-  color: #78899e;
+  color: #66788e;
   display: flex;
   align-items: center;
   gap: 12px;
@@ -55,35 +55,35 @@
 
 .settings-nav-item.active {
   background: #eaf2ff;
-  color: #3975df;
+  color: #3572de;
 }
 
 .settings-content {
-  padding: 36px 44px 28px;
+  padding: 32px 48px 32px;
   max-width: 980px;
 }
 
 .settings-content>h2 {
-  font-size: 22px;
+  font-size: 24px;
   letter-spacing: -.7px;
   margin: 0 0 12px;
   color: #2d405e;
 }
 
 .settings-panel-subtitle {
-  color: #98a5b5;
+  color: #66788e;
   font-size: 11px;
-  margin-bottom: 40px;
+  margin-bottom: 48px;
 }
 
 .settings-group {
-  margin-bottom: 36px;
+  margin-bottom: 32px;
 }
 
 .settings-group-title {
-  font-size: 10px;
+  font-size: 11px;
   text-transform: uppercase;
-  color: #90a1bb;
+  color: #60789c;
   letter-spacing: 1px;
   font-weight: 820;
   margin-bottom: 12px;
@@ -117,9 +117,9 @@
 
 .setting-row-text p {
   line-height: 1.55;
-  color: #a6b0be;
+  color: #68788e;
   margin: 8px 0 0;
-  font-size: 10px;
+  font-size: 11px;
   max-width: 520px;
 }
 
@@ -140,14 +140,14 @@
   justify-content: space-between;
   min-width: 164px;
   padding: 0 12px;
-  color: #8292a8;
+  color: #657892;
   background: #fff;
-  font-size: 10px;
+  font-size: 11px;
   white-space: nowrap;
 }
 
 .fake-select svg {
-  color: #aab7c7;
+  color: #617793;
 }
 
 .fake-segment {
@@ -156,8 +156,8 @@
   display: flex;
   padding: 4px;
   gap: 4px;
-  color: #9cabbc;
-  font-size: 10px;
+  color: #637992;
+  font-size: 11px;
   align-items: center;
 }
 
@@ -168,7 +168,7 @@
 
 .fake-segment .chosen {
   background: #e9f1fe;
-  color: #5c83cd;
+  color: #4874c7;
   border-radius: 4px;
 }
 
@@ -189,16 +189,16 @@
   border: 0;
   border-radius: 4px;
   background: transparent;
-  color: #7d8ca1;
+  color: #67778e;
   font: inherit;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 650;
   white-space: nowrap;
   cursor: pointer;
 }
 
 .setting-segment button:hover {
-  color: #3b74eb;
+  color: #346fea;
 }
 
 .setting-segment .chosen {
@@ -263,15 +263,15 @@
 
 .setting-icon {
   display: inline-flex;
-  color: #6487c7;
+  color: #4e76bf;
 }
 
 .future-chip {
-  color: #9daac0;
+  color: #637799;
   background: #f2f5f9;
   border-radius: 4px;
   padding: 4px 8px;
-  font-size: 9px;
+  font-size: 11px;
   letter-spacing: .15px;
   font-weight: 700;
 }
@@ -280,7 +280,7 @@
   display: flex;
   gap: 12px;
   align-items: flex-start;
-  color: #8199bb;
+  color: #5878a4;
   background: #f1f6ff;
   border: 1px solid #e3edfd;
   border-radius: 4px;
@@ -296,17 +296,17 @@
 
 .fake-text {
   font-size: 11px;
-  color: #8593a7;
+  color: #67788f;
 }
 
 .settings-disclaimer {
   display: flex;
   align-items: flex-start;
   gap: 8px;
-  font-size: 10px;
-  color: #aab5c3;
+  font-size: 11px;
+  color: #657890;
   line-height: 1.6;
-  margin-top: 52px;
+  margin-top: 48px;
 }
 
 .settings-disclaimer svg {
@@ -320,7 +320,7 @@
   display: flex;
   align-items: center;
   gap: 16px;
-  padding: 20px;
+  padding: 24px;
   margin: 0 0 32px;
 }
 
@@ -336,12 +336,12 @@
 
 .about-card h3 {
   margin: 0 0 4px;
-  font-size: 19px;
+  font-size: 20px;
 }
 
 .about-card p {
   margin: 0;
-  color: #879bb6;
+  color: #5e789a;
   font-size: 11px;
 }
 

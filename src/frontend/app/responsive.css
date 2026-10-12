@@ -13,8 +13,8 @@
 
 @media (min-width:1600px) {
   .content-pad {
-    padding-left: 60px;
-    padding-right: 60px;
+    padding-left: 64px;
+    padding-right: 64px;
   }
 
   .editor-layout {
@@ -38,7 +38,7 @@
   }
 
   .content-pad {
-    padding: 36px 28px;
+    padding: 32px 32px;
   }
 
   .editor-layout {
@@ -46,7 +46,7 @@
   }
 
   .editor-canvas {
-    padding: 44px 32px;
+    padding: 48px 32px;
   }
 
   .task-grid {
@@ -54,7 +54,7 @@
   }
 
   .board-tabs {
-    gap: 28px;
+    gap: 32px;
   }
 }
 
@@ -114,7 +114,7 @@
   }
 
   .editor-canvas {
-    padding: 48px 36px;
+    padding: 48px 32px;
   }
 }
 
@@ -140,7 +140,7 @@
   .topbar {
     height: 57px;
     min-height: 57px;
-    padding: 0 20px;
+    padding: 0 24px;
   }
 
   .breadcrumbs {
@@ -148,7 +148,7 @@
   }
 
   .main-scroll {
-    padding-bottom: 68px;
+    padding-bottom: 64px;
   }
 
   .mobile-nav {
@@ -175,18 +175,18 @@
     align-items: center;
     justify-content: center;
     gap: 4px;
-    color: #94a1b5;
-    font-size: 10px;
+    color: #657792;
+    font-size: 11px;
     font-weight: 650;
   }
 
   .mobile-link.active {
-    color: #3a76e2;
+    color: #3371e1;
     background: #f7faff;
   }
 
   .content-pad {
-    padding: 28px 20px 32px;
+    padding: 32px 24px 32px;
   }
 
   .page-intro {
@@ -195,7 +195,7 @@
   }
 
   .page-intro h1 {
-    font-size: 27px;
+    font-size: 28px;
   }
 
   .page-intro p {
@@ -205,12 +205,12 @@
   .notes-home .page-intro .btn {
     height: 33px;
     padding: 0 12px;
-    font-size: 10px;
-    margin-top: 20px;
+    font-size: 11px;
+    margin-top: 24px;
   }
 
   .section-heading h2 {
-    font-size: 15px;
+    font-size: 16px;
   }
 
   .recent-columns,
@@ -232,7 +232,7 @@
   }
 
   .recent-time {
-    font-size: 9px;
+    font-size: 11px;
   }
 
   .recent-name {
@@ -245,7 +245,7 @@
 
   .page-bar {
     padding: 0 8px;
-    gap: 2px;
+    gap: 4px;
   }
 
   .editor-layout {
@@ -255,12 +255,12 @@
   }
 
   .editor-canvas {
-    padding: 36px 24px 28px;
+    padding: 32px 24px 32px;
     order: 1;
   }
 
   .editor-width>h1 {
-    font-size: 27px;
+    font-size: 28px;
   }
 
   .article-body p,
@@ -281,7 +281,7 @@
   }
 
   .mode-option small {
-    font-size: 8px;
+    font-size: 11px;
   }
 
   .board-intro {
@@ -291,7 +291,7 @@
   .board-metrics {
     grid-template-columns: repeat(2,1fr);
     gap: 12px;
-    margin-bottom: 20px;
+    margin-bottom: 24px;
   }
 
   .metric {
@@ -299,7 +299,7 @@
   }
 
   .metric strong {
-    font-size: 23px;
+    font-size: 24px;
   }
 
   .board-tabs {
@@ -313,7 +313,7 @@
   }
 
   .board-panel-content {
-    padding: 20px 16px;
+    padding: 24px 16px;
   }
 
   .board-section-head {
@@ -321,7 +321,7 @@
   }
 
   .board-section-head h2 {
-    font-size: 17px;
+    font-size: 18px;
   }
 
   .board-section-head p {
@@ -330,7 +330,7 @@
   }
 
   .board-section-head .btn {
-    font-size: 10px;
+    font-size: 11px;
     padding: 0 8px;
     height: 33px;
   }
@@ -366,7 +366,7 @@
     padding: 0 12px;
     margin: 0;
     height: 37px;
-    font-size: 10px;
+    font-size: 11px;
     gap: 8px;
   }
 
@@ -383,7 +383,7 @@
   }
 
   .settings-panel-subtitle {
-    margin-bottom: 20px;
+    margin-bottom: 24px;
     line-height: 1.6;
   }
 
@@ -406,12 +406,12 @@
     max-width: 126px;
     padding: 0 8px;
     gap: 4px;
-    font-size: 9px;
+    font-size: 11px;
   }
 
   .fake-segment span {
     padding: 8px 4px;
-    font-size: 9px;
+    font-size: 11px;
   }
 }
 
@@ -473,7 +473,7 @@
   .sidebar-search {
     justify-content: center;
     height: 42px;
-    margin: 12px 0 20px;
+    margin: 12px 0 24px;
     padding: 0;
     background: transparent;
     border: 0;
@@ -493,5 +493,28 @@
     position: absolute;
     right: 10px;
     top: 6px;
+  }
+}
+
+
+/* =========================
+   Touch Screens
+   ========================= */
+
+/* On touch screens, buttons are at least 44 pixels square, the size a fingertip can hit reliably. */
+@media (pointer: coarse) {
+  .btn,
+  .page-bar-button,
+  .drawing-tool,
+  .selection-tool,
+  .page-menu-item,
+  .window-tab-close,
+  .window-new-tab,
+  .sidebar-toggle,
+  .primary-nav button,
+  .primary-nav a,
+  .mobile-nav button {
+    min-width: 44px;
+    min-height: 44px;
   }
 }

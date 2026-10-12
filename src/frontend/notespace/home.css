@@ -25,11 +25,11 @@
   height: 38px;
   border-bottom: 1px solid #eef0f5;
   background: #fafbfd;
-  color: #a6afbc;
-  font-size: 9px;
+  color: #69778b;
+  font-size: 11px;
   font-weight: 760;
   letter-spacing: .85px;
-  padding: 0 20px;
+  padding: 0 24px;
 }
 
 .recent-row {
@@ -38,7 +38,7 @@
   border: 0;
   border-bottom: 1px solid #f1f2f6;
   background: #fff;
-  padding: 12px 20px;
+  padding: 12px 24px;
   text-align: left;
 }
 
@@ -94,8 +94,8 @@
   overflow: hidden;
   border-radius: 4px;
   background: #f1f4f9;
-  color: #7a889d;
-  font-size: 10px;
+  color: #68778e;
+  font-size: 11px;
   font-weight: 600;
   line-height: 18px;
   text-overflow: ellipsis;
@@ -107,8 +107,8 @@
 }
 
 .recent-text small {
-  font-size: 10px;
-  color: #a4adbb;
+  font-size: 11px;
+  color: #69778d;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -116,12 +116,12 @@
 
 .recent-category {
   font-size: 11px;
-  color: #8695a8;
+  color: #66778e;
 }
 
 .recent-time {
-  font-size: 10px;
-  color: #99a5b5;
+  font-size: 11px;
+  color: #67788e;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -129,7 +129,7 @@
 }
 
 .recent-time svg {
-  color: #c6ceda;
+  color: #637898;
 }
 
 
@@ -140,21 +140,19 @@
 /* The welcome panel: greeting and clock on the left, "where you left off" on the right. */
 /* The welcome text and the "Where you left off" card sit side by side, and wrap one above the */
 /* other when there is no room, such as in a split pane. */
+/* The greeting sits on the page itself, so the "Where you left off" card beside it is the only */
+/* card (no card inside a card). */
 .home-hero {
   display: flex;
   flex-wrap: wrap;
   gap: 24px;
   align-items: stretch;
-  margin-bottom: 24px;
-  padding: 24px;
-  border: 1px solid var(--line);
-  border-radius: 4px;
-  background: var(--paper);
+  margin-bottom: 32px;
 }
 
 .home-hero-time {
   margin: 0 0 4px;
-  color: #8a97aa;
+  color: #68788f;
   font-size: 12px;
   font-weight: 600;
 }
@@ -168,8 +166,8 @@
 
 .home-hero-intro > p:not(.home-hero-time) {
   max-width: 460px;
-  margin: 0 0 20px;
-  color: #7d8ba0;
+  margin: 0 0 24px;
+  color: #68788f;
   font-size: 12px;
   line-height: 1.6;
 }
@@ -206,11 +204,9 @@
 }
 
 /* Starred and Recent share one panel; the tabs choose which list is shown. */
+/* The tabs sit on the page too; the note tiles under them are the cards. */
 .home-tabs-panel {
   margin-bottom: 32px;
-  border: 1px solid var(--line);
-  border-radius: 4px;
-  background: var(--paper);
 }
 
 /* The tabs on the left, and the Edit categories button on the right. */
@@ -221,33 +217,32 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding-right: 12px;
   border-bottom: 1px solid var(--line);
 }
 
 .home-tabs {
   display: flex;
-  gap: 4px;
+  gap: 24px;
   min-width: 0;
-  padding: 0 16px;
 }
 
 .home-tabs-action {
   flex-shrink: 0;
 }
 
-/* The active tab is marked with a blue line along its bottom edge. */
+/* The active tab is marked with a blue line along its bottom edge. The first tab's words line up */
+/* with the page's left edge. */
 .home-tab {
   display: inline-flex;
   align-items: center;
   gap: 8px;
   height: 44px;
-  padding: 0 12px;
+  padding: 0;
   margin-bottom: -1px;
   border: 0;
   border-bottom: 2px solid transparent;
   background: transparent;
-  color: #7d8ba0;
+  color: #68788f;
   font: inherit;
   font-size: 12px;
   font-weight: 650;
@@ -268,7 +263,7 @@
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   gap: 12px;
-  padding: 16px;
+  padding: 16px 0;
 }
 
 .note-tile {
@@ -302,7 +297,7 @@
 
 .note-tile-title svg {
   flex-shrink: 0;
-  color: #94a1b3;
+  color: #66778f;
 }
 
 .note-tile-title strong {
@@ -320,7 +315,7 @@
 .note-tile-text {
   display: -webkit-box;
   overflow: hidden;
-  color: #7d8ba0;
+  color: #68788f;
   font-size: 11px;
   line-height: 1.6;
   -webkit-box-orient: vertical;
@@ -329,8 +324,8 @@
 
 .note-tile-meta {
   margin-top: auto;
-  color: #a0abbb;
-  font-size: 10px;
+  color: #66778f;
+  font-size: 11px;
 }
 
 /* Category cards list the latest notes in the category, one per line. */
@@ -343,7 +338,7 @@
   flex-direction: column;
   gap: 4px;
   min-width: 0;
-  color: #7d8ba0;
+  color: #68788f;
   font-size: 11px;
 }
 
@@ -354,7 +349,7 @@
 }
 
 .category-card-empty {
-  color: #a0abbb;
+  color: #66778f;
 }
 
 /* The category page reuses the notes home layout, with a back link above the title. */
@@ -365,7 +360,7 @@
 }
 
 .category-page h1 svg {
-  color: #94a1b3;
+  color: #66778f;
 }
 
 
@@ -391,7 +386,7 @@
   align-items: center;
   gap: 8px;
   margin-left: auto;
-  color: #8795a9;
+  color: #66778f;
   font-size: 11px;
   font-weight: 600;
 }
@@ -451,7 +446,7 @@
   align-items: center;
   gap: 16px;
   min-height: 64px;
-  padding: 8px 0 8px 20px;
+  padding: 8px 0 8px 24px;
   border: 0;
   background: transparent;
   color: inherit;
@@ -468,7 +463,7 @@
   border: 0;
   border-radius: 4px;
   background: transparent;
-  color: #c3ccd9;
+  color: #607798;
   cursor: pointer;
 }
 
@@ -478,7 +473,7 @@
 }
 
 .note-pin.is-pinned {
-  color: #e2a520;
+  color: #986e14;
 }
 
 .note-pin.is-pinned svg {
@@ -543,7 +538,7 @@
 }
 
 .category-count {
-  color: #9aa6b6;
+  color: #66778e;
   font-weight: 600;
 }
 
@@ -568,7 +563,7 @@
   border: 1px solid #c9d7ee;
   border-radius: 4px;
   background: var(--paper);
-  color: #8795a9;
+  color: #66778f;
 }
 
 /* The whole chip shows that its name is being edited; the input itself has no focus ring, which */
@@ -602,7 +597,7 @@
   height: 100%;
   border: 0;
   background: transparent;
-  color: #a3adbb;
+  color: #68788d;
   cursor: pointer;
 }
 
@@ -620,7 +615,7 @@
 
 .notes-empty-list {
   margin: 0;
-  padding: 28px 20px;
-  color: #9aa6b6;
+  padding: 32px 24px;
+  color: #66778e;
   font-size: 12px;
 }

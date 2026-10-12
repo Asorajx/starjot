@@ -77,6 +77,29 @@ function convertText(hsl) {
   return { ...hsl, s, l: 44 - (l - 70) * 0.6 };
 }
 
+/* How bright a colour looks (WCAG relative luminance), from its hue, saturation and lightness. */
+function luminance({ h, s, l }) {
+  const sat = s / 100;
+  const light = l / 100;
+  const channel = n => {
+    const k = (n + h / 30) % 12;
+    const value = light - sat * Math.min(light, 1 - light) * Math.max(-1, Math.min(k - 3, 9 - k, 1));
+    return value <= 0.03928 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+  };
+  return 0.2126 * channel(0) + 0.7152 * channel(8) + 0.0722 * channel(4);
+}
+
+/* Text is lightened until it is easy to read on the dark surfaces (a contrast of at least 4.5:1, */
+/* the accessibility guideline for text). */
+const SURFACE = { h: 0, s: 0, l: 10 };
+const READABLE = 4.5;
+
+function readable(hsl) {
+  let color = hsl;
+  while (color.l < 100 && (luminance(color) + 0.05) / (luminance(SURFACE) + 0.05) < READABLE) color = { ...color, l: color.l + 1 };
+  return color;
+}
+
 /* Backgrounds, like the dark mode of most apps: the page is near-black, white surfaces (cards, */
 /* notes) are dark grey, and pale highlights (selected or hovered items) are a little lighter still. */
 /* Grey colours become neutral grey; clearly coloured tints keep a hint of their colour. */
@@ -122,6 +145,7 @@ function convertValue(property, value) {
     const isWhite = color.r === 255 && color.g === 255 && color.b === 255;
     const neutral = isNeutral(color);
     const converted = kind === 'text' ? convertText(hsl) : kind === 'border' ? convertBorder(hsl, neutral) : convertBackground(hsl, isWhite, neutral);
+    if (property === 'color') return format(readable(converted), color.a);
     return format(converted, color.a);
   });
 }

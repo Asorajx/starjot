@@ -9,7 +9,7 @@
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  gap: 2px;
+  gap: 4px;
   padding: 4px;
   border: 1px solid #dfe7f3;
   border-radius: 4px;
@@ -20,19 +20,19 @@
 
 /* Text colours and background colours (highlights) chosen from the selection toolbar. */
 .text-gray {
-  color: #787774;
+  color: #777673;
 }
 
 .text-brown {
-  color: #9f6b53;
+  color: #9d6a52;
 }
 
 .text-orange {
-  color: #d9730d;
+  color: #b5600b;
 }
 
 .text-yellow {
-  color: #cb912f;
+  color: #996e23;
 }
 
 .text-green {
@@ -40,19 +40,19 @@
 }
 
 .text-blue {
-  color: #337ea9;
+  color: #327da7;
 }
 
 .text-purple {
-  color: #9065b0;
+  color: #8f63af;
 }
 
 .text-pink {
-  color: #c14c8a;
+  color: #c04a89;
 }
 
 .text-red {
-  color: #d44c47;
+  color: #d2443f;
 }
 
 .bg-gray {
@@ -103,12 +103,12 @@
 .color-palette {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  padding: 4px 4px 6px;
+  gap: 8px;
+  padding: 4px 4px 8px;
 }
 
 .color-palette-heading {
-  color: #71829b;
+  color: #667891;
   font-size: 11px;
   font-weight: 700;
 }
@@ -116,7 +116,7 @@
 .color-palette-grid {
   display: grid;
   grid-template-columns: repeat(5, 30px);
-  gap: 6px;
+  gap: 8px;
   margin-bottom: 4px;
 }
 
@@ -156,15 +156,15 @@
 .selection-toolbar-row {
   display: flex;
   align-items: center;
-  gap: 2px;
+  gap: 4px;
 }
 
 /* What kind of text is selected, on top of the buttons. */
 .selection-kind {
   padding: 0 4px 4px;
   border-bottom: 1px solid #edf1f7;
-  color: #71829b;
-  font-size: 10.5px;
+  color: #667891;
+  font-size: 11px;
   font-weight: 700;
   letter-spacing: .2px;
   white-space: nowrap;

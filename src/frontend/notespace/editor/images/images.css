@@ -142,7 +142,7 @@
   inset: 0;
   display: grid;
   place-items: center;
-  color: #94a1b3;
+  color: #66778f;
   font-size: 11px;
   line-height: 1;
 }
@@ -156,7 +156,7 @@
   width: 10px;
   height: 10px;
   border: 2px solid #fff;
-  border-radius: 2px;
+  border-radius: 4px;
   background: var(--blue);
   cursor: nwse-resize;
 }
@@ -183,7 +183,7 @@
   z-index: 72;
   display: flex;
   align-items: center;
-  gap: 2px;
+  gap: 4px;
   padding: 4px;
   border: 1px solid #dfe7f3;
   border-radius: 4px;

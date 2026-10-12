@@ -3,21 +3,21 @@
    ========================= */
 
 .board-intro {
-  margin-bottom: 28px;
+  margin-bottom: 32px;
 }
 
 .board-metrics {
   display: grid;
   grid-template-columns: repeat(4,minmax(0,1fr));
   gap: 16px;
-  margin-bottom: 28px;
+  margin-bottom: 32px;
 }
 
 .metric {
   background: #fff;
   border: 1px solid var(--line);
   border-radius: 4px;
-  padding: 20px 24px;
+  padding: 24px 24px;
   box-shadow: var(--shadow);
   display: flex;
   flex-direction: column;
@@ -25,22 +25,22 @@
 }
 
 .metric>span {
-  color: #a0acbc;
-  font-size: 9px;
+  color: #667890;
+  font-size: 11px;
   font-weight: 780;
   letter-spacing: 1px;
 }
 
 .metric strong {
-  font-size: 26px;
+  font-size: 28px;
   line-height: 1.35;
   letter-spacing: -1px;
   color: #354767;
 }
 
 .metric small {
-  color: #a1adbc;
-  font-size: 10px;
+  color: #66788f;
+  font-size: 11px;
 }
 
 .board-panel {
@@ -52,7 +52,7 @@
 }
 
 .board-tabs {
-  padding: 0 28px;
+  padding: 0 32px;
   border-bottom: 1px solid var(--line);
   display: flex;
   align-items: center;
@@ -67,16 +67,16 @@
   gap: 8px;
   border: 0;
   background: transparent;
-  color: #9aa6b5;
+  color: #67788c;
   border-bottom: 2px solid transparent;
-  padding: 2px 2px 0;
+  padding: 4px 4px 0;
   white-space: nowrap;
   font-weight: 660;
   font-size: 12px;
 }
 
 .board-tab:hover {
-  color: #5a7eba;
+  color: #5177b6;
 }
 
 .board-tab.active {
@@ -86,19 +86,19 @@
 
 .tab-count {
   background: #f0f3f8;
-  color: #8797ad;
+  color: #647893;
   border-radius: 4px;
   padding: 4px 8px;
-  font-size: 10px;
+  font-size: 11px;
 }
 
 .board-tab.active .tab-count {
   background: #eaf2ff;
-  color: #4c82df;
+  color: #3673db;
 }
 
 .board-panel-content {
-  padding: 28px 28px 28px;
+  padding: 32px 32px 32px;
 }
 
 .board-section-head {
@@ -145,7 +145,7 @@
 
 .board-section-head p {
   font-size: 11px;
-  color: #a0acbb;
+  color: #66788f;
   margin: 0;
 }
 
@@ -161,7 +161,7 @@
   flex-direction: column;
   border: 1px solid #e8edf4;
   border-radius: 4px;
-  padding: 20px 20px 16px;
+  padding: 24px 24px 16px;
   min-height: 258px;
   background: #fff;
   transition: box-shadow .15s,border-color .15s;
@@ -180,8 +180,8 @@
 }
 
 .task-id {
-  font-size: 10px;
-  color: #a2afbf;
+  font-size: 11px;
+  color: #637790;
   font-weight: 680;
   letter-spacing: .2px;
 }
@@ -191,33 +191,33 @@
   align-items: center;
   gap: 8px;
   border-radius: 4px;
-  font-size: 9px;
+  font-size: 11px;
   padding: 4px 8px;
   background: #f5f7fb;
-  color: #8291a8;
+  color: #657792;
   white-space: nowrap;
 }
 
 .priority-mark {
   height: 6px;
   width: 6px;
-  border-radius: 2px;
+  border-radius: 4px;
   background: currentColor;
 }
 
 .priority--high {
   background: #fff1ef;
-  color: #dc807a;
+  color: #cd4a41;
 }
 
 .priority--medium {
   background: #fff7e9;
-  color: #cb9b52;
+  color: #986e2e;
 }
 
 .priority--low {
   background: #edf8f1;
-  color: #6aaf88;
+  color: #468260;
 }
 
 .task-card h3 {
@@ -231,7 +231,7 @@
 .task-card>p {
   font-size: 11px;
   line-height: 1.65;
-  color: #9aa7b6;
+  color: #65778c;
   margin: 0 0 16px;
   min-height: 36px;
 }
@@ -246,9 +246,9 @@
 .task-tag {
   background: #f2f6fc;
   border-radius: 4px;
-  color: #7d91b2;
+  color: #5f77a0;
   padding: 4px 8px;
-  font-size: 9px;
+  font-size: 11px;
   font-weight: 600;
 }
 
@@ -259,13 +259,13 @@
   padding: 8px 0;
   border-top: 1px solid #f0f2f6;
   gap: 8px;
-  color: #7094ce;
-  font-size: 10px;
+  color: #4876c0;
+  font-size: 11px;
   white-space: nowrap;
 }
 
 .task-link-row .linked-note-name {
-  color: #abb8c8;
+  color: #617895;
   overflow: hidden;
   text-overflow: ellipsis;
   flex: 1;
@@ -274,7 +274,7 @@
 }
 
 .task-link-row .muted {
-  color: #acb7c5;
+  color: #647790;
 }
 
 .task-bottom {
@@ -297,14 +297,14 @@
 .avatar--task {
   height: 26px;
   width: 26px;
-  font-size: 9px;
+  font-size: 11px;
   background: #e7eefd;
-  color: #6280b5;
+  color: #5676af;
 }
 
 .assignee span:last-child {
-  font-size: 10px;
-  color: #8593a7;
+  font-size: 11px;
+  color: #67788f;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -314,8 +314,8 @@
   display: flex;
   align-items: center;
   gap: 4px;
-  color: #a1adbc;
-  font-size: 10px;
+  color: #66788f;
+  font-size: 11px;
   white-space: nowrap;
 }
 
@@ -328,8 +328,8 @@
   align-items: flex-start;
   gap: 8px;
   padding: 12px 16px;
-  color: #90a1b9;
-  font-size: 10px;
+  color: #617899;
+  font-size: 11px;
   line-height: 1.6;
 }
 

@@ -7,7 +7,7 @@
   width: 100%;
   margin: 8px 0 16px;
   border-collapse: collapse;
-  font-size: 12.6px;
+  font-size: 13px;
   table-layout: fixed;
 }
 
@@ -57,7 +57,7 @@
   border: 1px solid #dfe7f3;
   border-radius: 4px;
   background: #ffffff;
-  color: #94a1b3;
+  color: #66778f;
   cursor: pointer;
 }
 
@@ -245,7 +245,7 @@
 
 .table-menu-item:disabled,
 .page-menu-item:disabled {
-  color: #b7c0cd;
+  color: #667892;
   cursor: default;
 }
 
@@ -262,7 +262,7 @@
 }
 
 .lock-status .page-locked {
-  color: #b0861a;
+  color: #937016;
 }
 
 .lock-status .page-locked.is-open {
@@ -302,7 +302,7 @@
   align-items: center;
   width: 30px;
   height: 18px;
-  padding: 2px;
+  padding: 4px;
   border-radius: 18px;
   background: #e1e8f0;
   transition: background .15s ease;

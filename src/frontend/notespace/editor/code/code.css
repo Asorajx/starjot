@@ -22,7 +22,7 @@
   background: #fff;
   color: #5d6f8a;
   font: inherit;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 650;
   cursor: pointer;
   pointer-events: auto;
@@ -35,7 +35,7 @@
 
 /* Token colours used by the syntax highlighter in code.js. */
 .tok-comment {
-  color: #8a99ad;
+  color: #657790;
   font-style: italic;
 }
 
