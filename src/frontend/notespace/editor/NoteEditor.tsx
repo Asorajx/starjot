@@ -17,6 +17,7 @@ import { SlashMenu } from './SlashMenu';
 import { TableTools } from './TableTools';
 import { BlockWidgets } from './BlockWidgets';
 import { DrawingLayer, DrawingTools } from './DrawingLayer';
+import { ExportDialog } from '../export/ExportDialog';
 import { TEXT_LAYER } from './drawing';
 import { ImageTools } from './ImageTools';
 import { LinkTools } from './LinkTools';
@@ -162,6 +163,7 @@ export function NoteEditor({ noteId, history, view, active, onClose, onOpenNote,
   const [panel, setPanel] = useState<Panel>(null);
   const [switching, setSwitching] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLElement>(null);
   const drawingRef = useRef<HTMLDivElement>(null);
@@ -340,6 +342,17 @@ export function NoteEditor({ noteId, history, view, active, onClose, onOpenNote,
 
   const togglePanel = (name: Exclude<Panel, null>) => setPanel(current => (current === name ? null : name));
 
+  /* How the note's text column is laid out, so an export can put loose drawings on the same words: */
+  /* its width, and how far below the drawing's starting corner the text begins (both at 100% zoom). */
+  function measureForExport() {
+    const layer = drawingRef.current;
+    const text = contentRef.current;
+    if (!layer || !text) return { columnWidth: 760, textTop: 0 };
+    const rect = layer.getBoundingClientRect();
+    const scale = rect.width / (layer.offsetWidth || rect.width) || 1;
+    return { columnWidth: layer.offsetWidth, textTop: (text.getBoundingClientRect().top - rect.top) / scale };
+  }
+
   /* Drawing takes the mouse away from the text, so any text selection (and its toolbar) is cleared. */
   function toggleDrawing() {
     if (!drawing) {
@@ -430,6 +443,7 @@ export function NoteEditor({ noteId, history, view, active, onClose, onOpenNote,
           onLockChange={value => updateNote(note.id, { locked: value })}
           onPageChange={changes => updateNote(note.id, changes)}
           onCopyLink={() => copyPageLink(note.id)}
+          onExport={() => { setPanel(null); setExporting(true); }}
           onDelete={() => { setPanel(null); setConfirmDelete(true); }}
         />
       </PageBar>
@@ -497,6 +511,8 @@ export function NoteEditor({ noteId, history, view, active, onClose, onOpenNote,
       <LinkTools session={session} locked={locked} onOpenNote={onOpenNote} onOpenNoteInNewTab={onOpenNoteInNewTab} />
       <ImageTools session={session} locked={locked} />
       <TableTools session={session} locked={locked} />
+
+      {exporting && <ExportDialog noteId={note.id} measure={measureForExport} onClose={() => setExporting(false)} />}
 
       {confirmDelete && (
         <ConfirmDialog title="Delete this note?" confirmLabel="Delete note" danger onConfirm={removeNote} onCancel={() => setConfirmDelete(false)}>

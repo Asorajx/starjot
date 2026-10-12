@@ -101,6 +101,9 @@ type PageOptionsProps = {
   onLockChange: (locked: boolean) => void;
   onPageChange: (changes: { layout?: PageLayout; pageSize?: PageSize; landscape?: boolean }) => void;
   onCopyLink: () => Promise<void>;
+
+  /* Opens the Export window. */
+  onExport: () => void;
   onDelete: () => void;
 };
 
@@ -122,7 +125,7 @@ const SPLITS: { id: 'right' | 'down'; title: string; tooltip: string; icon: Icon
 ];
 
 export function PageOptions({
-  id, note, open, zoom, view, onClose, onModeChange, onStickyIndicatorChange, onZoom, onLockChange, onPageChange, onCopyLink, onDelete
+  id, note, open, zoom, view, onClose, onModeChange, onStickyIndicatorChange, onZoom, onLockChange, onPageChange, onCopyLink, onExport, onDelete
 }: PageOptionsProps) {
   /* "Copied" shows until the panel is closed. */
   const [copied, setCopied] = useState(false);
@@ -175,6 +178,22 @@ export function PageOptions({
             onClick={() => onCopyLink().then(() => setCopied(true)).catch(() => undefined)}
           >
             <Icon name={copied ? 'check' : 'copy'} size={16} /> {copied ? 'Link copied' : 'Copy link to this page'}
+          </button>
+        </div>
+      </div>
+
+      <div className="side-setting side-setting--border">
+        <strong>Export</strong>
+        <div className="option-grid is-single">
+          <button
+            type="button"
+            className="option-tile"
+            data-tooltip="Save this page as a PDF, HTML, Markdown or plain text file."
+            data-tooltip-align="start"
+            data-tooltip-wrap=""
+            onClick={onExport}
+          >
+            <Icon name="download" size={16} /> Export
           </button>
         </div>
       </div>

@@ -231,11 +231,12 @@ export function NoteHeader({ note, locked, onOpenNote }: NoteHeaderProps) {
           <dt className="note-remarks-label">Remarks</dt>
           <dd className="note-remarks-cell"><RemarksField note={note} locked={locked} /></dd>
 
-          {/* The page list can be folded on its own, so the other details stay visible. */}
-          <dt className="note-pages-label">Pages</dt>
-          <dd className="note-pages">
-            {pageCount ? (
-              <>
+          {/* The Pages row only shows when the note has sub-pages. The list can be folded on its own, */}
+          {/* so the other details stay visible. */}
+          {pageCount > 0 && (
+            <>
+              <dt className="note-pages-label">Pages</dt>
+              <dd className="note-pages">
                 <button
                   type="button"
                   className="note-pages-toggle"
@@ -246,9 +247,9 @@ export function NoteHeader({ note, locked, onOpenNote }: NoteHeaderProps) {
                   {pageCount} {pageCount === 1 ? 'page' : 'pages'}
                 </button>
                 {!note.pagesHidden && <PageList notes={notes} parentId={note.id} onOpenNote={onOpenNote} />}
-              </>
-            ) : 'None'}
-          </dd>
+              </dd>
+            </>
+          )}
         </dl>
       )}
     </div>

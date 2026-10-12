@@ -1,6 +1,7 @@
 import { useSyncExternalStore } from 'react';
 import { readPreferences, writePreferences } from '../../backend/storage/preferencesStorage';
 import { clampSize, HEX_COLOR, INK } from '../notespace/editor/drawing';
+import { normalizeExportSettings, type ExportSettings } from '../notespace/export/exportSettings';
 
 /* App-wide preferences that apply to every note and screen; the backend saves them. */
 export type Theme = 'light' | 'dark';
@@ -38,6 +39,9 @@ export type Preferences = {
   /* Fade the page bar above a note while typing, until the mouse moves. */
   hideHeaderWhileTyping: boolean;
   drawing: DrawingPreferences;
+
+  /* The choices last made in the Export window. */
+  exportSettings: ExportSettings;
 };
 
 export const ZOOM_MIN = 0.5;
@@ -76,7 +80,8 @@ function loadDrawing(saved: unknown): DrawingPreferences {
 /* Light mode is the default; once a theme is chosen in Settings it is remembered between visits. */
 function load(): Preferences {
   const defaults: Preferences = {
-    theme: 'light', zoom: 1, sidebarCollapsed: false, contentsScroll: 'smooth', notesSort: 'edited', hideHeaderWhileTyping: true, drawing: loadDrawing(null)
+    theme: 'light', zoom: 1, sidebarCollapsed: false, contentsScroll: 'smooth', notesSort: 'edited', hideHeaderWhileTyping: true, drawing: loadDrawing(null),
+    exportSettings: normalizeExportSettings(null)
   };
   const saved = readPreferences();
   return {
@@ -86,7 +91,8 @@ function load(): Preferences {
     contentsScroll: saved.contentsScroll === 'instant' ? 'instant' : 'smooth',
     notesSort: saved.notesSort === 'opened' || saved.notesSort === 'title' ? saved.notesSort : defaults.notesSort,
     hideHeaderWhileTyping: saved.hideHeaderWhileTyping !== false,
-    drawing: loadDrawing(saved.drawing)
+    drawing: loadDrawing(saved.drawing),
+    exportSettings: normalizeExportSettings(saved.exportSettings)
   };
 }
 

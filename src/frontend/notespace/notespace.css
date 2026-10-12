@@ -4333,6 +4333,127 @@
 
 
 /* =========================
+   Export Window
+   ========================= */
+
+/* Each setting is a row: its name on the left, its choice on the right. */
+.export-dialog {
+  width: min(440px, 100%);
+}
+
+.export-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 44px;
+}
+
+.export-label {
+  color: #56657b;
+  font-size: 13px;
+}
+
+.export-value {
+  display: flex;
+  justify-content: flex-end;
+  min-width: 0;
+}
+
+.export-select {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  color: #1c2c47;
+}
+
+.export-select select {
+  max-width: 240px;
+  padding: 4px 24px 4px 8px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: right;
+  appearance: none;
+  cursor: pointer;
+}
+
+.export-select select:hover:not(:disabled),
+.export-select select:focus-visible {
+  border-color: #d5deea;
+  outline: none;
+}
+
+.export-select select:disabled {
+  color: #94a1b3;
+  cursor: default;
+}
+
+.export-select .icon {
+  position: absolute;
+  right: 6px;
+  color: #71829b;
+  pointer-events: none;
+}
+
+.export-number {
+  width: 88px;
+  height: 32px;
+  padding: 0 8px;
+  border: 1px solid #d5deea;
+  border-radius: 4px;
+  background: #fff;
+  color: #1c2c47;
+  font: inherit;
+  font-size: 13px;
+  text-align: right;
+}
+
+.export-number:focus {
+  border-color: #3878e4;
+  outline: none;
+}
+
+/* The details to include, shown under Include details while it is on. */
+.export-parts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  margin: -4px 0 8px;
+  padding: 8px 12px;
+  border-radius: 4px;
+  background: #f7f9fc;
+}
+
+.export-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #56657b;
+  font-size: 12.5px;
+  cursor: pointer;
+}
+
+.export-check input {
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  accent-color: #3878e4;
+  cursor: pointer;
+}
+
+.export-error {
+  margin: 8px 0 0;
+  color: #d23f3f;
+  font-size: 12px;
+}
+
+
+/* =========================
    Printing
    ========================= */
 
