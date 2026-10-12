@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type DragEvent, type MouseEvent, type ReactNode } from 'react';
-import { usePreferences } from './preferences';
-import { MobileNav, Sidebar, Topbar } from './Shell';
+import { updatePreferences, usePreferences } from './preferences';
+import { MobileNav, Sidebar, Topbar, WindowControls, type SpaceId } from './Shell';
+import { useDismiss } from '../lib/useDismiss';
+import { useMediaQuery } from '../lib/useMediaQuery';
 import { CategoryPage } from '../notespace/CategoryPage';
 import { NotesHome, type NoteFilter } from '../notespace/NotesHome';
 import type { ViewControls } from '../notespace/editor/EditorPanels';
@@ -100,6 +102,9 @@ function TabGroupFrame({ group, focused, onFocus, onDropTab, children }: TabGrou
 export function App() {
   const [workspace, setWorkspace] = useState<WorkspaceId>('notes');
 
+  /* The space whose lists the sidebar shows; it stays the same while Settings is open. */
+  const [space, setSpace] = useState<SpaceId>('notes');
+
   /* Notespace's tab groups (one, or two after a split), each with its tabs and their histories. */
   /* A page's own address (#note=id, see pageAddress) opens that page; anything else opens the home. */
   const [tabs, setTabs] = useState<Workspace>(() => {
@@ -114,9 +119,13 @@ export function App() {
   const [noteFilter, setNoteFilter] = useState<NoteFilter>('all');
   const { sidebarCollapsed } = usePreferences();
 
-  /* A hidden sidebar "peeks" out when the pointer rests at the left edge of the window. */
-  const [peeking, setPeeking] = useState(false);
-  const peekTimer = useRef<number | undefined>(undefined);
+  /* The sidebar docks beside the page when the user chose so and the window has room; otherwise */
+  /* it floats over the page as a popup. "hover" popups close when the pointer leaves them; */
+  /* "click" popups stay until Escape or a click elsewhere. */
+  const roomToDock = useMediaQuery('(min-width: 901px)');
+  const docked = !sidebarCollapsed && roomToDock;
+  const [popup, setPopup] = useState<'hover' | 'click' | null>(null);
+  const popupTimer = useRef<number | undefined>(undefined);
 
   const group = focusedGroup(tabs);
   const place = currentPlace(activeTab(group));
@@ -140,6 +149,7 @@ export function App() {
   /* Pages opened from outside a tab (the sidebar, Ctrl + N) open in the focused group's active tab. */
   function go(next: Place, groupId = group.id, tabId = activeTab(group).id) {
     setWorkspace('notes');
+    setSpace('notes');
     changeTab(groupId, tabId, tab => goTo(tab, next));
   }
 
@@ -154,7 +164,16 @@ export function App() {
   function navigate(next: WorkspaceId) {
     flushSave();
     setWorkspace(next);
+    if (next !== 'settings') setSpace(next);
     if (next === 'notes') go({ kind: 'home' });
+  }
+
+  /* A view of the board picked in the sidebar, such as its Timeline. */
+  function openBoardView(view: BoardTab) {
+    flushSave();
+    setWorkspace('workboard');
+    setSpace('workboard');
+    setWorkTab(view);
   }
 
   function scrollToTop(tabId: string) {
@@ -223,33 +242,71 @@ export function App() {
     if (workspace !== 'notes') document.title = `${workspaceLabel(workspace)} — Starjot`;
   }, [workspace]);
 
-  /* The short delays stop the sidebar from popping up when the pointer only passes the edge, */
-  /* and ignore the edge entirely while a mouse button is held (selecting text or dragging blocks). */
-  function startPeek(event: MouseEvent) {
-    window.clearTimeout(peekTimer.current);
-    if (event.buttons !== 0) return;
-    peekTimer.current = window.setTimeout(() => setPeeking(true), 180);
+  /* The short delays stop the sidebar from popping up when the pointer only passes by, and hover */
+  /* is ignored while a mouse button is held (selecting text, drawing or dragging a tab). */
+  function startPopup(event: MouseEvent) {
+    window.clearTimeout(popupTimer.current);
+    if (docked || event.buttons !== 0) return;
+    popupTimer.current = window.setTimeout(() => setPopup(current => current ?? 'hover'), 180);
   }
 
-  function cancelPeek() {
-    window.clearTimeout(peekTimer.current);
+  function cancelPopupTimer() {
+    window.clearTimeout(popupTimer.current);
   }
 
-  function endPeek() {
-    window.clearTimeout(peekTimer.current);
-    if (peeking) peekTimer.current = window.setTimeout(() => setPeeking(false), 280);
+  function endPopup() {
+    window.clearTimeout(popupTimer.current);
+    popupTimer.current = window.setTimeout(() => setPopup(current => (current === 'hover' ? null : current)), 280);
   }
+
+  function togglePopup() {
+    window.clearTimeout(popupTimer.current);
+    setPopup(current => (current === 'click' ? null : 'click'));
+  }
+
+  /* The sidebar button (and Ctrl + \) docks or undocks the sidebar, like Notion. Narrow windows */
+  /* have no room to dock, so there it keeps the popup open instead. */
+  function toggleSidebar() {
+    if (roomToDock) updatePreferences({ sidebarCollapsed: docked });
+    else togglePopup();
+  }
+
+  const closePopup = useCallback(() => setPopup(null), []);
+  useDismiss(popup !== null, '.sidebar, .sidebar-button', closePopup);
 
   useEffect(() => {
-    if (!sidebarCollapsed) setPeeking(false);
-  }, [sidebarCollapsed]);
+    if (docked) setPopup(null);
+  }, [docked]);
 
-  /* Ctrl + N creates a note while in Notespace; pending edits are saved when the page is hidden. */
+  /* Choosing something in the popup closes it, like a menu. */
+  function fromSidebar<T extends unknown[]>(action: (...args: T) => void) {
+    return (...args: T) => {
+      setPopup(null);
+      action(...args);
+    };
+  }
+
+  /* Until Starjot Home exists, Home goes to the Notespace home. */
+  const goHome = fromSidebar(() => navigate('notes'));
+
+  /* Shown in the tab bar (or top bar) while floating, and at the top of the sidebar while docked, */
+  /* in the same corner either way. */
+  const windowControls = (
+    <WindowControls sidebarOpen={docked || popup !== null} onHome={goHome} onToggleSidebar={toggleSidebar} onSidebarHover={startPopup} onSidebarLeave={endPopup} onNewNote={fromSidebar(() => newNote())} />
+  );
+
+  /* Ctrl + N creates a note while in Notespace, and Ctrl + \ hides or shows the sidebar. Alt is */
+  /* ignored because AltGr counts as Ctrl + Alt, and some keyboards type \ with AltGr. Pending */
+  /* edits are saved when the page is hidden. */
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
-      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'n' && workspace === 'notes') {
+      if (!(event.ctrlKey || event.metaKey) || event.altKey) return;
+      if (event.key.toLowerCase() === 'n' && workspace === 'notes') {
         event.preventDefault();
         newNote();
+      } else if (event.key === '\\') {
+        event.preventDefault();
+        toggleSidebar();
       }
     }
     function handleHidden() {
@@ -365,6 +422,7 @@ export function App() {
           >
             <WindowBar
               group={tabGroup}
+              leading={!docked && tabGroup.id === tabs.groups[0].id ? windowControls : null}
               onSelect={id => changeTabs(current => selectTab(current, tabGroup.id, id))}
               onClose={id => changeTabs(current => closeTab(current, tabGroup.id, id))}
               onNew={() => newNoteTab(tabGroup.id)}
@@ -408,18 +466,27 @@ export function App() {
   }
 
   return (
-    <div className={`app-shell ${workspace === 'notes' ? 'app-shell--notespace' : ''} ${sidebarCollapsed ? 'sidebar-collapsed' : ''} ${peeking ? 'sidebar-peek' : ''}`}>
-      {sidebarCollapsed && <div className="sidebar-hover-zone" aria-hidden="true" onMouseEnter={startPeek} onMouseLeave={cancelPeek} />}
+    <div className={`app-shell ${workspace === 'notes' ? 'app-shell--notespace' : ''} ${docked ? '' : 'sidebar-floating'} ${popup ? 'sidebar-open' : ''}`}>
+      {!docked && <div className="sidebar-hover-zone" aria-hidden="true" onMouseEnter={startPopup} onMouseLeave={cancelPopupTimer} />}
+      {/* The first thing the keyboard reaches: it skips the sidebar and goes to the page. */}
+      <button type="button" className="skip-link" onClick={() => document.getElementById('main-content')?.focus()}>Skip to content</button>
       <Sidebar
         workspace={workspace}
+        space={space}
         openNoteId={workspace === 'notes' && place.kind === 'note' ? place.id : null}
-        onNavigate={navigate}
-        onOpenNote={openNote}
-        onMouseEnter={cancelPeek}
-        onMouseLeave={endPeek}
+        boardView={workspace === 'workboard' ? workTab : null}
+        docked={docked}
+        onNavigate={fromSidebar(navigate)}
+        onOpenNote={fromSidebar(openNote)}
+        onOpenBoardView={fromSidebar(openBoardView)}
+        controls={windowControls}
+        onMouseEnter={cancelPopupTimer}
+        onMouseLeave={() => {
+          if (!docked) endPopup();
+        }}
       />
-      <div className="main-column">
-        <Topbar workspace={workspace} />
+      <div className="main-column" id="main-content" tabIndex={-1}>
+        <Topbar workspace={workspace} controls={docked ? null : windowControls} />
         {workspace === 'notes' && <DocumentTitle place={place} />}
         {screen}
       </div>

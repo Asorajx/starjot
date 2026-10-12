@@ -33,10 +33,6 @@
     min-width: 222px;
   }
 
-  .brand {
-    padding: 0 8px;
-  }
-
   .content-pad {
     padding: 32px 32px;
   }
@@ -59,52 +55,6 @@
 }
 
 @media (max-width:960px) {
-  .sidebar {
-    width: 69px;
-    min-width: 69px;
-    padding: 0 8px;
-  }
-
-  .brand {
-    padding: 0;
-    justify-content: center;
-  }
-
-  .brand-words,
-  .sidebar-workspace,
-  .sidebar-section-label,
-  .quick-access,
-  .profile-info,
-  .profile>svg {
-    display: none;
-  }
-
-  .primary-nav {
-    margin-top: 12px;
-  }
-
-  .nav-item {
-    justify-content: center;
-    padding: 0;
-    height: 50px;
-  }
-
-  .nav-item span:nth-child(2),
-  .nav-active-indicator {
-    display: none;
-  }
-
-  .sidebar-bottom {
-    padding-bottom: 16px;
-  }
-
-  .profile {
-    justify-content: center;
-    padding: 8px 0;
-    border: 0;
-    background: transparent;
-  }
-
   .topbar {
     padding: 0 24px;
   }
@@ -450,38 +400,6 @@
 
 
 /* =========================
-   Compact Sidebar Search
-   ========================= */
-
-@media (max-width: 960px) {
-  .sidebar-search {
-    justify-content: center;
-    height: 42px;
-    margin: 12px 0 24px;
-    padding: 0;
-    background: transparent;
-    border: 0;
-  }
-
-  .sidebar-search input,
-  .sidebar-notifications span:not(.notification-dot) {
-    display: none;
-  }
-
-  .sidebar-notifications {
-    justify-content: center;
-    padding: 12px 0;
-  }
-
-  .sidebar-notifications .notification-dot {
-    position: absolute;
-    right: 10px;
-    top: 6px;
-  }
-}
-
-
-/* =========================
    Touch Screens
    ========================= */
 
@@ -494,9 +412,10 @@
   .page-menu-item,
   .window-tab-close,
   .window-new-tab,
-  .sidebar-toggle,
-  .primary-nav button,
-  .primary-nav a,
+  .sidebar-icon,
+  .sidebar-link,
+  .window-home,
+  .window-control,
   .mobile-nav button {
     min-width: 44px;
     min-height: 44px;

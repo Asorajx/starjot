@@ -1,4 +1,4 @@
-import { useEffect, type DragEvent } from 'react';
+import { useEffect, type DragEvent, type ReactNode } from 'react';
 import { Icon, type IconName } from '../components/Icon';
 import { placeLabel } from '../notespace/PageBar';
 import { useCategories, useNotes } from '../notespace/store';
@@ -9,6 +9,9 @@ type WindowBarProps = {
   onSelect: (id: string) => void;
   onClose: (id: string) => void;
   onNew: () => void;
+
+  /* Home and the sidebar button, in the tab bar at the window's top left only. */
+  leading?: ReactNode;
 };
 
 const PLACE_ICONS: Record<Place['kind'], IconName> = { home: 'book-open', category: 'folder', note: 'file-text' };
@@ -41,7 +44,7 @@ export function DocumentTitle({ place }: { place: Place }) {
 /* The strip above a tab group, like a window's title bar: one tab for each open page and a + that */
 /* starts a new note in a new tab. The active tab joins onto the page below it. A stacked group shows */
 /* its tabs as strips beside the pages instead (see StackSpine), so only the + stays here. */
-export function WindowBar({ group, onSelect, onClose, onNew }: WindowBarProps) {
+export function WindowBar({ group, onSelect, onClose, onNew, leading }: WindowBarProps) {
   /* Re-render when notes or categories are renamed, so the tab titles stay current. */
   useNotes();
   useCategories();
@@ -49,6 +52,7 @@ export function WindowBar({ group, onSelect, onClose, onNew }: WindowBarProps) {
 
   return (
     <div className="window-bar">
+      {leading}
       {!group.stacked && (
         <div className="window-tabs" role="tablist" aria-label="Open tabs">
           {group.tabs.map(tab => {

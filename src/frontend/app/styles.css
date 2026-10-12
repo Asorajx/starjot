@@ -129,13 +129,12 @@ p {
   z-index: 20;
 }
 
-.brand {
-  height: 82px;
+/* Docked, Home and the sidebar button sit at the top, level with the tab bar beside it. */
+.sidebar-top {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 0 16px;
-  white-space: nowrap;
+  height: 40px;
+  margin-bottom: 8px;
 }
 
 .brand-mark {
@@ -173,311 +172,210 @@ p {
   top: 18px;
 }
 
-.brand-words {
-  font-weight: 790;
-  letter-spacing: -1.05px;
-  font-size: 24px;
-  color: #1b2a47;
-}
-
-.brand-point {
-  color: var(--blue);
-}
-
-.sidebar-workspace {
-  height: 64px;
-  margin: 4px 4px 32px;
-  padding: 12px;
-  border: 1px solid var(--line);
-  border-radius: 4px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.team-icon {
-  width: 35px;
-  height: 35px;
-  display: grid;
-  place-items: center;
-  background: #e8eefe;
-  color: #496bd0;
-  border-radius: 4px;
-  font-size: 18px;
-  font-weight: 760;
-}
-
-.team-name {
-  min-width: 0;
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.team-name strong {
-  font-size: 12px;
-  color: #34435d;
-  white-space: nowrap;
-}
-
-.team-name small {
-  font-size: 11px;
-  color: #69778c;
-}
-
-.team-chevron {
-  color: #67788f;
-}
-
-.sidebar-section-label {
-  padding: 0 12px 12px;
-  color: #69778d;
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 1.1px;
-}
-
-.sidebar-section-label--second {
-  margin-top: 32px;
-}
-
-.primary-nav {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.nav-item {
-  width: 100%;
-  height: 44px;
-  border: 0;
-  border-radius: 4px;
-  padding: 0 12px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  text-align: left;
-  background: transparent;
-  color: #63738a;
-  font-size: 13px;
-  font-weight: 620;
-  position: relative;
-  transition: background .15s,color .15s;
-}
-
-.nav-item:hover,
-.quick-label:hover,
-.quick-note:hover {
-  background: #f6f8fc;
-}
-
-.nav-item.active {
-  background: #edf3ff;
-  color: #2e6bdd;
-}
-
-.nav-item span:nth-child(2) {
-  flex: 1;
-}
-
-.nav-active-indicator {
-  height: 23px;
-  width: 3px;
-  border-radius: 4px;
-  background: #3b74eb;
-  margin-right: -8px;
-}
-
-.quick-access {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.quick-label,
-.quick-note {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  border: 0;
-  background: transparent;
-  border-radius: 4px;
-  height: 38px;
-  color: #6c788a;
-  text-align: left;
-  padding: 0 12px;
-  font-size: 12px;
-  white-space: nowrap;
-  min-width: 0;
-}
-
-.quick-label {
-  font-weight: 630;
-}
-
-.quick-label svg {
-  color: #667891;
-}
-
-.quick-note {
-  height: 32px;
-  padding-left: 24px;
-  color: #6a778c;
-}
-
-.quick-note span:last-child {
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.quick-note--active {
-  background: #f5f8ff;
-  color: var(--blue-deep);
-}
-
-.quick-dot {
-  width: 6px;
-  height: 6px;
-  flex-shrink: 0;
-  background: #a8b6f5;
-  border-radius: 50%;
-}
-
-.quick-dot--indigo {
-  background: #7689e2;
-}
-
-.quick-dot--mint {
-  background: #50bca7;
-}
-
-.quick-dot--amber {
-  background: #efba5d;
-}
-
-.sidebar-spacer {
-  flex: 1;
-}
-
-.sidebar-bottom {
-  padding: 12px 4px 16px;
-  border-top: 1px solid #f1f2f7;
-}
-
-.profile {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px 8px;
-  background: #fafbfe;
-  border-radius: 4px;
-  border: 1px solid #f2f4f8;
-}
-
-.avatar {
-  height: 31px;
-  width: 31px;
-  display: inline-grid;
-  place-items: center;
-  flex-shrink: 0;
-  border-radius: 50%;
-  font-weight: 760;
-  font-size: 11px;
-  background: #e2eaff;
-  color: #526ca9;
-}
-
-.avatar--profile {
-  width: 35px;
-  height: 35px;
-  background: #c9daf8;
-  color: #335e9a;
-}
-
-.profile-info {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  min-width: 0;
-}
-
-.profile-info strong {
-  font-size: 11px;
-  white-space: nowrap;
-}
-
-.profile-info small {
-  font-size: 11px;
-  color: #68788f;
-}
-
-.profile svg {
-  color: #67788f;
-}
-
-
-/* =========================
-   Sidebar Search and Notifications
-   ========================= */
-
 .sidebar-search {
   display: flex;
   align-items: center;
   gap: 8px;
-  height: 37px;
-  margin: 12px 4px 32px;
+  height: 36px;
+  margin: 0 4px 12px;
   padding: 0 12px;
-  border: 1px solid #e9edf5;
+  border: 1px solid var(--line);
   border-radius: 4px;
   background: #f7f9fc;
   color: #647794;
 }
 
+/* The focus outline goes around the whole box, not just the text inside it. */
+.sidebar-search:has(input:focus-visible) {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+}
+
 .sidebar-search input {
-  min-width: 0;
   width: 100%;
+  min-width: 0;
   border: 0;
   background: transparent;
   outline: none;
   color: #52647e;
-  font-size: 11px;
+  font: inherit;
+  font-size: 12px;
 }
 
 .sidebar-search input::placeholder {
   color: #657890;
 }
 
-.sidebar-notifications {
+/* The spaces, one icon each. */
+.sidebar-icons {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 4px;
+  padding: 0 4px 16px;
+  border-bottom: 1px solid var(--line);
+}
+
+.sidebar-icon {
   position: relative;
-  width: 100%;
-  margin-bottom: 8px;
-  padding: 8px 12px;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
   border: 0;
   border-radius: 4px;
   background: transparent;
-  text-align: left;
-  color: #68788d;
-  font-size: 11px;
-}
-
-.sidebar-notifications:hover {
-  background: #f3f7ff;
-}
-
-/* The light/dark mode switch sits above Notifications and looks the same. */
-.sidebar-theme {
-  margin-bottom: 0;
+  color: #63738a;
   cursor: pointer;
 }
 
-.sidebar-notifications .notification-dot {
-  position: static;
-  margin-left: auto;
+.sidebar-icon:hover {
+  background: #f3f6fc;
+  color: var(--ink);
+}
+
+.sidebar-icon.is-active {
+  background: #edf3ff;
+  color: #2e6bdd;
+}
+
+.sidebar-icon[aria-disabled="true"] {
+  cursor: default;
+}
+
+/* The space whose lists are shown is named inside its icon. */
+.sidebar-icons .sidebar-icon.is-active {
+  display: flex;
+  gap: 8px;
+  width: auto;
+  padding: 0 12px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+/* The lists take all the height left over, and scroll on their own when they are long. */
+.sidebar-lists {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 16px 0;
+}
+
+.sidebar-list + .sidebar-list {
+  margin-top: 24px;
+}
+
+.sidebar-section-label {
+  margin: 0;
+  padding: 0 12px 8px;
+  color: #69778d;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1.1px;
+  text-transform: uppercase;
+}
+
+.sidebar-list ul {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+  height: 32px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: #56657b;
+  font: inherit;
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.sidebar-link svg {
+  flex-shrink: 0;
+  color: #66778f;
+}
+
+.sidebar-link:hover {
+  background: #f3f6fc;
+  color: var(--ink);
+}
+
+.sidebar-link.is-current {
+  background: #edf3ff;
+  color: #2e6bdd;
+}
+
+.sidebar-link.is-current svg {
+  color: inherit;
+}
+
+.sidebar-link-emoji {
+  flex-shrink: 0;
+  width: 14px;
+  font-size: 13px;
+  line-height: 1;
+  text-align: center;
+}
+
+.sidebar-link-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sidebar-empty {
+  margin: 0;
+  padding: 0 12px;
+  color: #66778e;
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+/* Settings on the left; the theme switch and docking on the right. */
+.sidebar-bottom {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 0 12px;
+  border-top: 1px solid var(--line);
+}
+
+/* "Skip to content" stays out of sight until the keyboard reaches it. */
+.skip-link {
+  position: fixed;
+  top: 8px;
+  left: 8px;
+  z-index: 100;
+  padding: 8px 16px;
+  border: 0;
+  border-radius: 4px;
+  background: var(--blue);
+  color: #fff;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  transform: translateY(-200%);
+}
+
+.skip-link:focus {
+  transform: none;
+}
+
+.main-column:focus {
+  outline: none;
 }
 
 
@@ -496,7 +394,7 @@ p {
   height: 73px;
   min-height: 73px;
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-start;
   align-items: center;
   background: #fff;
   border-bottom: 1px solid var(--line);
@@ -874,6 +772,12 @@ p {
   transform: translateY(-50%);
 }
 
+/* Buttons along the bottom of the window show their label above instead. */
+[data-tooltip][data-tooltip-side="above"]::after {
+  top: auto;
+  bottom: calc(100% + 4px);
+}
+
 @keyframes tooltip-in {
   from {
     opacity: 0;
@@ -1020,50 +924,37 @@ p {
    Sidebar Visibility
    ========================= */
 
-.sidebar-toggle {
-  display: grid;
-  place-items: center;
-  flex-shrink: 0;
-  width: 30px;
-  height: 30px;
+/* The theme switch sits at the right of the sidebar's bottom row. */
+.sidebar-theme {
   margin-left: auto;
-  padding: 0;
-  border: 0;
-  border-radius: 4px;
-  background: transparent;
-  color: #68788f;
-  cursor: pointer;
 }
 
-.sidebar-toggle:hover,
-.sidebar-toggle:focus-visible {
-  background: #f0f5ff;
-  color: var(--blue);
-}
-
-/* While hidden and peeking, the button reads as "keep open", so it is shown in the accent colour. */
-.sidebar-toggle.is-collapsed {
-  color: var(--blue);
-}
-
-/* A hidden sidebar is moved off-screen; it slides back over the page while peeking. */
-.app-shell.sidebar-collapsed .sidebar {
+/* Not docked, the sidebar floats over the page as a popup below the tab bar and the note bar, so */
+/* the sidebar button, Back, Forward and the breadcrumb stay in view. It reaches down to 48px */
+/* from the bottom, and opens in the same place on every screen. It waits off-screen, and slides */
+/* in when opened, or when the keyboard moves into it (only keyboard focus counts, so a button */
+/* clicked inside does not hold it open). */
+.app-shell.sidebar-floating .sidebar {
   position: fixed;
-  top: 0;
-  bottom: 0;
-  left: 0;
+  top: 96px;
+  bottom: 48px;
+  left: 8px;
   z-index: 60;
-  height: 100vh;
-  transform: translateX(-100%);
+  height: auto;
+  padding-top: 12px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  transform: translateX(calc(-100% - 16px));
   transition: transform .18s ease, box-shadow .18s ease;
 }
 
-.app-shell.sidebar-collapsed.sidebar-peek .sidebar {
+.app-shell.sidebar-floating.sidebar-open .sidebar,
+.app-shell.sidebar-floating .sidebar:has(:focus-visible) {
   box-shadow: 0 18px 50px rgba(20, 38, 70, .2);
   transform: none;
 }
 
-/* A thin strip along the left edge reveals the hidden sidebar when the pointer rests on it. */
+/* A thin strip along the left edge opens the popup when the pointer rests on it. */
 .sidebar-hover-zone {
   position: fixed;
   top: 0;
@@ -1073,29 +964,83 @@ p {
   width: 10px;
 }
 
-/* In the narrow icon sidebar, the toggle sits under the logo. */
-@media (max-width: 960px) {
-  .sidebar .brand {
-    flex-direction: column;
-    height: auto;
-    padding: 24px 0 8px;
-    gap: 8px;
-  }
+/* Home and the sidebar button, at the start of the tab bar (or top bar) while not docked. */
+.window-controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  align-self: center;
+  margin-right: 8px;
+}
 
-  .sidebar .sidebar-toggle {
-    margin-left: 0;
-  }
+.window-home,
+.window-control {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: #66748a;
+  cursor: pointer;
+}
+
+.window-notifications {
+  position: relative;
+}
+
+.window-notifications .notification-dot {
+  top: 5px;
+  right: 5px;
+}
+
+.window-control[aria-disabled="true"] {
+  cursor: default;
+}
+
+/* Across the top of the docked sidebar, Notifications and New note sit at its right end. */
+.sidebar-top .window-controls {
+  flex: 1;
+  margin-right: 0;
+}
+
+.sidebar-top .window-notifications {
+  margin-left: auto;
+}
+
+/* Their tooltips line up with their right edge, so they stay inside the sidebar. */
+.sidebar-top .window-notifications[data-tooltip]::after,
+.sidebar-top .window-new-note[data-tooltip]::after {
+  left: auto;
+  right: 0;
+  transform: none;
+}
+
+.window-home:hover,
+.window-control:hover,
+.window-control[aria-expanded="true"] {
+  background: #e2e7ee;
+  color: var(--ink);
+}
+
+/* The logo is drawn at 32px; here it is shown at 24px. */
+.window-home .brand-mark {
+  transform: scale(.75) rotate(-1deg);
 }
 
 /* Phones use the bottom navigation instead of the sidebar. */
 @media (max-width: 700px) {
-  .sidebar-hover-zone {
+  .sidebar-hover-zone,
+  .window-controls {
     display: none;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .app-shell.sidebar-collapsed .sidebar {
+  .app-shell.sidebar-floating .sidebar {
     transition: none;
   }
 }
