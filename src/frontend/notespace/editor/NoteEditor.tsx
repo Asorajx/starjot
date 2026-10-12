@@ -17,6 +17,7 @@ import { SlashMenu } from './SlashMenu';
 import { TableTools } from './TableTools';
 import { BlockWidgets } from './BlockWidgets';
 import { DrawingLayer, DrawingTools } from './DrawingLayer';
+import { TEXT_LAYER } from './drawing';
 import { ImageTools } from './ImageTools';
 import { LinkTools } from './LinkTools';
 import { copyPageLink } from './links';
@@ -183,6 +184,12 @@ export function NoteEditor({ noteId, history, view, active, onClose, onOpenNote,
   /* shows its drawing but cannot be drawn on. */
   const [drawingMode, setDrawingMode] = useState(false);
   const drawing = drawingMode && !locked;
+
+  /* The layer being drawn on. It starts as the top drawing layer, and moves to another one if */
+  /* it is removed (or undone away). */
+  const [chosenLayer, setChosenLayer] = useState('');
+  const drawingLayers = note?.drawingLayers.filter(layer => layer.id !== TEXT_LAYER) ?? [];
+  const activeLayer = drawingLayers.some(layer => layer.id === chosenLayer) ? chosenLayer : drawingLayers.at(-1)?.id ?? '';
 
   /* One editing session per open note: undo history, Sticky state and editor actions. */
   const session = useMemo(() => new EditorSession(noteId, getNote(noteId)?.content ?? ''), [noteId]);
@@ -428,7 +435,18 @@ export function NoteEditor({ noteId, history, view, active, onClose, onOpenNote,
       </PageBar>
 
       <div className="editor-layout">
-        {drawing && <DrawingTools session={session} strokes={note.drawing} layerRef={drawingRef} onClose={() => setDrawingMode(false)} onOpenSettings={() => onOpenSettings('general', 'drawing')} />}
+        {drawing && (
+          <DrawingTools
+            session={session}
+            strokes={note.drawing}
+            layers={note.drawingLayers}
+            activeLayer={activeLayer}
+            onActiveLayerChange={setChosenLayer}
+            layerRef={drawingRef}
+            onClose={() => setDrawingMode(false)}
+            onOpenSettings={() => onOpenSettings('general', 'drawing')}
+          />
+        )}
         <main className={`editor-canvas ${geometry ? 'is-paginated' : ''}`} ref={canvasRef}>
           {/* Zoom scales everything in the note, using the CSS zoom property. A paginated note's */}
           {/* column is exactly one page wide, with the page margin as its padding, and as tall as */}
@@ -447,7 +465,7 @@ export function NoteEditor({ noteId, history, view, active, onClose, onOpenNote,
                 ))}
               </div>
             )}
-            <DrawingLayer strokes={note.drawing} inset={geometry?.margin ?? 0} layerRef={drawingRef} />
+            <DrawingLayer strokes={note.drawing} layers={note.drawingLayers} inset={geometry?.margin ?? 0} layerRef={drawingRef} />
             <div className="editor-meta">
               <span className="page-type"><Icon name="file-text" size={14} /> DOCUMENT</span>
               <span className="meta-dot">•</span>

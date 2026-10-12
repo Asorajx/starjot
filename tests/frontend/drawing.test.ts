@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  decodeStrokes, drawingBottom, encodeStrokes, hexToHsv, hsvToHex, joinBoxes, mostlyInside, moveStrokes, normalizeDrawing, simplifyPoints, splitStroke,
+  decodeStrokes, defaultLayers, drawingBottom, encodeStrokes, normalizeLayers, strokeLayer, hexToHsv, hsvToHex, joinBoxes, mostlyInside, moveStrokes, normalizeDrawing, simplifyPoints, splitStroke,
   strokePath, strokesBounds, touchesStroke
 } from '../../src/frontend/notespace/editor/drawing';
 import { anchorAlign, takeStrokes } from '../../src/frontend/notespace/editor/anchoring';
@@ -162,5 +162,57 @@ describe('encodeStrokes', () => {
     const text = encodeStrokes(strokes);
     expect(text).toBe('p,ink,4:0 0 100 0;h,#ffd84d,18:1.3 2');
     expect(decodeStrokes(text)).toEqual([line, { ...strokes[1], points: [1.3, 2] }]);
+  });
+});
+
+
+/* =========================
+   Layers
+   ========================= */
+
+describe('normalizeLayers', () => {
+  it('starts with one drawing layer above the text', () => {
+    expect(normalizeLayers(undefined)).toEqual(defaultLayers());
+    expect(defaultLayers().map(layer => layer.id)).toEqual(['text', 'layer-1']);
+  });
+
+  it('returns a valid list as the same array', () => {
+    const layers = [{ id: 'layer-2', name: 'Sketch', hidden: true }, ...defaultLayers()];
+    expect(normalizeLayers(layers)).toBe(layers);
+  });
+
+  it('repairs broken lists: bad ids, repeats, a missing text entry or no drawing layer', () => {
+    expect(normalizeLayers([{ id: 'Bad Id!', name: 'x' }, { id: 'layer-2', name: '  ', hidden: 'yes' }, { id: 'layer-2', name: 'Again' }]))
+      .toEqual([{ id: 'text', name: 'Text', hidden: false }, { id: 'layer-2', name: 'Layer', hidden: false }]);
+    expect(normalizeLayers([{ id: 'text', name: 'Words', hidden: true }])).toEqual(defaultLayers());
+  });
+});
+
+describe('strokeLayer', () => {
+  const layers = [{ id: 'layer-2', name: 'Under', hidden: false }, ...defaultLayers()];
+
+  it('uses the stroke layer, or the first layer for strokes drawn before layers', () => {
+    expect(strokeLayer({ ...line, layer: 'layer-2' }, layers)).toBe('layer-2');
+    expect(strokeLayer(line, layers)).toBe('layer-1');
+    expect(strokeLayer({ ...line, layer: 'gone' }, layers)).toBe('layer-1');
+  });
+
+  it('falls back to the first layer above the text when the first layer was removed', () => {
+    const others = [{ id: 'text', name: 'Text', hidden: false }, { id: 'layer-3', name: 'Top', hidden: false }];
+    expect(strokeLayer(line, others)).toBe('layer-3');
+  });
+
+  it('keeps valid layer ids on strokes and drops broken ones', () => {
+    expect(normalizeDrawing([{ ...line, layer: 'layer-2' }])[0].layer).toBe('layer-2');
+    expect(normalizeDrawing([{ ...line, layer: 'NOT valid' }])[0].layer).toBeUndefined();
+  });
+});
+
+describe('takeStrokes on one layer', () => {
+  it('only takes strokes the filter allows', () => {
+    const other = { ...line, layer: 'layer-2' };
+    const result = takeStrokes([line, other], { x: -10, y: -10, width: 120, height: 20 }, 'whole', stroke => stroke.layer !== 'layer-2');
+    expect(result.taken).toEqual([line]);
+    expect(result.left).toEqual([other]);
   });
 });

@@ -1,6 +1,6 @@
 import { useSyncExternalStore } from 'react';
 import { cleanHtml, htmlToText } from './sanitize';
-import { normalizeDrawing } from './editor/drawing';
+import { normalizeDrawing, normalizeLayers } from './editor/drawing';
 import { DEFAULT_CATEGORIES, MAX_CATEGORIES } from '../../backend/data/defaultCategories';
 import { SAMPLE_CONTENT, SAMPLE_NOTES } from '../../backend/data/sampleNotes';
 import { readCategories, writeCategories } from '../../backend/storage/categoriesStorage';
@@ -100,6 +100,7 @@ function normalizeNote(raw: unknown): Note | null {
     parentId: /^[a-zA-Z0-9_-]+$/.test(String(record.parentId ?? '')) ? String(record.parentId) : '',
     comments: normalizeComments(record.comments),
     drawing: normalizeDrawing(record.drawing),
+    drawingLayers: normalizeLayers(record.drawingLayers),
     content: cleanHtml(record.content ?? SAMPLE_CONTENT[id] ?? '')
   };
 }
@@ -249,6 +250,7 @@ export function updateNote(id: string, changes: NoteChanges, persist = true) {
   if (changes.remarks !== undefined) next.remarks = cleanHtml(String(changes.remarks).slice(0, REMARKS_LENGTH));
   if (changes.comments) next.comments = normalizeComments(changes.comments);
   if (changes.drawing) next.drawing = normalizeDrawing(changes.drawing);
+  if (changes.drawingLayers) next.drawingLayers = normalizeLayers(changes.drawingLayers);
 
   /* Locking or unlocking from Page options ends any short unlock. */
   if (typeof changes.locked === 'boolean') {
@@ -257,7 +259,7 @@ export function updateNote(id: string, changes: NoteChanges, persist = true) {
   }
 
   /* An edit while the note is unlocked for a short time starts the countdown again. */
-  const edits = (['title', 'subtitle', 'category', 'icon', 'content', 'remarks', 'comments', 'drawing'] as const).some(key => changes[key] !== undefined);
+  const edits = (['title', 'subtitle', 'category', 'icon', 'content', 'remarks', 'comments', 'drawing', 'drawingLayers'] as const).some(key => changes[key] !== undefined);
   if (edits && isTemporarilyUnlocked(current)) next.unlockedUntil = new Date(Date.now() + TEMPORARY_UNLOCK_MS).toISOString();
 
   setState({ notes: state.notes.map(note => (note.id === id ? next : note)) });

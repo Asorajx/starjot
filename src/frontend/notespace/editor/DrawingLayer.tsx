@@ -1,9 +1,12 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent, type RefObject } from 'react';
 import { updatePreferences, usePreferences, type DrawingToolName, type PenSettings } from '../../app/preferences';
 import { Icon, type IconName } from '../../components/Icon';
-import type { DrawingStroke } from '../../../shared/types/note';
+import type { DrawingLayerInfo, DrawingStroke } from '../../../shared/types/note';
+import { LayersMenu } from './LayersMenu';
 import { DrawingSelection } from './DrawingSelection';
-import { HEX_COLOR, INK, SIZE_MAX, SIZE_MIN, clampSize, drawingBottom, hexToHsv, hsvToHex, simplifyPoints, strokePath, touchesStroke, type Hsv } from './drawing';
+import {
+  HEX_COLOR, INK, SIZE_MAX, SIZE_MIN, TEXT_LAYER, clampSize, drawingBottom, hexToHsv, hsvToHex, simplifyPoints, strokeLayer, strokePath, touchesStroke, type Hsv
+} from './drawing';
 import type { EditorSession } from './session';
 
 /* The eraser's reach around the pointer, in pixels at 100% zoom. */
@@ -47,45 +50,92 @@ const WHEEL_SIZE = 176;
 
 type DrawingLayerProps = {
   strokes: DrawingStroke[];
+  layers: DrawingLayerInfo[];
 
   /* The distance from the column's edges to its text (a paginated note's page margin). */
   inset: number;
   layerRef: RefObject<HTMLDivElement | null>;
 };
 
-/* Shows the note's drawing over its text. It sits in the note's column and is zoomed with it, so */
-/* strokes keep their place on the text column at every zoom. It never takes the mouse; drawing */
-/* mode adds a surface above it (DrawingTools). Highlighter strokes are drawn under pen strokes. */
-export function DrawingLayer({ strokes, inset, layerRef }: DrawingLayerProps) {
-  const paths = useMemo(() => {
-    const order = strokes.map((stroke, index) => ({ stroke, index }));
-    return [...order.filter(item => item.stroke.tool === 'highlighter'), ...order.filter(item => item.stroke.tool === 'pen')];
-  }, [strokes]);
+type PlacedStroke = { stroke: DrawingStroke; index: number };
+
+/* Stroke paths in both halves of the drawing (under and over the text), found from either one. */
+export function strokeElements(layer: HTMLElement, selector: string) {
+  return Array.from(layer.parentElement?.querySelectorAll(`.drawing-layer ${selector}`) ?? []);
+}
+
+/* The path that shows the stroke being drawn, in the half of the drawing its layer is in. */
+export function livePath(layer: HTMLElement, belowText: boolean) {
+  return layer.parentElement?.querySelector(`.drawing-layer${belowText ? '.is-below' : ':not(.is-below)'} .drawing-live`) ?? null;
+}
+
+/* Whether a layer is under the note's text. */
+export function isBelowText(layers: DrawingLayerInfo[], id: string) {
+  return layers.findIndex(layer => layer.id === id) < layers.findIndex(layer => layer.id === TEXT_LAYER);
+}
+
+function StrokePaths({ items }: { items: PlacedStroke[] }) {
+  return (
+    <>
+      {items.map(({ stroke, index }) => (
+        <path
+          key={index}
+          data-stroke={index}
+          className={`drawing-stroke is-${stroke.tool}`}
+          d={strokePath(stroke.points)}
+          stroke={stroke.color === INK ? 'currentColor' : stroke.color}
+          strokeWidth={stroke.size}
+        />
+      ))}
+    </>
+  );
+}
+
+/* Shows the note's drawing in two halves: the layers under the text and the layers over it. Both */
+/* sit in the note's column and are zoomed with it, so strokes keep their place on the text column */
+/* at every zoom. They never take the mouse; drawing mode adds a surface above them (DrawingTools). */
+/* Layers are drawn in order, and within a layer highlighter strokes go under pen strokes. Hidden */
+/* layers are left out. */
+export function DrawingLayer({ strokes, layers, inset, layerRef }: DrawingLayerProps) {
+  const { below, above } = useMemo(() => {
+    const byLayer = new Map<string, PlacedStroke[]>();
+    strokes.forEach((stroke, index) => {
+      const id = strokeLayer(stroke, layers);
+      byLayer.set(id, [...(byLayer.get(id) ?? []), { stroke, index }]);
+    });
+    const half = (list: DrawingLayerInfo[]) => list.filter(layer => !layer.hidden).flatMap(layer => {
+      const items = byLayer.get(layer.id) ?? [];
+      return [...items.filter(item => item.stroke.tool === 'highlighter'), ...items.filter(item => item.stroke.tool === 'pen')];
+    });
+    const text = layers.findIndex(layer => layer.id === TEXT_LAYER);
+    return { below: half(layers.slice(0, text)), above: half(layers.slice(text + 1)) };
+  }, [strokes, layers]);
 
   /* The stroke being drawn is shown until the saved stroke replaces it. */
   useLayoutEffect(() => {
-    layerRef.current?.querySelector('.drawing-live')?.removeAttribute('d');
+    const layer = layerRef.current;
+    if (layer) strokeElements(layer, '.drawing-live').forEach(path => path.removeAttribute('d'));
   }, [strokes, layerRef]);
 
-  /* The layer reaches down to the lowest stroke, so the page can scroll to strokes below the text. */
+  /* The layers reach down to the lowest stroke, so the page can scroll to strokes below the text. */
   const bottom = drawingBottom(strokes);
+  const style = { inset, minHeight: bottom ? bottom + 24 : undefined };
 
   return (
-    <div ref={layerRef} className="drawing-layer" style={{ inset, minHeight: bottom ? bottom + 24 : undefined }} aria-hidden="true">
-      <svg width="100%" height="100%">
-        {paths.map(({ stroke, index }) => (
-          <path
-            key={index}
-            data-stroke={index}
-            className={`drawing-stroke is-${stroke.tool}`}
-            d={strokePath(stroke.points)}
-            stroke={stroke.color === INK ? 'currentColor' : stroke.color}
-            strokeWidth={stroke.size}
-          />
-        ))}
-        <path className="drawing-stroke drawing-live" />
-      </svg>
-    </div>
+    <>
+      <div className="drawing-layer is-below" style={style} aria-hidden="true">
+        <svg width="100%" height="100%">
+          <StrokePaths items={below} />
+          <path className="drawing-stroke drawing-live" />
+        </svg>
+      </div>
+      <div ref={layerRef} className="drawing-layer" style={style} aria-hidden="true">
+        <svg width="100%" height="100%">
+          <StrokePaths items={above} />
+          <path className="drawing-stroke drawing-live" />
+        </svg>
+      </div>
+    </>
   );
 }
 
@@ -271,6 +321,11 @@ function ColorMenu({ settings, onChange }: ColorMenuProps) {
 type DrawingToolsProps = {
   session: EditorSession;
   strokes: DrawingStroke[];
+  layers: DrawingLayerInfo[];
+
+  /* The layer being drawn on: new strokes go onto it, and the eraser and Select only touch it. */
+  activeLayer: string;
+  onActiveLayerChange: (id: string) => void;
   layerRef: RefObject<HTMLDivElement | null>;
   onClose: () => void;
 
@@ -290,14 +345,18 @@ type Gesture = {
 /* side of the pane with the tools, size and colour. The Select tool has its own surface */
 /* (DrawingSelection), for anchoring strokes into the text. Each stroke (or each sweep of the eraser) is */
 /* one undo step. While drawing, the note's text cannot be selected or edited. */
-export function DrawingTools({ session, strokes, layerRef, onClose, onOpenSettings }: DrawingToolsProps) {
+export function DrawingTools({ session, strokes, layers, activeLayer, onActiveLayerChange, layerRef, onClose, onOpenSettings }: DrawingToolsProps) {
   const { drawing } = usePreferences();
-  const [menu, setMenu] = useState<'size' | 'color' | null>(null);
+  const [menu, setMenu] = useState<'size' | 'color' | 'layers' | null>(null);
   const [eraserAt, setEraserAt] = useState<{ x: number; y: number; scale: number } | null>(null);
   const surfaceRef = useRef<HTMLDivElement>(null);
   const gesture = useRef<Gesture | null>(null);
   const strokesRef = useRef(strokes);
   strokesRef.current = strokes;
+
+  /* Only strokes on the layer being drawn on can be erased or selected (none while it is hidden). */
+  const active = layers.find(layer => layer.id === activeLayer);
+  const onActiveLayer = (stroke: DrawingStroke) => Boolean(active && !active.hidden) && strokeLayer(stroke, layers) === activeLayer;
 
   const tool = drawing.tool;
   const pen = tool === 'pen' || tool === 'highlighter' ? tool : null;
@@ -342,7 +401,7 @@ export function DrawingTools({ session, strokes, layerRef, onClose, onOpenSettin
 
   /* Show the stroke being drawn straight on the page, without waiting for React. */
   function drawLive(points: number[]) {
-    const live = layerRef.current?.querySelector('.drawing-live');
+    const live = layerRef.current && livePath(layerRef.current, isBelowText(layers, activeLayer));
     if (!live || !pen || !settings) return;
     live.setAttribute('d', strokePath(points));
     live.setAttribute('class', `drawing-stroke drawing-live is-${pen}`);
@@ -359,9 +418,10 @@ export function DrawingTools({ session, strokes, layerRef, onClose, onOpenSettin
       const atX = lastX + ((x - lastX) * step) / steps;
       const atY = lastY + ((y - lastY) * step) / steps;
       strokesRef.current.forEach((stroke, index) => {
-        if (current.erased.has(index) || !touchesStroke(stroke, atX, atY, ERASER_RADIUS)) return;
+        if (current.erased.has(index) || !onActiveLayer(stroke) || !touchesStroke(stroke, atX, atY, ERASER_RADIUS)) return;
         current.erased.add(index);
-        layerRef.current?.querySelector(`[data-stroke="${index}"]`)?.setAttribute('data-erasing', '');
+        const layer = layerRef.current;
+        if (layer) strokeElements(layer, `[data-stroke="${index}"]`)[0]?.setAttribute('data-erasing', '');
       });
     }
     current.points.push(x, y);
@@ -411,12 +471,17 @@ export function DrawingTools({ session, strokes, layerRef, onClose, onOpenSettin
     gesture.current = null;
 
     if (tool === 'eraser') {
-      layerRef.current?.querySelectorAll('[data-erasing]').forEach(path => path.removeAttribute('data-erasing'));
+      const layer = layerRef.current;
+      if (layer) strokeElements(layer, '[data-erasing]').forEach(path => path.removeAttribute('data-erasing'));
       if (current.erased.size) session.saveDrawing(strokesRef.current.filter((_, index) => !current.erased.has(index)));
       return;
     }
     if (!pen || !settings) return;
-    session.saveDrawing([...strokesRef.current, { tool: pen, color: settings.color, size: settings.size, points: simplifyPoints(current.points) }]);
+
+    /* Drawing on a hidden layer shows it again, so the new stroke can be seen. */
+    const stroke = { tool: pen, color: settings.color, size: settings.size, points: simplifyPoints(current.points), layer: activeLayer };
+    const shown = active?.hidden ? layers.map(layer => (layer.id === activeLayer ? { ...layer, hidden: false } : layer)) : undefined;
+    session.saveDrawing([...strokesRef.current, stroke], shown);
   }
 
   const toolButton = (item: (typeof TOOLS)[number]) => (
@@ -476,6 +541,21 @@ export function DrawingTools({ session, strokes, layerRef, onClose, onOpenSettin
             {menu === 'color' && settings && <ColorMenu settings={settings} onChange={color => changePen({ color })} />}
           </span>
 
+          <span className="drawing-menu-anchor">
+            <button
+              type="button"
+              className={`drawing-tool ${menu === 'layers' ? 'selected' : ''}`}
+              data-tooltip={menu === 'layers' ? undefined : `Layers: ${active?.name ?? ''}`}
+              data-tooltip-side="left"
+              aria-label="Layers"
+              aria-expanded={menu === 'layers'}
+              onClick={() => setMenu(open => (open === 'layers' ? null : 'layers'))}
+            >
+              <Icon name="layers" size={17} />
+            </button>
+            {menu === 'layers' && <LayersMenu session={session} strokes={strokes} layers={layers} active={activeLayer} onActivate={onActiveLayerChange} />}
+          </span>
+
           <span className="drawing-toolbar-rule" />
           <button type="button" className="drawing-tool" data-tooltip="Drawing settings" data-tooltip-side="left" aria-label="Drawing settings" onClick={onOpenSettings}>
             <Icon name="settings" size={17} />
@@ -487,7 +567,15 @@ export function DrawingTools({ session, strokes, layerRef, onClose, onOpenSettin
       </div>
 
       {tool === 'select' ? (
-        <DrawingSelection session={session} strokes={strokes} layerRef={layerRef} edge={drawing.selectEdge} snap={drawing.snap} />
+        <DrawingSelection
+          session={session}
+          strokes={strokes}
+          layerRef={layerRef}
+          edge={drawing.selectEdge}
+          snap={drawing.snap}
+          layer={activeLayer}
+          allowed={onActiveLayer}
+        />
       ) : (
         <div
           ref={surfaceRef}

@@ -947,11 +947,6 @@
   margin: 0 auto;
 }
 
-.editor-width.is-paginated > :not(.page-sheets, .drawing-layer) {
-  position: relative;
-  z-index: 1;
-}
-
 .page-sheets {
   position: absolute;
   inset: 0;
@@ -3810,6 +3805,17 @@
   pointer-events: none;
 }
 
+/* Layers under the text sit beneath the note's text (which is lifted to z-index 1), and above a */
+/* paginated note's sheets. */
+.drawing-layer.is-below {
+  z-index: 0;
+}
+
+.editor-wrap .editor-width > :not(.page-sheets, .drawing-layer, style) {
+  position: relative;
+  z-index: 1;
+}
+
 .drawing-layer svg {
   display: block;
   overflow: visible;
@@ -4187,6 +4193,121 @@
   box-shadow: 0 0 0 1px rgba(0, 0, 0, .4);
   transform: translate(-50%, -50%);
   pointer-events: none;
+}
+
+/* The layers menu: one row per layer, top first, with the note's text as a fixed row. */
+.drawing-layers {
+  width: 248px;
+}
+
+.drawing-layer-add {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: #71829b;
+}
+
+.drawing-layer-add:hover:not(:disabled) {
+  color: #3878e4;
+  background: #edf4ff;
+}
+
+.drawing-layer-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.drawing-layer-row {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  min-height: 32px;
+  padding: 0 4px;
+  border-radius: 4px;
+}
+
+.drawing-layer-row.is-active {
+  background: #edf4ff;
+}
+
+.drawing-layer-row.is-text {
+  gap: 8px;
+  padding: 0 8px;
+  border: 1px dashed #d5deea;
+  color: #71829b;
+  font-size: 12px;
+}
+
+.drawing-layer-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  padding: 4px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: #344962;
+  font: inherit;
+  font-size: 12px;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.drawing-layer-row.is-active .drawing-layer-name {
+  color: #3878e4;
+  font-weight: 700;
+}
+
+.drawing-layer-row.is-hidden .drawing-layer-name {
+  opacity: .5;
+}
+
+.drawing-layer-input {
+  flex: 1;
+  min-width: 0;
+  height: 26px;
+  padding: 0 4px;
+  border: 1px solid #3878e4;
+  border-radius: 4px;
+  background: #fff;
+  color: #344962;
+  font: inherit;
+  font-size: 12px;
+  outline: none;
+}
+
+.drawing-layer-button {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: #71829b;
+}
+
+.drawing-layer-button:hover:not(:disabled) {
+  color: #3878e4;
+  background: #dfeaff;
+}
+
+.drawing-layer-button:disabled,
+.drawing-layer-add:disabled {
+  opacity: .35;
+  cursor: default;
 }
 
 .drawing-hex {

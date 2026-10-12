@@ -1,4 +1,4 @@
-import type { DrawingStroke, NoteComment } from '../../../shared/types/note';
+import type { DrawingLayerInfo, DrawingStroke, NoteComment } from '../../../shared/types/note';
 
 
 /* =========================
@@ -7,12 +7,13 @@ import type { DrawingStroke, NoteComment } from '../../../shared/types/note';
 
 /* A comment's words are marked in the content, but its text is stored with the note, so each step */
 /* keeps both: undoing a deleted comment brings back its text as well as its highlight. Each step */
-/* also keeps the drawing, so one undo history covers both typing and drawing. */
+/* also keeps the drawing and its layers, so one undo history covers both typing and drawing. */
 export type HistoryEntry = {
   content: string;
   caret: number | null;
   comments: NoteComment[];
   drawing: DrawingStroke[];
+  layers: DrawingLayerInfo[];
 };
 
 const LIMIT = 300;
@@ -24,8 +25,8 @@ export class History {
   private current: HistoryEntry;
   private startNewStep = true;
 
-  constructor(content: string, comments: NoteComment[] = [], drawing: DrawingStroke[] = []) {
-    this.current = { content, caret: null, comments, drawing };
+  constructor(content: string, comments: NoteComment[] = [], drawing: DrawingStroke[] = [], layers: DrawingLayerInfo[] = []) {
+    this.current = { content, caret: null, comments, drawing, layers };
   }
 
   /* Call before an edit that should become its own step; the caret is where undo returns to. */
@@ -34,10 +35,10 @@ export class History {
     if (caret !== null) this.current.caret = caret;
   }
 
-  /* Call after every edit with the new content, comments and drawing. Returns false when nothing */
-  /* changed. A drawing counts as changed when it is a different array. */
-  record(content: string, caret: number | null, comments: NoteComment[] = this.current.comments, drawing = this.current.drawing) {
-    if (content === this.current.content && drawing === this.current.drawing) {
+  /* Call after every edit with the new content, comments, drawing and layers. Returns false when */
+  /* nothing changed. A drawing (or its layers) counts as changed when it is a different array. */
+  record(content: string, caret: number | null, comments: NoteComment[] = this.current.comments, drawing = this.current.drawing, layers = this.current.layers) {
+    if (content === this.current.content && drawing === this.current.drawing && layers === this.current.layers) {
       this.current.caret = caret ?? this.current.caret;
       this.current.comments = comments;
       return false;
@@ -47,7 +48,7 @@ export class History {
       if (this.undoStack.length > LIMIT) this.undoStack.shift();
       this.startNewStep = false;
     }
-    this.current = { content, caret, comments, drawing };
+    this.current = { content, caret, comments, drawing, layers };
     this.redoStack = [];
     return true;
   }
@@ -87,6 +88,10 @@ export class History {
   /* The drawing of the step being shown. */
   currentDrawing() {
     return this.current.drawing;
+  }
+
+  currentLayers() {
+    return this.current.layers;
   }
 
   canUndo() {

@@ -1,4 +1,4 @@
-import type { DrawingStroke, DrawingTool } from '../../../shared/types/note';
+import type { DrawingLayerInfo, DrawingStroke, DrawingTool } from '../../../shared/types/note';
 
 /* The colour of the note's text, which follows light and dark mode. */
 export const INK = 'ink';
@@ -10,6 +10,12 @@ export const SIZE_MAX = 48;
 const MAX_STROKES = 5000;
 const MAX_VALUES = 20000;
 const TOOLS: DrawingTool[] = ['pen', 'highlighter'];
+
+/* Layer ids look like layer-1 or layer-lq2x9k; "text" marks the note's text among the layers. */
+export const TEXT_LAYER = 'text';
+const LAYER_ID = /^[a-z0-9-]{1,24}$/;
+export const MAX_LAYERS = 10;
+const LAYER_NAME_LENGTH = 30;
 
 
 /* =========================
@@ -23,7 +29,8 @@ function isStroke(value: unknown): value is DrawingStroke {
     && (stroke.color === INK || HEX_COLOR.test(String(stroke.color)))
     && typeof stroke.size === 'number' && stroke.size >= SIZE_MIN && stroke.size <= SIZE_MAX
     && Array.isArray(stroke.points) && stroke.points.length >= 2 && stroke.points.length % 2 === 0
-    && stroke.points.length <= MAX_VALUES && stroke.points.every(Number.isFinite);
+    && stroke.points.length <= MAX_VALUES && stroke.points.every(Number.isFinite)
+    && (stroke.layer === undefined || (typeof stroke.layer === 'string' && LAYER_ID.test(stroke.layer)));
 }
 
 /* A stroke with missing or broken parts is repaired, or dropped when it has no points. */
@@ -34,11 +41,13 @@ function repairStroke(value: unknown): DrawingStroke[] {
   const points = numbers.slice(0, Math.min(MAX_VALUES, numbers.length - (numbers.length % 2))).map(round);
   if (points.length < 2) return [];
   const color = String(record.color ?? '');
+  const layer = typeof record.layer === 'string' && LAYER_ID.test(record.layer) ? record.layer : undefined;
   return [{
     tool: TOOLS.includes(record.tool as DrawingTool) ? record.tool as DrawingTool : 'pen',
     color: color === INK || HEX_COLOR.test(color) ? color : INK,
     size: clampSize(Number(record.size)),
-    points
+    points,
+    ...(layer ? { layer } : {})
   }];
 }
 
@@ -48,6 +57,49 @@ export function normalizeDrawing(raw: unknown): DrawingStroke[] {
   if (!Array.isArray(raw)) return [];
   if (raw.length <= MAX_STROKES && raw.every(isStroke)) return raw;
   return raw.slice(0, MAX_STROKES).flatMap(repairStroke);
+}
+
+/* A note starts with one drawing layer, above its text. */
+export function defaultLayers(): DrawingLayerInfo[] {
+  return [{ id: TEXT_LAYER, name: 'Text', hidden: false }, { id: 'layer-1', name: 'Layer 1', hidden: false }];
+}
+
+function isLayerList(value: unknown): value is DrawingLayerInfo[] {
+  if (!Array.isArray(value) || value.length > MAX_LAYERS + 1) return false;
+  const ids = new Set<string>();
+  const fine = value.every(layer => layer && typeof layer === 'object'
+    && typeof layer.id === 'string' && LAYER_ID.test(layer.id) && !ids.has(layer.id) && ids.add(layer.id)
+    && typeof layer.name === 'string' && layer.name.length <= LAYER_NAME_LENGTH && typeof layer.hidden === 'boolean');
+  return fine && ids.has(TEXT_LAYER) && ids.size >= 2;
+}
+
+/* A drawing's layers: one text entry and at least one drawing layer. A valid list is returned as */
+/* it is (the same array), like normalizeDrawing; a broken one is repaired. */
+export function normalizeLayers(raw: unknown): DrawingLayerInfo[] {
+  if (isLayerList(raw)) return raw;
+  if (!Array.isArray(raw)) return defaultLayers();
+  const seen = new Set<string>();
+  const layers = raw.flatMap(item => {
+    const record = (item && typeof item === 'object' ? item : {}) as Record<string, unknown>;
+    const id = String(record.id ?? '');
+    if (!LAYER_ID.test(id) || seen.has(id)) return [];
+    seen.add(id);
+    const name = id === TEXT_LAYER ? 'Text' : String(record.name ?? '').trim().slice(0, LAYER_NAME_LENGTH) || 'Layer';
+    return [{ id, name, hidden: id !== TEXT_LAYER && record.hidden === true }];
+  }).slice(0, MAX_LAYERS + 1);
+  if (!seen.has(TEXT_LAYER)) layers.unshift({ id: TEXT_LAYER, name: 'Text', hidden: false });
+  if (layers.length < 2) layers.push(defaultLayers()[1]);
+  return layers;
+}
+
+/* The layer a stroke is shown on: its own, or for strokes drawn before layers existed (or whose */
+/* layer is gone) the first layer a note starts with, else the first layer above the text. */
+export function strokeLayer(stroke: DrawingStroke, layers: DrawingLayerInfo[]) {
+  if (stroke.layer && stroke.layer !== TEXT_LAYER && layers.some(layer => layer.id === stroke.layer)) return stroke.layer;
+  const first = defaultLayers()[1].id;
+  if (layers.some(layer => layer.id === first)) return first;
+  const text = layers.findIndex(layer => layer.id === TEXT_LAYER);
+  return (layers.slice(text + 1).find(Boolean) ?? layers.find(layer => layer.id !== TEXT_LAYER))?.id ?? '';
 }
 
 export function clampSize(size: number) {
@@ -283,6 +335,7 @@ export function moveStrokes(strokes: DrawingStroke[], dx: number, dy: number, sc
 /* with points measured from the drawing's top-left corner. */
 const TOOL_CODES: Record<DrawingTool, string> = { pen: 'p', highlighter: 'h' };
 
+/* An anchored drawing has no layers, so the strokes' layers are left out. */
 export function encodeStrokes(strokes: DrawingStroke[]) {
   return strokes.map(stroke => `${TOOL_CODES[stroke.tool]},${stroke.color},${stroke.size}:${stroke.points.map(round).join(' ')}`).join(';');
 }

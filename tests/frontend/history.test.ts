@@ -67,6 +67,15 @@ describe('History with drawings', () => {
     expect(history.undo()?.drawing).toBe(before);
     expect(history.redo()?.drawing).toEqual([]);
   });
+
+  it('adds a step when only the layers change', () => {
+    const layers = [{ id: 'text', name: 'Text', hidden: false }, { id: 'layer-1', name: 'Layer 1', hidden: false }];
+    const history = new History('a', [], [], layers);
+    history.checkpoint();
+    const hidden = [layers[0], { ...layers[1], hidden: true }];
+    expect(history.record('a', null, [], history.currentDrawing(), hidden)).toBe(true);
+    expect(history.undo()?.layers).toBe(layers);
+  });
 });
 
 describe('TypingSteps', () => {

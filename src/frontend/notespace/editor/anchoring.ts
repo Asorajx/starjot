@@ -15,10 +15,14 @@ const LINES = 'p, li, h1, h2, h3, h4, h5, h6, td, th, pre, .toggle-summary, .blo
    Choosing Strokes
    ========================= */
 
+/* Which strokes a selection may take: those on the layer being worked on. */
+export type StrokeFilter = (stroke: DrawingStroke) => boolean;
+
 /* The strokes a selection box takes: those mostly inside it, or (when cutting) any that reach */
 /* into it. Returns their places in the list. */
-export function selectedStrokes(strokes: DrawingStroke[], box: Box, edge: SelectEdge) {
+export function selectedStrokes(strokes: DrawingStroke[], box: Box, edge: SelectEdge, allowed: StrokeFilter = () => true) {
   return strokes.flatMap((stroke, index) => {
+    if (!allowed(stroke)) return [];
     const taken = edge === 'whole' ? mostlyInside(stroke, box) : splitStroke(stroke, box).inside.length > 0;
     return taken ? [index] : [];
   });
@@ -27,8 +31,8 @@ export function selectedStrokes(strokes: DrawingStroke[], box: Box, edge: Select
 /* Split the drawing into the strokes the box takes and the strokes left behind. When cutting, */
 /* the parts of a stroke outside the box stay behind as strokes of their own. The box grows to */
 /* fit whole strokes that reach past it. */
-export function takeStrokes(strokes: DrawingStroke[], box: Box, edge: SelectEdge) {
-  const chosen = new Set(selectedStrokes(strokes, box, edge));
+export function takeStrokes(strokes: DrawingStroke[], box: Box, edge: SelectEdge, allowed: StrokeFilter = () => true) {
+  const chosen = new Set(selectedStrokes(strokes, box, edge, allowed));
   const taken: DrawingStroke[] = [];
   const left: DrawingStroke[] = [];
   strokes.forEach((stroke, index) => {
@@ -165,6 +169,7 @@ function insertDrawing(body: HTMLElement, layer: HTMLElement, block: HTMLElement
 type AnchorOptions = {
   edge: SelectEdge;
   snap: boolean;
+  allowed: StrokeFilter;
 
   /* Things above the text, let through while finding the place in the text. */
   blockers: (HTMLElement | null)[];
@@ -172,12 +177,12 @@ type AnchorOptions = {
 
 /* Anchor the strokes in the box into the text, as a drawing the text wraps around. One undo */
 /* step. Returns the new drawing, or null when the box holds no strokes. */
-export function anchorDrawing(session: EditorSession, selection: Box, { edge, snap, blockers }: AnchorOptions) {
+export function anchorDrawing(session: EditorSession, selection: Box, { edge, snap, allowed, blockers }: AnchorOptions) {
   const body = session.body();
   const layer = drawingLayerOf(session);
   const note = getNote(session.noteId);
   if (!body || !layer || !note) return null;
-  const { taken, left, box } = takeStrokes(note.drawing, selection, edge);
+  const { taken, left, box } = takeStrokes(note.drawing, selection, edge, allowed);
   if (!taken.length) return null;
 
   const block = createDrawingBlock(moveStrokes(taken, -box.x, -box.y), box.width, box.height, box.width, 'left', null);
@@ -210,14 +215,15 @@ export function moveDrawing(session: EditorSession, block: HTMLElement, box: Box
   return true;
 }
 
-/* Turn an anchored drawing back into loose strokes where it sits now (at the size it is shown). */
-/* One undo step. Returns the strokes' box on the drawing layer, or null. */
-export function detachDrawing(session: EditorSession, block: HTMLElement) {
+/* Turn an anchored drawing back into loose strokes where it sits now (at the size it is shown), */
+/* on the given layer (or the first layer above the text). One undo step. Returns the strokes' */
+/* box on the drawing layer, or null. */
+export function detachDrawing(session: EditorSession, block: HTMLElement, layer?: string) {
   const body = session.body();
   const note = getNote(session.noteId);
   const box = anchoredBox(session, block);
   if (!body || !note || !box || !body.contains(block)) return null;
-  const strokes = moveStrokes(drawingStrokes(block), box.x, box.y, box.width / drawingBox(block).width);
+  const strokes = moveStrokes(drawingStrokes(block), box.x, box.y, box.width / drawingBox(block).width).map(stroke => (layer ? { ...stroke, layer } : stroke));
 
   session.checkpoint();
   updateNote(session.noteId, { drawing: [...note.drawing, ...strokes] }, false);

@@ -1,7 +1,8 @@
 import { useEffect, useLayoutEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type RefObject } from 'react';
 import { Icon } from '../../components/Icon';
 import type { DrawingStroke } from '../../../shared/types/note';
-import { anchorDrawing, anchoredBox, detachDrawing, moveDrawing, selectedStrokes, takeStrokes, textTop, type SelectEdge } from './anchoring';
+import { anchorDrawing, anchoredBox, detachDrawing, moveDrawing, selectedStrokes, takeStrokes, textTop, type SelectEdge, type StrokeFilter } from './anchoring';
+import { strokeElements } from './DrawingLayer';
 import type { Box } from './drawing';
 import type { EditorSession } from './session';
 
@@ -34,6 +35,10 @@ type DrawingSelectionProps = {
   layerRef: RefObject<HTMLDivElement | null>;
   edge: SelectEdge;
   snap: boolean;
+
+  /* The layer being worked on: only its strokes can be selected, and detached strokes go onto it. */
+  layer: string;
+  allowed: StrokeFilter;
 };
 
 
@@ -73,7 +78,7 @@ function resizeBox(box: Box, handle: Handle, dx: number, dy: number, keepShape: 
 /* Anchor (or Enter) anchors them into the text. Clicking an anchored drawing selects it: drag it */
 /* to move it, drag a corner to resize it, or Detach it into loose strokes (which stay selected, */
 /* so more strokes can be taken in before anchoring again). Escape or a click outside closes the box. */
-export function DrawingSelection({ session, strokes, layerRef, edge, snap }: DrawingSelectionProps) {
+export function DrawingSelection({ session, strokes, layerRef, edge, snap, layer, allowed }: DrawingSelectionProps) {
   const [selection, setSelection] = useState<Selection | null>(null);
   const [, setTick] = useState(0);
   const surfaceRef = useRef<HTMLDivElement>(null);
@@ -103,14 +108,14 @@ export function DrawingSelection({ session, strokes, layerRef, edge, snap }: Dra
   function anchor() {
     const current = latest.current;
     if (!current || current.anchored) return;
-    const block = anchorDrawing(session, current.box, { edge, snap, blockers: [surfaceRef.current] });
+    const block = anchorDrawing(session, current.box, { edge, snap, allowed, blockers: [surfaceRef.current] });
     if (block) selectAnchored(block);
   }
 
   function detach() {
     const current = latest.current;
     if (!current?.anchored) return;
-    const box = detachDrawing(session, current.anchored);
+    const box = detachDrawing(session, current.anchored, layer);
     setSelection(box ? { box, anchored: null } : null);
   }
 
@@ -122,7 +127,7 @@ export function DrawingSelection({ session, strokes, layerRef, edge, snap }: Dra
       current.anchored.remove();
       session.commit();
     } else {
-      const { taken, left } = takeStrokes(strokes, current.box, edge);
+      const { taken, left } = takeStrokes(strokes, current.box, edge, allowed);
       if (taken.length) session.saveDrawing(left);
     }
     setSelection(null);
@@ -150,11 +155,11 @@ export function DrawingSelection({ session, strokes, layerRef, edge, snap }: Dra
 
   /* The loose strokes the box takes glow. */
   useLayoutEffect(() => {
-    const layer = layerRef.current;
-    if (!layer) return;
-    layer.querySelectorAll('[data-selected]').forEach(path => path.removeAttribute('data-selected'));
+    const shown = layerRef.current;
+    if (!shown) return;
+    strokeElements(shown, '[data-selected]').forEach(path => path.removeAttribute('data-selected'));
     if (!selection || selection.anchored) return;
-    selectedStrokes(strokes, selection.box, edge).forEach(index => layer.querySelector(`[data-stroke="${index}"]`)?.setAttribute('data-selected', ''));
+    selectedStrokes(strokes, selection.box, edge, allowed).forEach(index => strokeElements(shown, `[data-stroke="${index}"]`)[0]?.setAttribute('data-selected', ''));
   });
 
   /* Undo or a mode change redraws the note, which removes a selected anchored drawing. */
@@ -270,7 +275,7 @@ export function DrawingSelection({ session, strokes, layerRef, edge, snap }: Dra
 
   /* The buttons line up with the box's right edge when the box is on the right, so they stay on the page. */
   const barAtEnd = Boolean(shown && surface && shown.left + shown.width / 2 > surface.width / 2);
-  const hasStrokes = selection ? Boolean(selection.anchored) || selectedStrokes(strokes, selection.box, edge).length > 0 : false;
+  const hasStrokes = selection ? Boolean(selection.anchored) || selectedStrokes(strokes, selection.box, edge, allowed).length > 0 : false;
   const dragging = drag.current !== null;
   const handles = selection?.anchored ? CORNERS : HANDLES;
 

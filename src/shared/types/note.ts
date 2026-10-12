@@ -62,6 +62,10 @@ export type Note = {
   /* Pen and highlighter strokes drawn over the note in drawing mode, oldest first. */
   drawing: DrawingStroke[];
 
+  /* The drawing's layers from bottom to top. The entry with the id "text" marks where the note's */
+  /* text sits among them: layers before it are drawn under the text, layers after it over it. */
+  drawingLayers: DrawingLayerInfo[];
+
   /* Free remarks about the note, written in the details (sanitized HTML). They are not part of the */
   /* note's text, so they never appear in previews. */
   remarks: string;
@@ -92,12 +96,23 @@ export type DrawingStroke = {
   /* The line's points as x, y, x, y… in pixels from the top-left corner of the note's text */
   /* column, at 100% zoom. Drawings stay where they are drawn, whatever the text does. */
   points: number[];
+
+  /* The id of the layer the stroke is on. Strokes without one (or whose layer is gone) are shown */
+  /* on the first layer above the text. */
+  layer?: string;
+};
+
+/* One layer of a note's drawing. Hidden layers are not shown, and cannot be drawn on. */
+export type DrawingLayerInfo = {
+  id: string;
+  name: string;
+  hidden: boolean;
 };
 
 /* The fields an editor may change; everything else is managed by the store. */
 export type NoteChanges = Partial<Pick<Note,
   'title' | 'subtitle' | 'category' | 'icon' | 'content' | 'mode' | 'stickyIndicator' | 'layout' | 'pageSize' | 'landscape' | 'locked' | 'detailsHidden'
-  | 'pagesHidden' | 'comments' | 'remarks' | 'drawing'>>;
+  | 'pagesHidden' | 'comments' | 'remarks' | 'drawing' | 'drawingLayers'>>;
 
 /* A user-defined group of notes, such as "Work". Notes refer to it by id, so renaming is safe. */
 export type Category = {
