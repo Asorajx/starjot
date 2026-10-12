@@ -12,13 +12,18 @@ export type ContentsScroll = 'smooth' | 'instant';
 export type NotesSort = 'edited' | 'opened' | 'title';
 
 /* What drawing mode draws with: the chosen tool, and the pen's and highlighter's own colour and */
-/* size. The eraser removes whole strokes. */
-export type DrawingToolName = 'pen' | 'highlighter' | 'eraser';
+/* size. The eraser removes whole strokes; Select draws a box around strokes to anchor them into the */
+/* text. selectEdge decides what happens to strokes on the box's edge: "whole" takes the strokes */
+/* that are mostly inside it, "cut" cuts strokes at the edge. With snap on, an anchored drawing lines */
+/* up with its line and the side of the text; with it off, it stays exactly where it is put. */
+export type DrawingToolName = 'pen' | 'highlighter' | 'eraser' | 'select';
 export type PenSettings = { color: string; size: number };
 export type DrawingPreferences = {
   tool: DrawingToolName;
   pen: PenSettings;
   highlighter: PenSettings;
+  selectEdge: 'whole' | 'cut';
+  snap: boolean;
 };
 
 export type Preferences = {
@@ -58,11 +63,13 @@ function loadPen(saved: unknown, defaults: PenSettings): PenSettings {
 
 function loadDrawing(saved: unknown): DrawingPreferences {
   const record = (saved && typeof saved === 'object' ? saved : {}) as Record<string, unknown>;
-  const tool = record.tool === 'highlighter' || record.tool === 'eraser' ? record.tool : 'pen';
+  const tool = record.tool === 'highlighter' || record.tool === 'eraser' || record.tool === 'select' ? record.tool : 'pen';
   return {
     tool,
     pen: loadPen(record.pen, { color: INK, size: 3 }),
-    highlighter: loadPen(record.highlighter, { color: '#ffd84d', size: 18 })
+    highlighter: loadPen(record.highlighter, { color: '#ffd84d', size: 18 }),
+    selectEdge: record.selectEdge === 'cut' ? 'cut' : 'whole',
+    snap: record.snap !== false
   };
 }
 

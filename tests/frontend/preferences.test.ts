@@ -76,7 +76,9 @@ describe('preferences', () => {
     expect(preferences.getPreferences().drawing).toEqual({
       tool: 'eraser',
       pen: { color: 'ink', size: 48 },
-      highlighter: { color: '#30a46c', size: 18 }
+      highlighter: { color: '#30a46c', size: 18 },
+      selectEdge: 'whole',
+      snap: true
     });
   });
 });

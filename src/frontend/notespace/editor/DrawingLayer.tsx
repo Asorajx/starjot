@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState, type PointerEven
 import { updatePreferences, usePreferences, type DrawingToolName, type PenSettings } from '../../app/preferences';
 import { Icon, type IconName } from '../../components/Icon';
 import type { DrawingStroke } from '../../../shared/types/note';
+import { DrawingSelection } from './DrawingSelection';
 import { HEX_COLOR, INK, SIZE_MAX, SIZE_MIN, clampSize, drawingBottom, hexToHsv, hsvToHex, simplifyPoints, strokePath, touchesStroke, type Hsv } from './drawing';
 import type { EditorSession } from './session';
 
@@ -11,7 +12,8 @@ const ERASER_RADIUS = 8;
 const TOOLS: { name: DrawingToolName; label: string; icon: IconName }[] = [
   { name: 'pen', label: 'Pen', icon: 'pencil' },
   { name: 'highlighter', label: 'Highlighter', icon: 'highlighter' },
-  { name: 'eraser', label: 'Eraser: removes whole strokes', icon: 'eraser' }
+  { name: 'eraser', label: 'Eraser: removes whole strokes', icon: 'eraser' },
+  { name: 'select', label: 'Select: anchor strokes into the text', icon: 'box-select' }
 ];
 
 /* Quick sizes for each pen; the slider allows any size in between. */
@@ -271,6 +273,9 @@ type DrawingToolsProps = {
   strokes: DrawingStroke[];
   layerRef: RefObject<HTMLDivElement | null>;
   onClose: () => void;
+
+  /* Opens Settings at the drawing settings. */
+  onOpenSettings: () => void;
 };
 
 type Gesture = {
@@ -282,9 +287,10 @@ type Gesture = {
 };
 
 /* Drawing mode: a surface over the note that takes the mouse, pen or finger, and a toolbar at the */
-/* side of the pane with the tools, size and colour. Each stroke (or each sweep of the eraser) is */
+/* side of the pane with the tools, size and colour. The Select tool has its own surface */
+/* (DrawingSelection), for anchoring strokes into the text. Each stroke (or each sweep of the eraser) is */
 /* one undo step. While drawing, the note's text cannot be selected or edited. */
-export function DrawingTools({ session, strokes, layerRef, onClose }: DrawingToolsProps) {
+export function DrawingTools({ session, strokes, layerRef, onClose, onOpenSettings }: DrawingToolsProps) {
   const { drawing } = usePreferences();
   const [menu, setMenu] = useState<'size' | 'color' | null>(null);
   const [eraserAt, setEraserAt] = useState<{ x: number; y: number; scale: number } | null>(null);
@@ -294,7 +300,7 @@ export function DrawingTools({ session, strokes, layerRef, onClose }: DrawingToo
   strokesRef.current = strokes;
 
   const tool = drawing.tool;
-  const pen = tool === 'eraser' ? null : tool;
+  const pen = tool === 'pen' || tool === 'highlighter' ? tool : null;
   const settings = pen ? drawing[pen] : null;
 
   /* Clicking outside an open menu, or pressing Escape, closes it. Listening early (capture) lets */
@@ -471,28 +477,35 @@ export function DrawingTools({ session, strokes, layerRef, onClose }: DrawingToo
           </span>
 
           <span className="drawing-toolbar-rule" />
+          <button type="button" className="drawing-tool" data-tooltip="Drawing settings" data-tooltip-side="left" aria-label="Drawing settings" onClick={onOpenSettings}>
+            <Icon name="settings" size={17} />
+          </button>
           <button type="button" className="drawing-tool" data-tooltip="Stop drawing (Esc)" data-tooltip-side="left" aria-label="Stop drawing" onClick={onClose}>
             <Icon name="x" size={17} />
           </button>
         </div>
       </div>
 
-      <div
-        ref={surfaceRef}
-        className={`drawing-surface is-${tool}`}
-        onPointerDown={handlePointerDown}
-        onPointerMove={handlePointerMove}
-        onPointerUp={handlePointerUp}
-        onPointerCancel={handlePointerUp}
-        onPointerLeave={() => setEraserAt(null)}
-      >
-        {tool === 'eraser' && eraserAt && (
-          <span
-            className="drawing-eraser"
-            style={{ left: eraserAt.x, top: eraserAt.y, width: ERASER_RADIUS * 2 * eraserAt.scale, height: ERASER_RADIUS * 2 * eraserAt.scale }}
-          />
-        )}
-      </div>
+      {tool === 'select' ? (
+        <DrawingSelection session={session} strokes={strokes} layerRef={layerRef} edge={drawing.selectEdge} snap={drawing.snap} />
+      ) : (
+        <div
+          ref={surfaceRef}
+          className={`drawing-surface is-${tool}`}
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+          onPointerCancel={handlePointerUp}
+          onPointerLeave={() => setEraserAt(null)}
+        >
+          {tool === 'eraser' && eraserAt && (
+            <span
+              className="drawing-eraser"
+              style={{ left: eraserAt.x, top: eraserAt.y, width: ERASER_RADIUS * 2 * eraserAt.scale, height: ERASER_RADIUS * 2 * eraserAt.scale }}
+            />
+          )}
+        </div>
+      )}
     </>
   );
 }

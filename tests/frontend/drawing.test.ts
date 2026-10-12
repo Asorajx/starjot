@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { drawingBottom, hexToHsv, hsvToHex, normalizeDrawing, simplifyPoints, strokePath, touchesStroke } from '../../src/frontend/notespace/editor/drawing';
+import {
+  decodeStrokes, drawingBottom, encodeStrokes, hexToHsv, hsvToHex, joinBoxes, mostlyInside, moveStrokes, normalizeDrawing, simplifyPoints, splitStroke,
+  strokePath, strokesBounds, touchesStroke
+} from '../../src/frontend/notespace/editor/drawing';
+import { anchorAlign, takeStrokes } from '../../src/frontend/notespace/editor/anchoring';
 import type { DrawingStroke } from '../../src/shared/types/note';
 
 const line: DrawingStroke = { tool: 'pen', color: 'ink', size: 4, points: [0, 0, 100, 0] };
@@ -74,5 +78,89 @@ describe('colour wheel colours', () => {
     expect(hexToHsv('#00ff00')).toEqual({ h: 120, s: 1, v: 1 });
     expect(hexToHsv('#ffffff')).toEqual({ h: 0, s: 0, v: 1 });
     for (const hex of ['#3e7bfa', '#e5484d', '#30a46c', '#000000', '#8b95a5']) expect(hsvToHex(hexToHsv(hex))).toBe(hex);
+  });
+});
+
+
+/* =========================
+   Selecting and Pinning
+   ========================= */
+
+const box = { x: 0, y: -10, width: 60, height: 20 };
+
+describe('mostlyInside', () => {
+  it('takes a stroke when most of its length is inside the box', () => {
+    expect(mostlyInside(line, box)).toBe(true);
+    expect(mostlyInside(line, { ...box, width: 40 })).toBe(false);
+    expect(mostlyInside({ ...line, points: [5, 0] }, box)).toBe(true);
+  });
+});
+
+describe('splitStroke', () => {
+  it('cuts a stroke at the box edge into the parts inside and outside', () => {
+    expect(splitStroke(line, box)).toEqual({
+      inside: [{ ...line, points: [0, 0, 60, 0] }],
+      outside: [{ ...line, points: [60, 0, 100, 0] }]
+    });
+  });
+
+  it('gives several pieces for a stroke that leaves the box and comes back', () => {
+    const zigzag = { ...line, points: [10, 0, 10, 30, 20, 30, 20, 0] };
+    const parts = splitStroke(zigzag, box);
+    expect(parts.inside.map(stroke => stroke.points)).toEqual([[10, 0, 10, 10], [20, 10, 20, 0]]);
+    expect(parts.outside.map(stroke => stroke.points)).toEqual([[10, 10, 10, 30, 20, 30, 20, 10]]);
+  });
+});
+
+describe('boxes and moving strokes', () => {
+  it('measures strokes with their width and joins boxes', () => {
+    expect(strokesBounds([line])).toEqual({ x: -2, y: -2, width: 104, height: 4 });
+    expect(strokesBounds([])).toBeNull();
+    expect(joinBoxes(box, { x: 50, y: 0, width: 20, height: 30 })).toEqual({ x: 0, y: -10, width: 70, height: 40 });
+  });
+
+  it('moves and scales strokes, widths included', () => {
+    expect(moveStrokes([line], 5, 10, 2)).toEqual([{ ...line, size: 8, points: [5, 10, 205, 10] }]);
+  });
+});
+
+describe('takeStrokes', () => {
+  const far = { ...line, points: [300, 300, 310, 310] };
+
+  it('takes whole strokes mostly inside, growing the box to fit them', () => {
+    const result = takeStrokes([line, far], { x: -10, y: -10, width: 80, height: 20 }, 'whole');
+    expect(result.taken).toEqual([line]);
+    expect(result.left).toEqual([far]);
+    expect(result.box).toEqual({ x: -10, y: -10, width: 112, height: 20 });
+  });
+
+  it('cuts strokes at the edge, leaving the outside parts behind', () => {
+    const result = takeStrokes([line, far], box, 'cut');
+    expect(result.taken).toEqual([{ ...line, points: [0, 0, 60, 0] }]);
+    expect(result.left).toEqual([{ ...line, points: [60, 0, 100, 0] }, far]);
+    expect(result.box).toBe(box);
+  });
+});
+
+describe('anchorAlign', () => {
+  it('puts a drawing on the side its box is nearest, or on its own line', () => {
+    expect(anchorAlign({ x: 0, y: 0, width: 100, height: 50 }, 600)).toBe('wrap-left');
+    expect(anchorAlign({ x: 480, y: 0, width: 100, height: 50 }, 600)).toBe('right');
+    expect(anchorAlign({ x: 250, y: 0, width: 100, height: 50 }, 600)).toBe('center');
+    expect(anchorAlign({ x: 0, y: 0, width: 400, height: 50 }, 600)).toBe('center');
+  });
+
+  it('uses the nearer side when snapping is off, so the exact place can be kept', () => {
+    expect(anchorAlign({ x: 200, y: 0, width: 100, height: 50 }, 600, false)).toBe('wrap-left');
+    expect(anchorAlign({ x: 320, y: 0, width: 100, height: 50 }, 600, false)).toBe('right');
+  });
+});
+
+describe('encodeStrokes', () => {
+  it('writes strokes as short text and reads them back', () => {
+    const strokes = [line, { tool: 'highlighter' as const, color: '#ffd84d', size: 18, points: [1.25, 2] }];
+    const text = encodeStrokes(strokes);
+    expect(text).toBe('p,ink,4:0 0 100 0;h,#ffd84d,18:1.3 2');
+    expect(decodeStrokes(text)).toEqual([line, { ...strokes[1], points: [1.3, 2] }]);
   });
 });

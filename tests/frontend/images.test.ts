@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createImageBlock, imageAlign, imageIdsIn, setImageAlign, setImageWidth } from '../../src/frontend/notespace/editor/images';
+import { createDrawingBlock, createImageBlock, drawingStrokes, imageAlign, imageIdsIn, setImageAlign, setImageWidth } from '../../src/frontend/notespace/editor/images';
 import { newImageId } from '../../src/frontend/notespace/imageStore';
 import { cleanHtml } from '../../src/frontend/notespace/sanitize';
 
@@ -59,5 +59,36 @@ describe('cleanHtml with images', () => {
 
   it('never keeps an image tag outside an image block', () => {
     expect(cleanHtml('<p><img src="https://example.com/x.png" onerror="alert(1)">Hi</p>')).toBe('<p>Hi</p>');
+  });
+});
+
+
+/* =========================
+   Pinned Drawings
+   ========================= */
+
+describe('pinned drawings', () => {
+  const strokes = [{ tool: 'pen' as const, color: 'ink', size: 3, points: [1, 2, 30.5, 40] }];
+
+  it('keeps its strokes, its own size, its width, its side and how far it is moved', () => {
+    const block = createDrawingBlock(strokes, 40, 50, 80, 'wrap-left', { x: 12, y: 6 });
+    expect(block.className).toBe('image-block drawing-block');
+    expect(block.dataset.align).toBe('wrap-left');
+    expect(block.dataset.box).toBe('40 50');
+    expect(block.dataset.offset).toBe('12 6');
+    expect(drawingStrokes(block)).toEqual(strokes);
+  });
+
+  it('is stored empty, with its strokes checked and written again', () => {
+    const block = createDrawingBlock(strokes, 40, 50, 80, 'right', null);
+    block.innerHTML = '<svg><path d="M0 0"/></svg>';
+    expect(cleanHtml(block.outerHTML)).toBe(
+      '<span class="image-block drawing-block" data-width="80" data-align="right" data-drawing="p,ink,3:1 2 30.5 40" data-box="40 50"></span>'
+    );
+  });
+
+  it('drops broken strokes, sizes and offsets', () => {
+    const html = '<span class="image-block drawing-block" data-drawing="p,url(x),3:1 2;h,#ffd84d,9:a b" data-box="-4 9" data-offset="5"></span>';
+    expect(cleanHtml(html)).toBe('<span class="image-block drawing-block" data-drawing="p,ink,3:1 2"></span>');
   });
 });

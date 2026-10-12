@@ -18,7 +18,7 @@ const MAX_CONTENT = 250000;
 function keepsClass(tag: string, name: string) {
   if (name === 'document-tagline' || name === 'overline') return true;
   if (tag === 'DIV' && ['sticky-group', 'toggle-block', 'is-open', 'toggle-body'].includes(name)) return true;
-  if (tag === 'SPAN' && (name === 'page-block' || name === 'page-mention' || name === 'image-block')) return true;
+  if (tag === 'SPAN' && ['page-block', 'page-mention', 'image-block', 'drawing-block'].includes(name)) return true;
   if (/^(P|H[1-5])$/.test(tag) && name === 'toggle-summary') return true;
   if (tag === 'A' && name === 'page-link') return true;
   if (tag === 'TABLE' && name === 'fit-content') return true;
@@ -35,7 +35,8 @@ export function safeHref(href: string | null) {
 /* Copy the few attributes Notespace uses: link addresses, linked page ids, page block sizes and widths, */
 /* table column widths and row heights, how many rows and columns a merged table cell covers, and comment ids. */
 function copyAttributes(node: Element, copy: Element) {
-  /* An image keeps only its id, its width in pixels and where it sits on its line. */
+  /* An image keeps only its id, its width in pixels and where it sits on its line; a pinned */
+  /* drawing keeps its strokes, its own size and how far it is moved instead of an id. */
   if (node.tagName === 'SPAN' && node.classList.contains('image-block')) {
     Object.entries(safeImageAttributes(node)).forEach(([name, value]) => {
       if (value) copy.setAttribute(`data-${name}`, value);

@@ -7,6 +7,7 @@ import {
   updatedLabel, useCategories, useNote
 } from '../store';
 import type { NoteMode } from '../../../shared/types/note';
+import type { SettingsSection } from '../../settings/Settings';
 import { CodeLanguagePickers } from './CodeLanguagePickers';
 import { CommentLayer } from './CommentLayer';
 import { ContinuousEditor } from './ContinuousEditor';
@@ -51,6 +52,9 @@ type NoteEditorProps = {
 
   /* Opens a sub-page just added with the slash menu, ready to be named. */
   onOpenNewPage: (id: string) => void;
+
+  /* Opens Settings at one group of settings (the drawing toolbar's settings button). */
+  onOpenSettings: (section: SettingsSection, focus: string) => void;
 };
 
 
@@ -148,7 +152,7 @@ function pageFrameStyle(geometry: ReturnType<typeof pageGeometry>, pages: number
   };
 }
 
-export function NoteEditor({ noteId, history, view, active, onClose, onOpenNote, onOpenNoteInNewTab, onOpenCategory, onOpenNewPage }: NoteEditorProps) {
+export function NoteEditor({ noteId, history, view, active, onClose, onOpenNote, onOpenNoteInNewTab, onOpenCategory, onOpenNewPage, onOpenSettings }: NoteEditorProps) {
   const note = useNote(noteId);
 
   /* Re-render when categories are renamed, so the breadcrumb stays current. */
@@ -424,7 +428,7 @@ export function NoteEditor({ noteId, history, view, active, onClose, onOpenNote,
       </PageBar>
 
       <div className="editor-layout">
-        {drawing && <DrawingTools session={session} strokes={note.drawing} layerRef={drawingRef} onClose={() => setDrawingMode(false)} />}
+        {drawing && <DrawingTools session={session} strokes={note.drawing} layerRef={drawingRef} onClose={() => setDrawingMode(false)} onOpenSettings={() => onOpenSettings('general', 'drawing')} />}
         <main className={`editor-canvas ${geometry ? 'is-paginated' : ''}`} ref={canvasRef}>
           {/* Zoom scales everything in the note, using the CSS zoom property. A paginated note's */}
           {/* column is exactly one page wide, with the page margin as its padding, and as tall as */}

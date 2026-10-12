@@ -148,12 +148,14 @@ export class EditorSession {
   }
 
   /* Save new document content and add it to the undo history. */
-  /* The content is cleaned first, so editor-only classes never create extra undo steps. */
+  /* The content is cleaned first, so editor-only classes never create extra undo steps. The */
+  /* note's drawing goes into the same step, so anchoring a drawing into the text (which changes */
+  /* both) is undone in one go. */
   save(content: string, caret: number | null = getOffset(this.body())) {
     const clean = cleanHtml(content);
-    updateNote(this.noteId, { content: clean }, false);
+    const note = updateNote(this.noteId, { content: clean }, false);
     scheduleSave();
-    this.history.record(clean, caret, getNote(this.noteId)?.comments ?? []);
+    this.history.record(clean, caret, note?.comments ?? [], note?.drawing);
     this.typing.afterInput(caret);
     this.update({ layout: this.snapshot.layout + 1 });
   }

@@ -1,10 +1,17 @@
 import { IMAGE_ID, imageUrl, saveImage } from '../imageStore';
+import type { DrawingStroke } from '../../../shared/types/note';
+import { INK, decodeStrokes, encodeStrokes, strokePath } from './drawing';
 import type { EditorSession } from './session';
 
 /* Where an image sits on its line. left: in the text, so words can come before and after it. */
-/* center: on a line of its own. right: at the right edge, with the text running beside it. */
-export type ImageAlign = 'left' | 'center' | 'right';
-export const IMAGE_ALIGNS: ImageAlign[] = ['left', 'center', 'right'];
+/* wrap-left: at the left edge, with the text running beside it. center: on a line of its own. */
+/* right: at the right edge, with the text running beside it. */
+export type ImageAlign = 'left' | 'wrap-left' | 'center' | 'right';
+export const IMAGE_ALIGNS: ImageAlign[] = ['left', 'wrap-left', 'center', 'right'];
+
+/* An anchored drawing's own size, and how far it may be moved from where the text would put it. */
+const MAX_DRAWING_SIZE = 5000;
+const MAX_OFFSET = 2000;
 
 /* An image can be dragged as small as this, in pixels; it is never wider than its line. */
 export const MIN_IMAGE_WIDTH = 32;
@@ -50,16 +57,21 @@ export function setImageAlign(block: HTMLElement, align: ImageAlign) {
   else block.dataset.align = align;
 }
 
-/* The image id last drawn into each block, so unchanged blocks are not redrawn. */
+/* The image id (or drawing) last drawn into each block, so unchanged blocks are not redrawn. */
 const drawn = new WeakMap<Element, string>();
 
 /* Draw each image block: the picture, and the handle that resizes it. A picture the store does */
 /* not have (for example in a note copied from another browser) shows a short message instead. */
+/* An anchored drawing draws its strokes instead of a picture. */
 export function hydrateImages(root: Element | null) {
   root?.querySelectorAll<HTMLElement>('.image-block').forEach(block => {
     const id = block.dataset.image ?? '';
     block.contentEditable = 'false';
     setImageWidth(block, imageWidth(block));
+    if (block.classList.contains('drawing-block')) {
+      hydrateDrawing(block);
+      return;
+    }
     if (drawn.get(block) === id && block.querySelector('img')) return;
     drawn.set(block, id);
 
@@ -75,6 +87,80 @@ export function hydrateImages(root: Element | null) {
       else block.classList.add('is-missing');
     });
   });
+}
+
+
+/* =========================
+   Anchored Drawings
+   ========================= */
+
+/* A drawing anchored into the text is an image block with its strokes instead of a picture: */
+/* <span class="image-block drawing-block" data-drawing="strokes" data-box="w h" data-width="…">. */
+/* data-box is the drawing's own size; data-width is how wide it is shown, so it can be resized */
+/* like an image. data-offset="x y" (when snapping is turned off) keeps it where it was drawn, */
+/* x pixels from its side of the column and y pixels below its line. */
+export function createDrawingBlock(strokes: DrawingStroke[], width: number, height: number, shownWidth: number, align: ImageAlign, offset: { x: number; y: number } | null) {
+  const block = document.createElement('span');
+  block.className = 'image-block drawing-block';
+  block.dataset.drawing = encodeStrokes(strokes);
+  block.dataset.box = `${Math.round(width)} ${Math.round(height)}`;
+  if (offset) block.dataset.offset = `${Math.round(offset.x)} ${Math.round(offset.y)}`;
+  setImageWidth(block, shownWidth);
+  setImageAlign(block, align);
+  return block;
+}
+
+/* Two whole numbers from an attribute such as "120 80", each kept within 0 and max. */
+function numberPair(value: string | undefined, max: number) {
+  const parts = (value ?? '').split(' ').map(Number);
+  if (parts.length !== 2 || !parts.every(part => Number.isInteger(part) && part >= 0 && part <= max)) return null;
+  return parts as [number, number];
+}
+
+export function drawingBox(block: HTMLElement) {
+  const box = numberPair(block.dataset.box, MAX_DRAWING_SIZE);
+  return box && box[0] > 0 && box[1] > 0 ? { width: box[0], height: box[1] } : { width: imageWidth(block), height: imageWidth(block) };
+}
+
+export function drawingOffset(block: HTMLElement) {
+  const offset = numberPair(block.dataset.offset, MAX_OFFSET);
+  return offset ? { x: offset[0], y: offset[1] } : null;
+}
+
+export function drawingStrokes(block: HTMLElement) {
+  return decodeStrokes(block.dataset.drawing ?? '');
+}
+
+/* The drawing as an SVG picture. Ink strokes use the given colour (currentColor on the page, so */
+/* they follow light and dark mode). Highlighter strokes go under pen strokes. */
+export function drawingMarkup(strokes: DrawingStroke[], width: number, height: number, ink = 'currentColor') {
+  const ordered = [...strokes.filter(stroke => stroke.tool === 'highlighter'), ...strokes.filter(stroke => stroke.tool === 'pen')];
+  const paths = ordered.map(stroke => {
+    const color = stroke.color === INK ? ink : stroke.color;
+    const opacity = stroke.tool === 'highlighter' ? ' opacity="0.4"' : '';
+    return `<path d="${strokePath(stroke.points)}" stroke="${color}" stroke-width="${stroke.size}"${opacity}/>`;
+  }).join('');
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}" fill="none" stroke-linecap="round" stroke-linejoin="round">${paths}</svg>`;
+}
+
+/* An anchored drawing as an SVG file, with Ink in the colour it shows in now. */
+export function drawingFile(block: HTMLElement) {
+  const { width, height } = drawingBox(block);
+  const ink = getComputedStyle(block).color || '#1c2c47';
+  return new Blob([drawingMarkup(drawingStrokes(block), width, height, ink)], { type: 'image/svg+xml' });
+}
+
+function hydrateDrawing(block: HTMLElement) {
+  const offset = drawingOffset(block);
+  block.style.setProperty('--offset-x', `${offset?.x ?? 0}px`);
+  block.style.setProperty('--offset-y', `${offset?.y ?? 0}px`);
+  const key = `${block.dataset.box} ${block.dataset.drawing}`;
+  if (drawn.get(block) === key && block.querySelector('svg')) return;
+  drawn.set(block, key);
+
+  /* The strokes were checked when read (decodeStrokes), so the markup holds only numbers and colours. */
+  const { width, height } = drawingBox(block);
+  block.innerHTML = `${drawingMarkup(drawingStrokes(block), width, height)}<span class="image-resize" title="Drag to resize"></span>`;
 }
 
 
@@ -161,14 +247,22 @@ export function imageIdsIn(html: string) {
   return Array.from(template.content.querySelectorAll<HTMLElement>('.image-block[data-image]')).map(block => block.dataset.image as string);
 }
 
-/* The sanitizer's check for an image block's attributes. */
+/* The sanitizer's check for an image block's attributes. An anchored drawing's strokes are read */
+/* and written again, so only valid strokes are kept. */
 export function safeImageAttributes(node: Element) {
   const id = node.getAttribute('data-image') ?? '';
   const width = Number(node.getAttribute('data-width'));
   const align = node.getAttribute('data-align') ?? '';
+  const isDrawing = node.classList.contains('drawing-block');
+  const strokes = isDrawing ? decodeStrokes(node.getAttribute('data-drawing') ?? '') : [];
+  const box = numberPair(node.getAttribute('data-box') ?? '', MAX_DRAWING_SIZE);
+  const offset = numberPair(node.getAttribute('data-offset') ?? '', MAX_OFFSET);
   return {
-    image: IMAGE_ID.test(id) ? id : null,
+    image: !isDrawing && IMAGE_ID.test(id) ? id : null,
     width: Number.isInteger(width) && width >= MIN_IMAGE_WIDTH && width <= MAX_IMAGE_WIDTH ? String(width) : null,
-    align: align === 'center' || align === 'right' ? align : null
+    align: IMAGE_ALIGNS.includes(align as ImageAlign) && align !== 'left' ? align : null,
+    drawing: strokes.length ? encodeStrokes(strokes) : null,
+    box: isDrawing && box && box[0] > 0 && box[1] > 0 ? box.join(' ') : null,
+    offset: isDrawing && offset ? offset.join(' ') : null
   };
 }

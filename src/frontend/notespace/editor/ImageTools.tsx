@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from 'react';
 import { Icon, type IconName } from '../../components/Icon';
 import { imageUrl, loadImage } from '../imageStore';
-import { IMAGE_ALIGNS, MIN_IMAGE_WIDTH, imageAlign, imageFiles, insertImageFiles, setImageAlign, setImageWidth, type ImageAlign } from './images';
+import { IMAGE_ALIGNS, MIN_IMAGE_WIDTH, drawingFile, imageAlign, imageFiles, insertImageFiles, setImageAlign, setImageWidth, type ImageAlign } from './images';
+import { getPreferences } from '../../app/preferences';
+import { anchoredBox, detachDrawing, moveDrawing } from './anchoring';
 import type { EditorSession } from './session';
 
 type ImageToolsProps = {
@@ -11,8 +13,9 @@ type ImageToolsProps = {
 
 const ALIGN_ICONS: Record<ImageAlign, { icon: IconName; label: string }> = {
   left: { icon: 'align-left', label: 'In the text' },
+  'wrap-left': { icon: 'wrap-left', label: 'Left, with text beside it' },
   center: { icon: 'align-center', label: 'Centre on its own line' },
-  right: { icon: 'align-right', label: 'Right, with text beside it' }
+  right: { icon: 'wrap-right', label: 'Right, with text beside it' }
 };
 
 
@@ -26,29 +29,48 @@ function fileName(file: Blob) {
   return `image.${extension}`;
 }
 
-async function downloadImage(id: string) {
-  const file = await loadImage(id);
+/* The file an image block shows: its picture from the image store, or an anchored drawing as SVG. */
+function blockFile(block: HTMLElement) {
+  return block.classList.contains('drawing-block') ? Promise.resolve(drawingFile(block)) : loadImage(block.dataset.image ?? '');
+}
+
+/* An address the full-size viewer can show the block's picture from. */
+async function blockUrl(block: HTMLElement) {
+  if (!block.classList.contains('drawing-block')) return imageUrl(block.dataset.image ?? '');
+  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(await drawingFile(block).text())}`;
+}
+
+async function downloadImage(block: HTMLElement) {
+  const file = await blockFile(block);
   if (!file) return;
   const url = URL.createObjectURL(file);
   const link = document.createElement('a');
   link.href = url;
-  link.download = fileName(file);
+  link.download = block.classList.contains('drawing-block') ? 'drawing.svg' : fileName(file);
   link.click();
   URL.revokeObjectURL(url);
 }
 
 /* Copy the picture itself, so it can be pasted into this or any other app. Clipboards take PNG */
-/* pictures, so other formats are converted first. */
-async function copyImage(id: string) {
-  const file = await loadImage(id);
+/* pictures, so other formats are converted first (a drawing at twice its size, so it stays sharp). */
+async function copyImage(block: HTMLElement) {
+  const file = await blockFile(block);
   if (!file || typeof ClipboardItem === 'undefined') return;
   let png = file;
   if (file.type !== 'image/png') {
-    const bitmap = await createImageBitmap(file);
+    const url = URL.createObjectURL(file);
+    const picture = new Image();
+    await new Promise((resolve, reject) => {
+      picture.onload = resolve;
+      picture.onerror = reject;
+      picture.src = url;
+    });
+    const scale = file.type === 'image/svg+xml' ? 2 : 1;
     const canvas = document.createElement('canvas');
-    canvas.width = bitmap.width;
-    canvas.height = bitmap.height;
-    canvas.getContext('2d')?.drawImage(bitmap, 0, 0);
+    canvas.width = picture.naturalWidth * scale;
+    canvas.height = picture.naturalHeight * scale;
+    canvas.getContext('2d')?.drawImage(picture, 0, 0, canvas.width, canvas.height);
+    URL.revokeObjectURL(url);
     png = await new Promise<Blob>((resolve, reject) => canvas.toBlob(blob => (blob ? resolve(blob) : reject()), 'image/png'));
   }
   await navigator.clipboard.write([new ClipboardItem({ 'image/png': png })]);
@@ -60,7 +82,9 @@ async function copyImage(id: string) {
    ========================= */
 
 /* Clicking an image selects it and shows a small bar above it: where it sits on its line, */
-/* download, comment and delete (only download and comment on a locked note). The handle at its */
+/* detach (for an anchored drawing), download, comment and delete (only download and comment on */
+/* a locked note). An anchored drawing can also be dragged to a new place, where it is anchored */
+/* again (lined up with its line, or exactly where it is dropped when snapping is off). The handle at its */
 /* corner resizes it, keeping its shape. Double-click shows it full size until Escape or a click */
 /* beside it. While it is selected, Backspace or Delete removes it and Ctrl + C copies the picture. */
 /* Image files dropped on the note are added where they are dropped. */
@@ -73,6 +97,10 @@ export function ImageTools({ session, locked }: ImageToolsProps) {
   /* Redraw when the page scrolls or the note changes, so the bar stays above its image. */
   const [, setTick] = useState(0);
   const resizing = useRef<{ block: HTMLElement; align: ImageAlign; scale: number; startX: number; startWidth: number } | null>(null);
+
+  /* An anchored drawing being dragged to a new place; it only starts moving after a few pixels, */
+  /* so a plain click still just selects it. */
+  const moving = useRef<{ block: HTMLElement; scale: number; startX: number; startY: number; minDy: number; moved: boolean } | null>(null);
   const latest = useRef({ image, locked, viewing });
   latest.current = { image, locked, viewing };
 
@@ -115,6 +143,13 @@ export function ImageTools({ session, locked }: ImageToolsProps) {
         const scale = bounds.width / (found.offsetWidth || 1);
         resizing.current = { block: found, align: imageAlign(found), scale, startX: event.clientX, startWidth: bounds.width / scale };
         found.classList.add('is-resizing');
+      } else if (found.classList.contains('drawing-block') && !latest.current.locked && event.button === 0) {
+        const bounds = found.getBoundingClientRect();
+        /* It belongs to the text, so it stops at the top of the text instead of going over the details. */
+        const textTop = body()?.getBoundingClientRect().top ?? -Infinity;
+        moving.current = {
+          block: found, scale: bounds.width / (found.offsetWidth || 1), startX: event.clientX, startY: event.clientY, minDy: textTop - bounds.top, moved: false
+        };
       }
     }
 
@@ -123,6 +158,16 @@ export function ImageTools({ session, locked }: ImageToolsProps) {
     /* is on its left). It is measured from the start because the image itself can move while the */
     /* text around it rewraps. It never passes its line. */
     function handlePointerMove(event: PointerEvent) {
+      const move = moving.current;
+      if (move) {
+        const dx = event.clientX - move.startX;
+        const dy = Math.max(move.minDy, event.clientY - move.startY);
+        if (!move.moved && Math.hypot(dx, dy) < 4) return;
+        move.moved = true;
+        move.block.style.transform = `translate(${dx / move.scale}px, ${dy / move.scale}px)`;
+        setTick(tick => tick + 1);
+        return;
+      }
       const current = resizing.current;
       if (!current) return;
       const moved = (event.clientX - current.startX) / current.scale;
@@ -133,6 +178,14 @@ export function ImageTools({ session, locked }: ImageToolsProps) {
     }
 
     function handlePointerUp() {
+      const move = moving.current;
+      moving.current = null;
+      if (move?.moved) {
+        const box = anchoredBox(session, move.block);
+        move.block.style.removeProperty('transform');
+        if (box) moveDrawing(session, move.block, box, getPreferences().drawing.snap, [document.querySelector<HTMLElement>('.image-tools')]);
+        setTick(tick => tick + 1);
+      }
       const current = resizing.current;
       if (!current) return;
       resizing.current = null;
@@ -144,7 +197,7 @@ export function ImageTools({ session, locked }: ImageToolsProps) {
       const found = imageAt(event.target);
       if (!found || (event.target as Element).closest('.image-resize')) return;
       event.preventDefault();
-      imageUrl(found.dataset.image ?? '').then(url => {
+      blockUrl(found).then(url => {
         if (url) setViewing(url);
       });
     }
@@ -175,7 +228,7 @@ export function ImageTools({ session, locked }: ImageToolsProps) {
       } else if (command && event.key.toLowerCase() === 'c') {
         event.preventDefault();
         event.stopPropagation();
-        copyImage(selected.dataset.image ?? '').catch(() => undefined);
+        copyImage(selected).catch(() => undefined);
       } else if (!['Shift', 'Control', 'Alt', 'Meta'].includes(event.key)) {
         select(null);
       }
@@ -235,7 +288,6 @@ export function ImageTools({ session, locked }: ImageToolsProps) {
   /* Undo or a mode change redraws the note, which removes the image the bar was for. */
   if (!image?.isConnected) return viewer || null;
   const shown = image;
-  const id = shown.dataset.image ?? '';
   const align = imageAlign(shown);
 
   function changeAlign(next: ImageAlign) {
@@ -243,6 +295,12 @@ export function ImageTools({ session, locked }: ImageToolsProps) {
     setImageAlign(shown, next);
     session.commit();
     setTick(tick => tick + 1);
+  }
+
+  /* An anchored drawing can be turned back into loose strokes where it sits. */
+  function detach() {
+    select(null);
+    detachDrawing(session, shown);
   }
 
   function remove() {
@@ -299,14 +357,19 @@ export function ImageTools({ session, locked }: ImageToolsProps) {
               </button>
             ))}
             {!locked && <span className="image-tools-divider" />}
-            <button type="button" className="page-bar-button" data-tooltip="Download" aria-label="Download" onClick={() => downloadImage(id)}>
+            {!locked && shown.classList.contains('drawing-block') && (
+              <button type="button" className="page-bar-button" data-tooltip="Detach: turn back into loose strokes" aria-label="Detach" onClick={detach}>
+                <Icon name="box-select" size={16} />
+              </button>
+            )}
+            <button type="button" className="page-bar-button" data-tooltip="Download" aria-label="Download" onClick={() => downloadImage(shown)}>
               <Icon name="download" size={16} />
             </button>
             <button type="button" className="page-bar-button" data-tooltip="Comment" aria-label="Comment" onClick={() => setCommenting(true)}>
               <Icon name="message-square" size={16} />
             </button>
             {!locked && (
-              <button type="button" className="page-bar-button" data-tooltip="Delete" data-tooltip-align="end" aria-label="Delete image" onClick={remove}>
+              <button type="button" className="page-bar-button" data-tooltip="Delete" data-tooltip-align="end" aria-label={shown.classList.contains('drawing-block') ? 'Delete drawing' : 'Delete image'} onClick={remove}>
                 <Icon name="trash" size={16} />
               </button>
             )}

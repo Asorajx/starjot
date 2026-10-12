@@ -346,3 +346,22 @@
 }
 
 
+/* =========================
+   Highlighted Settings
+   ========================= */
+
+/* A group opened from elsewhere in the app (such as the drawing toolbar) flashes once. */
+.settings-group.is-highlighted {
+  animation: settings-highlight 1.6s ease;
+}
+
+@keyframes settings-highlight {
+  0%,
+  40% {
+    background: #edf4ff;
+  }
+
+  100% {
+    background: transparent;
+  }
+}

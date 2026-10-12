@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState, type DragEvent, type MouseEvent, type ReactNode } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type DragEvent, type MouseEvent, type ReactNode } from 'react';
 import { usePreferences } from './preferences';
 import { MobileNav, Sidebar, Topbar } from './Shell';
 import { CategoryPage } from '../notespace/CategoryPage';
@@ -109,6 +109,8 @@ export function App() {
   });
   const [workTab, setWorkTab] = useState<BoardTab>('todo');
   const [settingsSection, setSettingsSection] = useState<SettingsSection>('general');
+  const [settingsFocus, setSettingsFocus] = useState<string | null>(null);
+  const clearSettingsFocus = useCallback(() => setSettingsFocus(null), []);
   const [noteFilter, setNoteFilter] = useState<NoteFilter>('all');
   const { sidebarCollapsed } = usePreferences();
 
@@ -139,6 +141,14 @@ export function App() {
   function go(next: Place, groupId = group.id, tabId = activeTab(group).id) {
     setWorkspace('notes');
     changeTab(groupId, tabId, tab => goTo(tab, next));
+  }
+
+  /* Open Settings at one group of settings, such as the drawing settings from the drawing toolbar. */
+  function openSettings(section: SettingsSection, focus: string) {
+    flushSave();
+    setSettingsSection(section);
+    setSettingsFocus(focus);
+    setWorkspace('settings');
   }
 
   function navigate(next: WorkspaceId) {
@@ -306,6 +316,7 @@ export function App() {
           onOpenNoteInNewTab={openNoteInNewTab}
           onOpenCategory={openCategory}
           onOpenNewPage={openNewPage}
+          onOpenSettings={openSettings}
         />
       );
     } else if (shown.kind === 'category') {
@@ -393,7 +404,7 @@ export function App() {
   } else if (workspace === 'workboard') {
     screen = <div className="main-scroll"><Workboard tab={workTab} onTabChange={setWorkTab} /></div>;
   } else {
-    screen = <div className="main-scroll"><Settings section={settingsSection} onSectionChange={setSettingsSection} /></div>;
+    screen = <div className="main-scroll"><Settings section={settingsSection} onSectionChange={setSettingsSection} focus={settingsFocus} onFocused={clearSettingsFocus} /></div>;
   }
 
   return (

@@ -163,3 +163,141 @@ export function hsvToHex({ h, s, v }: Hsv) {
   };
   return `#${channel(5)}${channel(3)}${channel(1)}`;
 }
+
+
+/* =========================
+   Selecting Strokes
+   ========================= */
+
+/* A rectangle in drawing coordinates. */
+export type Box = { x: number; y: number; width: number; height: number };
+
+function inside(box: Box, x: number, y: number) {
+  return x >= box.x && x <= box.x + box.width && y >= box.y && y <= box.y + box.height;
+}
+
+/* True when most of the stroke's length lies inside the box (a dot counts when it is inside). */
+export function mostlyInside(stroke: DrawingStroke, box: Box) {
+  const { points } = stroke;
+  if (points.length === 2) return inside(box, points[0], points[1]);
+  let total = 0;
+  let within = 0;
+  for (let index = 0; index < points.length - 2; index += 2) {
+    const length = Math.hypot(points[index + 2] - points[index], points[index + 3] - points[index + 1]);
+    total += length;
+    if (inside(box, (points[index] + points[index + 2]) / 2, (points[index + 1] + points[index + 3]) / 2)) within += length;
+  }
+  return total ? within / total >= 0.5 : inside(box, points[0], points[1]);
+}
+
+/* The part of the segment a–b inside the box, as fractions of its length (Liang–Barsky), or null. */
+function clipSegment(box: Box, ax: number, ay: number, bx: number, by: number): [number, number] | null {
+  let start = 0;
+  let end = 1;
+  const dx = bx - ax;
+  const dy = by - ay;
+  const edges: [number, number][] = [[-dx, ax - box.x], [dx, box.x + box.width - ax], [-dy, ay - box.y], [dy, box.y + box.height - ay]];
+  for (const [p, q] of edges) {
+    if (p === 0) {
+      if (q < 0) return null;
+      continue;
+    }
+    const t = q / p;
+    if (p < 0) start = Math.max(start, t);
+    else end = Math.min(end, t);
+    if (start > end) return null;
+  }
+  return [start, end];
+}
+
+/* Cut a stroke at the box's edges into the pieces inside it and the pieces outside it. A stroke */
+/* that leaves the box and comes back gives several pieces. */
+export function splitStroke(stroke: DrawingStroke, box: Box) {
+  const { points } = stroke;
+  if (points.length === 2) return inside(box, points[0], points[1]) ? { inside: [stroke], outside: [] } : { inside: [], outside: [stroke] };
+  const runs: { inside: boolean; points: number[] }[] = [];
+
+  /* Add a piece of a segment, joining it to the previous piece when that is on the same side. */
+  const add = (isInside: boolean, from: number[], to: number[]) => {
+    if (from[0] === to[0] && from[1] === to[1]) return;
+    const last = runs.at(-1);
+    if (last && last.inside === isInside && last.points.at(-2) === from[0] && last.points.at(-1) === from[1]) last.points.push(...to);
+    else runs.push({ inside: isInside, points: [...from, ...to] });
+  };
+  for (let index = 0; index < points.length - 2; index += 2) {
+    const [ax, ay, bx, by] = points.slice(index, index + 4);
+    const at = (t: number) => [round(ax + (bx - ax) * t), round(ay + (by - ay) * t)];
+    const part = clipSegment(box, ax, ay, bx, by);
+    if (!part) {
+      add(false, [ax, ay], [bx, by]);
+      continue;
+    }
+    const [start, end] = part;
+    add(false, [ax, ay], at(start));
+    add(true, at(start), at(end));
+    add(false, at(end), [bx, by]);
+  }
+  const pieces = (isInside: boolean) => runs.filter(run => run.inside === isInside).map(run => ({ ...stroke, points: run.points }));
+  return { inside: pieces(true), outside: pieces(false) };
+}
+
+/* The rectangle around the strokes, including their width. */
+export function strokesBounds(strokes: DrawingStroke[]): Box | null {
+  let [left, top, right, bottom] = [Infinity, Infinity, -Infinity, -Infinity];
+  for (const stroke of strokes) {
+    const half = stroke.size / 2;
+    for (let index = 0; index < stroke.points.length; index += 2) {
+      left = Math.min(left, stroke.points[index] - half);
+      right = Math.max(right, stroke.points[index] + half);
+      top = Math.min(top, stroke.points[index + 1] - half);
+      bottom = Math.max(bottom, stroke.points[index + 1] + half);
+    }
+  }
+  return left === Infinity ? null : { x: left, y: top, width: right - left, height: bottom - top };
+}
+
+/* The smallest box holding both boxes. */
+export function joinBoxes(a: Box, b: Box | null): Box {
+  if (!b) return a;
+  const x = Math.min(a.x, b.x);
+  const y = Math.min(a.y, b.y);
+  return { x, y, width: Math.max(a.x + a.width, b.x + b.width) - x, height: Math.max(a.y + a.height, b.y + b.height) - y };
+}
+
+/* Move strokes by dx, dy and scale them (points and widths) by scale, around the point 0, 0. */
+export function moveStrokes(strokes: DrawingStroke[], dx: number, dy: number, scale = 1): DrawingStroke[] {
+  return strokes.map(stroke => ({
+    ...stroke,
+    size: clampSize(stroke.size * scale),
+    points: stroke.points.map((value, index) => round(value * scale + (index % 2 ? dy : dx)))
+  }));
+}
+
+
+/* =========================
+   Anchored Drawings
+   ========================= */
+
+/* A drawing anchored into the text keeps its strokes in its element as short text: strokes are */
+/* separated by ";", and each is "tool,colour,size:x y x y …" (p for pen, h for highlighter), */
+/* with points measured from the drawing's top-left corner. */
+const TOOL_CODES: Record<DrawingTool, string> = { pen: 'p', highlighter: 'h' };
+
+export function encodeStrokes(strokes: DrawingStroke[]) {
+  return strokes.map(stroke => `${TOOL_CODES[stroke.tool]},${stroke.color},${stroke.size}:${stroke.points.map(round).join(' ')}`).join(';');
+}
+
+/* Read strokes back from their text; anything broken is repaired or left out by normalizeDrawing. */
+export function decodeStrokes(text: string) {
+  const strokes = text.split(';').slice(0, MAX_STROKES).map(part => {
+    const [head = '', body = ''] = part.split(':');
+    const [tool, color, size] = head.split(',');
+    return {
+      tool: tool === 'h' ? 'highlighter' : 'pen',
+      color,
+      size: Number(size),
+      points: body.trim().split(/\s+/).filter(Boolean).map(Number)
+    };
+  });
+  return normalizeDrawing(strokes);
+}

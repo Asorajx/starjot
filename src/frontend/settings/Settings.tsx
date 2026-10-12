@@ -1,4 +1,4 @@
-import type { CSSProperties, ReactNode } from 'react';
+import { useEffect, type CSSProperties, type ReactNode } from 'react';
 import { Icon, type IconName } from '../components/Icon';
 import { updatePreferences, usePreferences, type Preferences } from '../app/preferences';
 
@@ -7,6 +7,11 @@ export type SettingsSection = 'general' | 'appearance' | 'workspace' | 'storage'
 type SettingsProps = {
   section: SettingsSection;
   onSectionChange: (section: SettingsSection) => void;
+
+  /* A group of settings to scroll to and highlight once, such as "drawing" (from the drawing */
+  /* toolbar's settings button), and what to call once that is done. */
+  focus?: string | null;
+  onFocused?: () => void;
 };
 
 /* Settings menu labels and icons; every option on these pages is display-only. */
@@ -45,8 +50,8 @@ function Row({ title, description, children }: { title: ReactNode; description: 
   );
 }
 
-function Group({ title, children }: { title: ReactNode; children: ReactNode }) {
-  return <div className="settings-group"><div className="settings-group-title">{title}</div>{children}</div>;
+function Group({ id, title, children }: { id?: string; title: ReactNode; children: ReactNode }) {
+  return <div className="settings-group" id={id ? `settings-group-${id}` : undefined}><div className="settings-group-title">{title}</div>{children}</div>;
 }
 
 /* A row of buttons where exactly one is chosen, used for settings that really change the app. */
@@ -84,7 +89,7 @@ function FakeSelect({ children }: { children: ReactNode }) {
    ========================= */
 
 function SettingsPanel({ section }: { section: SettingsSection }) {
-  const { theme, contentsScroll, hideHeaderWhileTyping } = usePreferences();
+  const { theme, contentsScroll, hideHeaderWhileTyping, drawing } = usePreferences();
   const set = (changes: Partial<Preferences>) => updatePreferences(changes);
 
   if (section === 'general') {
@@ -110,6 +115,19 @@ function SettingsPanel({ section }: { section: SettingsSection }) {
           </Row>
           <Row title="Hide the page bar while typing" description="The bar above a note fades away while you type and comes back when you move the mouse.">
             <Switch label="Hide the page bar while typing" on={hideHeaderWhileTyping} onChange={value => set({ hideHeaderWhileTyping: value })} />
+          </Row>
+        </Group>
+        <Group id="drawing" title="Drawing">
+          <Row title="Strokes on the edge of a selection" description="When anchoring a drawing into the text, take the strokes mostly inside the box, or cut strokes at its edge.">
+            <Segmented
+              label="Strokes on the edge of a selection"
+              value={drawing.selectEdge}
+              options={[{ value: 'whole', label: 'Mostly inside' }, { value: 'cut', label: 'Cut at the edge' }]}
+              onChange={value => set({ drawing: { ...drawing, selectEdge: value } })}
+            />
+          </Row>
+          <Row title="Snap anchored drawings to the text" description="An anchored drawing lines up with its line and the side of the text when it is anchored or moved. Turn off to keep it exactly where you place it.">
+            <Switch label="Snap anchored drawings to the text" on={drawing.snap} onChange={value => set({ drawing: { ...drawing, snap: value } })} />
           </Row>
         </Group>
       </>
@@ -203,8 +221,19 @@ function SettingsPanel({ section }: { section: SettingsSection }) {
    Settings Screen
    ========================= */
 
-export function Settings({ section, onSectionChange }: SettingsProps) {
+export function Settings({ section, onSectionChange, focus = null, onFocused }: SettingsProps) {
   const current = SETTING_TABS.find(tab => tab.id === section) ?? SETTING_TABS[0];
+
+  /* Scroll to the asked-for group and highlight it briefly, so it is easy to spot. */
+  useEffect(() => {
+    if (!focus) return;
+    const group = document.getElementById(`settings-group-${focus}`);
+    group?.scrollIntoView({ block: 'center' });
+    group?.classList.add('is-highlighted');
+    const timer = window.setTimeout(() => group?.classList.remove('is-highlighted'), 1600);
+    onFocused?.();
+    return () => window.clearTimeout(timer);
+  }, [focus, onFocused]);
 
   return (
     <div className="content-pad settings-page">
@@ -231,7 +260,7 @@ export function Settings({ section, onSectionChange }: SettingsProps) {
         </aside>
         <section className="settings-content" aria-label={`${current.label} preferences`}>
           <SettingsPanel section={section} />
-          <div className="settings-disclaimer"><Icon name="info" size={15} /> Theme, Contents scrolling and Hide the page bar while typing are saved. The other options are previews and do not change anything yet.</div>
+          <div className="settings-disclaimer"><Icon name="info" size={15} /> Theme, Contents scrolling, Hide the page bar while typing and the Drawing options are saved. The other options are previews and do not change anything yet.</div>
         </section>
       </div>
     </div>

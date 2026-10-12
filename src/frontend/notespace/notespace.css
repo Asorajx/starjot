@@ -3232,6 +3232,41 @@
   margin: 4px 0 8px 16px;
 }
 
+/* Left, with text beside it: at the left edge, with the text running down its right side. */
+.note-editable .image-block[data-align="wrap-left"],
+.block-content .image-block[data-align="wrap-left"] {
+  float: left;
+  margin: 4px 16px 8px 0;
+}
+
+/* A drawing anchored into the text. Its Ink strokes use the text colour. When snapping is turned */
+/* off, it keeps the place it was drawn: moved down from its line and in from its side. */
+.image-block.drawing-block {
+  color: #1c2c47;
+}
+
+.note-editable .image-block.drawing-block,
+.block-content .image-block.drawing-block {
+  margin-top: calc(4px + var(--offset-y, 0px));
+}
+
+.note-editable .image-block.drawing-block[data-align="wrap-left"],
+.block-content .image-block.drawing-block[data-align="wrap-left"] {
+  margin-left: var(--offset-x, 0px);
+}
+
+.note-editable .image-block.drawing-block[data-align="right"],
+.block-content .image-block.drawing-block[data-align="right"] {
+  margin-right: var(--offset-x, 0px);
+}
+
+.drawing-block svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
 /* A right image near the end of the note (or of a block) never hangs below it. */
 .note-body::after,
 .block-content::after {
@@ -3791,6 +3826,11 @@
   opacity: .4;
 }
 
+/* Strokes inside the Select tool's box glow, so it is clear which ones it takes. */
+.drawing-stroke[data-selected] {
+  filter: drop-shadow(0 0 3px #3878e4);
+}
+
 /* Strokes the eraser has touched fade until it is lifted, when they are removed. */
 .drawing-stroke[data-erasing] {
   opacity: .15;
@@ -3811,8 +3851,110 @@
   touch-action: none;
 }
 
+/* An image or drawing selected before drawing mode keeps its bar and outline out of the way. */
+.editor-wrap.is-drawing .image-tools,
+.editor-wrap.is-drawing .image-resize {
+  display: none !important;
+}
+
+.editor-wrap.is-drawing .image-block.is-selected {
+  outline: none;
+}
+
 .drawing-surface.is-eraser {
   cursor: none;
+}
+
+/* The Select tool's box: a dashed outline with eight handles, and its buttons below it. */
+.drawing-selection-box {
+  position: absolute;
+  border: 1.5px dashed #3878e4;
+  cursor: move;
+}
+
+.drawing-selection-handle {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border: 1.5px solid #3878e4;
+  border-radius: 50%;
+  background: #ffffff;
+  transform: translate(-50%, -50%);
+}
+
+.drawing-selection-handle.is-nw {
+  left: 0;
+  top: 0;
+  cursor: nwse-resize;
+}
+
+.drawing-selection-handle.is-n {
+  left: 50%;
+  top: 0;
+  cursor: ns-resize;
+}
+
+.drawing-selection-handle.is-ne {
+  left: 100%;
+  top: 0;
+  cursor: nesw-resize;
+}
+
+.drawing-selection-handle.is-e {
+  left: 100%;
+  top: 50%;
+  cursor: ew-resize;
+}
+
+.drawing-selection-handle.is-se {
+  left: 100%;
+  top: 100%;
+  cursor: nwse-resize;
+}
+
+.drawing-selection-handle.is-s {
+  left: 50%;
+  top: 100%;
+  cursor: ns-resize;
+}
+
+.drawing-selection-handle.is-sw {
+  left: 0;
+  top: 100%;
+  cursor: nesw-resize;
+}
+
+.drawing-selection-handle.is-w {
+  left: 0;
+  top: 50%;
+  cursor: ew-resize;
+}
+
+.drawing-selection-bar {
+  position: absolute;
+  top: calc(100% + 12px);
+  left: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid #e0e8f4;
+  border-radius: 4px;
+  background: #fff;
+  box-shadow: 0 8px 24px rgba(28, 54, 96, .12);
+  white-space: nowrap;
+  cursor: default;
+}
+
+.drawing-selection-bar.is-end {
+  left: auto;
+  right: 0;
+}
+
+.drawing-selection-bar .btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .drawing-eraser {
