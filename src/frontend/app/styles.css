@@ -172,6 +172,24 @@ p {
   font-size: 12px;
 }
 
+/* The shortcut, shown at the right of the box. */
+.sidebar-search-key {
+  flex-shrink: 0;
+  padding: 0 4px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--paper);
+  color: #5b6b82;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.sidebar-search input {
+  cursor: pointer;
+}
+
 .sidebar-search input::placeholder {
   color: #657890;
 }

@@ -16,6 +16,9 @@ type FindBarProps = {
 
   /* Show the replace row as the bar opens (Ctrl+H). */
   replacing: boolean;
+
+  /* Words to find as the bar opens, such as the ones a search matched. */
+  initialWords?: string;
   onClearWithin: () => void;
   onClose: () => void;
 };
@@ -28,8 +31,8 @@ type FindBarProps = {
 /* Find words in the note (Ctrl+F), going from match to match, and replace them. Enter goes to */
 /* the next match and Shift+Enter to the one before; in the replace box, Enter replaces the */
 /* current match. Escape closes the bar. A locked note can be searched but not changed. */
-export function FindBar({ session, locked, content, within, replacing, onClearWithin, onClose }: FindBarProps) {
-  const [query, setQuery] = useState('');
+export function FindBar({ session, locked, content, within, replacing, initialWords = '', onClearWithin, onClose }: FindBarProps) {
+  const [query, setQuery] = useState(initialWords);
   const [replacement, setReplacement] = useState('');
   const [matchCase, setMatchCase] = useState(false);
   const [showReplace, setShowReplace] = useState(replacing && !locked);

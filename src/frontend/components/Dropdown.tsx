@@ -1,0 +1,137 @@
+import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
+import { useEscape } from '../lib/useDismiss';
+import { Icon, type IconName } from './Icon';
+
+export type DropdownOption<T extends string> = {
+  value: T;
+  label: string;
+  icon?: IconName;
+
+  /* A small heading shown above this option, starting a group (such as "Categories"). */
+  heading?: string;
+
+  /* A thin line above this option, separating it from the ones before without a heading. */
+  divider?: boolean;
+};
+
+type DropdownProps<T extends string> = {
+  value: T;
+  options: DropdownOption<T>[];
+  onChange: (value: T) => void;
+
+  /* The accessible name, such as "Search in"; the button reads "<name>: <chosen option>". */
+  label: string;
+
+  /* Words shown before the chosen option on the button, such as "In". */
+  prefix?: string;
+
+  /* The button's look; it defaults to a small bordered button. */
+  className?: string;
+
+  /* Line the menu up with the button's right edge instead of its left (for buttons on the right). */
+  alignEnd?: boolean;
+};
+
+
+/* =========================
+   Dropdown
+   ========================= */
+
+/* A select box in the app's own style: a button showing the chosen option, and a menu like the */
+/* note menu, with an icon beside each option and a tick on the chosen one. From the keyboard it */
+/* works like a select box: ↑ and ↓ move (choosing straight away while closed), Enter or Space */
+/* opens or chooses, and Escape or Tab closes. A click anywhere else closes it too. */
+export function Dropdown<T extends string>({ value, options, onChange, label, prefix, className = 'dropdown-button', alignEnd }: DropdownProps<T>) {
+  const [open, setOpen] = useState(false);
+  const chosen = Math.max(0, options.findIndex(option => option.value === value));
+  const [active, setActive] = useState(chosen);
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const listId = useRef(`dropdown-${Math.random().toString(36).slice(2, 8)}`).current;
+  const current = options[chosen];
+
+  useEscape(open, () => setOpen(false));
+
+  useEffect(() => {
+    if (open) setActive(chosen);
+  }, [open, chosen]);
+
+  useEffect(() => {
+    if (!open) return;
+    function handleMouseDown(event: MouseEvent) {
+      if (!wrapRef.current?.contains(event.target as Node)) setOpen(false);
+    }
+    document.addEventListener('mousedown', handleMouseDown);
+    return () => document.removeEventListener('mousedown', handleMouseDown);
+  }, [open]);
+
+  /* Keep the highlighted option in view in a long list. */
+  useEffect(() => {
+    if (open) document.getElementById(`${listId}-${active}`)?.scrollIntoView({ block: 'nearest' });
+  }, [open, active, listId]);
+
+  function choose(index: number) {
+    onChange(options[index].value);
+    setOpen(false);
+  }
+
+  function handleKeyDown(event: KeyboardEvent) {
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+      event.preventDefault();
+      const step = event.key === 'ArrowDown' ? 1 : -1;
+      const next = Math.min(options.length - 1, Math.max(0, (open ? active : chosen) + step));
+      if (open) setActive(next);
+      else onChange(options[next].value);
+    } else if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      if (open) choose(active);
+      else setOpen(true);
+    } else if (event.key === 'Tab') {
+      setOpen(false);
+    }
+  }
+
+  return (
+    <div className="dropdown" ref={wrapRef}>
+      <button
+        type="button"
+        role="combobox"
+        className={className}
+        aria-label={`${label}: ${current?.label ?? ''}`}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-controls={listId}
+        aria-activedescendant={open ? `${listId}-${active}` : undefined}
+        onClick={() => setOpen(value => !value)}
+        onKeyDown={handleKeyDown}
+      >
+        {current?.icon && <Icon name={current.icon} size={14} />}
+        <span>{prefix && <>{prefix} </>}<strong>{current?.label}</strong></span>
+        <Icon name="chevron-down" size={14} className={open ? 'is-flipped' : ''} />
+      </button>
+
+      {open && (
+        <div className={`page-menu dropdown-menu ${alignEnd ? 'is-end' : ''}`} id={listId} role="listbox" aria-label={label}>
+          {options.map((option, index) => (
+            <div key={option.value} role="presentation">
+              {option.divider && <div className="dropdown-divider" role="presentation" />}
+              {option.heading && <div className="dropdown-heading" role="presentation">{option.heading}</div>}
+              <div
+                id={`${listId}-${index}`}
+                role="option"
+                aria-selected={index === chosen}
+                className={`page-menu-item dropdown-item ${index === active ? 'is-active' : ''}`}
+                onMouseMove={() => index !== active && setActive(index)}
+                onMouseDown={event => event.preventDefault()}
+                onClick={() => choose(index)}
+              >
+                {option.icon && <Icon name={option.icon} size={14} />}
+                <span>{option.label}</span>
+                {index === chosen && <Icon name="check" size={14} className="dropdown-check" />}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}

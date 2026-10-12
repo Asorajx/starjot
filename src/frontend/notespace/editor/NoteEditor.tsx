@@ -2,6 +2,7 @@ import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type CSSP
 import { changeZoom, usePreferences } from '../../app/preferences';
 import { DeleteNoteDialog } from '../DeleteNoteDialog';
 import { FindBar } from './find/FindBar';
+import { takeFindForNote } from './find/pendingFind';
 import { Icon } from '../../components/Icon';
 import {
   deleteNote, flushSave, getNote, isLocked, isTemporarilyUnlocked, markOpened, setPinned, updateNote,
@@ -91,9 +92,13 @@ export function NoteEditor({ noteId, history, view, active, onClose, onOpenNote,
   const [switching, setSwitching] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
-  /* The find bar, while open: the selected text it searches (or null for the whole note), and */
-  /* whether it opened with its replace row (Ctrl+H). */
-  const [finding, setFinding] = useState<{ within: Range | null; replacing: boolean } | null>(null);
+  /* The find bar, while open: the selected text it searches (or null for the whole note), */
+  /* whether it opened with its replace row (Ctrl+H), and any words to find straight away. A note */
+  /* opened from search starts with the find bar showing the words that matched. */
+  const [finding, setFinding] = useState<{ within: Range | null; replacing: boolean; words?: string } | null>(() => {
+    const words = takeFindForNote(noteId);
+    return words ? { within: null, replacing: false, words } : null;
+  });
   const [exporting, setExporting] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLElement>(null);
@@ -403,6 +408,7 @@ export function NoteEditor({ noteId, history, view, active, onClose, onOpenNote,
             content={note.content}
             within={finding.within}
             replacing={finding.replacing}
+            initialWords={finding.words}
             onClearWithin={() => setFinding(current => current && { ...current, within: null })}
             onClose={() => setFinding(null)}
           />

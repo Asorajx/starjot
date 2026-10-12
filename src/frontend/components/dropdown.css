@@ -1,0 +1,78 @@
+/* =========================
+   Dropdown
+   ========================= */
+
+/* The menu takes its look from the note menu (.page-menu in tables.css); here it opens below its */
+/* button instead of at the pointer, and scrolls when the list is long. */
+.dropdown {
+  position: relative;
+  display: inline-flex;
+}
+
+.dropdown-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 30px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--paper);
+  color: #56657b;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.dropdown-button:hover {
+  border-color: #c9d7ee;
+}
+
+.dropdown button strong {
+  font-weight: 700;
+}
+
+.dropdown > .dropdown-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 80;
+  min-width: 200px;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.dropdown > .dropdown-menu.is-end {
+  right: 0;
+  left: auto;
+}
+
+.dropdown-divider {
+  height: 1px;
+  margin: 4px 0;
+  background: var(--line);
+}
+
+.dropdown-heading {
+  padding: 8px 8px 4px;
+  color: #5b6b82;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+/* The highlighted option (by pointer or arrow keys) uses the same blue as a hovered menu item. */
+.dropdown-item.is-active {
+  background: var(--blue-soft);
+  color: var(--blue);
+}
+
+.dropdown-check {
+  margin-left: auto;
+  color: var(--blue);
+}
+
+/* The chevron turns upside down while the menu is open. */
+.dropdown .is-flipped {
+  transform: rotate(180deg);
+}

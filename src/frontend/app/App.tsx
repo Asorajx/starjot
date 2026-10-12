@@ -6,6 +6,8 @@ import { useMediaQuery } from '../lib/useMediaQuery';
 import { CategoryPage } from '../notespace/CategoryPage';
 import { NotesHome, type NoteFilter } from '../notespace/NotesHome';
 import { StarjotHome } from '../home/StarjotHome';
+import { SearchWindow } from '../search/SearchWindow';
+import { findWhenOpened } from '../notespace/editor/find/pendingFind';
 import type { ViewControls } from '../notespace/editor/EditorPanels';
 import { NoteEditor } from '../notespace/editor/NoteEditor';
 import { PageBar, placeExists, placeLabel, type PageHistory } from '../notespace/PageBar';
@@ -127,6 +129,9 @@ export function App() {
   const roomToDock = useMediaQuery('(min-width: 901px)');
   const docked = !sidebarCollapsed && roomToDock;
   const [popup, setPopup] = useState<'hover' | 'click' | null>(null);
+
+  /* The search window's starting text while it is open, or null while closed. */
+  const [searchStart, setSearchStart] = useState<string | null>(null);
   const popupTimer = useRef<number | undefined>(undefined);
 
   const group = focusedGroup(tabs);
@@ -288,6 +293,20 @@ export function App() {
     };
   }
 
+  function openSearch(query = '') {
+    setPopup(null);
+    setSearchStart(query);
+  }
+
+  /* A note found in its text opens with the find bar showing the words. If the note was already */
+  /* open there, nothing new opens, so the words are dropped rather than kept for later. */
+  function openFoundNote(id: string, newTab: boolean, findTerm: string) {
+    findWhenOpened(id, findTerm);
+    if (newTab) openNoteInNewTab(id);
+    else openNote(id);
+    window.setTimeout(() => findWhenOpened('', ''));
+  }
+
   /* Home shows Starjot Home in the current tab, so Back returns to where you were. */
   const goHome = fromSidebar(() => go({ kind: 'start' }));
 
@@ -297,13 +316,16 @@ export function App() {
     <WindowControls sidebarOpen={docked || popup !== null} onHome={goHome} onToggleSidebar={toggleSidebar} onSidebarHover={startPopup} onSidebarLeave={endPopup} onNewNote={fromSidebar(() => newNote())} />
   );
 
-  /* Ctrl + N creates a note while in Notespace, and Ctrl + \ hides or shows the sidebar. Alt is */
-  /* ignored because AltGr counts as Ctrl + Alt, and some keyboards type \ with AltGr. Pending */
-  /* edits are saved when the page is hidden. */
+  /* Ctrl + K opens search, Ctrl + N creates a note while in Notespace, and Ctrl + \ docks or */
+  /* undocks the sidebar. Alt is ignored because AltGr counts as Ctrl + Alt, and some keyboards */
+  /* type \ with AltGr. Pending edits are saved when the page is hidden. */
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
       if (!(event.ctrlKey || event.metaKey) || event.altKey) return;
-      if (event.key.toLowerCase() === 'n' && workspace === 'notes') {
+      if (event.key.toLowerCase() === 'k') {
+        event.preventDefault();
+        openSearch();
+      } else if (event.key.toLowerCase() === 'n' && workspace === 'notes') {
         event.preventDefault();
         newNote();
       } else if (event.key === '\\') {
@@ -491,6 +513,7 @@ export function App() {
         onOpenNote={fromSidebar(openNote)}
         onOpenBoardView={fromSidebar(openBoardView)}
         controls={windowControls}
+        onSearch={openSearch}
         onMouseEnter={cancelPopupTimer}
         onMouseLeave={() => {
           if (!docked) endPopup();
@@ -501,7 +524,16 @@ export function App() {
         {workspace === 'notes' && <DocumentTitle place={place} />}
         {screen}
       </div>
-      <MobileNav workspace={workspace} homeShown={workspace === 'notes' && place.kind === 'start'} onNavigate={navigate} onHome={goHome} />
+      <MobileNav workspace={workspace} homeShown={workspace === 'notes' && place.kind === 'start'} onNavigate={navigate} onHome={goHome} onSearch={() => openSearch()} />
+      {searchStart !== null && (
+        <SearchWindow
+          initialQuery={searchStart}
+          onClose={() => setSearchStart(null)}
+          onOpenNote={openFoundNote}
+          onOpenCategory={id => go({ kind: 'category', id })}
+          onOpenBoardView={openBoardView}
+        />
+      )}
     </div>
   );
 }

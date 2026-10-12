@@ -29,6 +29,9 @@ type SidebarProps = NavigationProps & {
   /* (controls) sit at its top. */
   docked: boolean;
   controls: ReactNode;
+
+  /* Opens the search window, starting with any text already typed. */
+  onSearch: (query: string) => void;
   onMouseEnter: () => void;
   onMouseLeave: () => void;
 };
@@ -186,7 +189,7 @@ function WorkboardLists({ boardView, onOpenBoardView }: Pick<SidebarProps, 'boar
 /* heading. Docked, it sits beside the page at full height, with the window controls across its */
 /* top. Otherwise it floats over the page as a popup below the note bar, opened by hovering the */
 /* sidebar button or the left edge of the window, or by the keyboard moving into it. */
-export function Sidebar({ workspace, space, openNoteId, boardView, docked, controls, onNavigate, onOpenNote, onOpenBoardView, onMouseEnter, onMouseLeave }: SidebarProps) {
+export function Sidebar({ workspace, space, openNoteId, boardView, docked, controls, onNavigate, onOpenNote, onOpenBoardView, onSearch, onMouseEnter, onMouseLeave }: SidebarProps) {
   const { theme } = usePreferences();
   const dark = theme === 'dark';
   const spaces = WORKSPACES.filter(item => item.id !== 'settings');
@@ -195,10 +198,24 @@ export function Sidebar({ workspace, space, openNoteId, boardView, docked, contr
     <aside className="sidebar" aria-label="Sidebar" onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave}>
       {docked && <div className="sidebar-top">{controls}</div>}
 
-      {/* A text field rather than a button, so typing can start with one click. */}
+      {/* A text field rather than a button, so typing can start straight away: clicking it, or */}
+      {/* typing into it, opens the search window with what was typed. */}
       <div className="sidebar-search" role="search">
         <Icon name="search" size={16} />
-        <input type="search" aria-label="Search (coming soon)" placeholder="Search…" readOnly />
+        <input
+          type="search"
+          aria-label="Search (Ctrl + K)"
+          placeholder="Search…"
+          readOnly
+          onClick={() => onSearch('')}
+          onKeyDown={event => {
+            const typed = event.key.length === 1 && !event.ctrlKey && !event.metaKey && !event.altKey;
+            if (!typed && event.key !== 'Enter') return;
+            event.preventDefault();
+            onSearch(typed ? event.key : '');
+          }}
+        />
+        <kbd className="sidebar-search-key">Ctrl K</kbd>
       </div>
 
       <nav className="sidebar-icons" aria-label="Spaces">
@@ -266,17 +283,18 @@ type MobileNavProps = NavigationProps & {
   /* Starjot Home is shown in a Notespace tab, so it is marked instead of Notespace while open. */
   homeShown: boolean;
   onHome: () => void;
+  onSearch: () => void;
 };
 
 /* Phones have no sidebar: Home and the spaces sit in a bar along the bottom. */
-export function MobileNav({ workspace, homeShown, onNavigate, onHome }: MobileNavProps) {
+export function MobileNav({ workspace, homeShown, onNavigate, onHome, onSearch }: MobileNavProps) {
   const current = (id: WorkspaceId) => workspace === id && !homeShown;
   return (
     <nav className="mobile-nav" aria-label="Mobile workspace navigation">
       <button type="button" className={`mobile-link ${homeShown ? 'active' : ''}`} aria-current={homeShown ? 'page' : undefined} onClick={onHome}>
         <Icon name="home" size={20} /><span>Home</span>
       </button>
-      {WORKSPACES.map(item => (
+      {WORKSPACES.filter(item => item.id !== 'settings').map(item => (
         <button
           key={item.id}
           type="button"
@@ -287,6 +305,17 @@ export function MobileNav({ workspace, homeShown, onNavigate, onHome }: MobileNa
           <Icon name={item.icon} size={20} /><span>{item.label}</span>
         </button>
       ))}
+      <button type="button" className="mobile-link" onClick={onSearch}>
+        <Icon name="search" size={20} /><span>Search</span>
+      </button>
+      <button
+        type="button"
+        className={`mobile-link ${current('settings') ? 'active' : ''}`}
+        aria-current={current('settings') ? 'page' : undefined}
+        onClick={() => onNavigate('settings')}
+      >
+        <Icon name="settings" size={20} /><span>Settings</span>
+      </button>
     </nav>
   );
 }
