@@ -106,6 +106,17 @@
   align-self: center;
 }
 
+/* The lock beside a locked note's title, in the same amber as the lock in the note bar. */
+.note-locked-mark {
+  display: inline-flex;
+  flex-shrink: 0;
+}
+
+.note-locked-mark svg,
+.note-tile-title .note-locked-mark svg {
+  color: #937016;
+}
+
 .recent-text small {
   font-size: 11px;
   color: #69778d;

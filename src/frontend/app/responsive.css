@@ -268,22 +268,6 @@
     font-size: 12px;
   }
 
-  .editor-mode-options {
-    flex-direction: row;
-  }
-
-  .mode-option {
-    flex: 1;
-  }
-
-  .mode-option strong {
-    white-space: normal;
-  }
-
-  .mode-option small {
-    font-size: 11px;
-  }
-
   .board-intro {
     align-items: center;
   }

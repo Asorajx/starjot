@@ -1,12 +1,14 @@
 import { useEffect } from 'react';
 import { Icon } from '../components/Icon';
 import { newestFirst, NoteTable } from './NoteList';
+import { useNoteMenu } from './NoteMenu';
 import { categoryName, useCategories, useNotes } from './store';
 
 type CategoryPageProps = {
   categoryId: string;
   onBack: () => void;
   onOpen: (id: string) => void;
+  onOpenInNewTab: (id: string) => void;
   onCreate: (categoryId: string) => void;
 };
 
@@ -16,8 +18,9 @@ type CategoryPageProps = {
    ========================= */
 
 /* Every note in one category. New notes made here start in the same category. */
-export function CategoryPage({ categoryId, onBack, onOpen, onCreate }: CategoryPageProps) {
+export function CategoryPage({ categoryId, onBack, onOpen, onOpenInNewTab, onCreate }: CategoryPageProps) {
   const notes = useNotes();
+  const noteMenu = useNoteMenu({ onOpen, onOpenInNewTab });
   const categories = useCategories();
   const exists = categories.some(category => category.id === categoryId);
   const name = categoryName(categoryId);
@@ -51,7 +54,9 @@ export function CategoryPage({ categoryId, onBack, onOpen, onCreate }: CategoryP
         </button>
       </div>
 
-      <NoteTable notes={shown} onOpen={onOpen} />
+      <NoteTable notes={shown} onOpen={onOpen} onMenu={noteMenu.onContextMenu} />
+
+      {noteMenu.menu}
     </div>
   );
 }

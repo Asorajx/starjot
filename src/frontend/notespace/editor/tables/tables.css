@@ -249,8 +249,9 @@
   cursor: default;
 }
 
-.table-menu-item.is-danger,
-.page-menu-item.is-danger {
+/* A disabled danger item stays grey, so it does not look like it can still be used. */
+.table-menu-item.is-danger:not(:disabled),
+.page-menu-item.is-danger:not(:disabled) {
   color: #c2410c;
 }
 

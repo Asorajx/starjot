@@ -177,14 +177,9 @@
   color: #455775;
 }
 
-.editor-mode-options {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-top: 12px;
-}
 
-/* Split right, split down, stack and unsplit, two to a row. */
+/* Choices side by side: two to a row, three for the quick actions at the top of Note options, */
+/* or four icon-only buttons for the view (their names are in the tooltips). */
 .option-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -192,8 +187,25 @@
   margin-top: 12px;
 }
 
-.option-grid.is-single {
-  grid-template-columns: 1fr;
+.option-grid.is-three {
+  grid-template-columns: repeat(3, 1fr);
+  margin-top: 0;
+}
+
+.option-grid.is-icons {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.option-grid.is-three .option-tile,
+.option-grid.is-icons .option-tile {
+  justify-content: center;
+  gap: 4px;
+  padding: 0 4px;
+  white-space: nowrap;
+}
+
+.option-grid.is-icons .option-tile em {
+  margin-left: 0;
 }
 
 .option-tile {
@@ -273,77 +285,6 @@
   font-style: normal;
 }
 
-.mode-option {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background: #fff;
-  border: 1px solid #e9edf3;
-  border-radius: 4px;
-  padding: 12px 8px;
-  text-align: left;
-}
-
-.mode-option.selected {
-  border-color: #8bb3fb;
-  background: #f7faff;
-  box-shadow: 0 0 0 2px #eaf2ff;
-}
-
-.mode-option:hover {
-  border-color: #c3d5f4;
-}
-
-.mode-icon {
-  color: #627896;
-  display: grid;
-  place-items: center;
-  width: 25px;
-  height: 25px;
-  flex-shrink: 0;
-}
-
-.mode-option.selected .mode-icon {
-  color: #3b71e0;
-}
-
-.mode-option>span:nth-child(2) {
-  min-width: 0;
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.mode-option strong {
-  font-size: 11px;
-  color: #586b86;
-  white-space: nowrap;
-}
-
-.mode-radio {
-  width: 13px;
-  height: 13px;
-  border: 1.5px solid #d0d8e5;
-  border-radius: 50%;
-  flex-shrink: 0;
-  position: relative;
-}
-
-.mode-option.selected .mode-radio {
-  border-color: #4781e5;
-}
-
-.mode-option.selected .mode-radio::before {
-  content: "";
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  position: absolute;
-  top: 2.5px;
-  left: 2.5px;
-  background: #4781e5;
-}
 
 .side-setting--border {
   border-top: 1px solid #e9edf4;
@@ -351,39 +292,6 @@
   margin-top: 24px;
 }
 
-.layout-option {
-  height: 34px;
-  background: #fff;
-  border: 1px solid #dfe9fc;
-  border-radius: 4px;
-  padding: 0 12px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: #5376b1;
-  font-size: 11px;
-  margin-bottom: 8px;
-}
-
-.side-setting > strong + .layout-option {
-  margin-top: 12px;
-}
-
-.layout-option span {
-  margin-left: auto;
-}
-
-.layout-option--disabled {
-  border-color: #edf0f4;
-  color: #64788e;
-}
-
-.layout-option em {
-  margin-left: auto;
-  color: #68788d;
-  font-size: 11px;
-  font-style: normal;
-}
 
 .structured-document {
   padding-bottom: 24px;
@@ -714,9 +622,10 @@
   line-height: 1.6;
 }
 
+/* Sections in a side panel sit closer together than on a full screen, so more fits without scrolling. */
 .editor-flyout .side-setting--border {
-  margin-top: 24px;
-  padding-top: 24px;
+  margin-top: 16px;
+  padding-top: 16px;
 }
 
 .note-switch-row {
@@ -724,7 +633,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 12px 0;
+  padding: 12px 0 0;
   color: #526581;
   font-size: 11px;
   font-weight: 650;
@@ -1124,7 +1033,6 @@
 .zoom-control {
   display: inline-flex;
   align-items: center;
-  margin-top: 4px;
   border: 1px solid #e0e8f4;
   border-radius: 4px;
   overflow: hidden;

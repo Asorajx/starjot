@@ -329,7 +329,7 @@ export function App() {
               <span className="editor-crumb-current">{placeLabel(shown)}</span>
             </nav>
           </PageBar>
-          <CategoryPage key={shown.id} categoryId={shown.id} onBack={closePage} onOpen={openHere} onCreate={category => newNote(category, tabGroup.id, tab)} />
+          <CategoryPage key={shown.id} categoryId={shown.id} onBack={closePage} onOpen={openHere} onOpenInNewTab={openNoteInNewTab} onCreate={category => newNote(category, tabGroup.id, tab)} />
         </>
       );
     } else {
@@ -338,7 +338,7 @@ export function App() {
           <PageBar history={history}>
             <nav className="editor-breadcrumb" aria-label="Breadcrumb"><span className="editor-crumb-current">Notespace</span></nav>
           </PageBar>
-          <NotesHome filter={noteFilter} onFilterChange={setNoteFilter} onOpen={openHere} onOpenCategory={openCategory} onCreate={() => newNote(undefined, tabGroup.id, tab)} />
+          <NotesHome filter={noteFilter} onFilterChange={setNoteFilter} onOpen={openHere} onOpenInNewTab={openNoteInNewTab} onOpenCategory={openCategory} onCreate={() => newNote(undefined, tabGroup.id, tab)} />
         </>
       );
     }

@@ -144,139 +144,61 @@ export function PageOptions({
         <button type="button" className="flyout-close" aria-label="Close note options" onClick={onClose}><Icon name="x" size={17} /></button>
       </div>
 
-      <div className="side-setting">
-        <strong>Document structure</strong>
-        <div className="editor-mode-options">
-          {MODES.map(mode => (
+      <div className="option-grid is-three">
+        <button
+          type="button"
+          className={`option-tile ${copied ? 'selected' : ''}`}
+          data-tooltip="Copies this note's address. Pasted into a note it becomes a link to this note; opened in a browser it opens this note."
+          data-tooltip-align="start"
+          data-tooltip-wrap=""
+          onClick={() => onCopyLink().then(() => setCopied(true)).catch(() => undefined)}
+        >
+          <Icon name={copied ? 'check' : 'link'} size={16} /> {copied ? 'Copied' : 'Copy link'}
+        </button>
+        <button
+          type="button"
+          className="option-tile"
+          data-tooltip="Save this note as a PDF, HTML, Markdown or plain text file."
+          data-tooltip-wrap=""
+          onClick={onExport}
+        >
+          <Icon name="download" size={16} /> Export
+        </button>
+        <button
+          type="button"
+          className={`option-tile ${note.locked ? 'selected' : ''}`}
+          aria-pressed={note.locked}
+          data-tooltip="A locked note can be read, selected and commented on, but not changed."
+          data-tooltip-align="end"
+          data-tooltip-wrap=""
+          onClick={() => onLockChange(!note.locked)}
+        >
+          <Icon name={note.locked ? 'lock' : 'unlock'} size={16} /> {note.locked ? 'Locked' : 'Lock'}
+        </button>
+      </div>
+
+      <div className="side-setting side-setting--border">
+        <strong>Structure</strong>
+        <div className="option-grid">
+          {MODES.map((mode, index) => (
             <button
               key={mode.id}
               type="button"
-              className={`mode-option ${note.mode === mode.id ? 'selected' : ''}`}
+              className={`option-tile ${note.mode === mode.id ? 'selected' : ''}`}
               aria-pressed={note.mode === mode.id}
               data-tooltip={mode.tooltip}
-              data-tooltip-align="start"
+              data-tooltip-align={index ? 'end' : 'start'}
               data-tooltip-wrap=""
               onClick={() => onModeChange(mode.id)}
             >
-              <span className="mode-icon"><Icon name={mode.icon} size={18} /></span>
-              <span><strong>{mode.title}</strong></span>
-              <span className="mode-radio" />
+              <Icon name={mode.icon} size={16} /> {mode.title}
             </button>
           ))}
         </div>
       </div>
 
       <div className="side-setting side-setting--border">
-        <strong>Link</strong>
-        <div className="option-grid is-single">
-          <button
-            type="button"
-            className={`option-tile ${copied ? 'selected' : ''}`}
-            data-tooltip="Copies this note's address. Pasted into a note it becomes a link to this note; opened in a browser it opens this note."
-            data-tooltip-align="start"
-            data-tooltip-wrap=""
-            onClick={() => onCopyLink().then(() => setCopied(true)).catch(() => undefined)}
-          >
-            <Icon name={copied ? 'check' : 'copy'} size={16} /> {copied ? 'Link copied' : 'Copy link to this note'}
-          </button>
-        </div>
-      </div>
-
-      <div className="side-setting side-setting--border">
-        <strong>Export</strong>
-        <div className="option-grid is-single">
-          <button
-            type="button"
-            className="option-tile"
-            data-tooltip="Save this note as a PDF, HTML, Markdown or plain text file."
-            data-tooltip-align="start"
-            data-tooltip-wrap=""
-            onClick={onExport}
-          >
-            <Icon name="download" size={16} /> Export
-          </button>
-        </div>
-      </div>
-
-      <div className="side-setting side-setting--border">
-        <strong>View</strong>
-        <div className="option-grid">
-          {SPLITS.map((split, index) => (
-            <button
-              key={split.id}
-              type="button"
-              className={`option-tile ${view.split === split.id ? 'selected' : ''}`}
-              aria-pressed={view.split === split.id}
-              data-tooltip={view.split ? `Show the two groups of tabs ${split.id === 'right' ? 'side by side' : 'one above the other'}.` : split.tooltip}
-              data-tooltip-align={index ? 'end' : 'start'}
-              data-tooltip-wrap=""
-              onClick={() => view.onSplit(split.id)}
-            >
-              <Icon name={split.icon} size={16} /> {split.title}
-            </button>
-          ))}
-          <button
-            type="button"
-            className={`option-tile ${view.stacked ? 'selected' : ''}`}
-            disabled={!view.canStack}
-            data-tooltip={stackTooltip}
-            data-tooltip-align="start"
-            data-tooltip-wrap=""
-            onClick={view.onStack}
-          >
-            <Icon name="stack" size={16} /> Stack {view.stacked && <em>{view.tabCount}/{STACK_LIMIT}</em>}
-          </button>
-          <button
-            type="button"
-            className="option-tile"
-            disabled={!view.canUnsplit}
-            data-tooltip={view.canUnsplit ? 'Put every tab back into one normal tab strip.' : 'Nothing is split or stacked.'}
-            data-tooltip-align="end"
-            data-tooltip-wrap=""
-            onClick={view.onUnsplit}
-          >
-            <Icon name="unsplit" size={16} /> Unsplit
-          </button>
-        </div>
-      </div>
-
-      <div className="side-setting side-setting--border">
-        <strong>Zoom</strong>
-        <div className="zoom-control" role="group" aria-label="Note zoom">
-          <button type="button" className="zoom-button" aria-label="Zoom out" onClick={() => onZoom(-1)}><Icon name="minus" size={15} /></button>
-          <button type="button" className="zoom-value" aria-label="Reset zoom to 100%" onClick={() => onZoom(0)}>{Math.round(zoom * 100)}%</button>
-          <button type="button" className="zoom-button" aria-label="Zoom in" onClick={() => onZoom(1)}><Icon name="plus" size={15} /></button>
-        </div>
-      </div>
-
-      <div className="side-setting side-setting--border">
-        <strong>Coupled blocks</strong>
-        <label
-          className="note-switch-row"
-          data-tooltip="Select content and press Sticky to keep it together on the same printed page. When the indicators are hidden, brackets still appear while a group is selected or moved."
-          data-tooltip-align="start"
-          data-tooltip-wrap=""
-        >
-          <span>Show sticky indicators</span>
-          <input type="checkbox" checked={note.stickyIndicator} onChange={event => onStickyIndicatorChange(event.target.checked)} />
-        </label>
-      </div>
-
-      <div className="side-setting side-setting--border">
-        <strong>Editing</strong>
-        <label
-          className="note-switch-row"
-          data-tooltip="A locked note can be read, selected and commented on, but not changed."
-          data-tooltip-align="start"
-          data-tooltip-wrap=""
-        >
-          <span><Icon name={note.locked ? 'lock' : 'unlock'} size={14} /> Lock note</span>
-          <input type="checkbox" checked={note.locked} onChange={event => onLockChange(event.target.checked)} />
-        </label>
-      </div>
-
-      <div className="side-setting side-setting--border">
-        <strong>Page layout</strong>
+        <strong>Layout</strong>
         <div className="option-grid">
           {LAYOUTS.map((layout, index) => (
             <button
@@ -313,6 +235,67 @@ export function PageOptions({
             </div>
           </>
         )}
+        <label
+          className="note-switch-row"
+          data-tooltip="Select content and press Sticky to keep it together on the same printed page. When the indicators are hidden, brackets still appear while a group is selected or moved."
+          data-tooltip-align="start"
+          data-tooltip-wrap=""
+        >
+          <span>Show sticky indicators</span>
+          <input type="checkbox" checked={note.stickyIndicator} onChange={event => onStickyIndicatorChange(event.target.checked)} />
+        </label>
+      </div>
+
+      <div className="side-setting side-setting--border">
+        <strong>View</strong>
+        <div className="option-grid is-icons">
+          {SPLITS.map((split, index) => (
+            <button
+              key={split.id}
+              type="button"
+              className={`option-tile ${view.split === split.id ? 'selected' : ''}`}
+              aria-pressed={view.split === split.id}
+              aria-label={split.title}
+              data-tooltip={`${split.title}: ${view.split ? `show the two groups of tabs ${split.id === 'right' ? 'side by side' : 'one above the other'}.` : split.tooltip}`}
+              data-tooltip-align={index ? undefined : 'start'}
+              data-tooltip-wrap=""
+              onClick={() => view.onSplit(split.id)}
+            >
+              <Icon name={split.icon} size={16} />
+            </button>
+          ))}
+          <button
+            type="button"
+            className={`option-tile ${view.stacked ? 'selected' : ''}`}
+            disabled={!view.canStack}
+            aria-label={view.stacked ? `Stack, ${view.tabCount} of ${STACK_LIMIT}` : 'Stack'}
+            data-tooltip={`Stack: ${stackTooltip}`}
+            data-tooltip-wrap=""
+            onClick={view.onStack}
+          >
+            <Icon name="stack" size={16} /> {view.stacked && <em>{view.tabCount}/{STACK_LIMIT}</em>}
+          </button>
+          <button
+            type="button"
+            className="option-tile"
+            disabled={!view.canUnsplit}
+            aria-label="Unsplit"
+            data-tooltip={`Unsplit: ${view.canUnsplit ? 'put every tab back into one normal tab strip.' : 'nothing is split or stacked.'}`}
+            data-tooltip-align="end"
+            data-tooltip-wrap=""
+            onClick={view.onUnsplit}
+          >
+            <Icon name="unsplit" size={16} />
+          </button>
+        </div>
+        <div className="option-row">
+          <span>Zoom</span>
+          <div className="zoom-control" role="group" aria-label="Note zoom">
+            <button type="button" className="zoom-button" aria-label="Zoom out" onClick={() => onZoom(-1)}><Icon name="minus" size={15} /></button>
+            <button type="button" className="zoom-value" aria-label="Reset zoom to 100%" onClick={() => onZoom(0)}>{Math.round(zoom * 100)}%</button>
+            <button type="button" className="zoom-button" aria-label="Zoom in" onClick={() => onZoom(1)}><Icon name="plus" size={15} /></button>
+          </div>
+        </div>
       </div>
 
       <div className="side-setting side-setting--border">

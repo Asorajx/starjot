@@ -3,6 +3,7 @@ import { ConfirmDialog } from '../components/ConfirmDialog';
 import { Icon } from '../components/Icon';
 import { updatePreferences, usePreferences, type NotesSort } from '../app/preferences';
 import { editedText, newestFirst, NoteTable, NoteTile, sortNotes } from './NoteList';
+import { useNoteMenu } from './NoteMenu';
 import {
   addCategory, canAddCategory, categoryName, removeCategory, renameCategory, useCategories, useNotes
 } from './store';
@@ -15,6 +16,7 @@ type NotesHomeProps = {
   filter: NoteFilter;
   onFilterChange: (filter: NoteFilter) => void;
   onOpen: (id: string) => void;
+  onOpenInNewTab: (id: string) => void;
   onOpenCategory: (id: string) => void;
   onCreate: () => void;
 };
@@ -183,8 +185,9 @@ function CategoryCard({ id, name, notes, onOpenCategory }: CategoryCardProps) {
    Notespace Home
    ========================= */
 
-export function NotesHome({ filter, onFilterChange, onOpen, onOpenCategory, onCreate }: NotesHomeProps) {
+export function NotesHome({ filter, onFilterChange, onOpen, onOpenInNewTab, onOpenCategory, onCreate }: NotesHomeProps) {
   const notes = useNotes();
+  const noteMenu = useNoteMenu({ onOpen, onOpenInNewTab });
   const now = useNow();
   const { notesSort } = usePreferences();
   const [showFilters, setShowFilters] = useState(filter !== 'all');
@@ -278,7 +281,7 @@ export function NotesHome({ filter, onFilterChange, onOpen, onOpenCategory, onCr
             ))
           )}
           {tab !== 'categories' && (tabNotes.length
-            ? tabNotes.map(note => <NoteTile key={note.id} note={note} onOpen={onOpen} />)
+            ? tabNotes.map(note => <NoteTile key={note.id} note={note} onOpen={onOpen} onMenu={noteMenu.onContextMenu} />)
             : <p className="notes-empty-list">Star a note with the ☆ in the list below to keep it here.</p>)}
         </div>
       </section>
@@ -307,8 +310,10 @@ export function NotesHome({ filter, onFilterChange, onOpen, onOpenCategory, onCr
 
         {showFilters && <CategoryBar notes={notes} filter={filter} onFilterChange={onFilterChange} />}
 
-        <NoteTable notes={shown} onOpen={onOpen} showOpened={notesSort === 'opened'} />
+        <NoteTable notes={shown} onOpen={onOpen} onMenu={noteMenu.onContextMenu} showOpened={notesSort === 'opened'} />
       </section>
+
+      {noteMenu.menu}
     </div>
   );
 }
