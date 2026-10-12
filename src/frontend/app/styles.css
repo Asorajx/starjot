@@ -138,38 +138,8 @@ p {
 }
 
 .brand-mark {
-  height: 32px;
-  width: 32px;
-  display: inline-flex;
-  position: relative;
-  align-items: center;
-  justify-content: center;
-  border-radius: 4px;
-  background: #346ee2;
+  display: block;
   flex-shrink: 0;
-  transform: rotate(-1deg);
-}
-
-.brand-mark>span {
-  position: absolute;
-  width: 16px;
-  height: 5px;
-  border: 1.5px solid #fff;
-  border-radius: 4px;
-  transform: skewY(-24deg) rotate(7deg);
-  opacity: .97;
-}
-
-.brand-mark>span:nth-child(1) {
-  top: 8px;
-}
-
-.brand-mark>span:nth-child(2) {
-  top: 13px;
-}
-
-.brand-mark>span:nth-child(3) {
-  top: 18px;
 }
 
 .sidebar-search {
@@ -1024,11 +994,6 @@ p {
 .window-control[aria-expanded="true"] {
   background: #e2e7ee;
   color: var(--ink);
-}
-
-/* The logo is drawn at 32px; here it is shown at 24px. */
-.window-home .brand-mark {
-  transform: scale(.75) rotate(-1deg);
 }
 
 /* Phones use the bottom navigation instead of the sidebar. */

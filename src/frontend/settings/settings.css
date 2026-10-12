@@ -324,16 +324,6 @@
   margin: 0 0 32px;
 }
 
-.brand-mark--large {
-  width: 52px;
-  height: 52px;
-  border-radius: 4px;
-}
-
-.brand-mark--large>span {
-  transform: scale(1.45) skewY(-24deg) rotate(7deg);
-}
-
 .about-card h3 {
   margin: 0 0 4px;
   font-size: 20px;

@@ -1,4 +1,5 @@
 import { useEffect, type CSSProperties, type ReactNode } from 'react';
+import { BrandMark } from '../components/BrandMark';
 import { Icon, type IconName } from '../components/Icon';
 import { updatePreferences, usePreferences, type Preferences } from '../app/preferences';
 import { Switch } from '../components/Switch';
@@ -196,7 +197,7 @@ function SettingsPanel({ section }: { section: SettingsSection }) {
       <h2>About</h2>
       <p className="settings-panel-subtitle">A little context about the product you are exploring.</p>
       <div className="about-card">
-        <span className="brand-mark brand-mark--large"><span /><span /><span /></span>
+        <BrandMark size={52} />
         <div><h3>Starjot</h3><p>A calmer place to think and get things done.</p></div>
       </div>
       <Group title="Application information">

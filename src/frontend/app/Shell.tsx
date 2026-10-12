@@ -1,4 +1,5 @@
 import type { MouseEvent, ReactNode } from 'react';
+import { BrandMark } from '../components/BrandMark';
 import { Icon, type IconName } from '../components/Icon';
 import { WORKSPACES, workspaceLabel, type WorkspaceId } from './workspaces';
 import { useNotes } from '../notespace/store';
@@ -35,10 +36,6 @@ type SidebarProps = NavigationProps & {
 /* How many notes each sidebar list shows. */
 const LIST_COUNT = 5;
 
-/* The starjot logo: three slanted lines on a blue square. */
-function BrandMark() {
-  return <span className="brand-mark" aria-hidden="true"><span /><span /><span /></span>;
-}
 
 
 /* =========================
