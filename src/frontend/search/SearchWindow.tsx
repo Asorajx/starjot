@@ -14,12 +14,19 @@ type SearchWindowProps = {
 
   /* Text already typed, such as the key pressed in the sidebar's search box. */
   initialQuery: string;
+
+  /* Opened from a tab group's +: whatever is chosen or created opens in a new tab. */
+  inNewTab: boolean;
   onClose: () => void;
 
-  /* newTab: opened with Ctrl + Enter or Ctrl + click. findTerm: words to show with the find bar. */
-  onOpenNote: (id: string, newTab: boolean, findTerm: string) => void;
-  onOpenCategory: (id: string) => void;
+  /* inNewTab: Ctrl + Enter or Ctrl + click (the app also opens a new tab when inNewTab was set). */
+  /* findTerm: words to show with the find bar. */
+  onOpenNote: (id: string, inNewTab: boolean, findTerm: string) => void;
+  onOpenCategory: (id: string, inNewTab: boolean) => void;
   onOpenBoardView: (view: StatusTab) => void;
+
+  /* "Create new note": the title (empty for an untitled note) and the category to start in. */
+  onCreateNote: (title: string, category: string, inNewTab: boolean) => void;
 };
 
 /* How many recently opened notes show before anything is typed, and how many notes match at most. */
@@ -178,6 +185,17 @@ function Preview({ entry }: { entry: SearchEntry }) {
   );
 }
 
+/* The note "Create new note" would make, before it exists. */
+function CreatePreview({ title, inNewTab }: { title: string; inNewTab: boolean }) {
+  return (
+    <article className="search-preview-page">
+      <span className="search-preview-icon" aria-hidden="true"><Icon name="plus" size={28} /></span>
+      <h2>{title || 'Untitled note'}</h2>
+      <p className="search-preview-empty">Press Enter to create this note{inNewTab ? ' in a new tab' : ''}.</p>
+    </article>
+  );
+}
+
 /* Shows the skeleton first whenever the selection changes, then the page. */
 function PreviewPane({ entry }: { entry: SearchEntry | null }) {
   const [shownId, setShownId] = useState<string | null>(null);
@@ -202,9 +220,11 @@ function PreviewPane({ entry }: { entry: SearchEntry | null }) {
    ========================= */
 
 /* Search across notes, categories and Workboard items, below the note bar and over the page. */
-/* Results are on the left and a preview of the selected one on the right. ↑ and ↓ move through */
-/* the results, Enter opens one (Ctrl + Enter in a new tab, for notes), and Escape closes. */
-export function SearchWindow({ initialQuery, onClose, onOpenNote, onOpenCategory, onOpenBoardView }: SearchWindowProps) {
+/* Results are on the left and a preview of the selected one on the right; the last row creates a */
+/* new note titled with what was typed. ↑ and ↓ move through the rows, Enter opens one (Ctrl + */
+/* Enter in a new tab), and Escape closes. Opened from a tab group's +, everything opens in a new */
+/* tab. */
+export function SearchWindow({ initialQuery, inNewTab, onClose, onOpenNote, onOpenCategory, onOpenBoardView, onCreateNote }: SearchWindowProps) {
   const [query, setQuery] = useState(initialQuery);
   const [titleOnly, setTitleOnly] = useState(false);
   const [scope, setScope] = useState('all');
@@ -216,8 +236,16 @@ export function SearchWindow({ initialQuery, onClose, onOpenNote, onOpenCategory
   const entries = useEntries();
   const groups = useGroups(entries, query, titleOnly, scope);
   const flat = groups.flatMap(group => group.results);
-  const index = Math.min(selected, flat.length - 1);
+
+  /* The rows are the results, then "Create new note" (its index is flat.length). */
+  const rowCount = flat.length + 1;
+  const index = Math.min(selected, rowCount - 1);
   const current = flat[index] ?? null;
+  const creating = index === flat.length;
+  const newTitle = query.trim().slice(0, 160);
+
+  /* A note created while searching in one category starts in it. */
+  const newCategory = categories.some(category => category.id === scope) ? scope : '';
   const scopeOptions: DropdownOption<string>[] = [
     { value: 'all', label: 'Everything', icon: 'search' },
     { value: 'notes', label: 'All notes', icon: 'book-open' },
@@ -248,22 +276,28 @@ export function SearchWindow({ initialQuery, onClose, onOpenNote, onOpenCategory
     const { entry } = result;
     onClose();
     if (entry.kind === 'note') onOpenNote(entry.id, newTab, result.findTerm);
-    else if (entry.kind === 'category') onOpenCategory(entry.id);
+    else if (entry.kind === 'category') onOpenCategory(entry.id, newTab);
     else {
       const found = TASK_COLUMNS.get(entry.id);
       if (found) onOpenBoardView(found.column);
     }
   }
 
+  function create(newTab: boolean) {
+    onClose();
+    onCreateNote(newTitle, newCategory, newTab);
+  }
+
   function handleKeyDown(event: KeyboardEvent) {
     if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
       event.preventDefault();
-      if (!flat.length) return;
       const step = event.key === 'ArrowDown' ? 1 : -1;
-      setSelected((index + step + flat.length) % flat.length);
-    } else if (event.key === 'Enter' && current) {
+      setSelected((index + step + rowCount) % rowCount);
+    } else if (event.key === 'Enter') {
       event.preventDefault();
-      open(current, event.ctrlKey || event.metaKey);
+      const newTab = event.ctrlKey || event.metaKey;
+      if (current) open(current, newTab);
+      else create(newTab);
     }
   }
 
@@ -271,7 +305,7 @@ export function SearchWindow({ initialQuery, onClose, onOpenNote, onOpenCategory
 
   return (
     <div className="search-backdrop" onMouseDown={event => event.target === event.currentTarget && onClose()}>
-      <div className="search-window" role="dialog" aria-modal="true" aria-label="Search">
+      <div className="search-window" role="dialog" aria-modal="true" aria-label={inNewTab ? 'Open in a new tab' : 'Search'}>
         <div className="search-head">
           <Icon name="search" size={20} />
           <input
@@ -282,9 +316,9 @@ export function SearchWindow({ initialQuery, onClose, onOpenNote, onOpenCategory
             aria-label="Search notes, categories and Workboard"
             aria-expanded="true"
             aria-controls="search-results"
-            aria-activedescendant={current ? `search-option-${index}` : undefined}
+            aria-activedescendant={`search-option-${index}`}
             aria-autocomplete="list"
-            placeholder="Search everything…"
+            placeholder={inNewTab ? 'Open in a new tab…' : 'Search everything…'}
             value={query}
             onChange={event => setQuery(event.target.value)}
             onKeyDown={handleKeyDown}
@@ -354,8 +388,27 @@ export function SearchWindow({ initialQuery, onClose, onOpenNote, onOpenCategory
                 })}
               </div>
             ))}
+
+            <div role="group" aria-label="New note" className="search-create-group">
+              <div
+                id={`search-option-${flat.length}`}
+                role="option"
+                aria-selected={creating}
+                className={`search-result search-create ${creating ? 'is-selected' : ''}`}
+                onMouseMove={() => !creating && setSelected(flat.length)}
+                onClick={(event: MouseEvent) => create(event.ctrlKey || event.metaKey)}
+              >
+                <span className="search-result-icon" aria-hidden="true"><Icon name="plus" size={16} /></span>
+                <span className="search-result-text">
+                  <span className="search-result-line">
+                    <strong>{newTitle ? `Create note “${newTitle}”` : 'Create new note'}</strong>
+                    {newCategory && <span className="search-result-path"> — in {categories.find(category => category.id === newCategory)?.name}</span>}
+                  </span>
+                </span>
+              </div>
+            </div>
           </div>
-          {showPreview && <PreviewPane entry={current?.entry ?? null} />}
+          {showPreview && (creating ? <aside className="search-preview" aria-label="Preview"><CreatePreview title={newTitle} inNewTab={inNewTab} /></aside> : <PreviewPane entry={current?.entry ?? null} />)}
         </div>
       </div>
     </div>

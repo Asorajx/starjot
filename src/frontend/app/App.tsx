@@ -11,7 +11,7 @@ import { findWhenOpened } from '../notespace/editor/find/pendingFind';
 import type { ViewControls } from '../notespace/editor/EditorPanels';
 import { NoteEditor } from '../notespace/editor/NoteEditor';
 import { PageBar, placeExists, placeLabel, type PageHistory } from '../notespace/PageBar';
-import { createNote, flushSave, getNote } from '../notespace/store';
+import { createNote, flushSave, getNote, updateNote } from '../notespace/store';
 import { Settings, type SettingsSection } from '../settings/Settings';
 import { Workboard } from '../workboard/Workboard';
 import type { BoardTab } from '../../shared/types/task';
@@ -130,8 +130,9 @@ export function App() {
   const docked = !sidebarCollapsed && roomToDock;
   const [popup, setPopup] = useState<'hover' | 'click' | null>(null);
 
-  /* The search window's starting text while it is open, or null while closed. */
-  const [searchStart, setSearchStart] = useState<string | null>(null);
+  /* The search window while open: its starting text, and the tab group whose + opened it (things */
+  /* chosen then open in a new tab of that group), or null to open them in the current tab. */
+  const [searchState, setSearchState] = useState<{ query: string; tabGroup: string | null } | null>(null);
   const popupTimer = useRef<number | undefined>(undefined);
 
   const group = focusedGroup(tabs);
@@ -205,15 +206,6 @@ export function App() {
     const shown = currentPlace(tab);
     const viewed = shown.kind === 'category' ? shown.id : '';
     go({ kind: 'note', id: createNote(category ?? (viewed || filtered)).id }, groupId, tab.id);
-    focusTitle(tab.id);
-  }
-
-  /* The + beside a group's tabs starts a new note in a new tab of that group. */
-  function newNoteTab(groupId: string) {
-    const target = tabs.groups.find(item => item.id === groupId);
-    if (!target || !canAddTab(target)) return;
-    const tab = newTab({ kind: 'note', id: createNote().id });
-    changeTabs(current => addTab(current, groupId, tab));
     focusTitle(tab.id);
   }
 
@@ -293,18 +285,43 @@ export function App() {
     };
   }
 
-  function openSearch(query = '') {
+  function openSearch(query = '', tabGroup: string | null = null) {
     setPopup(null);
-    setSearchStart(query);
+    setSearchState({ query, tabGroup });
+  }
+
+  /* Opens a place from search: in a new tab of the group whose + opened search, in a new tab of */
+  /* the focused group (Ctrl + Enter), or here. A group with no room for a tab opens it here. */
+  function openFromSearch(place: Place, inNewTab: boolean) {
+    const groupId = searchState?.tabGroup ?? (inNewTab ? group.id : null);
+    const target = groupId ? tabs.groups.find(item => item.id === groupId) : null;
+    if (!target || !canAddTab(target)) {
+      go(place);
+      return null;
+    }
+    setWorkspace('notes');
+    setSpace('notes');
+    const tab = newTab(place);
+    changeTabs(current => addTab(current, target.id, tab, true));
+    return tab;
   }
 
   /* A note found in its text opens with the find bar showing the words. If the note was already */
   /* open there, nothing new opens, so the words are dropped rather than kept for later. */
-  function openFoundNote(id: string, newTab: boolean, findTerm: string) {
+  function openFoundNote(id: string, inNewTab: boolean, findTerm: string) {
     findWhenOpened(id, findTerm);
-    if (newTab) openNoteInNewTab(id);
-    else openNote(id);
+    openFromSearch({ kind: 'note', id }, inNewTab);
     window.setTimeout(() => findWhenOpened('', ''));
+  }
+
+  /* "Create new note" in search: what was typed becomes the title; with nothing typed, the title */
+  /* is selected, ready to type. */
+  function createFromSearch(title: string, category: string, inNewTab: boolean) {
+    flushSave();
+    const note = createNote(category);
+    if (title) updateNote(note.id, { title });
+    const tab = openFromSearch({ kind: 'note', id: note.id }, inNewTab);
+    if (!title) focusTitle(tab?.id ?? activeTab(group).id);
   }
 
   /* Home shows Starjot Home in the current tab, so Back returns to where you were. */
@@ -458,7 +475,7 @@ export function App() {
               leading={!docked && tabGroup.id === tabs.groups[0].id ? windowControls : null}
               onSelect={id => changeTabs(current => selectTab(current, tabGroup.id, id))}
               onClose={id => changeTabs(current => closeTab(current, tabGroup.id, id))}
-              onNew={() => newNoteTab(tabGroup.id)}
+              onNew={() => openSearch('', tabGroup.id)}
             />
             <div className="tab-group-body">
               {tabGroup.tabs.map((tab, index) => {
@@ -525,12 +542,14 @@ export function App() {
         {screen}
       </div>
       <MobileNav workspace={workspace} homeShown={workspace === 'notes' && place.kind === 'start'} onNavigate={navigate} onHome={goHome} onSearch={() => openSearch()} />
-      {searchStart !== null && (
+      {searchState && (
         <SearchWindow
-          initialQuery={searchStart}
-          onClose={() => setSearchStart(null)}
+          initialQuery={searchState.query}
+          inNewTab={searchState.tabGroup !== null}
+          onClose={() => setSearchState(null)}
           onOpenNote={openFoundNote}
-          onOpenCategory={id => go({ kind: 'category', id })}
+          onCreateNote={createFromSearch}
+          onOpenCategory={(id, inNewTab) => openFromSearch({ kind: 'category', id }, inNewTab)}
           onOpenBoardView={openBoardView}
         />
       )}

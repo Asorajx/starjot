@@ -176,6 +176,17 @@
   color: #4a3a00;
 }
 
+/* "Create new note" is always the last row, set apart from the results by a line. */
+.search-create-group {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+}
+
+.search-create .search-result-icon {
+  color: var(--blue);
+}
+
 .search-empty {
   margin: 0;
   padding: 24px 12px;
