@@ -290,7 +290,7 @@ type MobileNavProps = NavigationProps & {
 export function MobileNav({ workspace, homeShown, onNavigate, onHome, onSearch }: MobileNavProps) {
   const current = (id: WorkspaceId) => workspace === id && !homeShown;
   return (
-    <nav className="mobile-nav" aria-label="Mobile workspace navigation">
+    <nav className="mobile-nav" aria-label="Spaces">
       <button type="button" className={`mobile-link ${homeShown ? 'active' : ''}`} aria-current={homeShown ? 'page' : undefined} onClick={onHome}>
         <Icon name="home" size={20} /><span>Home</span>
       </button>

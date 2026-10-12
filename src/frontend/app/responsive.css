@@ -334,7 +334,6 @@
     min-width: 0;
   }
 
-  .fake-field,
   .fake-select {
     min-width: 116px;
     max-width: 126px;
@@ -383,7 +382,6 @@
     margin-top: 4px;
   }
 
-  .fake-field,
   .fake-select {
     min-width: 160px;
   }

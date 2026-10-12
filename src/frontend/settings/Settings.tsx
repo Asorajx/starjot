@@ -20,7 +20,7 @@ type SettingsProps = {
 export const SETTING_TABS: { id: SettingsSection; label: string; icon: IconName }[] = [
   { id: 'general', label: 'General', icon: 'sliders-horizontal' },
   { id: 'appearance', label: 'Appearance', icon: 'palette' },
-  { id: 'workspace', label: 'Workspace', icon: 'panels-top-left' },
+  { id: 'workspace', label: 'Spaces', icon: 'panels-top-left' },
   { id: 'storage', label: 'Storage', icon: 'hard-drive' },
   { id: 'about', label: 'About', icon: 'info' }
 ];
@@ -89,13 +89,12 @@ function SettingsPanel({ section }: { section: SettingsSection }) {
     return (
       <>
         <h2>General</h2>
-        <p className="settings-panel-subtitle">A few everyday preferences for your workspace.</p>
+        <p className="settings-panel-subtitle">A few everyday preferences for Starjot.</p>
         <Group title="Application preferences">
-          <Row title="Workspace name" description="The name shown in your navigation."><span className="fake-field">Studio workspace</span></Row>
           <Row title="Start screen" description="Choose where the application opens by default."><FakeSelect>Notespace</FakeSelect></Row>
-          <Row title="Show helpful tips" description="Show small hints while you explore the workspace."><Toggle /></Row>
+          <Row title="Show helpful tips" description="Show small hints while you explore Starjot."><Toggle /></Row>
         </Group>
-        <Group title="Workspace preferences">
+        <Group title="Notespace preferences">
           <Row title="Default note view" description="New notes start as continuous documents."><FakeSelect>Continuous</FakeSelect></Row>
           <Row title="Show recent notes" description="Display your recently edited documents on Notespace home."><Toggle /></Row>
           <Row title="Contents scrolling" description="How the note scrolls when you choose a heading in Contents.">
@@ -164,13 +163,13 @@ function SettingsPanel({ section }: { section: SettingsSection }) {
   if (section === 'workspace') {
     return (
       <>
-        <h2>Workspace</h2>
-        <p className="settings-panel-subtitle">Choose which experiences belong in your application.</p>
-        <Group title="Available workspaces">
+        <h2>Spaces</h2>
+        <p className="settings-panel-subtitle">Choose which spaces appear in Starjot.</p>
+        <Group title="Available spaces">
           <Row title={<><span className="setting-icon"><Icon name="book-open" size={19} /></span> Notespace</>} description="A dedicated home for documents, notes, and knowledge."><Toggle /></Row>
           <Row title={<><span className="setting-icon"><Icon name="layout-dashboard" size={19} /></span> Workboard</>} description="A separate place for tasks, statuses, and linked note references."><Toggle /></Row>
         </Group>
-        <div className="info-banner"><Icon name="info" size={17} /> These switches are only visual previews. Disabling a workspace is not implemented.</div>
+        <div className="info-banner"><Icon name="info" size={17} /> These switches are only visual previews. Turning a space off is not built yet.</div>
       </>
     );
   }

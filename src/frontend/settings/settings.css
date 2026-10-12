@@ -129,7 +129,6 @@
   justify-content: flex-end;
 }
 
-.fake-field,
 .fake-select {
   border: 1px solid #e8edf4;
   border-radius: 4px;
