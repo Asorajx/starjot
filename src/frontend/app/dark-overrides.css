@@ -63,3 +63,76 @@
 [data-theme="dark"] .drawing-swatch.is-ink {
   background: linear-gradient(135deg, #e6edf7 50%, #1c2c47 50%);
 }
+
+/* Text and background colours chosen in the selection toolbar, made for a dark page. */
+[data-theme="dark"] .text-gray {
+  color: #9b9b9b;
+}
+
+[data-theme="dark"] .text-brown {
+  color: #ba856f;
+}
+
+[data-theme="dark"] .text-orange {
+  color: #e6883f;
+}
+
+[data-theme="dark"] .text-yellow {
+  color: #cfa24b;
+}
+
+[data-theme="dark"] .text-green {
+  color: #5ba57e;
+}
+
+[data-theme="dark"] .text-blue {
+  color: #529cca;
+}
+
+[data-theme="dark"] .text-purple {
+  color: #a77ec5;
+}
+
+[data-theme="dark"] .text-pink {
+  color: #d26e9f;
+}
+
+[data-theme="dark"] .text-red {
+  color: #e06b65;
+}
+
+[data-theme="dark"] .bg-gray {
+  background: #373737;
+}
+
+[data-theme="dark"] .bg-brown {
+  background: #3f2f28;
+}
+
+[data-theme="dark"] .bg-orange {
+  background: #4a3221;
+}
+
+[data-theme="dark"] .bg-yellow {
+  background: #463d23;
+}
+
+[data-theme="dark"] .bg-green {
+  background: #253a2e;
+}
+
+[data-theme="dark"] .bg-blue {
+  background: #22374a;
+}
+
+[data-theme="dark"] .bg-purple {
+  background: #3b2a48;
+}
+
+[data-theme="dark"] .bg-pink {
+  background: #45263a;
+}
+
+[data-theme="dark"] .bg-red {
+  background: #4b2524;
+}

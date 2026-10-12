@@ -1,6 +1,8 @@
 import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent, type MouseEvent } from 'react';
+import { RECENT_COLORS, getPreferences, updatePreferences, usePreferences } from '../../app/preferences';
 import { Icon, type IconName } from '../../components/Icon';
 import { safeHref } from '../sanitize';
+import { COLOR_NAMES, applyColor, colorAt, type ColorClass, type ColorKind, type ColorName } from './colors';
 import type { EditorSession } from './session';
 
 type SelectionToolbarProps = {
@@ -13,7 +15,7 @@ type Size = { width: number; height: number };
 
 /* The selection's outline, and the spot where the selection ends (where the mouse was released). */
 type Anchor = { selection: Box; end: Box; kind: string };
-type Mode = 'buttons' | 'link' | 'comment';
+type Mode = 'buttons' | 'link' | 'comment' | 'color';
 
 /* The editor's top bar covers this much of the window, so the toolbar never goes above it. */
 const TOP_LIMIT = 64;
@@ -107,6 +109,79 @@ export function selectionKind(range: Range, root: Element) {
 
 
 /* =========================
+   Colour Palette
+   ========================= */
+
+const COLOR_LABELS: Record<ColorName, string> = {
+  gray: 'Gray', brown: 'Brown', orange: 'Orange', yellow: 'Yellow', green: 'Green', blue: 'Blue', purple: 'Purple', pink: 'Pink', red: 'Red'
+};
+
+type SwatchProps = {
+  kind: ColorKind;
+  name: ColorName | null;
+  chosen: boolean;
+  onPick: () => void;
+};
+
+/* One colour to pick: an "A" in the text colour, or on the background colour. No colour shows */
+/* the default. */
+function Swatch({ kind, name, chosen, onPick }: SwatchProps) {
+  const label = `${name ? COLOR_LABELS[name] : 'Default'} ${kind === 'text' ? 'text' : 'background'}`;
+  return (
+    <button
+      type="button"
+      className={`color-swatch is-${kind} ${name ? `${kind}-${name}` : 'is-default'} ${chosen ? 'is-chosen' : ''}`}
+      aria-label={label}
+      aria-pressed={chosen}
+      data-tooltip={label}
+      onMouseDown={event => event.preventDefault()}
+      onClick={onPick}
+    >
+      A
+    </button>
+  );
+}
+
+type ColorPaletteProps = {
+  current: { text: string | null; bg: string | null };
+  onPick: (kind: ColorKind, name: ColorName | null) => void;
+};
+
+/* Recently used colours, then the text colours and the background colours. */
+function ColorPalette({ current, onPick }: ColorPaletteProps) {
+  const { recentColors } = usePreferences();
+  const options = (kind: ColorKind) => [null, ...COLOR_NAMES].map(name => (
+    <Swatch key={name ?? 'default'} kind={kind} name={name} chosen={(current[kind] ?? null) === (name ? `${kind}-${name}` : null)} onPick={() => onPick(kind, name)} />
+  ));
+  return (
+    <div className="color-palette">
+      {recentColors.length > 0 && (
+        <>
+          <span className="color-palette-heading">Recently used</span>
+          <div className="color-palette-grid">
+            {recentColors.map(color => {
+              const [kind, name] = color.split('-') as [ColorKind, ColorName];
+              return <Swatch key={color} kind={kind} name={name} chosen={current[kind] === color} onPick={() => onPick(kind, name)} />;
+            })}
+          </div>
+        </>
+      )}
+      <span className="color-palette-heading">Text color</span>
+      <div className="color-palette-grid">{options('text')}</div>
+      <span className="color-palette-heading">Background color</span>
+      <div className="color-palette-grid">{options('bg')}</div>
+    </div>
+  );
+}
+
+/* Put a colour first in the recently used list (the default colours are not listed). */
+function rememberColor(color: ColorClass) {
+  const recent = getPreferences().recentColors.filter(item => item !== color);
+  updatePreferences({ recentColors: [color, ...recent].slice(0, RECENT_COLORS) });
+}
+
+
+/* =========================
    Selection Toolbar
    ========================= */
 
@@ -161,6 +236,21 @@ export function SelectionToolbar({ session, locked }: SelectionToolbarProps) {
       scroller?.removeEventListener('scroll', update);
     };
   }, []);
+
+  /* Escape closes the colours and goes back to the buttons (listening early keeps it from also */
+  /* leaving the note). */
+  useEffect(() => {
+    if (mode !== 'color') return;
+    function handleKeyDown(event: globalThis.KeyboardEvent) {
+      if (event.key !== 'Escape') return;
+      event.preventDefault();
+      event.stopPropagation();
+      modeRef.current = 'buttons';
+      setMode('buttons');
+    }
+    document.addEventListener('keydown', handleKeyDown, true);
+    return () => document.removeEventListener('keydown', handleKeyDown, true);
+  }, [mode]);
 
   /* Re-measure whenever the bar changes shape, such as opening the comment box. */
   useLayoutEffect(() => {
@@ -221,6 +311,24 @@ export function SelectionToolbar({ session, locked }: SelectionToolbarProps) {
     close();
   }
 
+  /* Colour the remembered selection, keep it selected, and go back to the buttons. */
+  function applyTextColor(kind: ColorKind, name: ColorName | null) {
+    const range = savedRange.current;
+    if (!range) return;
+    restoreSelection();
+    session.checkpoint();
+    const colored = applyColor(range, kind, name);
+    if (colored) {
+      window.getSelection()?.removeAllRanges();
+      window.getSelection()?.addRange(colored);
+      savedRange.current = colored.cloneRange();
+    }
+    session.commit();
+    if (name) rememberColor(`${kind}-${name}`);
+    modeRef.current = 'buttons';
+    setMode('buttons');
+  }
+
   function applyComment() {
     const range = savedRange.current;
     if (range && value.trim()) session.addComment(range, value);
@@ -249,6 +357,11 @@ export function SelectionToolbar({ session, locked }: SelectionToolbarProps) {
       {mode === 'buttons' && <span className="selection-kind">{anchor.kind}</span>}
       {mode === 'buttons' && (
         <div className="selection-toolbar-row">
+          {!locked && (
+            <button type="button" className="selection-tool selection-color" aria-label="Text and background colour" data-tooltip="Colour" onMouseDown={keepSelection} onClick={() => setMode('color')}>
+              A
+            </button>
+          )}
           {!locked && FORMATS.map(item => (
             <button key={item.command} type="button" className="selection-tool" aria-label={item.label} onMouseDown={keepSelection} onClick={() => format(item.command)}>
               <Icon name={item.icon} size={15} />
@@ -264,6 +377,13 @@ export function SelectionToolbar({ session, locked }: SelectionToolbarProps) {
             <Icon name="message-square" size={15} /> Comment
           </button>
         </div>
+      )}
+
+      {mode === 'color' && savedRange.current && (
+        <ColorPalette
+          current={{ text: colorAt(savedRange.current, 'text'), bg: colorAt(savedRange.current, 'bg') }}
+          onPick={applyTextColor}
+        />
       )}
 
       {mode === 'link' && (

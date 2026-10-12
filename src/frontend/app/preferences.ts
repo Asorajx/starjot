@@ -2,6 +2,7 @@ import { useSyncExternalStore } from 'react';
 import { readPreferences, writePreferences } from '../../backend/storage/preferencesStorage';
 import { clampSize, HEX_COLOR, INK } from '../notespace/editor/drawing';
 import { normalizeExportSettings, type ExportSettings } from '../notespace/export/exportSettings';
+import { isColorClass, type ColorClass } from '../notespace/editor/colors';
 
 /* App-wide preferences that apply to every note and screen; the backend saves them. */
 export type Theme = 'light' | 'dark';
@@ -45,7 +46,12 @@ export type Preferences = {
 
   /* The choices last made in the Export window. */
   exportSettings: ExportSettings;
+
+  /* Text and background colours used most recently, newest first (up to five). */
+  recentColors: ColorClass[];
 };
+
+export const RECENT_COLORS = 5;
 
 export const ZOOM_MIN = 0.5;
 export const ZOOM_MAX = 2;
@@ -85,7 +91,8 @@ function loadDrawing(saved: unknown): DrawingPreferences {
 function load(): Preferences {
   const defaults: Preferences = {
     theme: 'light', zoom: 1, sidebarCollapsed: false, contentsScroll: 'smooth', notesSort: 'edited', hideHeaderWhileTyping: true, drawing: loadDrawing(null),
-    exportSettings: normalizeExportSettings(null)
+    exportSettings: normalizeExportSettings(null),
+    recentColors: []
   };
   const saved = readPreferences();
   return {
@@ -96,7 +103,8 @@ function load(): Preferences {
     notesSort: saved.notesSort === 'opened' || saved.notesSort === 'title' ? saved.notesSort : defaults.notesSort,
     hideHeaderWhileTyping: saved.hideHeaderWhileTyping !== false,
     drawing: loadDrawing(saved.drawing),
-    exportSettings: normalizeExportSettings(saved.exportSettings)
+    exportSettings: normalizeExportSettings(saved.exportSettings),
+    recentColors: Array.isArray(saved.recentColors) ? saved.recentColors.filter((name): name is ColorClass => isColorClass(String(name))).slice(0, RECENT_COLORS) : []
   };
 }
 

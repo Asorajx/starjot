@@ -1662,6 +1662,141 @@
   transform: translateX(-50%);
 }
 
+/* Text colours and background colours (highlights) chosen from the selection toolbar. */
+.text-gray {
+  color: #787774;
+}
+
+.text-brown {
+  color: #9f6b53;
+}
+
+.text-orange {
+  color: #d9730d;
+}
+
+.text-yellow {
+  color: #cb912f;
+}
+
+.text-green {
+  color: #448361;
+}
+
+.text-blue {
+  color: #337ea9;
+}
+
+.text-purple {
+  color: #9065b0;
+}
+
+.text-pink {
+  color: #c14c8a;
+}
+
+.text-red {
+  color: #d44c47;
+}
+
+.bg-gray {
+  background: #f1f1ef;
+}
+
+.bg-brown {
+  background: #f4eeee;
+}
+
+.bg-orange {
+  background: #fbecdd;
+}
+
+.bg-yellow {
+  background: #fbf3db;
+}
+
+.bg-green {
+  background: #edf3ec;
+}
+
+.bg-blue {
+  background: #e7f3f8;
+}
+
+.bg-purple {
+  background: #f6f3f9;
+}
+
+.bg-pink {
+  background: #faf1f5;
+}
+
+.bg-red {
+  background: #fdebec;
+}
+
+/* The colours to pick from, opened with the A button. */
+.selection-color {
+  font-weight: 800;
+  font-size: 14px;
+  text-decoration: underline;
+  text-decoration-color: #d9730d;
+  text-underline-offset: 3px;
+}
+
+.color-palette {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 4px 4px 6px;
+}
+
+.color-palette-heading {
+  color: #71829b;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.color-palette-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 30px);
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.color-swatch {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid #e0e8f4;
+  border-radius: 4px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+/* A text colour swatch shows its colour in the letter; a background swatch, behind it. */
+.color-swatch.is-text,
+.color-swatch.is-default {
+  background: #fff;
+}
+
+.color-swatch.is-bg,
+.color-swatch.is-default {
+  color: #1c2c47;
+}
+
+.color-swatch:hover {
+  border-color: #3878e4;
+}
+
+.color-swatch.is-chosen {
+  outline: 2px solid #3878e4;
+  outline-offset: 1px;
+}
+
 .selection-toolbar-row {
   display: flex;
   align-items: center;
