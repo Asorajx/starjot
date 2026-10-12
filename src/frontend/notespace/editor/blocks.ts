@@ -179,12 +179,16 @@ export function createTable(columns = 3, rows = 3) {
   return table;
 }
 
-/* A sub-page shown as a small card inside the text, so words can come before and after it. */
+/* A sub-page shown as a card inside the text. Words can come before and after it once it is */
+/* made narrower than its line. */
 export function createPageBlock(noteId: string) {
   const block = document.createElement('span');
   block.className = 'page-block';
   block.dataset.page = noteId;
   block.dataset.size = 'small';
+
+  /* A new sub-page card spans the line; it can be dragged narrower. */
+  block.dataset.width = '100';
   return block;
 }
 

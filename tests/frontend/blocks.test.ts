@@ -121,7 +121,7 @@ describe('slash command lines', () => {
     const range = document.createRange();
     range.setStart(body.querySelector('p')?.firstChild as Node, 7);
     insertInline(range, createPageBlock('child'));
-    expect(body.innerHTML).toBe('<p>Before <span class="page-block" data-page="child" data-size="small"></span> after</p>');
+    expect(body.innerHTML).toBe('<p>Before <span class="page-block" data-page="child" data-size="small" data-width="100"></span> after</p>');
     expect(window.getSelection()?.focusNode?.textContent).toBe(' ');
     expect(embeddedPageIds(body.innerHTML)).toEqual(new Set(['child']));
   });
@@ -315,9 +315,9 @@ describe('table arrow keys and the line below a table', () => {
    ========================= */
 
 describe('page block width', () => {
-  it('snaps to steps of 5% between 25% and the full line, and can go back to fitting its title', () => {
+  it('starts as wide as the line, snaps to steps of 5% between 25% and 100%, and can go back to fitting its title', () => {
     const block = createPageBlock('child');
-    expect(pageWidth(block)).toBeNull();
+    expect(pageWidth(block)).toBe(100);
     expect(setPageWidth(block, 47)).toBe(45);
     expect(block.dataset.width).toBe('45');
     expect(block.style.width).toBe('45%');

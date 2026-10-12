@@ -160,6 +160,23 @@ export const ContinuousEditor = memo(function ContinuousEditor({ session, conten
       return;
     }
 
+    /* Enter on an empty last line of a quote leaves the quote, as in a list: the empty line moves */
+    /* out to just after the quote (pressing Enter twice at its end continues below it). */
+    const quote = closestAtCaret('blockquote');
+    const quoteLine = quote ? closestAtCaret('p') : null;
+    if (event.key === 'Enter' && !event.shiftKey && quote && quoteLine && body.contains(quote) && window.getSelection()?.isCollapsed
+      && quoteLine.parentElement === quote && quoteLine === quote.lastElementChild && !quoteLine.textContent?.trim() && !quoteLine.querySelector('.image-block, .page-block')) {
+      event.preventDefault();
+      session.checkpoint();
+      quoteLine.remove();
+      const paragraph = emptyParagraph();
+      if (quote.childElementCount) quote.after(paragraph);
+      else quote.replaceWith(paragraph);
+      placeCaret(paragraph);
+      commit();
+      return;
+    }
+
     /* A web address typed just before Space or Enter becomes a link first. */
     if ((event.key === ' ' || event.key === 'Enter') && !event.altKey && !event.ctrlKey && !event.metaKey) linkTypedAddress(body);
 

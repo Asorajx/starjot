@@ -17,6 +17,7 @@ import { SlashMenu } from './SlashMenu';
 import { TableTools } from './TableTools';
 import { BlockWidgets } from './BlockWidgets';
 import { DrawingLayer, DrawingTools } from './DrawingLayer';
+import { emptyParagraph } from './dom';
 import { ExportDialog } from '../export/ExportDialog';
 import { TEXT_LAYER } from './drawing';
 import { ImageTools } from './ImageTools';
@@ -342,6 +343,32 @@ export function NoteEditor({ noteId, history, view, active, onClose, onOpenNote,
 
   const togglePanel = (name: Exclude<Panel, null>) => setPanel(current => (current === name ? null : name));
 
+  /* Clicking in the empty space below the text continues the note there: the caret goes to an */
+  /* empty last line, which is added when the note ends with something else (a quote, code, a */
+  /* table or a picture), so there is always a way to type below it. */
+  function continueBelow(event: ReactMouseEvent) {
+    const body = session.body();
+    const target = event.target as Element;
+    if (!body || locked || drawing || event.button !== 0) return;
+    if (target.closest('.note-header, .editor-meta, a, button, input, select, textarea, [contenteditable="false"]')) return;
+    if (body.contains(target) && target !== body && !target.matches('.block-content, .block-row, .structured-document')) return;
+
+    /* In Block mode the line goes into the last block, which then becomes a block of its own. */
+    const holder = note?.mode === 'blocks' ? Array.from(body.querySelectorAll<HTMLElement>('.block-content')).at(-1) : body;
+    const last = holder?.lastElementChild;
+    if (!holder || (last && event.clientY <= last.getBoundingClientRect().bottom)) return;
+    event.preventDefault();
+
+    const empty = last?.tagName === 'P' && !last.textContent?.trim() && !last.querySelector('.image-block, .page-block, .page-mention') ? last as HTMLElement : null;
+    const line = empty ?? emptyParagraph();
+    if (!empty) {
+      session.checkpoint();
+      holder.appendChild(line);
+    }
+    (holder.closest('[contenteditable="true"]') as HTMLElement | null)?.focus({ preventScroll: true });
+    session.linesChanged(line, false);
+  }
+
   /* How the note's text column is laid out, so an export can put loose drawings on the same words: */
   /* its width, and how far below the drawing's starting corner the text begins (both at 100% zoom). */
   function measureForExport() {
@@ -461,7 +488,7 @@ export function NoteEditor({ noteId, history, view, active, onClose, onOpenNote,
             onOpenSettings={() => onOpenSettings('general', 'drawing')}
           />
         )}
-        <main className={`editor-canvas ${geometry ? 'is-paginated' : ''}`} ref={canvasRef}>
+        <main className={`editor-canvas ${geometry ? 'is-paginated' : ''}`} ref={canvasRef} onMouseDown={continueBelow}>
           {/* Zoom scales everything in the note, using the CSS zoom property. A paginated note's */}
           {/* column is exactly one page wide, with the page margin as its padding, and as tall as */}
           {/* its pages; the sheets are drawn behind it. */}

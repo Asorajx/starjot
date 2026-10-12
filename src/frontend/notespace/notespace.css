@@ -2517,8 +2517,10 @@
   transition: transform .15s ease;
 }
 
+/* The arrow points right, towards where the list opens, and turns to point back left (to close */
+/* it) while the list is open. */
 .note-pages-toggle .icon.is-turned {
-  transform: rotate(90deg);
+  transform: rotate(180deg);
 }
 
 .note-page-list,
