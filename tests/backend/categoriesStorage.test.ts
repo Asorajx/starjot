@@ -20,7 +20,7 @@ describe('categories storage', () => {
   });
 
   it('ignores unreadable data', () => {
-    localStorage.setItem('strata-categories-v1', '{broken');
+    localStorage.setItem('starjot-categories-v1', '{broken');
     expect(readCategories()).toBeNull();
   });
 });

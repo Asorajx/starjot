@@ -516,12 +516,14 @@
   color: var(--blue);
 }
 
-.note-pin.is-pinned {
-  color: #986e14;
+/* A gold fill with a darker outline, so the star still stands out 3:1 against white. */
+.note-pin.is-pinned,
+.note-pin.is-pinned:hover {
+  color: #c27803;
 }
 
 .note-pin.is-pinned svg {
-  fill: currentColor;
+  fill: #f5b301;
 }
 
 @container (max-width: 560px) {

@@ -111,7 +111,7 @@ describe('categories', () => {
   });
 
   it('moves notes saved with an old category name into the matching category', async () => {
-    localStorage.setItem('strata-notespace-v1', JSON.stringify({ notes: [{ id: 'old1', title: 'Old', category: 'Projects' }], deleted: [] }));
+    localStorage.setItem('starjot-notespace-v1', JSON.stringify({ notes: [{ id: 'old1', title: 'Old', category: 'Projects' }], deleted: [] }));
     const store = await openApp();
     expect(store.getNote('old1')?.category).toBe('work');
   });
@@ -134,7 +134,7 @@ describe('note icons and details', () => {
   });
 
   it('drops the old named icons from saved notes', async () => {
-    localStorage.setItem('strata-notespace-v1', JSON.stringify({ notes: [{ id: 'old2', title: 'Old', icon: 'layers' }], deleted: [] }));
+    localStorage.setItem('starjot-notespace-v1', JSON.stringify({ notes: [{ id: 'old2', title: 'Old', icon: 'layers' }], deleted: [] }));
     const store = await openApp();
     expect(store.getNote('old2')?.icon).toBe('');
   });
@@ -212,7 +212,7 @@ describe('sub-pages', () => {
 
   it('moves pages nested deeper than allowed up into their top-level note', async () => {
     const page = (id: string, parentId: string) => ({ id, title: id, content: '<p></p>', mode: 'structured', parentId });
-    localStorage.setItem('strata-notespace-v1', JSON.stringify({
+    localStorage.setItem('starjot-notespace-v1', JSON.stringify({
       version: 1,
       deleted: [],
       notes: [page('top', ''), page('middle', 'top'), page('deep', 'middle'), page('deeper', 'deep')]
@@ -248,7 +248,7 @@ describe('sub-pages', () => {
 
   it('turns sub-pages with a missing parent, or in a loop, into top-level notes', async () => {
     const page = (id: string, parentId: string) => ({ id, title: id, content: '<p></p>', mode: 'structured', parentId });
-    localStorage.setItem('strata-notespace-v1', JSON.stringify({
+    localStorage.setItem('starjot-notespace-v1', JSON.stringify({
       version: 1,
       deleted: [],
       notes: [page('orphan', 'gone'), page('loop-a', 'loop-b'), page('loop-b', 'loop-a'), page('kept', 'atlas')]

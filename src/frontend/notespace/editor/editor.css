@@ -477,11 +477,11 @@
 /* A starred note shows a filled yellow star, like the stars in the note lists. */
 .star-button.is-starred,
 .star-button.is-starred:hover {
-  color: #986e14;
+  color: #c27803;
 }
 
 .star-button.is-starred svg {
-  fill: currentColor;
+  fill: #f5b301;
 }
 
 /* Saved shows a green tick, saving a spinning loader, and a refused save an orange warning. */

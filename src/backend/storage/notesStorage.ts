@@ -8,8 +8,7 @@ import type { Note } from '../../shared/types/note';
 /* The backend's job is keeping data; the frontend only calls these functions. */
 /* Today the data lives in the browser's localStorage. A Windows app or a server can later */
 /* replace this file without changing any screens. */
-/* The key keeps the app's earlier name (Strata) so notes saved before the rename still load. */
-const STORAGE_KEY = 'strata-notespace-v1';
+const STORAGE_KEY = 'starjot-notespace-v1';
 
 /* What is saved: every note, plus the ids of deleted sample notes so they are not re-added. */
 export type StoredNotes = {

@@ -6,7 +6,7 @@ import type { Category } from '../../shared/types/note';
    ========================= */
 
 /* Categories are saved separately from notes, in this browser's localStorage. */
-const STORAGE_KEY = 'strata-categories-v1';
+const STORAGE_KEY = 'starjot-categories-v1';
 
 /* Returns the saved list, or null when categories have never been saved. */
 export function readCategories(): unknown[] | null {

@@ -23,7 +23,7 @@ describe('notes storage', () => {
   });
 
   it('ignores saved data in an unexpected shape', () => {
-    localStorage.setItem('strata-notespace-v1', JSON.stringify({ notes: 'broken' }));
+    localStorage.setItem('starjot-notespace-v1', JSON.stringify({ notes: 'broken' }));
     expect(readNotes()).toBeNull();
   });
 });
@@ -40,7 +40,7 @@ describe('preferences storage', () => {
   });
 
   it('returns an empty object for unreadable data', () => {
-    localStorage.setItem('strata-preferences-v1', 'not json');
+    localStorage.setItem('starjot-preferences-v1', 'not json');
     expect(readPreferences()).toEqual({});
   });
 });

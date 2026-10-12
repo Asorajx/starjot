@@ -3,8 +3,7 @@
    ========================= */
 
 /* App-wide preferences (theme, zoom, sidebar) saved in this browser. */
-/* The key keeps the app's earlier name (Strata) so saved preferences still load. */
-const STORAGE_KEY = 'strata-preferences-v1';
+const STORAGE_KEY = 'starjot-preferences-v1';
 
 /* Returns the saved object, or an empty object when nothing usable is saved. */
 export function readPreferences(): Record<string, unknown> {

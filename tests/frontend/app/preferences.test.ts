@@ -18,7 +18,7 @@ function openApp() {
 describe('preferences', () => {
   it('zooms in steps of 10% and stays between 50% and 200%', async () => {
     const preferences = await openApp();
-    const zoom = () => JSON.parse(localStorage.getItem('strata-preferences-v1') ?? '{}').zoom;
+    const zoom = () => JSON.parse(localStorage.getItem('starjot-preferences-v1') ?? '{}').zoom;
 
     preferences.changeZoom(1);
     expect(zoom()).toBe(1.1);
@@ -71,7 +71,7 @@ describe('preferences', () => {
   });
 
   it('remembers the drawing tools, ignoring broken colours and sizes', async () => {
-    localStorage.setItem('strata-preferences-v1', JSON.stringify({ drawing: { tool: 'eraser', pen: { color: 'red', size: 99 }, highlighter: { color: '#30a46c' } } }));
+    localStorage.setItem('starjot-preferences-v1', JSON.stringify({ drawing: { tool: 'eraser', pen: { color: 'red', size: 99 }, highlighter: { color: '#30a46c' } } }));
     const preferences = await openApp();
     expect(preferences.getPreferences().drawing).toEqual({
       tool: 'eraser',
