@@ -145,54 +145,51 @@
 
 
 /* =========================
-   Welcome Panel, Starred and Recent
+   Header, Starred and All Notes
    ========================= */
 
-/* The welcome panel: greeting and clock on the left, "where you left off" on the right. */
-/* The welcome text and the "Where you left off" card sit side by side, and wrap one above the */
-/* other when there is no room, such as in a split pane. */
-/* The greeting sits on the page itself, so the "Where you left off" card beside it is the only */
-/* card (no card inside a card). */
-.home-hero {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 24px;
-  align-items: stretch;
-  margin-bottom: 32px;
-}
-
-.home-hero-time {
-  margin: 0 0 4px;
-  color: #68788f;
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.home-hero h1 {
-  margin: 0 0 8px;
-  color: var(--ink);
-  font-size: 28px;
-  letter-spacing: -.6px;
-}
-
-.home-hero-intro > p:not(.home-hero-time) {
-  max-width: 460px;
-  margin: 0 0 24px;
-  color: #68788f;
-  font-size: 12px;
-  line-height: 1.6;
-}
-
-/* "Where you left off" sits in a tinted box so it reads as a separate shortcut. */
-.home-hero-intro {
-  flex: 999 1 320px;
-  min-width: 0;
-}
-
-.home-hero-actions {
+/* New note sits last, so the main action is at the right edge of the header. */
+.notes-home-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+}
+
+/* Each section is a heading on the page with its content directly below (no card around it). */
+.home-section {
+  margin-bottom: 48px;
+}
+
+.home-section-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.home-section-heading h2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  color: #2c3d58;
+  font-size: 16px;
+  font-weight: 750;
+}
+
+.home-section-heading h2 svg {
+  color: #66778f;
+}
+
+.home-hint {
+  margin: 0;
+  padding: 16px;
+  border: 1px dashed var(--line);
+  border-radius: 4px;
+  color: #66778e;
+  font-size: 12px;
 }
 
 /* While files are dragged over the home screen, a dashed outline shows they can be dropped. */
@@ -222,92 +219,11 @@
   text-align: center;
 }
 
-.home-resume {
-  flex: 1 1 300px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 16px;
-  border: 1px solid #dce7fb;
-  border-radius: 4px;
-  background: var(--blue-soft);
-}
-
-.home-resume-label {
-  color: var(--blue);
-  font-size: 11px;
-  font-weight: 700;
-}
-
-.home-resume-footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-top: auto;
-}
-
-/* Starred and Recent share one panel; the tabs choose which list is shown. */
-/* The tabs sit on the page too; the note tiles under them are the cards. */
-.home-tabs-panel {
-  margin-bottom: 32px;
-}
-
-/* The tabs on the left, and the Edit categories button on the right. */
-/* The action wraps below the tabs when there is no room beside them, such as in a split pane. */
-.home-tabs-header {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  border-bottom: 1px solid var(--line);
-}
-
-.home-tabs {
-  display: flex;
-  gap: 24px;
-  min-width: 0;
-}
-
-.home-tabs-action {
-  flex-shrink: 0;
-}
-
-/* The active tab is marked with a blue line along its bottom edge. The first tab's words line up */
-/* with the page's left edge. */
-.home-tab {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  height: 44px;
-  padding: 0;
-  margin-bottom: -1px;
-  border: 0;
-  border-bottom: 2px solid transparent;
-  background: transparent;
-  color: #68788f;
-  font: inherit;
-  font-size: 12px;
-  font-weight: 650;
-  cursor: pointer;
-}
-
-.home-tab:hover {
-  color: var(--ink);
-}
-
-.home-tab.is-active {
-  border-bottom-color: var(--blue);
-  color: var(--blue);
-}
-
 /* Note cards fill the row: as many 220px-wide columns as fit. */
 .note-tiles {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   gap: 12px;
-  padding: 16px 0;
 }
 
 .note-tile {
@@ -372,30 +288,6 @@
   font-size: 11px;
 }
 
-/* Category cards list the latest notes in the category, one per line. */
-.category-card .category-count {
-  margin-left: auto;
-}
-
-.category-card-notes {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  min-width: 0;
-  color: #68788f;
-  font-size: 11px;
-}
-
-.category-card-notes span {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.category-card-empty {
-  color: #66778f;
-}
-
 /* The category page reuses the notes home layout, with a back link above the title. */
 .category-page h1 {
   display: flex;
@@ -412,19 +304,7 @@
    All Notes
    ========================= */
 
-.all-notes {
-  margin-top: 24px;
-}
-
-.all-notes-heading {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 12px;
-}
-
-/* "Sort by" sits on the right, next to the Filter button. */
+/* "Sort by" sits on the right of the All notes heading. */
 .notes-sort {
   display: inline-flex;
   align-items: center;
@@ -451,21 +331,6 @@
 .notes-sort select:focus-visible {
   border-color: #a7c5f5;
   outline: none;
-}
-
-.all-notes-heading h2 {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin: 0;
-  color: #2c3d58;
-  font-size: 16px;
-  font-weight: 750;
-}
-
-/* The chevron turns upside down while the filters are open. */
-.is-flipped {
-  transform: rotate(180deg);
 }
 
 /* Each row is the open button (name, category, time) plus a pin button at the end. */
@@ -527,8 +392,14 @@
 }
 
 @container (max-width: 560px) {
-  .note-row-columns {
+  /* Two classes, so the phone layout for plain recent rows in responsive.css does not apply. */
+  .note-row-columns,
+  .recent-row.note-row {
     grid-template-columns: minmax(0, 1fr) 40px;
+  }
+
+  .recent-row.note-row {
+    padding: 0;
   }
 
   .note-row-open {
@@ -548,13 +419,29 @@
    Notes List and Categories
    ========================= */
 
-/* Filter chips sit in one row; the edit and add buttons are pushed to the right. */
+/* Category pills on the left and Edit categories on the right. When the pills need the whole */
+/* width, such as on a phone, Edit categories moves below them. */
 .category-bar {
   display: flex;
   flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.category-filters,
+.category-editor {
+  display: flex;
+  flex: 1 1 320px;
+  flex-wrap: wrap;
   align-items: center;
   gap: 8px;
-  margin-bottom: 16px;
+  min-width: 0;
+}
+
+.category-bar-action {
+  flex-shrink: 0;
 }
 
 .category-filter {
@@ -590,15 +477,6 @@
 
 .category-filter.is-active .category-count {
   color: inherit;
-}
-
-/* Categories being edited fill the whole Categories tab, one name field per category. */
-.category-editor {
-  grid-column: 1 / -1;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
 }
 
 .category-edit {

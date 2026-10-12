@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { Icon } from '../components/Icon';
 import { updatePreferences, usePreferences, type NotesSort } from '../app/preferences';
-import { editedText, newestFirst, NoteTable, NoteTile, sortNotes } from './NoteList';
+import { newestFirst, NoteTable, NoteTile, sortNotes } from './NoteList';
 import { useNoteMenu } from './NoteMenu';
 import { useImport } from './import/useImport';
 import {
@@ -22,28 +22,8 @@ type NotesHomeProps = {
   onCreate: () => void;
 };
 
-type HomeTab = 'starred' | 'recent' | 'categories';
-
-/* How many notes the Starred and Recent tabs show. */
-const TAB_COUNT = 6;
-
-/* After midnight it is still "evening" until 5 am. */
-function greeting(now: Date) {
-  const hour = now.getHours();
-  if (hour >= 5 && hour < 12) return 'Good morning';
-  if (hour >= 12 && hour < 18) return 'Good afternoon';
-  return 'Good evening';
-}
-
-/* The current time, updated every 30 seconds so the clock and greeting stay correct. */
-function useNow() {
-  const [now, setNow] = useState(() => new Date());
-  useEffect(() => {
-    const timer = window.setInterval(() => setNow(new Date()), 30000);
-    return () => window.clearInterval(timer);
-  }, []);
-  return now;
-}
+/* How many starred notes show before "Show all". */
+const STARRED_COUNT = 6;
 
 
 /* =========================
@@ -54,11 +34,13 @@ type CategoryBarProps = {
   notes: Note[];
   filter: NoteFilter;
   onFilterChange: (filter: NoteFilter) => void;
+  onOpenCategory: (id: string) => void;
 };
 
-/* Filter chips for each category, shown when the Filter button is opened. */
-function CategoryBar({ notes, filter, onFilterChange }: CategoryBarProps) {
+/* One pill per category filters All notes; Edit categories swaps the pills for name fields. */
+function CategoryBar({ notes, filter, onFilterChange, onOpenCategory }: CategoryBarProps) {
   const categories = useCategories();
+  const [editing, setEditing] = useState(false);
   const count = (id: string) => notes.filter(note => note.category === id).length;
 
   const chip = (value: NoteFilter, label: string, total: number) => (
@@ -69,14 +51,28 @@ function CategoryBar({ notes, filter, onFilterChange }: CategoryBarProps) {
       aria-pressed={filter === value}
       onClick={() => onFilterChange(value)}
     >
-      {label} <span className="category-count">{total}</span>
+      {value !== 'all' && <Icon name="folder" size={13} />}{label} <span className="category-count">{total}</span>
     </button>
   );
 
   return (
-    <div className="category-bar" id="note-filters" role="toolbar" aria-label="Filter notes by category">
-      {chip('all', 'All notes', notes.length)}
-      {categories.map(category => chip(category.id, category.name, count(category.id)))}
+    <div className="category-bar">
+      {editing
+        ? <CategoryEditor notes={notes} filter={filter} onFilterChange={onFilterChange} />
+        : (
+          <div className="category-filters" role="toolbar" aria-label="Filter notes by category">
+            {chip('all', 'All', notes.length)}
+            {categories.map(category => chip(category.id, category.name, count(category.id)))}
+            {filter !== 'all' && (
+              <button type="button" className="btn btn-sm btn-tertiary" onClick={() => onOpenCategory(filter)}>
+                Open {categoryName(filter)} <Icon name="arrow-right" size={14} />
+              </button>
+            )}
+          </div>
+        )}
+      <button type="button" className="btn btn-sm btn-tertiary category-bar-action" aria-pressed={editing} onClick={() => setEditing(value => !value)}>
+        {editing ? 'Done' : <><Icon name="sliders-horizontal" size={14} /> Edit categories</>}
+      </button>
     </div>
   );
 }
@@ -92,7 +88,7 @@ type CategoryEditorProps = {
   onFilterChange: (filter: NoteFilter) => void;
 };
 
-/* Shown in the Categories tab after pressing Edit categories: rename, remove or add categories. */
+/* Shown after pressing Edit categories: rename, remove or add categories. */
 function CategoryEditor({ notes, filter, onFilterChange }: CategoryEditorProps) {
   const categories = useCategories();
   const [removing, setRemoving] = useState<Category | null>(null);
@@ -153,36 +149,6 @@ function CategoryEditor({ notes, filter, onFilterChange }: CategoryEditorProps) 
 
 
 /* =========================
-   Category Cards
-   ========================= */
-
-type CategoryCardProps = {
-  id: string;
-  name: string;
-  notes: Note[];
-  onOpenCategory: (id: string) => void;
-};
-
-/* A card for one category: its name, how many notes it has, and its latest three notes. */
-function CategoryCard({ id, name, notes, onOpenCategory }: CategoryCardProps) {
-  return (
-    <button type="button" className="note-tile category-card" onClick={() => onOpenCategory(id)}>
-      <span className="note-tile-title">
-        <Icon name="folder" size={16} />
-        <strong>{name}</strong>
-        <span className="category-count">{notes.length}</span>
-      </span>
-      <span className="category-card-notes">
-        {notes.length
-          ? notes.slice(0, 3).map(note => <span key={note.id}>{note.icon ? `${note.icon} ` : ''}{note.title || 'Untitled note'}</span>)
-          : <span className="category-card-empty">No notes yet</span>}
-      </span>
-    </button>
-  );
-}
-
-
-/* =========================
    Notespace Home
    ========================= */
 
@@ -190,119 +156,57 @@ export function NotesHome({ filter, onFilterChange, onOpen, onOpenInNewTab, onOp
   const notes = useNotes();
   const noteMenu = useNoteMenu({ onOpen, onOpenInNewTab });
   const importer = useImport(onOpen);
-  const now = useNow();
   const { notesSort } = usePreferences();
-  const [showFilters, setShowFilters] = useState(filter !== 'all');
-  const [editingCategories, setEditingCategories] = useState(false);
+  const [showAllStarred, setShowAllStarred] = useState(false);
 
   /* Re-render when categories are renamed, so each row shows the current name. */
   const categories = useCategories();
 
-  const newest = newestFirst(notes);
-  const starred = newest.filter(note => note.pinned);
-  const lastEdited = newest[0];
+  const starred = newestFirst(notes).filter(note => note.pinned);
+  const starredShown = showAllStarred ? starred : starred.slice(0, STARRED_COUNT);
   const shown = sortNotes(notes.filter(note => filter === 'all' || note.category === filter), notesSort);
-  const filterLabel = filter === 'all' ? 'All notes' : categoryName(filter);
-
-  /* Starred opens first when there are starred notes; otherwise Recent. */
-  const [tab, setTab] = useState<HomeTab>(starred.length ? 'starred' : 'recent');
-  const tabNotes = (tab === 'starred' ? starred : newest).slice(0, TAB_COUNT);
-
-  const tabButton = (id: HomeTab, label: string, icon: 'star' | 'clock' | 'folder', count?: number) => (
-    <button
-      type="button"
-      role="tab"
-      id={`tab-${id}`}
-      aria-selected={tab === id}
-      aria-controls="home-tab-panel"
-      className={`home-tab ${tab === id ? 'is-active' : ''}`}
-      onClick={() => {
-        setTab(id);
-        if (id !== 'categories') setEditingCategories(false);
-      }}
-    >
-      <Icon name={icon} size={14} /> {label} {count !== undefined && <span className="category-count">{count}</span>}
-    </button>
-  );
 
   return (
     <div className="content-pad notes-home" {...importer.dropProps}>
-      {/* Welcome panel: greeting and clock on the left, the last edited note on the right. */}
-      <section className="home-hero" aria-label="Welcome">
-        <div className="home-hero-intro">
-          <p className="home-hero-time">
-            {now.toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' })} · {now.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}
+      <header className="page-intro">
+        <div>
+          <h1>Notespace</h1>
+          <p>
+            {notes.length} {notes.length === 1 ? 'note' : 'notes'} in {categories.length} {categories.length === 1 ? 'category' : 'categories'}
           </p>
-          <h1>{greeting(now)}</h1>
-          <p>Find your thoughts, pick up where you left off, and make room for the next idea.</p>
-          <div className="home-hero-actions">
-            <button className="btn btn-primary" type="button" onClick={onCreate}><Icon name="plus" size={16} /><span>New note</span></button>
-            <button
-              className="btn btn-secondary"
-              type="button"
-              disabled={importer.busy}
-              data-tooltip="Make new notes from Markdown, HTML, PDF, CSV or text files. You can also drop files here."
-              data-tooltip-wrap=""
-              onClick={importer.choose}
-            >
-              <Icon name="upload" size={16} /><span>{importer.busy ? 'Importing…' : 'Import'}</span>
-            </button>
-          </div>
         </div>
-
-        {lastEdited && (
-          <div className="home-resume">
-            <span className="home-resume-label">Where you left off</span>
-            <span className="note-tile-title">
-              {lastEdited.icon ? <span className="note-tile-icon" aria-hidden="true">{lastEdited.icon}</span> : <Icon name="file-text" size={16} />}
-              <strong>{lastEdited.title || 'Untitled note'}</strong>
-            </span>
-            <span className="note-tile-text">{lastEdited.subtitle || lastEdited.preview || 'No content yet.'}</span>
-            <span className="home-resume-footer">
-              <span className="note-tile-meta">{editedText(lastEdited)}</span>
-              <button className="btn btn-sm btn-secondary" type="button" onClick={() => onOpen(lastEdited.id)}>Continue <Icon name="arrow-right" size={14} /></button>
-            </span>
-          </div>
-        )}
-      </section>
-
-      <section className="home-tabs-panel">
-        <div className="home-tabs-header">
-          <div className="home-tabs" role="tablist" aria-label="Starred notes, recent notes and categories">
-            {tabButton('starred', 'Starred', 'star', starred.length)}
-            {tabButton('recent', 'Recent', 'clock')}
-            {tabButton('categories', 'Categories', 'folder', categories.length)}
-          </div>
-
-          {/* Editing happens in the Categories tab, so the button switches to it. */}
+        <div className="notes-home-actions">
           <button
+            className="btn btn-secondary"
             type="button"
-            className="btn btn-sm btn-tertiary home-tabs-action"
-            aria-pressed={editingCategories}
-            onClick={() => {
-              setTab('categories');
-              setEditingCategories(value => !value);
-            }}
+            disabled={importer.busy}
+            data-tooltip="Make new notes from Markdown, HTML, PDF, CSV or text files. You can also drop files here."
+            data-tooltip-wrap=""
+            onClick={importer.choose}
           >
-            {editingCategories ? 'Done' : <><Icon name="sliders-horizontal" size={14} /> Edit categories</>}
+            <Icon name="upload" size={16} /><span>{importer.busy ? 'Importing…' : 'Import'}</span>
           </button>
+          <button className="btn btn-primary" type="button" onClick={onCreate}><Icon name="plus" size={16} /><span>New note</span></button>
         </div>
-        <div className="note-tiles" id="home-tab-panel" role="tabpanel" aria-labelledby={`tab-${tab}`}>
-          {tab === 'categories' && editingCategories && <CategoryEditor notes={notes} filter={filter} onFilterChange={onFilterChange} />}
-          {tab === 'categories' && !editingCategories && (
-            categories.map(category => (
-              <CategoryCard key={category.id} id={category.id} name={category.name} notes={newest.filter(note => note.category === category.id)} onOpenCategory={onOpenCategory} />
-            ))
+      </header>
+
+      <section className="home-section" aria-labelledby="starred-heading">
+        <div className="home-section-heading">
+          <h2 id="starred-heading"><Icon name="star" size={16} /> Starred <span className="category-count">{starred.length}</span></h2>
+          {starred.length > STARRED_COUNT && (
+            <button type="button" className="btn btn-sm btn-tertiary" aria-expanded={showAllStarred} onClick={() => setShowAllStarred(value => !value)}>
+              {showAllStarred ? 'Show fewer' : `Show all ${starred.length}`}
+            </button>
           )}
-          {tab !== 'categories' && (tabNotes.length
-            ? tabNotes.map(note => <NoteTile key={note.id} note={note} onOpen={onOpen} onMenu={noteMenu.onContextMenu} />)
-            : <p className="notes-empty-list">Star a note with the ☆ in the list below to keep it here.</p>)}
         </div>
+        {starred.length
+          ? <div className="note-tiles">{starredShown.map(note => <NoteTile key={note.id} note={note} onOpen={onOpen} onMenu={noteMenu.onContextMenu} />)}</div>
+          : <p className="home-hint">Star a note with the ☆ in the list below to keep it here.</p>}
       </section>
 
-      <section className="all-notes" aria-label="All notes">
-        <div className="all-notes-heading">
-          <h2>All notes <span className="category-count">{notes.length}</span></h2>
+      <section className="home-section" aria-labelledby="all-notes-heading">
+        <div className="home-section-heading">
+          <h2 id="all-notes-heading"><Icon name="file-text" size={16} /> All notes <span className="category-count">{notes.length}</span></h2>
           <label className="notes-sort">
             <span>Sort by</span>
             <select value={notesSort} aria-label="Sort all notes by" onChange={event => updatePreferences({ notesSort: event.target.value as NotesSort })}>
@@ -311,18 +215,9 @@ export function NotesHome({ filter, onFilterChange, onOpen, onOpenInNewTab, onOp
               <option value="title">Name (A–Z)</option>
             </select>
           </label>
-          <button
-            type="button"
-            className="btn btn-sm btn-secondary"
-            aria-expanded={showFilters}
-            aria-controls="note-filters"
-            onClick={() => setShowFilters(value => !value)}
-          >
-            <Icon name="sliders-horizontal" size={14} /> Filter{filter !== 'all' ? `: ${filterLabel}` : ''} <Icon name="chevron-down" size={14} className={showFilters ? 'is-flipped' : ''} />
-          </button>
         </div>
 
-        {showFilters && <CategoryBar notes={notes} filter={filter} onFilterChange={onFilterChange} />}
+        <CategoryBar notes={notes} filter={filter} onFilterChange={onFilterChange} onOpenCategory={onOpenCategory} />
 
         <NoteTable notes={shown} onOpen={onOpen} onMenu={noteMenu.onContextMenu} showOpened={notesSort === 'opened'} />
       </section>
