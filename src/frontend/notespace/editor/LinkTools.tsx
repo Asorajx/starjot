@@ -26,10 +26,10 @@ const LINK_AREAS = '.note-body, [data-remarks], .comment-popover';
    Opening and Copying Links
    ========================= */
 
-/* The words shown for a page link's page, or "Page not found" once it is deleted. */
+/* The words shown for a page link's page, or "Note not found" once it is deleted. */
 function pageTitle(id: string) {
   const note = getNote(id);
-  return note ? note.title || 'Untitled note' : 'Page not found';
+  return note ? note.title || 'Untitled note' : 'Note not found';
 }
 
 /* A page link copies the page's address (see copyPageLink), so pasting it into a note makes the */
@@ -185,7 +185,7 @@ export function LinkTools({ session, locked, onOpenNote, onOpenNoteInNewTab }: L
     event?.preventDefault();
     const href = page ? null : normalizeAddress(address);
     if (!page && !href) {
-      setError('Enter a web address, or type a page name and pick the page.');
+      setError('Enter a web address, or type a note name and pick the note.');
       return;
     }
     session.checkpoint();
@@ -262,7 +262,7 @@ export function LinkTools({ session, locked, onOpenNote, onOpenNoteInNewTab }: L
             <input
               className="selection-input"
               value={address}
-              placeholder="Paste an address or type a page name"
+              placeholder="Paste an address or type a note name"
               onChange={event => {
                 setAddress(event.target.value);
                 setPage(null);
@@ -272,7 +272,7 @@ export function LinkTools({ session, locked, onOpenNote, onOpenNoteInNewTab }: L
           </label>
           {page && <span className="link-tools-chosen"><Icon name="file-text" size={13} /> Links to the page {pageTitle(page)}</span>}
           {suggestions.length > 0 && (
-            <span className="link-tools-suggestions" role="listbox" aria-label="Pages">
+            <span className="link-tools-suggestions" role="listbox" aria-label="Notes">
               {suggestions.map(note => (
                 <button
                   key={note.id}

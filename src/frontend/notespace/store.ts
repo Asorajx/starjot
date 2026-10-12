@@ -160,7 +160,7 @@ function load(): Note[] {
     return repairParents([...restored, ...seeds.filter(note => !ids.has(note.id) && !deletedIds.includes(note.id))]);
   } catch (error) {
     storageAvailable = false;
-    console.warn('Notespace: browser storage is unavailable; notes will remain in this page only.', error);
+    console.warn('Notespace: browser storage is unavailable; notes will remain in this tab only.', error);
     return seeds;
   }
 }
@@ -312,7 +312,7 @@ export function deleteNote(id: string) {
   const removed = getNote(id);
   if (SAMPLE_NOTES.some(note => note.id === id)) deletedIds = [...deletedIds, id];
 
-  /* The page's card is also taken out of the page it sat in, so no "Page not found" card is left. */
+  /* The page's card is also taken out of the page it sat in, so no "Note not found" card is left. */
   const withoutCard = (html: string) => {
     const template = document.createElement('template');
     template.innerHTML = html;

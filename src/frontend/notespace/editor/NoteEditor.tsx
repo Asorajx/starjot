@@ -452,7 +452,7 @@ export function NoteEditor({ noteId, history, view, active, onClose, onOpenNote,
 
         {note.locked && <LockStatus noteId={note.id} temporary={temporary} unlockedUntil={note.unlockedUntil} />}
 
-        <button type="button" data-panel-toggle data-tooltip-align="end" className={`page-bar-button ${panel === 'options' ? 'selected' : ''}`} data-tooltip={panel === 'options' ? undefined : 'Page options'} aria-label="Page options" aria-expanded={panel === 'options'} aria-controls={`${panelId}-options`} onClick={() => togglePanel('options')}>
+        <button type="button" data-panel-toggle data-tooltip-align="end" className={`page-bar-button ${panel === 'options' ? 'selected' : ''}`} data-tooltip={panel === 'options' ? undefined : 'Note options'} aria-label="Note options" aria-expanded={panel === 'options'} aria-controls={`${panelId}-options`} onClick={() => togglePanel('options')}>
           <Icon name="sliders-horizontal" size={17} />
         </button>
 
@@ -544,7 +544,7 @@ export function NoteEditor({ noteId, history, view, active, onClose, onOpenNote,
       {confirmDelete && (
         <ConfirmDialog title="Delete this note?" confirmLabel="Delete note" danger onConfirm={removeNote} onCancel={() => setConfirmDelete(false)}>
           <p><strong>{note.title || 'Untitled note'}</strong> will be removed from this browser. This cannot be undone.</p>
-          {childrenOf(note.id).length > 0 && <p>Its {childrenOf(note.id).length} sub-page(s) will be kept and move up one level.</p>}
+          {childrenOf(note.id).length > 0 && <p>Its {childrenOf(note.id).length} sub-note(s) will be kept and move up one level.</p>}
         </ConfirmDialog>
       )}
     </div>

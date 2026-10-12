@@ -45,8 +45,8 @@ export const SLASH_COMMANDS: SlashCommand[] = [
   { id: 'code', label: 'Code block', hint: '```', icon: 'file-code', keywords: 'pre snippet programming' },
   { id: 'table', label: 'Table', hint: '', icon: 'table', keywords: 'grid rows columns spreadsheet' },
   { id: 'divider', label: 'Divider', hint: '---', icon: 'minus', keywords: 'hr line rule separator' },
-  { id: 'page', label: 'Add page', hint: '', icon: 'file-text', keywords: 'new page sub-page subpage child' },
-  { id: 'link', label: 'Link to page', hint: '', icon: 'link', keywords: 'mention reference note' }
+  { id: 'page', label: 'Add sub-note', hint: '', icon: 'file-text', keywords: 'new note page sub-note sub-page subpage child' },
+  { id: 'link', label: 'Link to note', hint: '', icon: 'link', keywords: 'mention reference note page' }
 ];
 
 type CommandContext = {
@@ -310,7 +310,7 @@ export function hydratePages(root: Element | null) {
     mention.contentEditable = 'false';
     mention.classList.toggle('is-missing', !note);
     const icon = note?.icon ? escapeHtml(note.icon) : iconMarkup(note ? 'file-text' : 'file', 14);
-    const html = `<span class="page-mention-icon">${icon}</span><span class="page-mention-title">${escapeHtml(note ? note.title || 'Untitled note' : 'Page not found')}</span>`;
+    const html = `<span class="page-mention-icon">${icon}</span><span class="page-mention-title">${escapeHtml(note ? note.title || 'Untitled note' : 'Note not found')}</span>`;
     if (drawn.get(mention) === html && mention.firstChild) return;
     mention.innerHTML = html;
     drawn.set(mention, html);
@@ -329,11 +329,11 @@ export function hydratePages(root: Element | null) {
     const html = note
       ? `<span class="page-block-icon">${note.icon ? escapeHtml(note.icon) : iconMarkup('file-text', 18)}</span>`
         + `<span class="page-block-text"><strong>${escapeHtml(note.title || 'Untitled note')}</strong>`
-        + `<small>${escapeHtml(note.subtitle || note.preview || 'Empty page')}</small>`
+        + `<small>${escapeHtml(note.subtitle || note.preview || 'Empty note')}</small>`
         + `<span class="page-block-meta">${category ? `${escapeHtml(category)} · ` : ''}${escapeHtml(updatedLabel(note))}</span></span>`
         + `<span class="page-block-sizes" role="group" aria-label="Block size">${sizes}</span>`
         + '<span class="page-block-resize" title="Drag to change the width" aria-hidden="true"></span>'
-      : `<span class="page-block-icon">${iconMarkup('file', 18)}</span><span class="page-block-text"><strong>Page not found</strong><small>The page was deleted.</small></span>`;
+      : `<span class="page-block-icon">${iconMarkup('file', 18)}</span><span class="page-block-text"><strong>Note not found</strong><small>The note was deleted.</small></span>`;
     if (drawn.get(block) === html && block.firstChild) return;
     block.innerHTML = html;
     drawn.set(block, html);

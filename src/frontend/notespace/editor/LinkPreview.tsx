@@ -51,7 +51,7 @@ export function LinkPreviewCard({ target }: { target: LinkTarget }) {
   }
 
   const note = getNote(target.id);
-  if (!note) return <span className="page-preview-text">This page was deleted.</span>;
+  if (!note) return <span className="page-preview-text">This note was deleted.</span>;
   const category = categoryName(note.category);
   return (
     <>
@@ -60,7 +60,7 @@ export function LinkPreviewCard({ target }: { target: LinkTarget }) {
         <strong>{note.title || 'Untitled note'}</strong>
       </span>
       <span className="page-preview-meta">{category && `${category} · `}{updatedLabel(note)}</span>
-      <span className="page-preview-text">{note.preview || note.subtitle || 'This page is empty.'}</span>
+      <span className="page-preview-text">{note.preview || note.subtitle || 'This note is empty.'}</span>
     </>
   );
 }

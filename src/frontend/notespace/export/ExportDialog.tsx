@@ -162,9 +162,9 @@ export function ExportDialog({ noteId, measure, onClose }: ExportDialogProps) {
         <Row label="Export format">
           <Choice label="Export format" value={settings.format} options={EXPORT_FORMATS} onChange={format => change({ format })} />
         </Row>
-        <Row label="Page content">
+        <Row label="Note content">
           <Choice
-            label="Page content"
+            label="Note content"
             value={text ? 'text' : settings.content}
             disabled={text}
             options={[{ value: 'everything', label: 'Everything' }, { value: 'text', label: 'Text only (no images or drawings)' }]}
@@ -198,9 +198,9 @@ export function ExportDialog({ noteId, measure, onClose }: ExportDialogProps) {
             </Row>
           </>
         )}
-        <Row label="Include sub-pages">
-          <span data-tooltip={hasSubpages ? undefined : 'This page has no sub-pages'} data-tooltip-align="end">
-            <Switch label="Include sub-pages" on={settings.subpages && hasSubpages} disabled={!hasSubpages} onChange={subpages => change({ subpages })} />
+        <Row label="Include sub-notes">
+          <span data-tooltip={hasSubpages ? undefined : 'This note has no sub-notes'} data-tooltip-align="end">
+            <Switch label="Include sub-notes" on={settings.subpages && hasSubpages} disabled={!hasSubpages} onChange={subpages => change({ subpages })} />
           </span>
         </Row>
 

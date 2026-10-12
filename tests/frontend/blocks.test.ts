@@ -38,7 +38,7 @@ describe('slash command list', () => {
   it('filters by name and keywords, with names that start with the text first', () => {
     const ids = matchCommands('add', { inlineOnly: false, canAddPage: true }).map(command => command.id);
     expect(ids[0]).toBe('page');
-    expect(matchCommands('sub', { inlineOnly: false, canAddPage: true }).map(command => command.id)).toEqual(['h2', 'page']);
+    expect(matchCommands('sub', { inlineOnly: false, canAddPage: true }).map(command => command.id)).toEqual(['page', 'h2']);
     expect(matchCommands('ul', { inlineOnly: false, canAddPage: true })[0].id).toBe('bullet');
   });
 
@@ -349,6 +349,6 @@ describe('page mentions', () => {
     expect(found.contentEditable).toBe('false');
     expect(found.querySelector('.page-mention-title')?.textContent).toBe('Project Atlas — Research brief');
     expect(missing.classList.contains('is-missing')).toBe(true);
-    expect(missing.textContent).toBe('Page not found');
+    expect(missing.textContent).toBe('Note not found');
   });
 });

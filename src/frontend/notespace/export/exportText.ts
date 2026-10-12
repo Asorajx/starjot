@@ -96,7 +96,7 @@ function pageText(note: Note, settings: ExportSettings) {
     if (rows.length) parts.push(rows.join('\n'));
     if (chosen.remarks && hasRemarks(note)) parts.push(`Remarks:\n${indent(blocks(contentCopy(note.remarks)), '    ')}`);
     const pages = chosen.pages ? childrenOf(note.id) : [];
-    if (pages.length) parts.push(`Pages: ${pages.map(page => page.title || 'Untitled note').join(', ')}`);
+    if (pages.length) parts.push(`Sub-notes: ${pages.map(page => page.title || 'Untitled note').join(', ')}`);
   }
   const text = blocks(contentCopy(note.content));
   if (text) parts.push(text);

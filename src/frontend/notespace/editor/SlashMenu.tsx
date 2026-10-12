@@ -25,7 +25,7 @@ type Mode = 'commands' | 'pages';
 
 type MenuPosition = { top: number; left: number; above: boolean };
 
-/* How many pages the "Link to page" list shows at once. */
+/* How many pages the "Link to note" list shows at once. */
 const PAGE_RESULTS = 8;
 
 /* The text node and offset of a collapsed caret. Browsers sometimes report the caret as a position */
@@ -272,7 +272,7 @@ export function SlashMenu({ session, noteId, locked, onOpenNewPage }: SlashMenuP
   const keepFocus = (event: ReactMouseEvent) => event.preventDefault();
 
   return (
-    <div className="slash-menu" style={style} role="listbox" aria-label={mode === 'pages' ? 'Choose a page to link' : 'Add a block'}>
+    <div className="slash-menu" style={style} role="listbox" aria-label={mode === 'pages' ? 'Choose a note to link' : 'Add a block'}>
       {mode === 'commands' && (
         <>
           <p className="slash-menu-label">{inlineOnly.current ? 'Insert' : 'Add a block'}</p>
@@ -300,8 +300,8 @@ export function SlashMenu({ session, noteId, locked, onOpenNewPage }: SlashMenuP
           <input
             className="slash-menu-search"
             autoFocus
-            placeholder="Search pages…"
-            aria-label="Search pages"
+            placeholder="Search notes…"
+            aria-label="Search notes"
             value={search}
             onChange={event => {
               setSearch(event.target.value);
@@ -326,7 +326,7 @@ export function SlashMenu({ session, noteId, locked, onOpenNewPage }: SlashMenuP
               <span className="slash-menu-icon">{page.icon || <Icon name="file-text" size={15} />}</span>
               <span className="slash-menu-name">{page.title || 'Untitled note'}</span>
             </button>
-          )) : <p className="slash-menu-empty">No pages found</p>}
+          )) : <p className="slash-menu-empty">No notes found</p>}
         </>
       )}
     </div>

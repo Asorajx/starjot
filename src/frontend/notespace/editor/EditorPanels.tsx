@@ -120,8 +120,8 @@ const MODES: { id: NoteMode; title: string; tooltip: string; icon: IconName }[] 
 
 /* A split opens a second group of tabs, with its own tab strip, showing this page again. */
 const SPLITS: { id: 'right' | 'down'; title: string; tooltip: string; icon: IconName }[] = [
-  { id: 'right', title: 'Split right', tooltip: 'Open a second group of tabs beside this one, showing this page again.', icon: 'split-right' },
-  { id: 'down', title: 'Split down', tooltip: 'Open a second group of tabs below this one, showing this page again.', icon: 'split-down' }
+  { id: 'right', title: 'Split right', tooltip: 'Open a second group of tabs beside this one, showing this note again.', icon: 'split-right' },
+  { id: 'down', title: 'Split down', tooltip: 'Open a second group of tabs below this one, showing this note again.', icon: 'split-down' }
 ];
 
 export function PageOptions({
@@ -134,14 +134,14 @@ export function PageOptions({
   }, [open]);
 
   const stackTooltip = view.canStack
-    ? `Stack this group's tabs side by side (up to ${STACK_LIMIT}), adding this page again. Two are open at a time; the others fold into strips with their titles.`
+    ? `Stack this group's tabs side by side (up to ${STACK_LIMIT}), adding this note again. Two are open at a time; the others fold into strips with their titles.`
     : `A stack holds up to ${STACK_LIMIT} tabs.`;
 
   return (
-    <section className="editor-flyout editor-preferences-flyout" id={id} aria-label="Page options" hidden={!open}>
+    <section className="editor-flyout editor-preferences-flyout" id={id} aria-label="Note options" hidden={!open}>
       <div className="flyout-heading">
-        <strong>Page options</strong>
-        <button type="button" className="flyout-close" aria-label="Close page options" onClick={onClose}><Icon name="x" size={17} /></button>
+        <strong>Note options</strong>
+        <button type="button" className="flyout-close" aria-label="Close note options" onClick={onClose}><Icon name="x" size={17} /></button>
       </div>
 
       <div className="side-setting">
@@ -172,12 +172,12 @@ export function PageOptions({
           <button
             type="button"
             className={`option-tile ${copied ? 'selected' : ''}`}
-            data-tooltip="Copies this page's address. Pasted into a note it becomes a link to this page; opened in a browser it opens this page."
+            data-tooltip="Copies this note's address. Pasted into a note it becomes a link to this note; opened in a browser it opens this note."
             data-tooltip-align="start"
             data-tooltip-wrap=""
             onClick={() => onCopyLink().then(() => setCopied(true)).catch(() => undefined)}
           >
-            <Icon name={copied ? 'check' : 'copy'} size={16} /> {copied ? 'Link copied' : 'Copy link to this page'}
+            <Icon name={copied ? 'check' : 'copy'} size={16} /> {copied ? 'Link copied' : 'Copy link to this note'}
           </button>
         </div>
       </div>
@@ -188,7 +188,7 @@ export function PageOptions({
           <button
             type="button"
             className="option-tile"
-            data-tooltip="Save this page as a PDF, HTML, Markdown or plain text file."
+            data-tooltip="Save this note as a PDF, HTML, Markdown or plain text file."
             data-tooltip-align="start"
             data-tooltip-wrap=""
             onClick={onExport}
@@ -266,11 +266,11 @@ export function PageOptions({
         <strong>Editing</strong>
         <label
           className="note-switch-row"
-          data-tooltip="A locked page can be read, selected and commented on, but not changed."
+          data-tooltip="A locked note can be read, selected and commented on, but not changed."
           data-tooltip-align="start"
           data-tooltip-wrap=""
         >
-          <span><Icon name={note.locked ? 'lock' : 'unlock'} size={14} /> Lock page</span>
+          <span><Icon name={note.locked ? 'lock' : 'unlock'} size={14} /> Lock note</span>
           <input type="checkbox" checked={note.locked} onChange={event => onLockChange(event.target.checked)} />
         </label>
       </div>
@@ -321,7 +321,7 @@ export function PageOptions({
           className="danger-option"
           onClick={onDelete}
           disabled={note.locked}
-          data-tooltip={note.locked ? 'Unlock the page to delete it.' : undefined}
+          data-tooltip={note.locked ? 'Unlock the note to delete it.' : undefined}
           data-tooltip-align="start"
         >
           <Icon name="trash" size={16} /> Delete note

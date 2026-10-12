@@ -213,7 +213,7 @@ async function pageMarkdown(note: Note, settings: ExportSettings, anchors: Map<s
     if (rows.length) parts.push(rows.join('  \n'));
     if (chosen.remarks && hasRemarks(note)) parts.push(`**Remarks:**\n\n${blocks(contentCopy(note.remarks), context)}`);
     const pages = chosen.pages ? childrenOf(note.id) : [];
-    if (pages.length) parts.push(`**Pages:** ${pages.map(page => `[${escapeMarkdown(pageHeading(page))}](${pageLink(page.id, context)})`).join(', ')}`);
+    if (pages.length) parts.push(`**Sub-notes:** ${pages.map(page => `[${escapeMarkdown(pageHeading(page))}](${pageLink(page.id, context)})`).join(', ')}`);
   }
 
   const text = blocks(root, context);

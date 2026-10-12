@@ -34,12 +34,12 @@ describe('page blocks', () => {
     expect(block.querySelectorAll('[data-size-option]')).toHaveLength(3);
   });
 
-  it('shows "Page not found" when the page was deleted', () => {
+  it('shows "Note not found" when the note was deleted', () => {
     const line = holder('<p><span class="page-block" data-page="gone"></span></p>');
     hydratePages(line);
     const block = line.querySelector('.page-block') as HTMLElement;
     expect(block.classList.contains('is-missing')).toBe(true);
-    expect(block.querySelector('strong')?.textContent).toBe('Page not found');
+    expect(block.querySelector('strong')?.textContent).toBe('Note not found');
   });
 
   it('does not redraw a block that has not changed', () => {

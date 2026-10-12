@@ -99,13 +99,13 @@ function SettingsPanel({ section }: { section: SettingsSection }) {
         <p className="settings-panel-subtitle">A few everyday preferences for your workspace.</p>
         <Group title="Application preferences">
           <Row title="Workspace name" description="The name shown in your navigation."><span className="fake-field">Studio workspace</span></Row>
-          <Row title="Start page" description="Choose where the application opens by default."><FakeSelect>Notespace</FakeSelect></Row>
+          <Row title="Start screen" description="Choose where the application opens by default."><FakeSelect>Notespace</FakeSelect></Row>
           <Row title="Show helpful tips" description="Show small hints while you explore the workspace."><Toggle /></Row>
         </Group>
         <Group title="Workspace preferences">
           <Row title="Default note view" description="New notes start as continuous documents."><FakeSelect>Continuous</FakeSelect></Row>
           <Row title="Show recent notes" description="Display your recently edited documents on Notespace home."><Toggle /></Row>
-          <Row title="Contents scrolling" description="How the page moves when you choose a heading in Contents.">
+          <Row title="Contents scrolling" description="How the note scrolls when you choose a heading in Contents.">
             <Segmented
               label="Contents scrolling"
               value={contentsScroll}
@@ -113,8 +113,8 @@ function SettingsPanel({ section }: { section: SettingsSection }) {
               onChange={value => set({ contentsScroll: value })}
             />
           </Row>
-          <Row title="Hide the page bar while typing" description="The bar above a note fades away while you type and comes back when you move the mouse.">
-            <Switch label="Hide the page bar while typing" on={hideHeaderWhileTyping} onChange={value => set({ hideHeaderWhileTyping: value })} />
+          <Row title="Hide the note bar while typing" description="The bar above a note fades away while you type and comes back when you move the mouse.">
+            <Switch label="Hide the note bar while typing" on={hideHeaderWhileTyping} onChange={value => set({ hideHeaderWhileTyping: value })} />
           </Row>
         </Group>
         <Group id="drawing" title="Drawing">
@@ -260,7 +260,7 @@ export function Settings({ section, onSectionChange, focus = null, onFocused }: 
         </aside>
         <section className="settings-content" aria-label={`${current.label} preferences`}>
           <SettingsPanel section={section} />
-          <div className="settings-disclaimer"><Icon name="info" size={15} /> Theme, Contents scrolling, Hide the page bar while typing and the Drawing options are saved. The other options are previews and do not change anything yet.</div>
+          <div className="settings-disclaimer"><Icon name="info" size={15} /> Theme, Contents scrolling, Hide the note bar while typing and the Drawing options are saved. The other options are previews and do not change anything yet.</div>
         </section>
       </div>
     </div>

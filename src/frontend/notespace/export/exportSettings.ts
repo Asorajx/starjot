@@ -21,7 +21,7 @@ export const DETAIL_PARTS: { key: keyof DetailParts; label: string }[] = [
   { key: 'description', label: 'Description' },
   { key: 'created', label: 'Created' },
   { key: 'remarks', label: 'Remarks' },
-  { key: 'pages', label: 'Pages' }
+  { key: 'pages', label: 'Sub-notes' }
 ];
 
 /* The choices in the Export window. They are remembered for the next export. */

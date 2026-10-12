@@ -235,7 +235,7 @@ export function NoteHeader({ note, locked, onOpenNote }: NoteHeaderProps) {
           {/* so the other details stay visible. */}
           {pageCount > 0 && (
             <>
-              <dt className="note-pages-label">Pages</dt>
+              <dt className="note-pages-label">Sub-notes</dt>
               <dd className="note-pages">
                 <button
                   type="button"

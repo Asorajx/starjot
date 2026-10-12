@@ -50,7 +50,7 @@ export function WindowBar({ group, onSelect, onClose, onNew }: WindowBarProps) {
   return (
     <div className="window-bar">
       {!group.stacked && (
-        <div className="window-tabs" role="tablist" aria-label="Open pages">
+        <div className="window-tabs" role="tablist" aria-label="Open tabs">
           {group.tabs.map(tab => {
             const place = currentPlace(tab);
             const label = placeLabel(place);

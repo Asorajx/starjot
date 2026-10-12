@@ -45,7 +45,7 @@ export function openedLabel(note: Note) {
 function SubpageTag({ note }: { note: Note }) {
   const parent = getNote(note.parentId);
   if (!parent) return null;
-  const label = `Sub-page of ${parent.title || 'Untitled note'}`;
+  const label = `Sub-note of ${parent.title || 'Untitled note'}`;
   return <span className="note-subpage-tag" title={label}>{label}</span>;
 }
 

@@ -124,7 +124,7 @@ function detailsMarkup(note: Note, settings: ExportSettings, included: Set<strin
       const icon = page.icon ? `<span class="note-page-icon" aria-hidden="true">${escapeHtml(page.icon)}</span>` : iconMarkup('file-text', 13);
       return `<li><a class="note-page-link" href="${escapeHtml(pageHref(page.id, included))}">${icon}<span class="note-page-title">${escapeHtml(page.title || 'Untitled note')}</span></a></li>`;
     });
-    rows.push(`<dt class="note-pages-label">Pages</dt><dd class="note-pages"><ul class="note-page-list">${items.join('')}</ul></dd>`);
+    rows.push(`<dt class="note-pages-label">Sub-notes</dt><dd class="note-pages"><ul class="note-page-list">${items.join('')}</ul></dd>`);
   }
   return rows.length ? `<dl class="note-details">${rows.join('')}</dl>` : '';
 }

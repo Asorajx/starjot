@@ -311,14 +311,14 @@ export function BlockWidgets({ session, locked, onOpenNote }: BlockWidgetsProps)
         <div
           className="page-menu"
           role="menu"
-          aria-label="Page options"
+          aria-label="Sub-note options"
           style={{ top: Math.min(pageMenu.top, window.innerHeight - 140), left: Math.min(pageMenu.left, window.innerWidth - 220) }}
           onKeyDown={event => {
             if (event.key === 'Escape') setPageMenu(null);
           }}
         >
           <button type="button" role="menuitem" className="page-menu-item" disabled={!menuNote} onClick={() => { setPageMenu(null); onOpenNote(pageMenu.id); }}>
-            <Icon name="arrow-right" size={14} /> Open page
+            <Icon name="arrow-right" size={14} /> Open note
           </button>
           <button type="button" role="menuitem" className="page-menu-item" disabled={!menuNote} onClick={() => { setPageMenu(null); copyPageLink(pageMenu.id).catch(() => undefined); }}>
             <Icon name="copy" size={14} /> Copy link
@@ -326,7 +326,7 @@ export function BlockWidgets({ session, locked, onOpenNote }: BlockWidgetsProps)
           {!locked && (
             <>
               <button type="button" role="menuitem" className="page-menu-item" disabled={!menuNote} onClick={() => separate(pageMenu.id)}>
-                <Icon name="arrow-up" size={14} /> Separate page
+                <Icon name="arrow-up" size={14} /> Separate note
               </button>
               <button
                 type="button"
@@ -338,7 +338,7 @@ export function BlockWidgets({ session, locked, onOpenNote }: BlockWidgetsProps)
                   else removeFromText(pageMenu.id);
                 }}
               >
-                <Icon name="trash" size={14} /> {menuNote ? 'Delete sub-page' : 'Remove from page'}
+                <Icon name="trash" size={14} /> {menuNote ? 'Delete sub-note' : 'Remove from note'}
               </button>
             </>
           )}
@@ -346,9 +346,9 @@ export function BlockWidgets({ session, locked, onOpenNote }: BlockWidgetsProps)
       )}
 
       {deleting && (
-        <ConfirmDialog title="Delete this sub-page?" confirmLabel="Delete sub-page" danger onConfirm={confirmDelete} onCancel={() => setDeleting(null)}>
+        <ConfirmDialog title="Delete this sub-note?" confirmLabel="Delete sub-note" danger onConfirm={confirmDelete} onCancel={() => setDeleting(null)}>
           <p><strong>{deletingNote?.title || 'Untitled note'}</strong> and everything written in it will be removed from this browser. This cannot be undone.</p>
-          {nested > 0 && <p>Its {nested} sub-page(s) will be kept and move into this note.</p>}
+          {nested > 0 && <p>Its {nested} sub-note(s) will be kept and move into this note.</p>}
         </ConfirmDialog>
       )}
     </>
