@@ -9,6 +9,7 @@ import { imageFiles, insertImageFiles } from './images';
 import { linkTypedAddress } from './links';
 import { applyMarkdownShortcut } from './markdown';
 import { deleteSelection, insertPasted, pastedMarkdown } from './paste';
+import { pastedSource, writeSelection } from './clipboard';
 import { stickyStateForRange, toggleStickyRange } from './stickyDom';
 import type { EditorSession } from './session';
 
@@ -244,7 +245,7 @@ export const ContinuousEditor = memo(function ContinuousEditor({ session, conten
     session.checkpoint();
     const text = event.clipboardData.getData('text/plain');
     const pre = preAtCaret(body);
-    const lines = pre ? null : pastedMarkdown(text, event.clipboardData.getData('text/html'));
+    const lines = pre ? null : pastedMarkdown(pastedSource(event.clipboardData), event.clipboardData.getData('text/html'));
     if (lines) {
       deleteSelection(body);
       insertPasted(body, lines);
@@ -275,6 +276,22 @@ export const ContinuousEditor = memo(function ContinuousEditor({ session, conten
     }
   }
 
+  /* Copying keeps the kind of each line (see clipboard.ts), so pasting into a note brings it back. */
+  function handleCopy(event: ClipboardEvent<HTMLDivElement>) {
+    const body = bodyRef.current;
+    if (body) writeSelection(event.nativeEvent, body);
+  }
+
+  /* Cutting copies the same way, then deletes the selection as an ordinary edit. */
+  function handleCut(event: ClipboardEvent<HTMLDivElement>) {
+    const body = bodyRef.current;
+    if (!body || locked) {
+      event.preventDefault();
+      return;
+    }
+    if (writeSelection(event.nativeEvent, body)) document.execCommand('delete');
+  }
+
   /* Double-clicking the side of a sticky group selects the whole group. */
   function handleDoubleClick(event: MouseEvent<HTMLDivElement>) {
     const target = event.target as HTMLElement;
@@ -299,6 +316,8 @@ export const ContinuousEditor = memo(function ContinuousEditor({ session, conten
       onKeyDown={handleKeyDown}
       onInput={handleInput}
       onPaste={handlePaste}
+      onCopy={handleCopy}
+      onCut={handleCut}
       onDoubleClick={handleDoubleClick}
     />
   );

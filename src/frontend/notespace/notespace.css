@@ -1651,7 +1651,8 @@
   position: fixed;
   z-index: 70;
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  align-items: stretch;
   gap: 2px;
   padding: 4px;
   border: 1px solid #dfe7f3;
@@ -1659,6 +1660,23 @@
   background: #fff;
   box-shadow: 0 10px 30px rgba(28, 54, 96, .18);
   transform: translateX(-50%);
+}
+
+.selection-toolbar-row {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+/* What kind of text is selected, on top of the buttons. */
+.selection-kind {
+  padding: 0 4px 4px;
+  border-bottom: 1px solid #edf1f7;
+  color: #71829b;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: .2px;
+  white-space: nowrap;
 }
 
 .selection-tool {

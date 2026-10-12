@@ -12,7 +12,7 @@ type Box = { top: number; bottom: number; left: number; right: number };
 type Size = { width: number; height: number };
 
 /* The selection's outline, and the spot where the selection ends (where the mouse was released). */
-type Anchor = { selection: Box; end: Box };
+type Anchor = { selection: Box; end: Box; kind: string };
 type Mode = 'buttons' | 'link' | 'comment';
 
 /* The editor's top bar covers this much of the window, so the toolbar never goes above it. */
@@ -34,7 +34,7 @@ const FORMATS: { command: string; icon: IconName; label: string }[] = [
 /* Above the selection when there is room; otherwise below it; and when the selection fills the */
 /* window, next to the end where the mouse was released. The result is always kept inside the */
 /* window, so a selection near an edge can no longer push the bar off screen. */
-export function placeToolbar(anchor: Anchor, size: Size, view: Size) {
+export function placeToolbar(anchor: Pick<Anchor, 'selection' | 'end'>, size: Size, view: Size) {
   const { selection, end } = anchor;
   const fitsAbove = (box: Box) => box.top - size.height - GAP >= TOP_LIMIT;
   const fitsBelow = (box: Box) => box.bottom + GAP + size.height <= view.height - GAP;
@@ -64,10 +64,54 @@ function selectionEnd(selection: Selection): Box | null {
 
 
 /* =========================
+   Kind of Text
+   ========================= */
+
+/* What a line is called, checked from the most specific kind to plain text. */
+const KINDS: [string, string][] = [
+  ['pre', 'Code'],
+  ['td, th', 'Table'],
+  ['h1', 'Heading 1'],
+  ['h2', 'Heading 2'],
+  ['h3', 'Heading 3'],
+  ['h4', 'Heading 4'],
+  ['h5', 'Heading 5'],
+  ['.toggle-summary', 'Toggle'],
+  ['ol > li', 'Numbered list'],
+  ['ul > li', 'Bulleted list'],
+  ['blockquote', 'Quote']
+];
+
+const LINES = 'p, h1, h2, h3, h4, h5, h6, li, pre, td, th';
+
+function kindOf(node: Node, root: Element) {
+  const element = node instanceof Element ? node : node.parentElement;
+  const found = KINDS.find(([selector]) => {
+    const match = element?.closest(selector);
+    return Boolean(match && root.contains(match));
+  });
+  const heading = element?.closest('.toggle-summary')?.tagName.match(/^H([1-5])$/);
+  if (found?.[1] === 'Toggle' || (heading && found?.[1].startsWith('Heading'))) return heading ? `Toggle heading ${heading[1]}` : 'Toggle';
+  return found?.[1] ?? 'Text';
+}
+
+/* What kind of text is selected ("Text", "Heading 2", "Bulleted list"…), or "Mixed" when the */
+/* selection covers lines of different kinds. */
+export function selectionKind(range: Range, root: Element) {
+  const kinds = new Set([kindOf(range.startContainer, root), kindOf(range.endContainer, root)]);
+  root.querySelectorAll(LINES).forEach(line => {
+    if (kinds.size < 2 && range.intersectsNode(line) && line.textContent?.trim()) kinds.add(kindOf(line, root));
+  });
+  return kinds.size === 1 ? [...kinds][0] : 'Mixed';
+}
+
+
+/* =========================
    Selection Toolbar
    ========================= */
 
-/* A small bar that appears above selected note text: formatting, links and comments. */
+/* A small bar that appears above selected note text: what kind of text it is (on top), then */
+/* formatting, links and comments. */
 /* It uses fixed positioning, so it lines up with the selection at any note zoom level. */
 export function SelectionToolbar({ session, locked }: SelectionToolbarProps) {
   const [anchor, setAnchor] = useState<Anchor | null>(null);
@@ -96,7 +140,7 @@ export function SelectionToolbar({ session, locked }: SelectionToolbarProps) {
       }
       savedRange.current = range.cloneRange();
       const bounds = range.getBoundingClientRect();
-      setAnchor({ selection: bounds, end: selectionEnd(selection as Selection) ?? bounds });
+      setAnchor({ selection: bounds, end: selectionEnd(selection as Selection) ?? bounds, kind: selectionKind(range, body) });
     }
 
     /* Clicking anywhere outside the bar cancels an unfinished link or comment. */
@@ -202,8 +246,9 @@ export function SelectionToolbar({ session, locked }: SelectionToolbarProps) {
 
   return (
     <div ref={barRef} className="selection-toolbar" role="toolbar" aria-label="Format selected text" style={{ top: position.top, left: position.left }}>
+      {mode === 'buttons' && <span className="selection-kind">{anchor.kind}</span>}
       {mode === 'buttons' && (
-        <>
+        <div className="selection-toolbar-row">
           {!locked && FORMATS.map(item => (
             <button key={item.command} type="button" className="selection-tool" aria-label={item.label} onMouseDown={keepSelection} onClick={() => format(item.command)}>
               <Icon name={item.icon} size={15} />
@@ -218,7 +263,7 @@ export function SelectionToolbar({ session, locked }: SelectionToolbarProps) {
           <button type="button" className="selection-tool selection-tool--text" onMouseDown={keepSelection} onClick={() => setMode('comment')}>
             <Icon name="message-square" size={15} /> Comment
           </button>
-        </>
+        </div>
       )}
 
       {mode === 'link' && (

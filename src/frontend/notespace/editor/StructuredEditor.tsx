@@ -18,6 +18,7 @@ import { imageFiles, insertImageFiles } from './images';
 import { linkTypedAddress } from './links';
 import { applyMarkdownShortcut } from './markdown';
 import { deleteSelection, insertPasted, pastedMarkdown } from './paste';
+import { pastedSource, writeSelection } from './clipboard';
 import type { EditorSession } from './session';
 
 type StructuredEditorProps = {
@@ -744,7 +745,7 @@ export const StructuredEditor = memo(function StructuredEditor({ session, conten
     session.checkpoint();
     const text = event.clipboardData.getData('text/plain');
     const start = closestAtCaret('.block-content');
-    const lines = start && preAtCaret(start) ? null : pastedMarkdown(text, event.clipboardData.getData('text/html'));
+    const lines = start && preAtCaret(start) ? null : pastedMarkdown(pastedSource(event.clipboardData), event.clipboardData.getData('text/html'));
     if (lines) {
       pasteLines(lines);
       return;
@@ -793,16 +794,23 @@ export const StructuredEditor = memo(function StructuredEditor({ session, conten
     }
   }
 
-  /* Cutting across blocks copies the text, then removes it as one edit. */
+  /* Copying keeps the kind of each line (see clipboard.ts), so pasting into a note brings it back. */
+  function handleCopy(event: ClipboardEvent<HTMLDivElement>) {
+    const body = bodyRef.current;
+    if (body) writeSelection(event.nativeEvent, body);
+  }
+
+  /* Cutting copies the same way, then removes the selection: across blocks as one edit, inside */
+  /* one block as an ordinary deletion. */
   function handleCut(event: ClipboardEvent<HTMLDivElement>) {
-    if (locked) {
+    const body = bodyRef.current;
+    if (!body || locked) {
       event.preventDefault();
       return;
     }
-    if (selectionRef.current.picked.length < 2) return;
-    event.preventDefault();
-    event.clipboardData.setData('text/plain', window.getSelection()?.toString() ?? '');
-    deleteAcross();
+    if (!writeSelection(event.nativeEvent, body)) return;
+    if (selectionRef.current.picked.length >= 2) deleteAcross();
+    else document.execCommand('delete');
   }
 
   /* Double-clicking the side of a sticky group selects the text of every block in it. */
@@ -878,6 +886,7 @@ export const StructuredEditor = memo(function StructuredEditor({ session, conten
       onKeyDown={handleKeyDown}
       onInput={handleInput}
       onPaste={handlePaste}
+      onCopy={handleCopy}
       onCut={handleCut}
       onDoubleClick={handleDoubleClick}
     >

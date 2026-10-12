@@ -172,6 +172,13 @@ function blocks(parent: Element, context: Context): string {
 }
 
 
+/* Some note HTML as Markdown, without pictures (used when copying from a note). Links to pages */
+/* lead to their Starjot addresses, so pasting them into a note makes page links again. */
+export function markdownOf(root: Element) {
+  return blocks(root, { anchors: new Map(), pictures: new Map() });
+}
+
+
 /* =========================
    Pages
    ========================= */

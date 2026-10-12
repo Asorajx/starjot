@@ -6,6 +6,7 @@ import { isEmptyContent, wrapLooseLines } from './dom';
 import { linkTypedAddress } from './links';
 import { applyMarkdownShortcut } from './markdown';
 import { deleteSelection, insertPasted, pastedMarkdown } from './paste';
+import { pastedSource } from './clipboard';
 import type { Note } from '../../../shared/types/note';
 
 type NoteHeaderProps = {
@@ -64,15 +65,14 @@ function RemarksField({ note, locked }: RemarksFieldProps) {
   function handlePaste(event: ClipboardEvent<HTMLDivElement>) {
     event.preventDefault();
     const field = ref.current;
-    const text = event.clipboardData.getData('text/plain');
-    const lines = pastedMarkdown(text, event.clipboardData.getData('text/html'));
+    const lines = pastedMarkdown(pastedSource(event.clipboardData), event.clipboardData.getData('text/html'));
     if (field && lines) {
       deleteSelection(field);
       insertPasted(field, lines);
       save();
       return;
     }
-    document.execCommand('insertText', false, text);
+    document.execCommand('insertText', false, event.clipboardData.getData('text/plain'));
   }
 
   return (
