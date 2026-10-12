@@ -35,6 +35,10 @@ const DIVIDER = /^ {0,3}([-*_])(?:\s*\1){2,}\s*$/;
 const LIST_ITEM = /^(\s*)([-*+]|\d{1,9}[.)])\s+(.*)$/;
 const QUOTE = /^ {0,3}>\s?(.*)$/;
 
+/* A table row (| a | b |) and the line under a table's header row (| --- | :---: |). */
+const TABLE_ROW = /^\s*\|.*\|\s*$/;
+const TABLE_RULE = /^\s*\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)*\|?\s*$/;
+
 /* The caret's line: a paragraph, heading, list item or plain line, but not a wrapper such as a */
 /* sticky group or toggle list. */
 const LINE = 'p, h1, h2, h3, h4, h5, h6, li, div:not(.sticky-group):not(.toggle-block):not(.toggle-body)';
@@ -114,15 +118,34 @@ function line(tag: string, text: string) {
   return made;
 }
 
+/* The cells of a table row, split at each | that is not written as \|. */
+function tableCells(row: string) {
+  return row.trim().replace(/^\|/, '').replace(/(?<!\\)\|$/, '').split(/(?<!\\)\|/).map(cell => cell.trim());
+}
+
+/* A Markdown table as a note table: its first row becomes the header row, and short rows are */
+/* filled with empty cells so every row is as wide as the widest. */
+function markdownTable(rows: string[][]) {
+  const width = Math.max(...rows.map(row => row.length));
+  const table = document.createElement('table');
+  table.className = 'fit-content';
+  const body = table.appendChild(document.createElement('tbody'));
+  rows.forEach((cells, index) => {
+    const row = body.appendChild(document.createElement('tr'));
+    for (let column = 0; column < width; column += 1) row.append(line(index ? 'td' : 'th', cells[column] ?? ''));
+  });
+  return table;
+}
+
 /* How far a list item is indented; a tab counts as four spaces. */
 function indentOf(space: string) {
   return space.replace(/\t/g, '    ').length;
 }
 
 /* Turn Markdown text into note lines: paragraphs, headings, lists (nested by indenting), quotes, */
-/* code blocks and dividers. Every line of text becomes its own line, as with plain pasting, but */
+/* code blocks, tables and dividers. Every line of text becomes its own line, as with plain pasting, but */
 /* blank lines are left out because in Markdown they only separate paragraphs. */
-function markdownLines(plain: string) {
+export function markdownLines(plain: string) {
   const blocks: HTMLElement[] = [];
   let lists: { indent: number; list: HTMLElement }[] = [];
   let quote: HTMLElement | null = null;
@@ -144,7 +167,13 @@ function markdownLines(plain: string) {
     if (!item) lists = [];
     if (!quoted) quote = null;
 
-    if (fence) {
+    if (TABLE_ROW.test(text) && TABLE_RULE.test(lines[index + 1] ?? '') && lines[index + 1].includes('|')) {
+      /* A table runs from its header row, past the rule under it, to the last row in a row. */
+      const rows = [tableCells(text)];
+      index += 1;
+      while (index + 1 < lines.length && TABLE_ROW.test(lines[index + 1])) rows.push(tableCells(lines[++index]));
+      blocks.push(markdownTable(rows));
+    } else if (fence) {
       /* Code keeps every line exactly as written, until the closing fence or the end of the text. */
       const code: string[] = [];
       while (index + 1 < lines.length && !lines[index + 1].trim().startsWith(fence[1])) code.push(lines[++index]);
@@ -217,6 +246,11 @@ function inlineLines(blocks: HTMLElement[]) {
   blocks.forEach(block => {
     if (block.tagName === 'PRE') {
       (block.textContent ?? '').split('\n').forEach(text => lines.push([document.createTextNode(text)]));
+    } else if (block.tagName === 'TABLE') {
+      /* A table pasted where only words can go keeps one line per row, its cells apart by tabs. */
+      block.querySelectorAll('tr').forEach(row => {
+        lines.push(Array.from(row.children).flatMap((cell, index) => [...(index ? [document.createTextNode('	')] : []), ...Array.from(cell.childNodes)]));
+      });
     } else if (['UL', 'OL', 'BLOCKQUOTE'].includes(block.tagName)) {
       block.querySelectorAll('li, p').forEach(item => {
         lines.push(Array.from(item.childNodes).filter(node => !['UL', 'OL', 'BR'].includes(node.nodeName)));
@@ -317,17 +351,18 @@ export function insertPasted(root: HTMLElement, blocks: HTMLElement[]) {
   current.after(...pasted);
   const keepsCurrent = hasContent(current) || pasted.length === 0;
 
-  /* The text after the caret joins the last pasted line, unless that line is code or a divider. */
+  /* The text after the caret joins the last pasted line, unless that line is code, a divider or */
+  /* a table. */
   const lastBlock = pasted[pasted.length - 1];
   const joined = lastBlock ? lastLineOf(lastBlock) : current;
-  const canJoin = joined.tagName !== 'HR' && joined.tagName !== 'CODE';
+  const canJoin = !['HR', 'CODE', 'TABLE'].includes(joined.tagName);
   if (canJoin && hasContent(after)) {
     if (!hasContent(joined)) joined.replaceChildren();
     else trimBreak(joined);
     caret.setStart(joined, joined.childNodes.length);
     joined.append(...Array.from(after.childNodes));
   } else if (hasContent(after) || !canJoin) {
-    /* After code or a divider, the caret goes to the start of the next line. */
+    /* After code, a divider or a table, the caret goes to the start of the next line. */
     if (!after.childNodes.length) after.append(document.createElement('br'));
     (lastBlock ?? current).after(after);
     if (canJoin) caret.setStart(joined, joined.childNodes.length);

@@ -189,6 +189,39 @@
   min-width: 0;
 }
 
+.home-hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* While files are dragged over the home screen, a dashed outline shows they can be dropped. */
+/* The words stay in view however far down the screen is scrolled. */
+.notes-home {
+  position: relative;
+}
+
+.import-drop {
+  position: absolute;
+  inset: 8px;
+  z-index: 40;
+  border: 2px dashed var(--blue);
+  border-radius: 4px;
+  background: rgba(239, 245, 255, .85);
+  pointer-events: none;
+}
+
+.import-drop span {
+  position: sticky;
+  top: 40%;
+  display: block;
+  padding: 24px;
+  color: #2f5fc4;
+  font-size: 16px;
+  font-weight: 700;
+  text-align: center;
+}
+
 .home-resume {
   flex: 1 1 300px;
   display: flex;

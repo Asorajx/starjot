@@ -41,6 +41,7 @@ const PATHS = {
   'align-center': '<path d="M4 6h16M7 10h10M4 14h16M7 18h10"/>',
   'align-right': '<path d="M4 6h16M10 10h10M4 14h16M10 18h10"/>',
   'download': '<path d="M12 4v11m0 0-4-4m4 4 4-4M5 19h14"/>',
+  'upload': '<path d="M12 20V9m0 0-4 4m4-4 4 4M5 5h14"/>',
   'blocks': '<rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="5" rx="1.5"/><rect x="13" y="10" width="8" height="11" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/>',
   'grip': '<circle cx="9" cy="6" r="1"/><circle cx="15" cy="6" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="9" cy="18" r="1"/><circle cx="15" cy="18" r="1"/>',
   'lock': '<rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/>',

@@ -423,6 +423,12 @@ export function categoryName(id: string) {
   return state.categories.find(category => category.id === id)?.name ?? '';
 }
 
+/* The id of the category with this name (ignoring capitals), or an empty string when there is none. */
+export function categoryNamed(name: string) {
+  const wanted = name.trim().toLowerCase();
+  return state.categories.find(category => category.name.toLowerCase() === wanted)?.id ?? '';
+}
+
 
 /* =========================
    Labels and Status

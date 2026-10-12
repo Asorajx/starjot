@@ -221,15 +221,19 @@ function naturalWidth(file: Blob) {
   });
 }
 
+/* Keep an image file and return a block showing it, at its own width but no wider than */
+/* START_WIDTH or the given width. */
+export async function storedImageBlock(file: Blob, maxWidth = START_WIDTH) {
+  const [id, width] = await Promise.all([saveImage(file), naturalWidth(file)]);
+  return createImageBlock(id, Math.min(width, START_WIDTH, Math.max(MIN_IMAGE_WIDTH, maxWidth)));
+}
+
 /* Keep each image file and put it at the range, one after another, each followed by a space. */
 /* An image starts at its own width, no wider than START_WIDTH or the line it lands on. */
 /* Returns the new image blocks (none when the range left the page while the files were saved). */
 export async function addImages(files: File[], range: Range, lineWidth: number) {
   const blocks: HTMLElement[] = [];
-  for (const file of files) {
-    const [id, width] = await Promise.all([saveImage(file), naturalWidth(file)]);
-    blocks.push(createImageBlock(id, Math.min(width, START_WIDTH, Math.max(MIN_IMAGE_WIDTH, lineWidth))));
-  }
+  for (const file of files) blocks.push(await storedImageBlock(file, lineWidth));
   if (!range.startContainer.isConnected) return [];
 
   /* Each block goes in front of the ones already placed, so the last image's space is made first; */

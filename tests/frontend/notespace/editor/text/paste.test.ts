@@ -160,3 +160,31 @@ describe('insertPasted', () => {
     expect(result?.line.tagName).toBe('P');
   });
 });
+
+
+/* =========================
+   Markdown Tables
+   ========================= */
+
+describe('pasting Markdown tables', () => {
+  it('turns a table into a note table with a header row', () => {
+    expect(markdown('| Name | Value |\n| --- | :---: |\n| Alpha | **1** |\n| Beta |')).toBe(
+      '<table class="fit-content"><tbody><tr><th>Name</th><th>Value</th></tr><tr><td>Alpha</td><td><strong>1</strong></td></tr><tr><td>Beta</td><td><br></td></tr></tbody></table>'
+    );
+  });
+
+  it('keeps a | written as \\| inside a cell', () => {
+    expect(markdown('| a \\| b |\n| --- |\n| c |')).toContain('<th>a | b</th>');
+  });
+
+  it('leaves lines with | but no rule under them as text', () => {
+    expect(markdown('| not | a table |')).toBeNull();
+  });
+
+  it('puts the caret on the line after a pasted table', () => {
+    const body = editor('<p>|</p>');
+    paste(body, '| a |\n| --- |\n| b |');
+    expect(body.querySelector('table')).not.toBeNull();
+    expect(body.lastElementChild?.tagName).toBe('P');
+  });
+});

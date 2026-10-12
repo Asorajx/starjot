@@ -4,6 +4,7 @@ import { Icon } from '../components/Icon';
 import { updatePreferences, usePreferences, type NotesSort } from '../app/preferences';
 import { editedText, newestFirst, NoteTable, NoteTile, sortNotes } from './NoteList';
 import { useNoteMenu } from './NoteMenu';
+import { useImport } from './import/useImport';
 import {
   addCategory, canAddCategory, categoryName, removeCategory, renameCategory, useCategories, useNotes
 } from './store';
@@ -188,6 +189,7 @@ function CategoryCard({ id, name, notes, onOpenCategory }: CategoryCardProps) {
 export function NotesHome({ filter, onFilterChange, onOpen, onOpenInNewTab, onOpenCategory, onCreate }: NotesHomeProps) {
   const notes = useNotes();
   const noteMenu = useNoteMenu({ onOpen, onOpenInNewTab });
+  const importer = useImport(onOpen);
   const now = useNow();
   const { notesSort } = usePreferences();
   const [showFilters, setShowFilters] = useState(filter !== 'all');
@@ -224,7 +226,7 @@ export function NotesHome({ filter, onFilterChange, onOpen, onOpenInNewTab, onOp
   );
 
   return (
-    <div className="content-pad notes-home">
+    <div className="content-pad notes-home" {...importer.dropProps}>
       {/* Welcome panel: greeting and clock on the left, the last edited note on the right. */}
       <section className="home-hero" aria-label="Welcome">
         <div className="home-hero-intro">
@@ -233,7 +235,19 @@ export function NotesHome({ filter, onFilterChange, onOpen, onOpenInNewTab, onOp
           </p>
           <h1>{greeting(now)}</h1>
           <p>Find your thoughts, pick up where you left off, and make room for the next idea.</p>
-          <button className="btn btn-primary" type="button" onClick={onCreate}><Icon name="plus" size={16} /><span>New note</span></button>
+          <div className="home-hero-actions">
+            <button className="btn btn-primary" type="button" onClick={onCreate}><Icon name="plus" size={16} /><span>New note</span></button>
+            <button
+              className="btn btn-secondary"
+              type="button"
+              disabled={importer.busy}
+              data-tooltip="Make new notes from Markdown, HTML, PDF, CSV or text files. You can also drop files here."
+              data-tooltip-wrap=""
+              onClick={importer.choose}
+            >
+              <Icon name="upload" size={16} /><span>{importer.busy ? 'Importing…' : 'Import'}</span>
+            </button>
+          </div>
         </div>
 
         {lastEdited && (
@@ -314,6 +328,7 @@ export function NotesHome({ filter, onFilterChange, onOpen, onOpenInNewTab, onOp
       </section>
 
       {noteMenu.menu}
+      {importer.elements}
     </div>
   );
 }
