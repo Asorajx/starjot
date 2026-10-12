@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { readNotes, writeNotes } from '../../src/backend/storage/notesStorage';
 import { readPreferences, writePreferences } from '../../src/backend/storage/preferencesStorage';
+import { readQuickNoteDraft, writeQuickNoteDraft } from '../../src/backend/storage/draftStorage';
 import type { Note } from '../../src/shared/types/note';
 
 /* Each test starts with empty browser storage. */
@@ -42,5 +43,20 @@ describe('preferences storage', () => {
   it('returns an empty object for unreadable data', () => {
     localStorage.setItem('starjot-preferences-v1', 'not json');
     expect(readPreferences()).toEqual({});
+  });
+});
+
+
+/* =========================
+   Quick Note Draft
+   ========================= */
+
+describe('quick note draft', () => {
+  it('keeps the draft until it is cleared', () => {
+    expect(readQuickNoteDraft()).toBe('');
+    writeQuickNoteDraft('Half a thought');
+    expect(readQuickNoteDraft()).toBe('Half a thought');
+    writeQuickNoteDraft('');
+    expect(localStorage.getItem('starjot-quick-note-v1')).toBeNull();
   });
 });

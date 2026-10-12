@@ -1,0 +1,152 @@
+/* =========================
+   Starjot Home
+   ========================= */
+
+/* The greeting sits on the page itself; the sections below hold the cards. Section headings */
+/* reuse .home-section and .home-section-heading from the Notespace home (notespace/home.css). */
+.starjot-home-intro {
+  margin-bottom: 48px;
+}
+
+.starjot-home-time {
+  margin: 0 0 4px;
+  color: #68788f;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.starjot-home-intro h1 {
+  margin: 0 0 8px;
+  color: var(--ink);
+  font-size: 32px;
+  letter-spacing: -.6px;
+}
+
+.starjot-home-intro > p:last-child {
+  margin: 0;
+  color: #68788f;
+  font-size: 13px;
+}
+
+/* The quick note and "Where you left off" sit side by side, and stack when there is no room. */
+.starjot-home-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.home-card-label {
+  color: var(--blue);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.home-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: auto;
+}
+
+
+/* =========================
+   Quick Note
+   ========================= */
+
+.quick-note {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--paper);
+}
+
+.quick-note-text {
+  width: 100%;
+  min-height: 112px;
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--paper);
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+  line-height: 1.6;
+  resize: vertical;
+}
+
+.quick-note-text::placeholder {
+  color: #66778f;
+}
+
+.quick-note-status {
+  min-width: 0;
+  color: #66778f;
+  font-size: 11px;
+}
+
+/* A button that reads as a link inside a sentence. */
+.text-link {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--blue);
+  font: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* "Where you left off" sits in a tinted box so it reads as a shortcut. */
+.home-resume {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px;
+  border: 1px solid #dce7fb;
+  border-radius: 4px;
+  background: var(--blue-soft);
+}
+
+
+/* =========================
+   Workboard Summary
+   ========================= */
+
+/* One tile per column; each opens that column of the board. */
+.board-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+}
+
+.board-summary-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--paper);
+  color: #56657b;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 650;
+  text-align: left;
+  cursor: pointer;
+}
+
+.board-summary-item:hover {
+  border-color: #c9d7ee;
+  background: var(--blue-soft);
+}
+
+.board-summary-count {
+  color: var(--ink);
+  font-size: 28px;
+  font-weight: 750;
+  line-height: 1.2;
+}

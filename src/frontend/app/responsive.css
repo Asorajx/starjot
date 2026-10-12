@@ -420,4 +420,22 @@
     min-width: 44px;
     min-height: 44px;
   }
+
+  /* The tab bar grows to fit 44px tabs, so a tab, its close button and the + line up. */
+  .window-bar {
+    height: 52px;
+  }
+
+  .window-tab {
+    height: 44px;
+  }
+
+  .window-new-tab {
+    margin-bottom: 0;
+  }
+
+  /* The sidebar popup starts below the taller tab bar. */
+  .app-shell.sidebar-floating .sidebar {
+    top: 108px;
+  }
 }

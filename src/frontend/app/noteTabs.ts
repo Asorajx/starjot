@@ -3,7 +3,8 @@
    ========================= */
 
 /* A place a tab can show: the notes home, one category's page, or one note. */
-export type Place = { kind: 'home' } | { kind: 'category'; id: string } | { kind: 'note'; id: string };
+/* 'start' is Starjot Home, the app's own home; 'home' is the Notespace home. */
+export type Place = { kind: 'start' } | { kind: 'home' } | { kind: 'category'; id: string } | { kind: 'note'; id: string };
 
 /* A tab keeps its own history, like a browser tab: the places it has shown, and which one it shows now. */
 export type NoteTab = { id: string; history: Place[]; index: number };
@@ -157,7 +158,7 @@ export function closeTab(workspace: Workspace, groupId: string, tabId: string): 
   if (!tabs.length) {
     const rest = workspace.groups.filter(item => item.id !== groupId);
     if (rest.length) return { ...workspace, groups: rest, focus: rest.some(item => item.id === workspace.focus) ? workspace.focus : rest[0].id };
-    const fresh = newTab({ kind: 'home' });
+    const fresh = newTab({ kind: 'start' });
     return changeGroup(workspace, groupId, () => ({ ...group, tabs: [fresh], active: fresh.id, stacked: false, stackStart: 0 }));
   }
 

@@ -37,7 +37,6 @@ type SidebarProps = NavigationProps & {
 const LIST_COUNT = 5;
 
 
-
 /* =========================
    Window Controls
    ========================= */
@@ -262,15 +261,27 @@ export function Sidebar({ workspace, space, openNoteId, boardView, docked, contr
    Mobile Navigation and Header
    ========================= */
 
-export function MobileNav({ workspace, onNavigate }: NavigationProps) {
+type MobileNavProps = NavigationProps & {
+
+  /* Starjot Home is shown in a Notespace tab, so it is marked instead of Notespace while open. */
+  homeShown: boolean;
+  onHome: () => void;
+};
+
+/* Phones have no sidebar: Home and the spaces sit in a bar along the bottom. */
+export function MobileNav({ workspace, homeShown, onNavigate, onHome }: MobileNavProps) {
+  const current = (id: WorkspaceId) => workspace === id && !homeShown;
   return (
     <nav className="mobile-nav" aria-label="Mobile workspace navigation">
+      <button type="button" className={`mobile-link ${homeShown ? 'active' : ''}`} aria-current={homeShown ? 'page' : undefined} onClick={onHome}>
+        <Icon name="home" size={20} /><span>Home</span>
+      </button>
       {WORKSPACES.map(item => (
         <button
           key={item.id}
           type="button"
-          className={`mobile-link ${workspace === item.id ? 'active' : ''}`}
-          aria-current={workspace === item.id ? 'page' : undefined}
+          className={`mobile-link ${current(item.id) ? 'active' : ''}`}
+          aria-current={current(item.id) ? 'page' : undefined}
           onClick={() => onNavigate(item.id)}
         >
           <Icon name={item.icon} size={20} /><span>{item.label}</span>

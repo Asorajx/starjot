@@ -14,7 +14,7 @@ type WindowBarProps = {
   leading?: ReactNode;
 };
 
-const PLACE_ICONS: Record<Place['kind'], IconName> = { home: 'book-open', category: 'folder', note: 'file-text' };
+const PLACE_ICONS: Record<Place['kind'], IconName> = { start: 'home', home: 'book-open', category: 'folder', note: 'file-text' };
 
 /* Dragged tabs carry their group and tab ids under this type, so other drags (text, blocks) are ignored. */
 export const TAB_DRAG_TYPE = 'application/x-starjot-tab';

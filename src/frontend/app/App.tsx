@@ -5,6 +5,7 @@ import { useDismiss } from '../lib/useDismiss';
 import { useMediaQuery } from '../lib/useMediaQuery';
 import { CategoryPage } from '../notespace/CategoryPage';
 import { NotesHome, type NoteFilter } from '../notespace/NotesHome';
+import { StarjotHome } from '../home/StarjotHome';
 import type { ViewControls } from '../notespace/editor/EditorPanels';
 import { NoteEditor } from '../notespace/editor/NoteEditor';
 import { PageBar, placeExists, placeLabel, type PageHistory } from '../notespace/PageBar';
@@ -106,11 +107,12 @@ export function App() {
   const [space, setSpace] = useState<SpaceId>('notes');
 
   /* Notespace's tab groups (one, or two after a split), each with its tabs and their histories. */
-  /* A page's own address (#note=id, see pageAddress) opens that page; anything else opens the home. */
+  /* A page's own address (#note=id, see pageAddress) opens that page; anything else opens Starjot */
+  /* Home. */
   const [tabs, setTabs] = useState<Workspace>(() => {
     const id = window.location.hash.match(/^#note=([a-zA-Z0-9_-]{1,90})$/)?.[1];
     if (id) window.history.replaceState(null, '', window.location.pathname + window.location.search);
-    return newWorkspace(id && getNote(id) ? { kind: 'note', id } : { kind: 'home' });
+    return newWorkspace(id && getNote(id) ? { kind: 'note', id } : { kind: 'start' });
   });
   const [workTab, setWorkTab] = useState<BoardTab>('todo');
   const [settingsSection, setSettingsSection] = useState<SettingsSection>('general');
@@ -286,8 +288,8 @@ export function App() {
     };
   }
 
-  /* Until Starjot Home exists, Home goes to the Notespace home. */
-  const goHome = fromSidebar(() => navigate('notes'));
+  /* Home shows Starjot Home in the current tab, so Back returns to where you were. */
+  const goHome = fromSidebar(() => go({ kind: 'start' }));
 
   /* Shown in the tab bar (or top bar) while floating, and at the top of the sidebar while docked, */
   /* in the same corner either way. */
@@ -387,6 +389,15 @@ export function App() {
             </nav>
           </PageBar>
           <CategoryPage key={shown.id} categoryId={shown.id} onBack={closePage} onOpen={openHere} onOpenInNewTab={openNoteInNewTab} onCreate={category => newNote(category, tabGroup.id, tab)} />
+        </>
+      );
+    } else if (shown.kind === 'start') {
+      screen = (
+        <>
+          <PageBar history={history}>
+            <nav className="editor-breadcrumb" aria-label="Breadcrumb"><span className="editor-crumb-current">Home</span></nav>
+          </PageBar>
+          <StarjotHome onOpenNote={openHere} onOpenNotespace={openHome} onOpenWorkboard={() => navigate('workboard')} onOpenBoardView={openBoardView} />
         </>
       );
     } else {
@@ -490,7 +501,7 @@ export function App() {
         {workspace === 'notes' && <DocumentTitle place={place} />}
         {screen}
       </div>
-      <MobileNav workspace={workspace} onNavigate={navigate} />
+      <MobileNav workspace={workspace} homeShown={workspace === 'notes' && place.kind === 'start'} onNavigate={navigate} onHome={goHome} />
     </div>
   );
 }

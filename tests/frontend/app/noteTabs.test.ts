@@ -74,11 +74,11 @@ describe('closing tabs', () => {
     expect(workspace.groups[0].active).toBe(first.id);
   });
 
-  it('leaves one tab on the notes home after closing the last one', () => {
+  it('leaves one tab on Starjot Home after closing the last one', () => {
     const workspace = newWorkspace(note('a'));
     const group = workspace.groups[0];
     const closed = closeTab(workspace, group.id, group.tabs[0].id);
-    expect(places(closed)).toEqual([[home]]);
+    expect(places(closed)).toEqual([[{ kind: 'start' }]]);
   });
 });
 

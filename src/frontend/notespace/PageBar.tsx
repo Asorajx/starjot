@@ -18,6 +18,7 @@ export type PageHistory = {
 
 /* The name shown for a place on its tab and in the Back and Forward tooltips. */
 export function placeLabel(place: Place) {
+  if (place.kind === 'start') return 'Home';
   if (place.kind === 'home') return 'Notespace';
   if (place.kind === 'category') return categoryName(place.id) || 'Category';
   return getNote(place.id)?.title || 'Untitled note';
@@ -25,7 +26,7 @@ export function placeLabel(place: Place) {
 
 /* A note or category can be deleted while it is still in a tab's history. */
 export function placeExists(place: Place) {
-  if (place.kind === 'home') return true;
+  if (place.kind === 'start' || place.kind === 'home') return true;
   if (place.kind === 'category') return Boolean(categoryName(place.id));
   return Boolean(getNote(place.id));
 }

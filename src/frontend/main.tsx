@@ -8,6 +8,7 @@ import { getNotes, isStorageAvailable } from './notespace/store';
 /* Styles load in their original cascade order to preserve the design. */
 import './app/styles.css';
 import './notespace/home.css';
+import './home/starjotHome.css';
 import './notespace/editor/editor.css';
 import './notespace/editor/text/text.css';
 import './notespace/editor/code/code.css';
