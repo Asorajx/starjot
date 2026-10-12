@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { ConfirmDialog } from '../components/ConfirmDialog';
+import { Dropdown } from '../components/Dropdown';
 import { Icon } from '../components/Icon';
 import { updatePreferences, usePreferences, type NotesSort } from '../app/preferences';
 import { newestFirst, NoteTable, NoteTile, sortNotes } from './NoteList';
@@ -207,14 +208,20 @@ export function NotesHome({ filter, onFilterChange, onOpen, onOpenInNewTab, onOp
       <section className="home-section" aria-labelledby="all-notes-heading">
         <div className="home-section-heading">
           <h2 id="all-notes-heading"><Icon name="file-text" size={16} /> All notes <span className="category-count">{notes.length}</span></h2>
-          <label className="notes-sort">
-            <span>Sort by</span>
-            <select value={notesSort} aria-label="Sort all notes by" onChange={event => updatePreferences({ notesSort: event.target.value as NotesSort })}>
-              <option value="edited">Last edited</option>
-              <option value="opened">Last opened</option>
-              <option value="title">Name (A–Z)</option>
-            </select>
-          </label>
+          <div className="notes-sort">
+            <span aria-hidden="true">Sort by</span>
+            <Dropdown<NotesSort>
+              label="Sort all notes by"
+              value={notesSort}
+              alignEnd
+              options={[
+                { value: 'edited', label: 'Last edited', icon: 'pencil' },
+                { value: 'opened', label: 'Last opened', icon: 'clock' },
+                { value: 'title', label: 'Name (A–Z)', icon: 'type' }
+              ]}
+              onChange={sort => updatePreferences({ notesSort: sort })}
+            />
+          </div>
         </div>
 
         <CategoryBar notes={notes} filter={filter} onFilterChange={onFilterChange} onOpenCategory={onOpenCategory} />

@@ -1397,10 +1397,42 @@
   font-size: 12px;
 }
 
-/* A drop-down list adds its own space before its text, so it gets less padding to line up with */
-/* the other details. */
-select.note-detail-field {
-  padding-left: 4px;
+/* The Category dropdown looks like the other detail fields: plain text until pointed at, with */
+/* the chevron at its right end. */
+.dropdown.note-detail-dropdown-wrap {
+  display: flex;
+  width: 100%;
+  max-width: 420px;
+}
+
+.note-detail-dropdown {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.note-detail-dropdown > span {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dropdown .note-detail-dropdown strong {
+  font-weight: inherit;
+}
+
+/* Each part of the note is its own layer (see drawing.css), so while the Category menu is open */
+/* the header is lifted above the rest of the note and its drawings, or they would cover it. */
+.editor-wrap .editor-width > .note-header:has(.dropdown-menu) {
+  z-index: 3;
+}
+
+.note-detail-dropdown:disabled {
+  cursor: default;
 }
 
 .note-detail-field:hover:not(:disabled):not([readonly]) {

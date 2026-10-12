@@ -1,4 +1,5 @@
 import { useLayoutEffect, useRef, useState, type ClipboardEvent, type KeyboardEvent } from 'react';
+import { Dropdown } from '../../components/Dropdown';
 import { EmojiPicker } from '../../components/EmojiPicker';
 import { Icon } from '../../components/Icon';
 import { scheduleSave, updateNote, useCategories, useNotes } from '../store';
@@ -195,16 +196,15 @@ export function NoteHeader({ note, locked, onOpenNote }: NoteHeaderProps) {
         <dl className="note-details">
           <dt>Category</dt>
           <dd>
-            <select
-              className="note-detail-field"
-              aria-label="Category"
+            <Dropdown
+              label="Category"
+              className="note-detail-field note-detail-dropdown"
+              wrapperClassName="note-detail-dropdown-wrap"
               disabled={locked}
               value={note.category}
-              onChange={event => updateNote(note.id, { category: event.target.value })}
-            >
-              <option value="">None</option>
-              {categories.map(category => <option key={category.id} value={category.id}>{category.name}</option>)}
-            </select>
+              options={[{ value: '', label: 'None' }, ...categories.map(category => ({ value: category.id, label: category.name, icon: 'folder' as const }))]}
+              onChange={category => updateNote(note.id, { category })}
+            />
           </dd>
 
           <dt>Description</dt>

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { updatePreferences, usePreferences } from '../../app/preferences';
-import { Icon } from '../../components/Icon';
+import { Dropdown } from '../../components/Dropdown';
 import { childrenOf } from '../store';
 import { exportHtml, exportPdf, type ExportLayout } from './exportHtml';
 import { exportMarkdown } from './exportMarkdown';
@@ -40,16 +40,9 @@ type ChoiceProps<T extends string> = {
   onChange: (value: T) => void;
 };
 
-/* A drop-down list in the app's style, with a chevron. */
+/* A dropdown on the right of a row, showing its choice as plain text until pointed at. */
 function Choice<T extends string>({ label, value, options, disabled = false, onChange }: ChoiceProps<T>) {
-  return (
-    <span className="export-select">
-      <select aria-label={label} value={value} disabled={disabled} onChange={event => onChange(event.target.value as T)}>
-        {options.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
-      </select>
-      <Icon name="chevron-down" size={14} />
-    </span>
-  );
+  return <Dropdown label={label} className="export-select" alignEnd value={value} options={options} disabled={disabled} onChange={onChange} />;
 }
 
 

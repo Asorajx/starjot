@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useState, type RefObject } from 'react';
+import { Dropdown } from '../../../components/Dropdown';
 import { LANGUAGES, type LanguageId } from './grammars';
 import { highlight, languageOf } from './code';
 import { useSessionValue, type EditorSession } from '../session';
@@ -67,17 +68,18 @@ export function CodeLanguagePickers({ session, containerRef, locked }: CodeLangu
   return (
     <div className="code-lang-layer">
       {positions.map((position, index) => (
-        <select
+        <Dropdown<LanguageId>
           key={index}
+          label="Code block language"
           className="code-lang-select"
-          aria-label="Code block language"
+          wrapperClassName="code-lang-picker"
           style={{ top: position.top, right: position.right }}
+          alignEnd
           value={position.language}
           disabled={locked}
-          onChange={event => changeLanguage(index, event.target.value as LanguageId)}
-        >
-          {LANGUAGES.map(language => <option key={language.id} value={language.id}>{language.label}</option>)}
-        </select>
+          options={LANGUAGES.map(language => ({ value: language.id as LanguageId, label: language.label }))}
+          onChange={language => changeLanguage(index, language)}
+        />
       ))}
     </div>
   );

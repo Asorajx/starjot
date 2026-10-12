@@ -30,43 +30,36 @@
 }
 
 .export-select {
-  position: relative;
   display: inline-flex;
   align-items: center;
-  color: #1c2c47;
-}
-
-.export-select select {
+  gap: 8px;
   max-width: 240px;
-  padding: 4px 24px 4px 8px;
+  padding: 4px 8px;
   border: 1px solid transparent;
   border-radius: 4px;
   background: transparent;
-  color: inherit;
+  color: #1c2c47;
   font: inherit;
   font-size: 13px;
   font-weight: 600;
-  text-align: right;
-  appearance: none;
   cursor: pointer;
 }
 
-.export-select select:hover:not(:disabled),
-.export-select select:focus-visible {
-  border-color: #d5deea;
-  outline: none;
+.dropdown .export-select strong {
+  font-weight: inherit;
 }
 
-.export-select select:disabled {
+.export-select:hover:not(:disabled) {
+  border-color: #d5deea;
+}
+
+.export-select:disabled {
   color: #66778f;
   cursor: default;
 }
 
 .export-select .icon {
-  position: absolute;
-  right: 6px;
   color: #667891;
-  pointer-events: none;
 }
 
 .export-number {

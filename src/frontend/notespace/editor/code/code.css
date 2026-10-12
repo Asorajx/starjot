@@ -13,8 +13,16 @@
   pointer-events: none;
 }
 
-.code-lang-select {
+/* Each picker is placed over the top-right corner of its code block. */
+.dropdown.code-lang-picker {
   position: absolute;
+  pointer-events: auto;
+}
+
+.code-lang-select {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   height: 22px;
   padding: 0 8px;
   border: 1px solid #dbe4f2;
@@ -25,7 +33,14 @@
   font-size: 11px;
   font-weight: 650;
   cursor: pointer;
-  pointer-events: auto;
+}
+
+.dropdown .code-lang-select strong {
+  font-weight: inherit;
+}
+
+.code-lang-select:disabled {
+  cursor: default;
 }
 
 .code-lang-select:focus-visible {

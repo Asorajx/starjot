@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
+import { useEffect, useRef, useState, type CSSProperties, type KeyboardEvent } from 'react';
 import { useEscape } from '../lib/useDismiss';
 import { Icon, type IconName } from './Icon';
 
@@ -30,6 +30,13 @@ type DropdownProps<T extends string> = {
 
   /* Line the menu up with the button's right edge instead of its left (for buttons on the right). */
   alignEnd?: boolean;
+
+  /* A locked note's dropdowns show their value but cannot be opened. */
+  disabled?: boolean;
+
+  /* For placing the whole dropdown, such as a code block's language picker over its block. */
+  wrapperClassName?: string;
+  style?: CSSProperties;
 };
 
 
@@ -41,7 +48,7 @@ type DropdownProps<T extends string> = {
 /* note menu, with an icon beside each option and a tick on the chosen one. From the keyboard it */
 /* works like a select box: ↑ and ↓ move (choosing straight away while closed), Enter or Space */
 /* opens or chooses, and Escape or Tab closes. A click anywhere else closes it too. */
-export function Dropdown<T extends string>({ value, options, onChange, label, prefix, className = 'dropdown-button', alignEnd }: DropdownProps<T>) {
+export function Dropdown<T extends string>({ value, options, onChange, label, prefix, className = 'dropdown-button', alignEnd, disabled = false, wrapperClassName = '', style }: DropdownProps<T>) {
   const [open, setOpen] = useState(false);
   const chosen = Math.max(0, options.findIndex(option => option.value === value));
   const [active, setActive] = useState(chosen);
@@ -74,7 +81,12 @@ export function Dropdown<T extends string>({ value, options, onChange, label, pr
     setOpen(false);
   }
 
+  useEffect(() => {
+    if (disabled) setOpen(false);
+  }, [disabled]);
+
   function handleKeyDown(event: KeyboardEvent) {
+    if (disabled) return;
     if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
       event.preventDefault();
       const step = event.key === 'ArrowDown' ? 1 : -1;
@@ -91,7 +103,7 @@ export function Dropdown<T extends string>({ value, options, onChange, label, pr
   }
 
   return (
-    <div className="dropdown" ref={wrapRef}>
+    <div className={`dropdown ${wrapperClassName}`} style={style} ref={wrapRef}>
       <button
         type="button"
         role="combobox"
@@ -101,12 +113,13 @@ export function Dropdown<T extends string>({ value, options, onChange, label, pr
         aria-expanded={open}
         aria-controls={listId}
         aria-activedescendant={open ? `${listId}-${active}` : undefined}
+        disabled={disabled}
         onClick={() => setOpen(value => !value)}
         onKeyDown={handleKeyDown}
       >
         {current?.icon && <Icon name={current.icon} size={14} />}
         <span>{prefix && <>{prefix} </>}<strong>{current?.label}</strong></span>
-        <Icon name="chevron-down" size={14} className={open ? 'is-flipped' : ''} />
+        {!disabled && <Icon name="chevron-down" size={14} className={`dropdown-chevron ${open ? 'is-flipped' : ''}`} />}
       </button>
 
       {open && (
