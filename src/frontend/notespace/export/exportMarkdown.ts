@@ -177,11 +177,13 @@ function blocks(parent: Element, context: Context): string {
    ========================= */
 
 /* Load the pictures a page's text shows as data addresses: images from the image store, and */
-/* anchored drawings as SVG. Loose drawings have no place in Markdown, so they are left out. */
+/* anchored drawings as SVG. Loose drawings, and drawings in front of the text, have no place in */
+/* Markdown (it cannot put a picture over words), so they are left out. */
 async function loadPictures(root: Element) {
   const pictures = new Map<Element, string>();
   await Promise.all(Array.from(root.querySelectorAll<HTMLElement>('.image-block')).map(async block => {
     if (block.classList.contains('drawing-block')) {
+      if (block.dataset.wrap === 'front') return;
       pictures.set(block, await dataUrl(drawingFile(block)));
       return;
     }

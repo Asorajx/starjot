@@ -78,7 +78,8 @@ describe('preferences', () => {
       pen: { color: 'ink', size: 48 },
       highlighter: { color: '#30a46c', size: 18 },
       selectEdge: 'whole',
-      snap: true
+      snap: true,
+      anchorWrap: 'wrap'
     });
   });
 });

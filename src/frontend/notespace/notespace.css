@@ -3257,11 +3257,54 @@
   margin-right: var(--offset-x, 0px);
 }
 
+.drawing-ink {
+  position: relative;
+  display: block;
+}
+
 .drawing-block svg {
   display: block;
   width: 100%;
   height: auto;
   overflow: visible;
+}
+
+/* In front of the text: the block takes no room at the start of its line, and its strokes are */
+/* placed from there, over the words. Only the strokes themselves can be clicked, so the words */
+/* under them can still be clicked and selected. */
+.note-editable .image-block.drawing-block[data-wrap="front"],
+.block-content .image-block.drawing-block[data-wrap="front"] {
+  display: inline-block;
+  float: none;
+  width: 0 !important;
+  height: 0;
+  margin: 0;
+  vertical-align: top;
+  outline: none;
+  cursor: default;
+}
+
+.image-block.drawing-block[data-wrap="front"] .drawing-ink {
+  position: absolute;
+  top: var(--offset-y, 0px);
+  left: var(--offset-x, 0px);
+  z-index: 2;
+  width: var(--drawing-width, 100px);
+  pointer-events: none;
+}
+
+.image-block.drawing-block[data-wrap="front"] path {
+  pointer-events: stroke;
+  cursor: pointer;
+}
+
+.image-block.drawing-block[data-wrap="front"] .image-resize {
+  pointer-events: auto;
+}
+
+.image-block.drawing-block[data-wrap="front"].is-selected .drawing-ink {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
 }
 
 /* A right image near the end of the note (or of a block) never hangs below it. */
@@ -3952,6 +3995,20 @@
   box-shadow: 0 8px 24px rgba(28, 54, 96, .12);
   white-space: nowrap;
   cursor: default;
+}
+
+/* Picked strokes keep their exact box: it has no handles, and is moved with the arrow keys. */
+.drawing-selection-box.is-picked {
+  cursor: default;
+}
+
+/* Wrapped or in front of the text, before the Anchor button. */
+.drawing-wrap-choice {
+  display: inline-flex;
+  gap: 2px;
+  margin-right: 4px;
+  padding-right: 4px;
+  border-right: 1px solid #e0e8f4;
 }
 
 .drawing-selection-bar.is-end {

@@ -25,6 +25,9 @@ export type DrawingPreferences = {
   highlighter: PenSettings;
   selectEdge: 'whole' | 'cut';
   snap: boolean;
+
+  /* How strokes are anchored: wrapped by the text (it moves aside) or in front of it. */
+  anchorWrap: 'wrap' | 'front';
 };
 
 export type Preferences = {
@@ -73,7 +76,8 @@ function loadDrawing(saved: unknown): DrawingPreferences {
     pen: loadPen(record.pen, { color: INK, size: 3 }),
     highlighter: loadPen(record.highlighter, { color: '#ffd84d', size: 18 }),
     selectEdge: record.selectEdge === 'cut' ? 'cut' : 'whole',
-    snap: record.snap !== false
+    snap: record.snap !== false,
+    anchorWrap: record.anchorWrap === 'front' ? 'front' : 'wrap'
   };
 }
 

@@ -1,7 +1,9 @@
 import type { DrawingStroke } from '../../../shared/types/note';
 import { getNote, updateNote } from '../store';
 import { joinBoxes, mostlyInside, moveStrokes, splitStroke, strokesBounds, type Box } from './drawing';
-import { MIN_IMAGE_WIDTH, createDrawingBlock, drawingBox, drawingStrokes, hydrateImages, setImageAlign, setImageWidth, type ImageAlign } from './images';
+import {
+  MIN_IMAGE_WIDTH, createDrawingBlock, drawingBox, drawingStrokes, hydrateImages, setDrawingWrap, setImageAlign, setImageWidth, type DrawingWrap, type ImageAlign
+} from './images';
 import type { EditorSession } from './session';
 
 /* What happens to strokes on the selection box's edge (see DrawingPreferences). */
@@ -77,12 +79,13 @@ function layerFrame(layer: HTMLElement) {
   return { rect, scale: rect.width / (layer.offsetWidth || rect.width) || 1 };
 }
 
-/* Where an anchored drawing is on the drawing layer (as shown, including any drag in progress). */
+/* Where an anchored drawing's strokes are on the drawing layer (as shown, including any drag in */
+/* progress). A drawing in front of the text takes no room, so its strokes' own box is measured. */
 export function anchoredBox(session: EditorSession, block: HTMLElement): Box | null {
   const layer = drawingLayerOf(session);
   if (!layer) return null;
   const { rect, scale } = layerFrame(layer);
-  const bounds = block.getBoundingClientRect();
+  const bounds = (block.querySelector('.drawing-ink') ?? block).getBoundingClientRect();
   return { x: (bounds.left - rect.left) / scale, y: (bounds.top - rect.top) / scale, width: bounds.width / scale, height: bounds.height / scale };
 }
 
@@ -126,20 +129,48 @@ function placeAt(body: HTMLElement, x: number, y: number, blockers: (HTMLElement
   return range;
 }
 
-/* Put a drawing block into the text at the line nearest the box's top, shown as wide as the box. */
-/* With snapping on it lines up with that line and its side of the column; with it off it keeps */
-/* the box's exact place, as a distance down from its line and in from its side. */
-function insertDrawing(body: HTMLElement, layer: HTMLElement, block: HTMLElement, box: Box, snap: boolean, blockers: (HTMLElement | null)[]) {
+/* How a drawing is placed: in front of the text or wrapped by it, and (when wrapped) whether it */
+/* snaps to its line and side. */
+export type Placement = { wrap: DrawingWrap; snap: boolean };
+
+/* Put a drawing block into the text, shown as wide as the box. Wrapped, it goes in at the line */
+/* nearest the box's top: with snapping on it lines up with that line and its side of the column; */
+/* with it off it keeps the box's exact place, as a distance down from its line and in from its */
+/* side. In front of the text, it goes in at the line through the box's middle, and keeps the */
+/* box's exact place measured from the start of that line. */
+function insertDrawing(body: HTMLElement, layer: HTMLElement, block: HTMLElement, box: Box, { wrap, snap }: Placement, blockers: (HTMLElement | null)[]) {
   const { rect, scale } = layerFrame(layer);
   const column = layer.offsetWidth;
-  const range = placeAt(body, rect.left + 2, rect.top + box.y * scale + 2, blockers);
+  const front = wrap === 'front';
+  const middle = rect.top + (box.y + box.height / 2) * scale;
+  let range = placeAt(body, rect.left + 2, front ? middle : rect.top + box.y * scale + 2, blockers);
   if (!range) return false;
 
-  const align = anchorAlign(box, column, snap);
-  setImageAlign(block, align);
-  setImageWidth(block, Math.max(MIN_IMAGE_WIDTH, Math.min(box.width, column)));
+  /* In front of the text, a drawing in the gap between two lines (an underline) belongs to the */
+  /* line above it. */
+  const found = (range.startContainer instanceof Element ? range.startContainer : range.startContainer.parentElement)?.closest(LINES);
+  if (front && found && middle < found.getBoundingClientRect().top) {
+    const lines = Array.from(body.querySelectorAll<HTMLElement>(LINES)).filter(line => !line.querySelector(LINES));
+    const above = lines[lines.indexOf(found as HTMLElement) - 1];
+    if (above) {
+      range = document.createRange();
+      range.selectNodeContents(above);
+      range.collapse(true);
+    }
+  }
+
+  setDrawingWrap(block, wrap);
   delete block.dataset.offset;
-  if (!snap) {
+  if (front) {
+    setImageAlign(block, 'left');
+    setImageWidth(block, Math.max(MIN_IMAGE_WIDTH, box.width));
+  } else {
+    const align = anchorAlign(box, column, snap);
+    setImageAlign(block, align);
+    setImageWidth(block, Math.max(MIN_IMAGE_WIDTH, Math.min(box.width, column)));
+  }
+  if (!snap && !front) {
+    const align = anchorAlign(box, column, snap);
     const line = (range.startContainer instanceof Element ? range.startContainer : range.startContainer.parentElement)?.closest(LINES);
     const lineTop = range.getClientRects()[0]?.top ?? line?.getBoundingClientRect().top ?? rect.top;
     const side = align === 'right' ? column - (box.x + box.width) : box.x;
@@ -157,6 +188,15 @@ function insertDrawing(body: HTMLElement, layer: HTMLElement, block: HTMLElement
   } else {
     range.insertNode(block);
   }
+
+  /* In front of the text, the block now marks the start of its line; the strokes are placed */
+  /* from there, exactly where the box is. */
+  if (front) {
+    const start = block.getBoundingClientRect();
+    const x = Math.round((rect.left + box.x * scale - start.left) / scale);
+    const y = Math.round((rect.top + box.y * scale - start.top) / scale);
+    block.dataset.offset = `${x} ${y}`;
+  }
   hydrateImages(body);
   return true;
 }
@@ -166,29 +206,39 @@ function insertDrawing(body: HTMLElement, layer: HTMLElement, block: HTMLElement
    Anchoring and Detaching
    ========================= */
 
-type AnchorOptions = {
+type AnchorOptions = Placement & {
   edge: SelectEdge;
-  snap: boolean;
   allowed: StrokeFilter;
+
+  /* Strokes picked one by one (double-clicked), taken exactly instead of by the box. */
+  picked?: number[] | null;
 
   /* Things above the text, let through while finding the place in the text. */
   blockers: (HTMLElement | null)[];
 };
 
-/* Anchor the strokes in the box into the text, as a drawing the text wraps around. One undo */
-/* step. Returns the new drawing, or null when the box holds no strokes. */
-export function anchorDrawing(session: EditorSession, selection: Box, { edge, snap, allowed, blockers }: AnchorOptions) {
+/* Anchor the strokes in the box (or the picked strokes) into the text. Picked strokes fit their */
+/* box exactly, with no space around them. One undo step. Returns the new drawing, or null when */
+/* there are no strokes to anchor. */
+export function anchorDrawing(session: EditorSession, selection: Box, { edge, snap, wrap, allowed, picked, blockers }: AnchorOptions) {
   const body = session.body();
   const layer = drawingLayerOf(session);
   const note = getNote(session.noteId);
   if (!body || !layer || !note) return null;
-  const { taken, left, box } = takeStrokes(note.drawing, selection, edge, allowed);
+  const chosen = picked ? new Set(picked) : null;
+  const { taken, left, box } = chosen
+    ? {
+      taken: note.drawing.filter((_, index) => chosen.has(index)),
+      left: note.drawing.filter((_, index) => !chosen.has(index)),
+      box: strokesBounds(note.drawing.filter((_, index) => chosen.has(index))) ?? selection
+    }
+    : takeStrokes(note.drawing, selection, edge, allowed);
   if (!taken.length) return null;
 
   const block = createDrawingBlock(moveStrokes(taken, -box.x, -box.y), box.width, box.height, box.width, 'left', null);
   session.checkpoint();
   updateNote(session.noteId, { drawing: left }, false);
-  if (!insertDrawing(body, layer, block, box, snap, blockers)) {
+  if (!insertDrawing(body, layer, block, box, { wrap, snap }, blockers)) {
     updateNote(session.noteId, { drawing: note.drawing }, false);
     return null;
   }
@@ -196,9 +246,9 @@ export function anchorDrawing(session: EditorSession, selection: Box, { edge, sn
   return block;
 }
 
-/* Move (and resize) an anchored drawing to a new box: it is anchored again at the line nearest */
-/* the box's top. One undo step. Returns false when it could not be placed. */
-export function moveDrawing(session: EditorSession, block: HTMLElement, box: Box, snap: boolean, blockers: (HTMLElement | null)[] = []) {
+/* Move (and resize) an anchored drawing to a new box, or change how it sits with the text: it is */
+/* anchored again from the new box. One undo step. Returns false when it could not be placed. */
+export function moveDrawing(session: EditorSession, block: HTMLElement, box: Box, placement: Placement, blockers: (HTMLElement | null)[] = []) {
   const body = session.body();
   const layer = drawingLayerOf(session);
   if (!body || !layer || !body.contains(block)) return false;
@@ -206,7 +256,7 @@ export function moveDrawing(session: EditorSession, block: HTMLElement, box: Box
   const place = document.createComment('');
   block.replaceWith(place);
   block.style.removeProperty('transform');
-  if (!insertDrawing(body, layer, block, box, snap, blockers)) {
+  if (!insertDrawing(body, layer, block, box, placement, blockers)) {
     place.replaceWith(block);
     return false;
   }

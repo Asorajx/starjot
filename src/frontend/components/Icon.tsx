@@ -81,6 +81,7 @@ const PATHS = {
   'box-select': '<path d="M5 3H3v2M9 3h2M15 3h2M19 3h2v2M3 9v2M3 15v2M21 9v2M21 15v2M3 19v2h2M9 21h2M15 21h2M19 21h2v-2"/>',
   'eye': '<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/>',
   'eye-off': '<path d="M10.7 5.1A10 10 0 0 1 12 5c6.5 0 10 7 10 7a17 17 0 0 1-2.2 3.2M6.6 6.6A17 17 0 0 0 2 12s3.5 7 10 7a9.7 9.7 0 0 0 5.4-1.6M3 3l18 18M9.9 9.9a3 3 0 0 0 4.2 4.2"/>',
+  'text-front': '<path d="M3 6h18M3 12h4m10 0h4M3 18h18"/><circle cx="12" cy="12" r="4"/>',
   'line-weight': '<path d="M4 5h16"/><path d="M4 11h16" stroke-width="3"/><path d="M4 18h16" stroke-width="5"/>',
   'pencil': '<path d="M21.2 6.8a2.8 2.8 0 0 0-4-4L3.8 16.2a2 2 0 0 0-.5.8l-1.3 4.4a.5.5 0 0 0 .6.6l4.4-1.3a2 2 0 0 0 .8-.5Z"/><path d="m15 5 4 4"/>',
   'highlighter': '<path d="m9 11-6 6v3h9l3-3"/><path d="m22 12-4.6 4.6a2 2 0 0 1-2.8 0l-5.2-5.2a2 2 0 0 1 0-2.8L14 4"/>',

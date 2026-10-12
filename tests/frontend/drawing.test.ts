@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  decodeStrokes, defaultLayers, drawingBottom, encodeStrokes, normalizeLayers, strokeLayer, hexToHsv, hsvToHex, joinBoxes, mostlyInside, moveStrokes, normalizeDrawing, simplifyPoints, splitStroke,
+  connectedStrokes, decodeStrokes, defaultLayers, drawingBottom, encodeStrokes, normalizeLayers, strokeLayer, strokesTouch, hexToHsv, hsvToHex, joinBoxes, mostlyInside, moveStrokes, normalizeDrawing, simplifyPoints, splitStroke,
   strokePath, strokesBounds, touchesStroke
 } from '../../src/frontend/notespace/editor/drawing';
 import { anchorAlign, takeStrokes } from '../../src/frontend/notespace/editor/anchoring';
@@ -214,5 +214,29 @@ describe('takeStrokes on one layer', () => {
     const result = takeStrokes([line, other], { x: -10, y: -10, width: 120, height: 20 }, 'whole', stroke => stroke.layer !== 'layer-2');
     expect(result.taken).toEqual([line]);
     expect(result.left).toEqual([other]);
+  });
+});
+
+
+/* =========================
+   Strokes That Touch
+   ========================= */
+
+describe('connectedStrokes', () => {
+  const stroke = (points: number[]) => ({ tool: 'pen' as const, color: 'ink', size: 2, points });
+
+  it('finds strokes that cross or touch, and anything joined to them through others', () => {
+    const across = stroke([0, 0, 100, 100]);
+    const back = stroke([100, 0, 0, 100]);
+    const tail = stroke([100, 100, 140, 100]);
+    const apart = stroke([300, 300, 320, 300]);
+    expect(strokesTouch(across, back)).toBe(true);
+    expect(strokesTouch(across, apart)).toBe(false);
+    expect(connectedStrokes([across, apart, back, tail], 2)).toEqual([0, 2, 3]);
+  });
+
+  it('leaves out strokes the filter does not allow', () => {
+    const strokes = [stroke([0, 0, 10, 0]), { ...stroke([10, 0, 20, 0]), layer: 'other' }];
+    expect(connectedStrokes(strokes, 0, item => item.layer !== 'other')).toEqual([0]);
   });
 });

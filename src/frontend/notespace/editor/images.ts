@@ -45,6 +45,9 @@ export function setImageWidth(block: HTMLElement, width: number) {
   const value = Math.min(MAX_IMAGE_WIDTH, Math.max(MIN_IMAGE_WIDTH, Math.round(width)));
   block.dataset.width = String(value);
   block.style.width = `${value}px`;
+
+  /* A drawing in front of the text takes no room itself, so its strokes are sized on their own. */
+  if (block.classList.contains('drawing-block')) block.style.setProperty('--drawing-width', `${value}px`);
   return value;
 }
 
@@ -99,6 +102,9 @@ export function hydrateImages(root: Element | null) {
 /* data-box is the drawing's own size; data-width is how wide it is shown, so it can be resized */
 /* like an image. data-offset="x y" (when snapping is turned off) keeps it where it was drawn, */
 /* x pixels from its side of the column and y pixels below its line. */
+/* With data-wrap="front" the drawing sits in front of the text instead: it takes no room, so no */
+/* words move aside, and data-offset places it from the start of the line it is anchored to (and */
+/* moves with). */
 export function createDrawingBlock(strokes: DrawingStroke[], width: number, height: number, shownWidth: number, align: ImageAlign, offset: { x: number; y: number } | null) {
   const block = document.createElement('span');
   block.className = 'image-block drawing-block';
@@ -110,10 +116,24 @@ export function createDrawingBlock(strokes: DrawingStroke[], width: number, heig
   return block;
 }
 
-/* Two whole numbers from an attribute such as "120 80", each kept within 0 and max. */
-function numberPair(value: string | undefined, max: number) {
+/* How an anchored drawing sits with the text: wrapped (the text moves aside) or in front of it. */
+export type DrawingWrap = 'wrap' | 'front';
+
+export function drawingWrap(block: HTMLElement): DrawingWrap {
+  return block.dataset.wrap === 'front' ? 'front' : 'wrap';
+}
+
+export function setDrawingWrap(block: HTMLElement, wrap: DrawingWrap) {
+  if (wrap === 'front') block.dataset.wrap = 'front';
+  else delete block.dataset.wrap;
+}
+
+/* Two whole numbers from an attribute such as "120 80", each kept within 0 and max (or within */
+/* -max and max when they may be negative). */
+function numberPair(value: string | undefined, max: number, signed = false) {
   const parts = (value ?? '').split(' ').map(Number);
-  if (parts.length !== 2 || !parts.every(part => Number.isInteger(part) && part >= 0 && part <= max)) return null;
+  const min = signed ? -max : 0;
+  if (parts.length !== 2 || !parts.every(part => Number.isInteger(part) && part >= min && part <= max)) return null;
   return parts as [number, number];
 }
 
@@ -123,7 +143,7 @@ export function drawingBox(block: HTMLElement) {
 }
 
 export function drawingOffset(block: HTMLElement) {
-  const offset = numberPair(block.dataset.offset, MAX_OFFSET);
+  const offset = numberPair(block.dataset.offset, MAX_OFFSET, true);
   return offset ? { x: offset[0], y: offset[1] } : null;
 }
 
@@ -154,13 +174,16 @@ function hydrateDrawing(block: HTMLElement) {
   const offset = drawingOffset(block);
   block.style.setProperty('--offset-x', `${offset?.x ?? 0}px`);
   block.style.setProperty('--offset-y', `${offset?.y ?? 0}px`);
+  block.style.setProperty('--drawing-width', `${imageWidth(block)}px`);
   const key = `${block.dataset.box} ${block.dataset.drawing}`;
   if (drawn.get(block) === key && block.querySelector('svg')) return;
   drawn.set(block, key);
 
   /* The strokes were checked when read (decodeStrokes), so the markup holds only numbers and colours. */
+  /* They sit in their own box (.drawing-ink), which is the drawing's visible size even when the */
+  /* block takes no room in front of the text. */
   const { width, height } = drawingBox(block);
-  block.innerHTML = `${drawingMarkup(drawingStrokes(block), width, height)}<span class="image-resize" title="Drag to resize"></span>`;
+  block.innerHTML = `<span class="drawing-ink">${drawingMarkup(drawingStrokes(block), width, height)}<span class="image-resize" title="Drag to resize"></span></span>`;
 }
 
 
@@ -256,13 +279,14 @@ export function safeImageAttributes(node: Element) {
   const isDrawing = node.classList.contains('drawing-block');
   const strokes = isDrawing ? decodeStrokes(node.getAttribute('data-drawing') ?? '') : [];
   const box = numberPair(node.getAttribute('data-box') ?? '', MAX_DRAWING_SIZE);
-  const offset = numberPair(node.getAttribute('data-offset') ?? '', MAX_OFFSET);
+  const offset = numberPair(node.getAttribute('data-offset') ?? '', MAX_OFFSET, true);
   return {
     image: !isDrawing && IMAGE_ID.test(id) ? id : null,
     width: Number.isInteger(width) && width >= MIN_IMAGE_WIDTH && width <= MAX_IMAGE_WIDTH ? String(width) : null,
     align: IMAGE_ALIGNS.includes(align as ImageAlign) && align !== 'left' ? align : null,
     drawing: strokes.length ? encodeStrokes(strokes) : null,
     box: isDrawing && box && box[0] > 0 && box[1] > 0 ? box.join(' ') : null,
-    offset: isDrawing && offset ? offset.join(' ') : null
+    offset: isDrawing && offset ? offset.join(' ') : null,
+    wrap: isDrawing && node.getAttribute('data-wrap') === 'front' ? 'front' : null
   };
 }

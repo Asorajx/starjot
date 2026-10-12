@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from 'react';
 import { Icon, type IconName } from '../../components/Icon';
 import { imageUrl, loadImage } from '../imageStore';
-import { IMAGE_ALIGNS, MIN_IMAGE_WIDTH, drawingFile, imageAlign, imageFiles, insertImageFiles, setImageAlign, setImageWidth, type ImageAlign } from './images';
+import { IMAGE_ALIGNS, MIN_IMAGE_WIDTH, drawingFile, drawingWrap, imageAlign, imageFiles, insertImageFiles, setImageAlign, setImageWidth, type ImageAlign } from './images';
 import { getPreferences } from '../../app/preferences';
 import { anchoredBox, detachDrawing, moveDrawing } from './anchoring';
+import type { DrawingWrap } from './images';
 import type { EditorSession } from './session';
 
 type ImageToolsProps = {
@@ -28,6 +29,17 @@ function fileName(file: Blob) {
   const extension = file.type.split('/')[1]?.replace('jpeg', 'jpg').replace('svg+xml', 'svg') || 'png';
   return `image.${extension}`;
 }
+
+/* What an image block shows: its picture, or a drawing's strokes. A drawing in front of the text */
+/* takes no room itself, so its strokes' box is what is measured and outlined. */
+function shownPart(block: HTMLElement) {
+  return block.querySelector<HTMLElement>('.drawing-ink') ?? block;
+}
+
+const WRAPS: { value: DrawingWrap; label: string; icon: IconName }[] = [
+  { value: 'wrap', label: 'Wrap text: the text moves aside to make room for the drawing', icon: 'wrap-left' },
+  { value: 'front', label: 'In front of text: sits over the words and moves with them, without moving any text', icon: 'text-front' }
+];
 
 /* The file an image block shows: its picture from the image store, or an anchored drawing as SVG. */
 function blockFile(block: HTMLElement) {
@@ -139,16 +151,16 @@ export function ImageTools({ session, locked }: ImageToolsProps) {
 
       if (target.closest('.image-resize') && !latest.current.locked && event.button === 0) {
         session.checkpoint();
-        const bounds = found.getBoundingClientRect();
-        const scale = bounds.width / (found.offsetWidth || 1);
+        const bounds = shownPart(found).getBoundingClientRect();
+        const scale = bounds.width / (shownPart(found).offsetWidth || 1);
         resizing.current = { block: found, align: imageAlign(found), scale, startX: event.clientX, startWidth: bounds.width / scale };
         found.classList.add('is-resizing');
       } else if (found.classList.contains('drawing-block') && !latest.current.locked && event.button === 0) {
-        const bounds = found.getBoundingClientRect();
+        const bounds = shownPart(found).getBoundingClientRect();
         /* It belongs to the text, so it stops at the top of the text instead of going over the details. */
         const textTop = body()?.getBoundingClientRect().top ?? -Infinity;
         moving.current = {
-          block: found, scale: bounds.width / (found.offsetWidth || 1), startX: event.clientX, startY: event.clientY, minDy: textTop - bounds.top, moved: false
+          block: found, scale: bounds.width / (shownPart(found).offsetWidth || 1), startX: event.clientX, startY: event.clientY, minDy: textTop - bounds.top, moved: false
         };
       }
     }
@@ -183,7 +195,8 @@ export function ImageTools({ session, locked }: ImageToolsProps) {
       if (move?.moved) {
         const box = anchoredBox(session, move.block);
         move.block.style.removeProperty('transform');
-        if (box) moveDrawing(session, move.block, box, getPreferences().drawing.snap, [document.querySelector<HTMLElement>('.image-tools')]);
+        const placement = { wrap: drawingWrap(move.block), snap: getPreferences().drawing.snap };
+        if (box) moveDrawing(session, move.block, box, placement, [document.querySelector<HTMLElement>('.image-tools')]);
         setTick(tick => tick + 1);
       }
       const current = resizing.current;
@@ -297,6 +310,13 @@ export function ImageTools({ session, locked }: ImageToolsProps) {
     setTick(tick => tick + 1);
   }
 
+  /* An anchored drawing can sit wrapped by the text or in front of it; changing keeps it in place. */
+  function changeWrap(next: DrawingWrap) {
+    const box = anchoredBox(session, shown);
+    if (box) moveDrawing(session, shown, box, { wrap: next, snap: getPreferences().drawing.snap }, [document.querySelector<HTMLElement>('.image-tools')]);
+    setTick(tick => tick + 1);
+  }
+
   /* An anchored drawing can be turned back into loose strokes where it sits. */
   function detach() {
     select(null);
@@ -324,7 +344,9 @@ export function ImageTools({ session, locked }: ImageToolsProps) {
   }
 
   /* The bar sits above the image, or below it when there is no room above. */
-  const bounds = shown.getBoundingClientRect();
+  const bounds = shownPart(shown).getBoundingClientRect();
+  const isDrawing = shown.classList.contains('drawing-block');
+  const wrap = isDrawing ? drawingWrap(shown) : 'wrap';
   const below = bounds.top < 120;
   const style = {
     top: below ? bounds.bottom + 8 : bounds.top - 8,
@@ -342,14 +364,30 @@ export function ImageTools({ session, locked }: ImageToolsProps) {
           </form>
         ) : (
           <>
-            {!locked && IMAGE_ALIGNS.map((option, index) => (
+            {!locked && isDrawing && WRAPS.map((option, index) => (
+              <button
+                key={option.value}
+                type="button"
+                className={`page-bar-button ${wrap === option.value ? 'selected' : ''}`}
+                aria-pressed={wrap === option.value}
+                data-tooltip={option.label}
+                data-tooltip-wrap=""
+                data-tooltip-align={index ? undefined : 'start'}
+                aria-label={option.label}
+                onClick={() => changeWrap(option.value)}
+              >
+                <Icon name={option.icon} size={16} />
+              </button>
+            ))}
+            {!locked && isDrawing && wrap === 'wrap' && <span className="image-tools-divider" />}
+            {!locked && wrap === 'wrap' && IMAGE_ALIGNS.map((option, index) => (
               <button
                 key={option}
                 type="button"
                 className={`page-bar-button ${align === option ? 'selected' : ''}`}
                 aria-pressed={align === option}
                 data-tooltip={ALIGN_ICONS[option].label}
-                data-tooltip-align={index ? undefined : 'start'}
+                data-tooltip-align={index || isDrawing ? undefined : 'start'}
                 aria-label={ALIGN_ICONS[option].label}
                 onClick={() => changeAlign(option)}
               >

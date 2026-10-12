@@ -176,6 +176,47 @@ export function touchesStroke(stroke: DrawingStroke, x: number, y: number, radiu
   return false;
 }
 
+/* The segments of a stroke as [ax, ay, bx, by]; a dot is a segment of no length. */
+function segments(points: number[]) {
+  if (points.length === 2) return [[points[0], points[1], points[0], points[1]]];
+  const result: number[][] = [];
+  for (let index = 0; index < points.length - 2; index += 2) result.push(points.slice(index, index + 4));
+  return result;
+}
+
+/* True when the segments a–b and c–d cross. */
+function crosses([ax, ay, bx, by]: number[], [cx, cy, dx, dy]: number[]) {
+  const side = (px: number, py: number, qx: number, qy: number, rx: number, ry: number) => Math.sign((qx - px) * (ry - py) - (qy - py) * (rx - px));
+  return side(ax, ay, bx, by, cx, cy) * side(ax, ay, bx, by, dx, dy) < 0 && side(cx, cy, dx, dy, ax, ay) * side(cx, cy, dx, dy, bx, by) < 0;
+}
+
+/* True when two strokes touch or cross, counting their widths and a pixel of slack: strokes */
+/* that touch are parts of one drawing (the two lines of an X, a circle and its arrow). */
+export function strokesTouch(first: DrawingStroke, second: DrawingStroke) {
+  const reach = (first.size + second.size) / 2 + 1;
+  return segments(first.points).some(one => segments(second.points).some(other => crosses(one, other)
+    || distanceToSegment(one[0], one[1], other[0], other[1], other[2], other[3]) <= reach
+    || distanceToSegment(one[2], one[3], other[0], other[1], other[2], other[3]) <= reach
+    || distanceToSegment(other[0], other[1], one[0], one[1], one[2], one[3]) <= reach
+    || distanceToSegment(other[2], other[3], one[0], one[1], one[2], one[3]) <= reach));
+}
+
+/* The stroke at the start and every stroke joined to it through strokes that touch, among the */
+/* strokes the filter allows. Returns their places in the list. */
+export function connectedStrokes(strokes: DrawingStroke[], start: number, allowed: (stroke: DrawingStroke) => boolean = () => true) {
+  const found = new Set([start]);
+  const waiting = [start];
+  while (waiting.length) {
+    const current = strokes[waiting.pop() as number];
+    strokes.forEach((stroke, index) => {
+      if (found.has(index) || !allowed(stroke) || !strokesTouch(current, stroke)) return;
+      found.add(index);
+      waiting.push(index);
+    });
+  }
+  return [...found].sort((a, b) => a - b);
+}
+
 /* How far down the drawing reaches, so the page can grow to show strokes below the text. */
 export function drawingBottom(strokes: DrawingStroke[]) {
   let bottom = 0;

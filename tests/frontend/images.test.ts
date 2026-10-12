@@ -87,6 +87,11 @@ describe('pinned drawings', () => {
     );
   });
 
+  it('keeps a drawing in front of the text, with an offset that may be negative', () => {
+    const html = '<span class="image-block drawing-block" data-drawing="p,ink,3:1 2" data-box="40 50" data-offset="-12 -6" data-wrap="front"></span>';
+    expect(cleanHtml(html)).toBe('<span class="image-block drawing-block" data-drawing="p,ink,3:1 2" data-box="40 50" data-offset="-12 -6" data-wrap="front"></span>');
+  });
+
   it('drops broken strokes, sizes and offsets', () => {
     const html = '<span class="image-block drawing-block" data-drawing="p,url(x),3:1 2;h,#ffd84d,9:a b" data-box="-4 9" data-offset="5"></span>';
     expect(cleanHtml(html)).toBe('<span class="image-block drawing-block" data-drawing="p,ink,3:1 2"></span>');

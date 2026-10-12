@@ -573,6 +573,8 @@ export function DrawingTools({ session, strokes, layers, activeLayer, onActiveLa
           layerRef={layerRef}
           edge={drawing.selectEdge}
           snap={drawing.snap}
+          wrap={drawing.anchorWrap}
+          onWrapChange={anchorWrap => choose({ anchorWrap })}
           layer={activeLayer}
           allowed={onActiveLayer}
         />
