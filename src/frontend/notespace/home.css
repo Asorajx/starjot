@@ -1,0 +1,626 @@
+/* =========================
+   Notespace Home
+   ========================= */
+
+/* The list is a container, so its columns follow its own width (a split pane can be narrow in a */
+/* wide window). */
+.recent-table {
+  container-type: inline-size;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  overflow: hidden;
+  background: #fff;
+  box-shadow: var(--shadow);
+}
+
+.recent-columns,
+.recent-row {
+  display: grid;
+  grid-template-columns: minmax(0,1fr) 120px 147px;
+  align-items: center;
+  gap: 16px;
+}
+
+.recent-columns {
+  height: 38px;
+  border-bottom: 1px solid #eef0f5;
+  background: #fafbfd;
+  color: #a6afbc;
+  font-size: 9px;
+  font-weight: 760;
+  letter-spacing: .85px;
+  padding: 0 20px;
+}
+
+.recent-row {
+  width: 100%;
+  min-height: 66px;
+  border: 0;
+  border-bottom: 1px solid #f1f2f6;
+  background: #fff;
+  padding: 12px 20px;
+  text-align: left;
+}
+
+.recent-row:last-child {
+  border-bottom: 0;
+}
+
+.recent-row:hover {
+  background: #f8faff;
+}
+
+.recent-name {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.recent-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: 4px;
+}
+
+.recent-text strong {
+  font-size: 11px;
+  font-weight: 680;
+  color: #4b5b74;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* A row title and, for a sub-page, the tag naming its parent. */
+.note-row-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.note-row-title strong {
+  min-width: 0;
+}
+
+/* "Sub-page of …", shown in lists and on note cards. */
+.note-subpage-tag {
+  flex-shrink: 1;
+  align-self: flex-start;
+  max-width: 200px;
+  padding: 0 8px;
+  overflow: hidden;
+  border-radius: 4px;
+  background: #f1f4f9;
+  color: #7a889d;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 18px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.note-row-title .note-subpage-tag {
+  align-self: center;
+}
+
+.recent-text small {
+  font-size: 10px;
+  color: #a4adbb;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.recent-category {
+  font-size: 11px;
+  color: #8695a8;
+}
+
+.recent-time {
+  font-size: 10px;
+  color: #99a5b5;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.recent-time svg {
+  color: #c6ceda;
+}
+
+
+/* =========================
+   Welcome Panel, Starred and Recent
+   ========================= */
+
+/* The welcome panel: greeting and clock on the left, "where you left off" on the right. */
+/* The welcome text and the "Where you left off" card sit side by side, and wrap one above the */
+/* other when there is no room, such as in a split pane. */
+.home-hero {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  align-items: stretch;
+  margin-bottom: 24px;
+  padding: 24px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--paper);
+}
+
+.home-hero-time {
+  margin: 0 0 4px;
+  color: #8a97aa;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.home-hero h1 {
+  margin: 0 0 8px;
+  color: var(--ink);
+  font-size: 28px;
+  letter-spacing: -.6px;
+}
+
+.home-hero-intro > p:not(.home-hero-time) {
+  max-width: 460px;
+  margin: 0 0 20px;
+  color: #7d8ba0;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+/* "Where you left off" sits in a tinted box so it reads as a separate shortcut. */
+.home-hero-intro {
+  flex: 999 1 320px;
+  min-width: 0;
+}
+
+.home-resume {
+  flex: 1 1 300px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px;
+  border: 1px solid #dce7fb;
+  border-radius: 4px;
+  background: var(--blue-soft);
+}
+
+.home-resume-label {
+  color: var(--blue);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.home-resume-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: auto;
+}
+
+/* Starred and Recent share one panel; the tabs choose which list is shown. */
+.home-tabs-panel {
+  margin-bottom: 32px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--paper);
+}
+
+/* The tabs on the left, and the Edit categories button on the right. */
+/* The action wraps below the tabs when there is no room beside them, such as in a split pane. */
+.home-tabs-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-right: 12px;
+  border-bottom: 1px solid var(--line);
+}
+
+.home-tabs {
+  display: flex;
+  gap: 4px;
+  min-width: 0;
+  padding: 0 16px;
+}
+
+.home-tabs-action {
+  flex-shrink: 0;
+}
+
+/* The active tab is marked with a blue line along its bottom edge. */
+.home-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 44px;
+  padding: 0 12px;
+  margin-bottom: -1px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: #7d8ba0;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.home-tab:hover {
+  color: var(--ink);
+}
+
+.home-tab.is-active {
+  border-bottom-color: var(--blue);
+  color: var(--blue);
+}
+
+/* Note cards fill the row: as many 220px-wide columns as fit. */
+.note-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+  padding: 16px;
+}
+
+.note-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 116px;
+  padding: 12px 16px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--paper);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.note-tile:hover {
+  border-color: #c9d7ee;
+  background: var(--blue-soft);
+}
+
+.note-tile-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  color: #2c3d58;
+  font-size: 13px;
+}
+
+.note-tile-title svg {
+  flex-shrink: 0;
+  color: #94a1b3;
+}
+
+.note-tile-title strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.note-tile-icon {
+  font-size: 16px;
+  line-height: 1;
+}
+
+/* At most two lines of description, ending with "…". */
+.note-tile-text {
+  display: -webkit-box;
+  overflow: hidden;
+  color: #7d8ba0;
+  font-size: 11px;
+  line-height: 1.6;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.note-tile-meta {
+  margin-top: auto;
+  color: #a0abbb;
+  font-size: 10px;
+}
+
+/* Category cards list the latest notes in the category, one per line. */
+.category-card .category-count {
+  margin-left: auto;
+}
+
+.category-card-notes {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  color: #7d8ba0;
+  font-size: 11px;
+}
+
+.category-card-notes span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.category-card-empty {
+  color: #a0abbb;
+}
+
+/* The category page reuses the notes home layout, with a back link above the title. */
+.category-page h1 {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.category-page h1 svg {
+  color: #94a1b3;
+}
+
+
+/* =========================
+   All Notes
+   ========================= */
+
+.all-notes {
+  margin-top: 24px;
+}
+
+.all-notes-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+/* "Sort by" sits on the right, next to the Filter button. */
+.notes-sort {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+  color: #8795a9;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.notes-sort select {
+  height: 28px;
+  padding: 0 8px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--paper);
+  color: #2c3d58;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.notes-sort select:focus-visible {
+  border-color: #a7c5f5;
+  outline: none;
+}
+
+.all-notes-heading h2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  color: #2c3d58;
+  font-size: 16px;
+  font-weight: 750;
+}
+
+/* The chevron turns upside down while the filters are open. */
+.is-flipped {
+  transform: rotate(180deg);
+}
+
+/* Each row is the open button (name, category, time) plus a pin button at the end. */
+.note-row-columns,
+.note-row {
+  grid-template-columns: minmax(0, 1fr) 40px;
+}
+
+.note-row-columns {
+  grid-template-columns: minmax(0, 1fr) 120px 148px 40px;
+  padding-right: 0;
+}
+
+.note-row {
+  display: grid;
+  padding: 0;
+}
+
+.note-row-open {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 120px 148px;
+  align-items: center;
+  gap: 16px;
+  min-height: 64px;
+  padding: 8px 0 8px 20px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.note-pin {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: #c3ccd9;
+  cursor: pointer;
+}
+
+.note-pin:hover {
+  background: var(--blue-soft);
+  color: var(--blue);
+}
+
+.note-pin.is-pinned {
+  color: #e2a520;
+}
+
+.note-pin.is-pinned svg {
+  fill: currentColor;
+}
+
+@container (max-width: 560px) {
+  .note-row-columns {
+    grid-template-columns: minmax(0, 1fr) 40px;
+  }
+
+  .note-row-open {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .note-row-open .recent-category,
+  .note-row-open .recent-time,
+  .note-row-columns > span:nth-child(2),
+  .note-row-columns > span:nth-child(3) {
+    display: none;
+  }
+}
+
+
+/* =========================
+   Notes List and Categories
+   ========================= */
+
+/* Filter chips sit in one row; the edit and add buttons are pushed to the right. */
+.category-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.category-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 30px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--paper);
+  color: #56657b;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.category-filter:hover {
+  border-color: #c9d7ee;
+}
+
+.category-filter.is-active {
+  border-color: var(--blue);
+  background: var(--blue-soft);
+  color: var(--blue);
+}
+
+.category-count {
+  color: #9aa6b6;
+  font-weight: 600;
+}
+
+.category-filter.is-active .category-count {
+  color: inherit;
+}
+
+/* Categories being edited fill the whole Categories tab, one name field per category. */
+.category-editor {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.category-edit {
+  display: inline-flex;
+  align-items: center;
+  height: 32px;
+  padding-left: 12px;
+  border: 1px solid #c9d7ee;
+  border-radius: 4px;
+  background: var(--paper);
+  color: #8795a9;
+}
+
+/* The whole chip shows that its name is being edited; the input itself has no focus ring, which */
+/* would stick out of the chip. */
+.category-edit:focus-within {
+  border-color: #8fb3f2;
+  box-shadow: 0 0 0 2px #eaf2ff;
+}
+
+.category-name-input {
+  width: 110px;
+  height: 100%;
+  padding: 0 4px 0 8px;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 650;
+  outline: none;
+}
+
+.category-name-input:focus-visible {
+  outline: none;
+}
+
+.category-remove {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 100%;
+  border: 0;
+  background: transparent;
+  color: #a3adbb;
+  cursor: pointer;
+}
+
+.category-remove:hover {
+  color: #d23f3f;
+}
+
+.note-row-icon {
+  flex-shrink: 0;
+  width: 24px;
+  font-size: 18px;
+  line-height: 1;
+  text-align: center;
+}
+
+.notes-empty-list {
+  margin: 0;
+  padding: 28px 20px;
+  color: #9aa6b6;
+  font-size: 12px;
+}

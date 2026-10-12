@@ -1,0 +1,63 @@
+/* =========================
+   Code Blocks
+   ========================= */
+
+/* The picker layer covers the note content; only the pickers themselves receive clicks. */
+.note-content {
+  position: relative;
+}
+
+.code-lang-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.code-lang-select {
+  position: absolute;
+  height: 22px;
+  padding: 0 8px;
+  border: 1px solid #dbe4f2;
+  border-radius: 4px;
+  background: #fff;
+  color: #5d6f8a;
+  font: inherit;
+  font-size: 10px;
+  font-weight: 650;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.code-lang-select:focus-visible {
+  outline: 2px solid #5591ed;
+  outline-offset: 1px;
+}
+
+/* Token colours used by the syntax highlighter in code.js. */
+.tok-comment {
+  color: #8a99ad;
+  font-style: italic;
+}
+
+.tok-string {
+  color: #22863a;
+}
+
+.tok-number,
+.tok-literal {
+  color: #b15c00;
+}
+
+.tok-keyword,
+.tok-tag {
+  color: #7a3fc4;
+}
+
+.tok-function {
+  color: #2f6fd6;
+}
+
+.tok-property,
+.tok-attr {
+  color: #c2366b;
+}

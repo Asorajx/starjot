@@ -2,9 +2,11 @@ import type { DrawingLayerInfo, DrawingStroke, Note } from '../../../shared/type
 import { iconMarkup } from '../../components/Icon';
 import { loadImage } from '../imageStore';
 import { childrenOf } from '../store';
-import { hydratePages } from '../editor/blocks';
-import { INK, TEXT_LAYER, drawingBottom, strokeLayer, strokePath } from '../editor/drawing';
-import { contentCopy, dataUrl, detailRows, downloadFile, exportFileName, hasRemarks, pageAnchor, pageHref, type ExportSettings } from './exportPages';
+import { hydratePages } from '../editor/text/pageBlocks';
+import { drawingBottom, inDrawingOrder, strokeLayer, strokeMarkup, visibleLayers } from '../editor/drawing/drawing';
+import { contentCopy, detailRows, exportFileName, hasRemarks, pageAnchor, pageHref, type ExportSettings } from './exportNotes';
+import { escapeHtml } from '../../lib/html';
+import { dataUrl, downloadFile } from '../../lib/files';
 
 /* How the open note is laid out in the app, so loose drawings land on the same words: the width */
 /* of its text column, and how far below the drawing's starting corner its text begins. */
@@ -47,10 +49,6 @@ html, body { margin: 0; background: #ffffff; }
 /* =========================
    Building Pages
    ========================= */
-
-function escapeHtml(text: string) {
-  return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-}
 
 /* Turn an element into a link, keeping its children, classes and attributes. */
 function asLink(element: Element, href: string) {
@@ -97,15 +95,9 @@ async function pageContent(note: Note, settings: ExportSettings, included: Set<s
 /* The note's loose drawing for one side of the text, as SVG. Hidden layers are left out, and */
 /* within a layer highlighter strokes go under pen strokes. */
 function looseDrawing(strokes: DrawingStroke[], layers: DrawingLayerInfo[], below: boolean) {
-  const text = layers.findIndex(layer => layer.id === TEXT_LAYER);
-  const shown = (below ? layers.slice(0, text) : layers.slice(text + 1)).filter(layer => !layer.hidden);
-  const paths = shown.flatMap(layer => {
+  const paths = visibleLayers(layers, below).flatMap(layer => {
     const own = strokes.filter(stroke => strokeLayer(stroke, layers) === layer.id);
-    return [...own.filter(stroke => stroke.tool === 'highlighter'), ...own.filter(stroke => stroke.tool === 'pen')];
-  }).map(stroke => {
-    const color = stroke.color === INK ? 'currentColor' : stroke.color;
-    const opacity = stroke.tool === 'highlighter' ? ' opacity="0.4"' : '';
-    return `<path d="${strokePath(stroke.points)}" stroke="${color}" stroke-width="${stroke.size}"${opacity}/>`;
+    return inDrawingOrder(own, stroke => stroke).map(stroke => strokeMarkup(stroke));
   });
   if (!paths.length) return '';
   const height = drawingBottom(strokes) + 24;

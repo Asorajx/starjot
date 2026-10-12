@@ -1,6 +1,6 @@
 import { useSyncExternalStore } from 'react';
 import { cleanHtml, htmlToText } from './sanitize';
-import { normalizeDrawing, normalizeLayers } from './editor/drawing';
+import { normalizeDrawing, normalizeLayers } from './editor/drawing/drawing';
 import { DEFAULT_CATEGORIES, MAX_CATEGORIES } from '../../backend/data/defaultCategories';
 import { SAMPLE_CONTENT, SAMPLE_NOTES } from '../../backend/data/sampleNotes';
 import { readCategories, writeCategories } from '../../backend/storage/categoriesStorage';

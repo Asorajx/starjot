@@ -1,0 +1,752 @@
+/* =========================
+   Structured Block Interaction
+   ========================= */
+
+/* Blocks stay visually quiet; their controls only appear while the pointer is over them. */
+.structured-document .editable-block {
+  margin-left: -60px;
+  padding: 4px 0 4px 60px;
+  border-radius: 4px;
+}
+
+.structured-document .editable-block:hover {
+  background: transparent;
+}
+
+/* The document is focused (without an outline) while Ctrl + A has the whole note selected. */
+.structured-document:focus {
+  outline: none;
+}
+
+/* A locked page hides the block controls, since blocks cannot be added or moved. */
+.editor-wrap.is-locked .block-controls {
+  display: none;
+}
+
+.structured-document .editable-block.is-selected {
+  background: #f9fbff;
+  box-shadow: inset 2px 0 #abc9fc;
+}
+
+.block-controls {
+  position: absolute;
+  top: 4px;
+  left: 18px;
+  display: flex;
+  align-items: center;
+  height: 26px;
+  gap: 0;
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.editable-block:hover .block-controls {
+  visibility: visible;
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Touch screens have no hover, so they show the controls on the selected block instead. */
+@media (hover: none) {
+  .editable-block.is-selected .block-controls {
+    visibility: visible;
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
+.block-controls .block-control {
+  position: static;
+  display: grid;
+  place-items: center;
+  flex: 0 0 19px;
+  width: 19px;
+  height: 26px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: #8797ac;
+  font-size: 13px;
+  line-height: 1;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.block-controls .block-handle {
+  cursor: grab;
+}
+
+.block-controls .block-handle:active {
+  cursor: grabbing;
+}
+
+.block-controls .block-control:hover,
+.block-controls .block-control:focus-visible {
+  color: #3978e8;
+  background: #e9f2ff;
+}
+
+.structured-document .editable-block.is-picked {
+  background: #eef4ff;
+  box-shadow: inset 2px 0 #6f9ff0;
+}
+
+.editable-block.is-dragging {
+  opacity: .45;
+}
+
+.editable-block.drop-before::before,
+.editable-block.drop-after::after {
+  content: "";
+  position: absolute;
+  left: 60px;
+  right: 0;
+  height: 2px;
+  background: #347af4;
+  pointer-events: none;
+}
+
+.editable-block.drop-before::before {
+  top: -4px;
+}
+
+.editable-block.drop-after::after {
+  bottom: -5px;
+}
+
+/* Windows is the primary target; compact widths keep reordering controls accessible. */
+@media (max-width: 700px) {
+  .structured-document .editable-block {
+    margin-left: 0;
+    padding-left: 0;
+  }
+
+  .block-controls {
+    left: auto;
+    right: 0;
+    top: -25px;
+    z-index: 2;
+    background: #f8fbff;
+    border-radius: 4px;
+  }
+}
+
+
+/* =========================
+   Sticky Groups
+   ========================= */
+
+/* Negative margins plus matching padding create side areas without moving the text. */
+/* The left side area is where a double-click selects the whole group. */
+.sticky-group {
+  --sticky-gutter: 22px;
+  position: relative;
+  margin-right: calc(var(--sticky-gutter) * -1);
+  margin-left: calc(var(--sticky-gutter) * -1);
+  padding-right: var(--sticky-gutter);
+  padding-left: var(--sticky-gutter);
+}
+
+/* The indicator is a pair of brackets, [ on the left and ] on the right, drawn in the side areas. */
+/* z-index keeps them above a selected block's background; clicks pass through to the group. */
+.sticky-group::before,
+.sticky-group::after {
+  content: "";
+  position: absolute;
+  z-index: 1;
+  top: 2px;
+  bottom: 2px;
+  width: 7px;
+  border: 2px solid #a9c4f4;
+  pointer-events: none;
+  transition: border-color .15s ease;
+}
+
+.sticky-group::before {
+  left: 8px;
+  border-right: 0;
+  border-radius: 3px 0 0 3px;
+}
+
+.sticky-group::after {
+  right: 8px;
+  border-left: 0;
+  border-radius: 0 3px 3px 0;
+}
+
+.sticky-group:hover::before,
+.sticky-group:hover::after {
+  border-color: #4f8cf0;
+}
+
+.sticky-indicators-off .sticky-group::before,
+.sticky-indicators-off .sticky-group::after {
+  display: none;
+}
+
+/* Hidden brackets still appear while a group's text is selected or the group is being moved. */
+.sticky-indicators-off .sticky-group.is-revealed::before,
+.sticky-indicators-off .sticky-group.is-revealed::after {
+  display: block;
+}
+
+.sticky-group.is-revealed::before,
+.sticky-group.is-revealed::after {
+  border-color: #4f8cf0;
+}
+
+@media (max-width: 700px) {
+  .sticky-group {
+    --sticky-gutter: 14px;
+  }
+
+  .sticky-group::before {
+    left: 3px;
+  }
+
+  .sticky-group::after {
+    right: 3px;
+  }
+}
+
+
+/* =========================
+   Slash Menu
+   ========================= */
+
+/* The menu of blocks that opens after typing "/". */
+.slash-menu {
+  position: fixed;
+  z-index: 75;
+  display: flex;
+  flex-direction: column;
+  width: 280px;
+  max-height: 340px;
+  padding: 4px;
+  overflow-y: auto;
+  border: 1px solid #dfe7f3;
+  border-radius: 4px;
+  background: #ffffff;
+  box-shadow: 0 10px 30px rgba(28, 54, 96, .18);
+}
+
+.slash-menu-label {
+  margin: 4px 8px 4px;
+  color: #94a1b3;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.slash-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 36px;
+  padding: 4px 8px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: #2c3d58;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+
+.slash-menu-item.is-active {
+  background: var(--blue-soft);
+  color: var(--blue);
+}
+
+/* Each block type has a small square icon, like a preview of the block. */
+.slash-menu-icon {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid #e2e8f1;
+  border-radius: 4px;
+  background: #ffffff;
+  color: #65738a;
+  font-size: 14px;
+}
+
+.slash-menu-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The Markdown shortcut that does the same thing. */
+.slash-menu-item kbd {
+  color: #a4adbb;
+  font: 11px ui-monospace, SFMono-Regular, Consolas, monospace;
+}
+
+.slash-menu-empty {
+  margin: 8px;
+  color: #94a1b3;
+  font-size: 12px;
+}
+
+.slash-menu-search {
+  height: 32px;
+  margin: 4px 4px 8px;
+  padding: 0 8px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: #ffffff;
+  color: var(--ink);
+  font: inherit;
+  font-size: 12px;
+}
+
+.slash-menu-search:focus {
+  border-color: #a7c5f5;
+  outline: none;
+}
+
+
+/* =========================
+   Page Blocks and Links
+   ========================= */
+
+/* A sub-page shown inside the note as a card within the text, so words can come before and after */
+/* it. Clicking it opens the page. */
+.note-editable .page-block,
+.block-content .page-block {
+  position: relative;
+  display: inline-flex;
+  box-sizing: border-box;
+  align-items: flex-start;
+  gap: 12px;
+  margin: 2px 0;
+  padding: 8px 12px;
+  vertical-align: middle;
+  text-align: left;
+  line-height: normal;
+  border: 1px solid #e2e8f1;
+  border-radius: 4px;
+  background: #ffffff;
+  cursor: pointer;
+  user-select: none;
+}
+
+.page-block:hover {
+  border-color: #a7c5f5;
+}
+
+.page-block-icon {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  color: #65738a;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.page-block-text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.page-block-text strong {
+  overflow: hidden;
+  color: #2c3d58;
+  font-size: 13px;
+  line-height: 24px;
+  text-decoration: underline;
+  text-decoration-color: #d5dde9;
+  text-underline-offset: 3px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.page-block-text small {
+  display: -webkit-box;
+  overflow: hidden;
+  color: #7a889d;
+  font-size: 12px;
+  line-height: 1.6;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.page-block-meta {
+  overflow: hidden;
+  color: #a4adbb;
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The right edge of a page block can be dragged to change its width. A block too wide for the */
+/* space left on its line moves to the next line. */
+.note-editable .page-block,
+.block-content .page-block {
+  max-width: 100%;
+  min-width: 160px;
+}
+
+/* Until it is resized, a block is only as wide as its title needs, up to a compact card. */
+.note-editable .page-block:not([data-width]),
+.block-content .page-block:not([data-width]) {
+  max-width: min(100%, 360px);
+}
+
+.page-block-resize {
+  position: absolute;
+  top: 0;
+  right: -4px;
+  bottom: 0;
+  width: 8px;
+  cursor: ew-resize;
+  touch-action: none;
+}
+
+.page-block-resize::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 3px;
+  width: 2px;
+  height: 20px;
+  border-radius: 2px;
+  background: transparent;
+  transform: translateY(-50%);
+}
+
+.page-block:hover .page-block-resize::after,
+.page-block.is-resizing .page-block-resize::after {
+  background: #a7c5f5;
+}
+
+.page-block.is-resizing {
+  border-color: #a7c5f5;
+  cursor: ew-resize;
+}
+
+.editor-wrap.is-locked .page-block-resize {
+  display: none;
+}
+
+/* Small shows only the title; medium adds the description; large shows more of it and the details. */
+.page-block[data-size="small"] small,
+.page-block[data-size="small"] .page-block-meta,
+.page-block[data-size="medium"] .page-block-meta {
+  display: none;
+}
+
+.page-block[data-size="small"] {
+  align-items: center;
+  padding: 4px 12px;
+}
+
+.page-block[data-size="large"] {
+  padding: 16px;
+}
+
+.page-block[data-size="large"] small {
+  -webkit-line-clamp: 5;
+}
+
+.page-block.is-missing {
+  border-style: dashed;
+  cursor: default;
+}
+
+.page-block.is-missing strong {
+  color: #94a1b3;
+  text-decoration: none;
+}
+
+/* S / M / L appear while the pointer is over the block. */
+/* The size buttons float over the card's right edge while it is hovered. Shown inside the card */
+/* they would widen it, which can push it onto the next line, away from the pointer. */
+.page-block-sizes {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  display: none;
+  gap: 2px;
+  padding: 2px;
+  border-radius: 4px;
+  background: #ffffff;
+  transform: translateY(-50%);
+}
+
+.page-block:hover .page-block-sizes {
+  display: flex;
+}
+
+.editor-wrap.is-locked .page-block-sizes {
+  display: none;
+}
+
+.page-block-size {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: transparent;
+  color: #94a1b3;
+  font: inherit;
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.page-block-size:hover {
+  border-color: #e2e8f1;
+  color: #2c3d58;
+}
+
+.page-block-size.is-active {
+  background: var(--blue-soft);
+  color: var(--blue);
+}
+
+/* A page mention (from / → Link to page): the page's icon and title as text, which cannot be */
+/* edited. Clicking it opens the page; hovering shows its preview. */
+.note-editable .page-mention,
+.block-content .page-mention {
+  display: inline;
+  color: var(--blue);
+  font-weight: 600;
+  text-decoration: underline;
+  text-decoration-color: #b9cdf0;
+  text-underline-offset: 3px;
+  cursor: pointer;
+  user-select: all;
+}
+
+.page-mention-icon {
+  display: inline-block;
+  margin-right: 4px;
+  vertical-align: -2px;
+  text-decoration: none;
+}
+
+.page-mention.is-missing {
+  color: #94a1b3;
+  text-decoration-style: dashed;
+}
+
+/* The preview shown while hovering over a page block. */
+.page-preview {
+  position: fixed;
+  z-index: 72;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 300px;
+  padding: 12px;
+  border: 1px solid #dfe7f3;
+  border-radius: 4px;
+  background: #ffffff;
+  box-shadow: 0 10px 30px rgba(28, 54, 96, .18);
+}
+
+.page-preview-title {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  color: #2c3d58;
+  font-size: 14px;
+}
+
+/* The preview shows the whole title, since it is often used to read a title cut off elsewhere. */
+.page-preview-title strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/* A web address under its site's name, cut short with an ellipsis when long. */
+.page-preview-address {
+  overflow: hidden;
+  color: #65738a;
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.page-preview-favicon {
+  flex-shrink: 0;
+  border-radius: 2px;
+}
+
+.page-preview-meta {
+  color: #a4adbb;
+  font-size: 11px;
+}
+
+.page-preview-text {
+  display: -webkit-box;
+  overflow: hidden;
+  color: #65738a;
+  font-size: 12px;
+  line-height: 1.6;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+}
+
+
+/* The bar shown while hovering over a link: where it leads, and buttons to open, copy, edit or remove it. */
+/* The card shown while hovering over a link: a preview of where it leads (the same as the */
+/* sub-page preview), with Copy and Edit underneath. */
+.link-tools {
+  position: fixed;
+  z-index: 72;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 300px;
+  padding: 12px;
+  border: 1px solid #dfe7f3;
+  border-radius: 4px;
+  background: #ffffff;
+  box-shadow: 0 10px 30px rgba(28, 54, 96, .18);
+}
+
+
+.link-tools-buttons {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 2px;
+  margin: 0 -4px -4px;
+  padding-top: 4px;
+  border-top: 1px solid #edf1f7;
+}
+
+/* Removing sits apart from Cancel and Save, on the left. */
+.link-tools-remove {
+  margin-right: auto;
+}
+
+.link-tools-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.link-tools-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.link-tools-form label > span {
+  color: #71829b;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.link-tools-form .selection-input {
+  width: 100%;
+}
+
+.link-tools-chosen {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: #65738a;
+  font-size: 11px;
+}
+
+.link-tools-suggestions {
+  display: flex;
+  flex-direction: column;
+  margin: -4px 0 0;
+}
+
+.link-tools-error {
+  color: #c2410c;
+  font-size: 11px;
+}
+
+.link-tools-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+
+/* =========================
+   Toggle Lists
+   ========================= */
+
+/* The arrow is drawn in the title's left padding; clicking it opens or closes the toggle. */
+.note-editable .toggle-summary,
+.block-content .toggle-summary {
+  position: relative;
+  margin-bottom: 4px;
+  padding-left: 24px;
+}
+
+.note-editable p.toggle-summary,
+.block-content p.toggle-summary {
+  color: #2c3d58;
+  font-weight: 600;
+}
+
+/* The arrow lines up with the middle of the title's first line, for paragraphs and headings alike. */
+.toggle-summary::before {
+  content: "";
+  position: absolute;
+  top: calc(.5lh - 4px);
+  left: 6px;
+  width: 0;
+  height: 0;
+  border-top: 4px solid transparent;
+  border-bottom: 4px solid transparent;
+  border-left: 6px solid #94a1b3;
+  cursor: pointer;
+  transition: transform .15s ease;
+}
+
+.toggle-block.is-open > .toggle-summary::before {
+  transform: rotate(90deg);
+}
+
+/* A thin line runs down the left of the lines inside an open toggle and turns at the end, */
+/* showing where the toggle finishes and normal lines start again. */
+.toggle-body {
+  position: relative;
+  margin-left: 8px;
+  padding-left: 16px;
+  border-left: 1px solid #e2e8f1;
+}
+
+.toggle-body::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: -1px;
+  width: 8px;
+  border-bottom: 1px solid #e2e8f1;
+}
+
+.toggle-body:empty {
+  min-height: 12px;
+}
+
+.toggle-block:not(.is-open) > .toggle-body {
+  display: none;
+}

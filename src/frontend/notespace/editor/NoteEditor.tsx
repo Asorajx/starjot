@@ -3,32 +3,35 @@ import { changeZoom, usePreferences } from '../../app/preferences';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
 import { Icon } from '../../components/Icon';
 import {
-  childrenOf, deleteNote, flushSave, getNote, isLocked, isTemporarilyUnlocked, lockNow, markOpened, setPinned, unlockForAWhile, updateNote,
+  childrenOf, deleteNote, flushSave, getNote, isLocked, isTemporarilyUnlocked, markOpened, setPinned, updateNote,
   updatedLabel, useCategories, useNote
 } from '../store';
 import type { NoteMode } from '../../../shared/types/note';
 import type { SettingsSection } from '../../settings/Settings';
-import { CodeLanguagePickers } from './CodeLanguagePickers';
-import { CommentLayer } from './CommentLayer';
-import { ContinuousEditor } from './ContinuousEditor';
+import { CodeLanguagePickers } from './code/CodeLanguagePickers';
+import { CommentLayer } from './comments/CommentLayer';
+import { ContinuousEditor } from './text/ContinuousEditor';
 import { PageOptions, TableOfContents, type ViewControls } from './EditorPanels';
-import { SelectionToolbar } from './SelectionToolbar';
-import { SlashMenu } from './SlashMenu';
-import { TableTools } from './TableTools';
-import { BlockWidgets } from './BlockWidgets';
-import { DrawingLayer, DrawingTools } from './DrawingLayer';
-import { emptyParagraph } from './dom';
+import { SelectionToolbar } from './format/SelectionToolbar';
+import { SlashMenu } from './text/SlashMenu';
+import { TableTools } from './tables/TableTools';
+import { BlockWidgets } from './text/BlockWidgets';
+import { DrawingLayer } from './drawing/DrawingLayer';
+import { LockStatus } from './LockStatus';
+import { DrawingTools } from './drawing/DrawingTools';
+import { emptyParagraph } from './text/dom';
 import { ExportDialog } from '../export/ExportDialog';
-import { TEXT_LAYER } from './drawing';
-import { ImageTools } from './ImageTools';
-import { LinkTools } from './LinkTools';
-import { copyPageLink } from './links';
+import { TEXT_LAYER } from './drawing/drawing';
+import { ImageTools } from './images/ImageTools';
+import { LinkTools } from './links/LinkTools';
+import { copyPageLink } from './links/links';
 import { NoteBreadcrumb } from './NoteBreadcrumb';
 import { PageBar, SaveStatus, type PageHistory } from '../PageBar';
 import { NoteHeader } from './NoteHeader';
-import { pageGeometry, pageStep, usePages } from './pagination';
+import { pageGeometry, pageStep, usePages } from './layout/pagination';
 import { EditorSession, useSessionValue } from './session';
-import { StructuredEditor } from './StructuredEditor';
+import { StructuredEditor } from './text/StructuredEditor';
+import { zoomed } from '../../lib/geometry';
 
 type Panel = 'toc' | 'options' | null;
 
@@ -60,84 +63,6 @@ type NoteEditorProps = {
   onOpenSettings: (section: SettingsSection, focus: string) => void;
 };
 
-
-
-/* =========================
-   Lock Status
-   ========================= */
-
-type LockStatusProps = {
-  noteId: string;
-  temporary: boolean;
-  unlockedUntil: string | null;
-};
-
-/* A lock icon in the page bar of a locked note; its tooltip says whether the note is locked or how */
-/* long it stays unlocked. Clicking it unlocks the note for a few minutes (it locks itself again after */
-/* that long without an edit) or for good (lock it again in Page options), or locks it straight away. */
-function LockStatus({ noteId, temporary, unlockedUntil }: LockStatusProps) {
-  const [open, setOpen] = useState(false);
-  const minutes = unlockedUntil ? Math.max(1, Math.ceil((Date.parse(unlockedUntil) - Date.now()) / 60000)) : 0;
-  const label = temporary ? `Unlocked · locks again in ${minutes} min` : 'Locked';
-
-  /* Clicking anywhere else closes the menu. */
-  useEffect(() => {
-    if (!open) return;
-    function handleMouseDown(event: MouseEvent) {
-      if (!(event.target as Element).closest?.('.lock-status')) setOpen(false);
-    }
-
-    /* Escape closes only the menu. Listening early (capture) lets it run before the editor's own */
-    /* Escape, which would otherwise leave the note. */
-    function handleKeyDown(event: KeyboardEvent) {
-      if (event.key !== 'Escape') return;
-      event.preventDefault();
-      setOpen(false);
-    }
-    document.addEventListener('mousedown', handleMouseDown);
-    document.addEventListener('keydown', handleKeyDown, true);
-    return () => {
-      document.removeEventListener('mousedown', handleMouseDown);
-      document.removeEventListener('keydown', handleKeyDown, true);
-    };
-  }, [open]);
-
-  const choose = (action: () => void) => {
-    action();
-    setOpen(false);
-  };
-
-  return (
-    <span className="lock-status">
-      <button
-        type="button"
-        className={`page-bar-button page-locked ${temporary ? 'is-open' : ''}`}
-        data-tooltip={open ? undefined : label}
-        aria-label={label}
-        aria-expanded={open}
-        onClick={() => setOpen(value => !value)}
-      >
-        <Icon name={temporary ? 'unlock' : 'lock'} size={17} />
-      </button>
-      {open && (
-        <span className="page-menu lock-menu" role="menu">
-          {temporary ? (
-            <button type="button" role="menuitem" className="page-menu-item" onClick={() => choose(() => lockNow(noteId))}>
-              <Icon name="lock" size={14} /> Lock now
-            </button>
-          ) : (
-            <button type="button" role="menuitem" className="page-menu-item" onClick={() => choose(() => unlockForAWhile(noteId))}>
-              <Icon name="clock" size={14} /> Unlock for 5 minutes
-            </button>
-          )}
-          <button type="button" role="menuitem" className="page-menu-item" onClick={() => choose(() => updateNote(noteId, { locked: false }))}>
-            <Icon name="unlock" size={14} /> Unlock
-          </button>
-        </span>
-      )}
-    </span>
-  );
-}
 
 
 /* =========================
@@ -375,8 +300,7 @@ export function NoteEditor({ noteId, history, view, active, onClose, onOpenNote,
     const layer = drawingRef.current;
     const text = contentRef.current;
     if (!layer || !text) return { columnWidth: 760, textTop: 0 };
-    const rect = layer.getBoundingClientRect();
-    const scale = rect.width / (layer.offsetWidth || rect.width) || 1;
+    const { rect, scale } = zoomed(layer);
     return { columnWidth: layer.offsetWidth, textTop: (text.getBoundingClientRect().top - rect.top) / scale };
   }
 

@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import { isEmoji } from '../../shared/emoji';
 import { EMOJI_GROUPS } from './emojiGroups';
+import { useDismiss } from '../lib/useDismiss';
 
 type EmojiPickerProps = {
   current: string;
@@ -19,30 +20,12 @@ type EmojiPickerProps = {
 export function EmojiPicker({ current, onPick, onRemove, onClose }: EmojiPickerProps) {
   const [group, setGroup] = useState(0);
   const [typed, setTyped] = useState('');
-  const panelRef = useRef<HTMLDivElement>(null);
 
-  /* Close on Escape or a click outside. Escape is stopped here so the note editor does not also */
-  /* treat it as "go back to all notes". */
-  useEffect(() => {
-    function handleKeyDown(event: KeyboardEvent) {
-      if (event.key !== 'Escape') return;
-      event.preventDefault();
-      event.stopImmediatePropagation();
-      onClose();
-    }
-    function handleMouseDown(event: MouseEvent) {
-      if (!panelRef.current?.contains(event.target as Node)) onClose();
-    }
-    window.addEventListener('keydown', handleKeyDown, true);
-    document.addEventListener('mousedown', handleMouseDown);
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown, true);
-      document.removeEventListener('mousedown', handleMouseDown);
-    };
-  }, [onClose]);
+  /* Close on Escape or a click outside (Escape without also leaving the note). */
+  useDismiss(true, '.emoji-picker', onClose);
 
   return (
-    <div className="emoji-picker" ref={panelRef} role="dialog" aria-label="Choose an icon">
+    <div className="emoji-picker" role="dialog" aria-label="Choose an icon">
       <div className="emoji-tabs" role="tablist" aria-label="Emoji groups">
         {EMOJI_GROUPS.map((item, index) => (
           <button

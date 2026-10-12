@@ -2,23 +2,19 @@ import { useLayoutEffect, useRef, useState, type ClipboardEvent, type KeyboardEv
 import { EmojiPicker } from '../../components/EmojiPicker';
 import { Icon } from '../../components/Icon';
 import { scheduleSave, updateNote, useCategories, useNotes } from '../store';
-import { isEmptyContent, wrapLooseLines } from './dom';
-import { linkTypedAddress } from './links';
-import { applyMarkdownShortcut } from './markdown';
-import { deleteSelection, insertPasted, pastedMarkdown } from './paste';
-import { pastedSource } from './clipboard';
+import { isEmptyContent, wrapLooseLines } from './text/dom';
+import { linkTypedAddress } from './links/links';
+import { applyMarkdownShortcut } from './text/markdown';
+import { deleteSelection, insertPasted, pastedMarkdown } from './text/paste';
+import { pastedSource } from './text/clipboard';
 import type { Note } from '../../../shared/types/note';
+import { formatDate } from '../../lib/dates';
 
 type NoteHeaderProps = {
   note: Note;
   locked: boolean;
   onOpenNote: (id: string) => void;
 };
-
-function formatDate(iso: string | null) {
-  if (!iso) return 'Unknown';
-  return new Date(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
-}
 
 /* Every page inside a page, at any depth (only one level today, but older notes may have more). */
 function countPages(notes: Note[], parentId: string): number {

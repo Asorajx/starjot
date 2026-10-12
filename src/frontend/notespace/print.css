@@ -1,0 +1,93 @@
+/* =========================
+   Printing
+   ========================= */
+
+/* Print only the document, and keep each sticky group on one page when it fits. */
+@media print {
+  html,
+  body,
+  #app,
+  .app-shell,
+  .main-column,
+  .main-scroll,
+  .tab-layout,
+  .tab-group,
+  .tab-group-body,
+  .group-tab,
+  .editor-wrap,
+  .editor-layout {
+    display: block;
+    height: auto;
+    min-height: 0;
+    overflow: visible;
+  }
+
+  .sidebar,
+  .mobile-nav,
+  .topbar,
+  .page-bar,
+  .editor-meta,
+  .block-controls,
+  .code-lang-layer,
+  .comment-layer,
+  .selection-toolbar,
+  .slash-menu,
+  .page-preview,
+  .table-tools,
+  .page-block-sizes,
+  .document-end,
+  .link-tools,
+  .page-sheets,
+  .drawing-dock,
+  .drawing-surface,
+  .window-bar,
+  .stack-spine,
+  .tab-group:not(.is-focused),
+  .group-tab:not(.is-active) {
+    display: none !important;
+  }
+
+  .editor-wrap .editor-canvas {
+    padding: 0;
+    background: none;
+  }
+
+  /* The printer's own pages replace the sheets drawn on screen. */
+  .editor-width.is-paginated {
+    width: auto !important;
+    min-height: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* Without the page margin, the drawing starts at the text's corner, where it was drawn. */
+  .editor-width.is-paginated > .drawing-layer {
+    inset: 0 !important;
+  }
+
+  .sticky-group {
+    break-inside: avoid;
+  }
+
+  /* Tables are kept whole inside a sticky group; elsewhere a table may continue on the next */
+  /* page, but a row is never cut in half. */
+  .sticky-group table,
+  .sticky-group tr {
+    break-inside: avoid;
+  }
+
+  tr {
+    break-inside: avoid;
+  }
+
+  .sticky-group::before,
+  .sticky-group::after {
+    display: none;
+  }
+
+  .structured-document .editable-block,
+  .structured-document .editable-block.is-selected,
+  .structured-document .editable-block.is-picked {
+    background: none;
+    box-shadow: none;
+  }
+}

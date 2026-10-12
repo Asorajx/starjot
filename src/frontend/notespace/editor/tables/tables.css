@@ -1,0 +1,340 @@
+/* =========================
+   Tables
+   ========================= */
+
+.note-editable table,
+.block-content table {
+  width: 100%;
+  margin: 8px 0 16px;
+  border-collapse: collapse;
+  font-size: 12.6px;
+  table-layout: fixed;
+}
+
+.note-editable th,
+.note-editable td,
+.block-content th,
+.block-content td {
+  padding: 8px 12px;
+  border: 1px solid #e2e8f1;
+  color: #4b5b74;
+  line-height: 1.6;
+  text-align: left;
+  vertical-align: top;
+  overflow-wrap: anywhere;
+}
+
+.note-editable th,
+.block-content th {
+  background: #f6f8fc;
+  color: #2c3d58;
+  font-weight: 650;
+}
+
+/* Fit to width off: columns are only as wide as their text needs, but wide enough to click into when empty. */
+/* Once a border has been dragged, the stored widths are used exactly, so this minimum no longer applies. */
+.note-editable table.fit-content,
+.block-content table.fit-content {
+  width: auto;
+  table-layout: auto;
+}
+
+.note-editable table.fit-content:not(:has(> colgroup)) th,
+.note-editable table.fit-content:not(:has(> colgroup)) td,
+.block-content table.fit-content:not(:has(> colgroup)) th,
+.block-content table.fit-content:not(:has(> colgroup)) td {
+  min-width: 96px;
+}
+
+/* The grip beside a table in continuous mode, and the grips on the edge of a row or column. */
+.table-grip,
+.table-line-grip {
+  position: fixed;
+  z-index: 55;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 1px solid #dfe7f3;
+  border-radius: 4px;
+  background: #ffffff;
+  color: #94a1b3;
+  cursor: pointer;
+}
+
+.table-grip {
+  width: 22px;
+  height: 26px;
+  border-color: transparent;
+  background: transparent;
+}
+
+.table-grip:hover {
+  background: var(--blue-soft);
+  color: var(--blue);
+}
+
+/* Row grips sit across the table's left edge and column grips across its top edge. */
+.table-line-grip {
+  width: 14px;
+  height: 22px;
+  cursor: grab;
+  touch-action: none;
+}
+
+.table-line-grip.is-column {
+  width: 22px;
+  height: 14px;
+}
+
+.table-line-grip.is-column .icon {
+  transform: rotate(90deg);
+}
+
+.table-line-grip:hover,
+.table-line-grip:active {
+  border-color: #a7c5f5;
+  color: var(--blue);
+}
+
+.table-line-grip:active {
+  cursor: grabbing;
+}
+
+/* The selected (or dragged) table, row or column. */
+.table-pick {
+  position: fixed;
+  z-index: 50;
+  border: 2px solid var(--blue);
+  border-radius: 4px;
+  background: rgba(37, 99, 235, .06);
+  pointer-events: none;
+}
+
+/* Where a dragged row or column will be placed. */
+.table-drop {
+  position: fixed;
+  z-index: 56;
+  background: var(--blue);
+  pointer-events: none;
+}
+
+.table-drop.is-row {
+  height: 3px;
+}
+
+.table-drop.is-column {
+  width: 3px;
+}
+
+/* A border that can be dragged to resize a column or row: a blue line appears while hovering or dragging. */
+.table-resize {
+  position: fixed;
+  z-index: 54;
+  touch-action: none;
+}
+
+.table-resize.is-column {
+  cursor: col-resize;
+}
+
+.table-resize.is-row {
+  cursor: row-resize;
+}
+
+.table-resize::after {
+  content: "";
+  position: absolute;
+  background: #a7c5f5;
+}
+
+.table-resize.is-active::after {
+  background: var(--blue);
+}
+
+.table-resize.is-column::after {
+  top: 0;
+  bottom: 0;
+  left: calc(50% - 1px);
+  width: 2px;
+}
+
+.table-resize.is-row::after {
+  left: 0;
+  right: 0;
+  top: calc(50% - 1px);
+  height: 2px;
+}
+
+/* A table with stored column widths keeps them exactly, even with Fit to width off. */
+.note-editable table:has(> colgroup),
+.block-content table:has(> colgroup) {
+  table-layout: fixed;
+}
+
+/* Cells selected for merging, and the Merge cells / Unmerge button. */
+.table-range {
+  position: fixed;
+  z-index: 50;
+  border: 2px dashed var(--blue);
+  border-radius: 4px;
+  pointer-events: none;
+}
+
+.table-cell-action {
+  position: fixed;
+  z-index: 57;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 26px;
+  padding: 0 8px;
+  border: 1px solid #dfe7f3;
+  border-radius: 4px;
+  background: #ffffff;
+  box-shadow: 0 6px 18px rgba(28, 54, 96, .12);
+  color: #2c3d58;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 650;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.table-cell-action:hover {
+  border-color: #a7c5f5;
+  color: var(--blue);
+}
+
+.table-menu,
+.page-menu {
+  position: fixed;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  min-width: 180px;
+  padding: 4px;
+  border: 1px solid #dfe7f3;
+  border-radius: 4px;
+  background: #ffffff;
+  box-shadow: 0 10px 30px rgba(28, 54, 96, .18);
+}
+
+.table-menu-item,
+.page-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 32px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: #2c3d58;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+
+.table-menu-item:hover:not(:disabled),
+.page-menu-item:hover:not(:disabled) {
+  background: var(--blue-soft);
+  color: var(--blue);
+}
+
+.table-menu-item:disabled,
+.page-menu-item:disabled {
+  color: #b7c0cd;
+  cursor: default;
+}
+
+.table-menu-item.is-danger,
+.page-menu-item.is-danger {
+  color: #c2410c;
+}
+
+/* The page block menu (right-click) uses the same look as the table menu, with icons beside each action. */
+/* The lock button in the page bar opens a small menu for unlocking or locking again. */
+.lock-status {
+  position: relative;
+  display: inline-flex;
+}
+
+.lock-status .page-locked {
+  color: #b0861a;
+}
+
+.lock-status .page-locked.is-open {
+  color: #b45309;
+}
+
+/* The menu opens under the button, lined up with its right edge, rather than at the pointer. */
+.lock-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  min-width: 200px;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.page-menu-item .icon {
+  flex-shrink: 0;
+}
+
+/* On/off options: the label on the left and a switch on the right, like the switches in Settings. */
+.table-menu-item.is-switch {
+  justify-content: space-between;
+  gap: 16px;
+  padding-left: 12px;
+}
+
+.table-menu-item.is-last-switch {
+  margin-bottom: 4px;
+  border-bottom: 1px solid #edf1f7;
+  border-radius: 4px 4px 0 0;
+}
+
+.table-switch {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  width: 30px;
+  height: 18px;
+  padding: 2px;
+  border-radius: 18px;
+  background: #e1e8f0;
+  transition: background .15s ease;
+}
+
+.table-switch > span {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgba(28, 54, 96, .3);
+  transition: transform .15s ease;
+}
+
+.table-switch.is-on {
+  background: var(--blue);
+}
+
+.table-switch.is-on > span {
+  transform: translateX(12px);
+}
+
+.table-menu-icon {
+  display: grid;
+  place-items: center;
+  width: 16px;
+}
+
+.table-menu-comment {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 260px;
+  padding: 4px;
+}

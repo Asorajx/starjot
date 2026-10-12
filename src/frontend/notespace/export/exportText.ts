@@ -1,6 +1,7 @@
 import type { Note } from '../../../shared/types/note';
 import { childrenOf } from '../store';
-import { contentCopy, detailRows, downloadFile, exportFileName, hasRemarks, type ExportSettings } from './exportPages';
+import { contentCopy, detailRows, exportFileName, hasRemarks, type ExportSettings } from './exportNotes';
+import { downloadFile } from '../../lib/files';
 
 const BLOCKS = new Set(['P', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'UL', 'OL', 'BLOCKQUOTE', 'PRE', 'HR', 'TABLE', 'DIV']);
 

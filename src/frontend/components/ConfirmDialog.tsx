@@ -1,4 +1,5 @@
 import { useEffect, useRef, type ReactNode } from 'react';
+import { useEscape } from '../lib/useDismiss';
 
 type ConfirmDialogProps = {
   title: string;
@@ -19,19 +20,10 @@ type ConfirmDialogProps = {
 export function ConfirmDialog({ title, children, confirmLabel, danger = false, onConfirm, onCancel }: ConfirmDialogProps) {
   const cancelRef = useRef<HTMLButtonElement>(null);
 
-  useEffect(() => {
-    cancelRef.current?.focus();
+  useEffect(() => cancelRef.current?.focus(), []);
 
-    /* Escape cancels; stopping it here keeps the note editor from also handling it. */
-    function handleKeyDown(event: KeyboardEvent) {
-      if (event.key !== 'Escape') return;
-      event.preventDefault();
-      event.stopImmediatePropagation();
-      onCancel();
-    }
-    window.addEventListener('keydown', handleKeyDown, true);
-    return () => window.removeEventListener('keydown', handleKeyDown, true);
-  }, [onCancel]);
+  /* Escape cancels, without the note editor also handling it. */
+  useEscape(true, onCancel);
 
   return (
     <div className="dialog-backdrop" onMouseDown={event => { if (event.target === event.currentTarget) onCancel(); }}>

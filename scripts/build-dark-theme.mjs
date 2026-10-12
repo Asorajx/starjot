@@ -8,14 +8,12 @@
 /* Hand-made adjustments belong in src/frontend/app/dark-overrides.css, which loads after this file. */
 import { readFileSync, writeFileSync } from 'node:fs';
 
-const SOURCES = [
-  'src/frontend/app/styles.css',
-  'src/frontend/notespace/notespace.css',
-  'src/frontend/workboard/workboard.css',
-  'src/frontend/settings/settings.css',
-  'src/frontend/app/responsive.css',
-  'src/frontend/workboard/timeline.css'
-];
+/* The light stylesheets, in the order src/frontend/main.tsx loads them (so later rules still win), */
+/* leaving out the dark theme itself. Adding a stylesheet to main.tsx is enough to include it. */
+const ENTRY = 'src/frontend/main.tsx';
+const SOURCES = [...readFileSync(ENTRY, 'utf8').matchAll(/^import '\.\/(.+\.css)';$/gm)]
+  .map(match => `src/frontend/${match[1]}`)
+  .filter(path => !/dark-(theme|overrides)\.css$/.test(path));
 const OUTPUT = 'src/frontend/app/dark-theme.css';
 const PREFIX = '[data-theme="dark"]';
 

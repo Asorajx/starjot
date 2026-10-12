@@ -1,0 +1,231 @@
+/* =========================
+   Selection Toolbar
+   ========================= */
+
+/* Fixed positioning places the bar over the selected text; translateX centres it. */
+.selection-toolbar {
+  position: fixed;
+  z-index: 70;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 2px;
+  padding: 4px;
+  border: 1px solid #dfe7f3;
+  border-radius: 4px;
+  background: #fff;
+  box-shadow: 0 10px 30px rgba(28, 54, 96, .18);
+  transform: translateX(-50%);
+}
+
+/* Text colours and background colours (highlights) chosen from the selection toolbar. */
+.text-gray {
+  color: #787774;
+}
+
+.text-brown {
+  color: #9f6b53;
+}
+
+.text-orange {
+  color: #d9730d;
+}
+
+.text-yellow {
+  color: #cb912f;
+}
+
+.text-green {
+  color: #448361;
+}
+
+.text-blue {
+  color: #337ea9;
+}
+
+.text-purple {
+  color: #9065b0;
+}
+
+.text-pink {
+  color: #c14c8a;
+}
+
+.text-red {
+  color: #d44c47;
+}
+
+.bg-gray {
+  background: #f1f1ef;
+}
+
+.bg-brown {
+  background: #f4eeee;
+}
+
+.bg-orange {
+  background: #fbecdd;
+}
+
+.bg-yellow {
+  background: #fbf3db;
+}
+
+.bg-green {
+  background: #edf3ec;
+}
+
+.bg-blue {
+  background: #e7f3f8;
+}
+
+.bg-purple {
+  background: #f6f3f9;
+}
+
+.bg-pink {
+  background: #faf1f5;
+}
+
+.bg-red {
+  background: #fdebec;
+}
+
+/* The colours to pick from, opened with the A button. */
+.selection-color {
+  font-weight: 800;
+  font-size: 14px;
+  text-decoration: underline;
+  text-decoration-color: #d9730d;
+  text-underline-offset: 3px;
+}
+
+.color-palette {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 4px 4px 6px;
+}
+
+.color-palette-heading {
+  color: #71829b;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.color-palette-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 30px);
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.color-swatch {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid #e0e8f4;
+  border-radius: 4px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+/* A text colour swatch shows its colour in the letter; a background swatch, behind it. */
+.color-swatch.is-text,
+.color-swatch.is-default {
+  background: #fff;
+}
+
+.color-swatch.is-bg,
+.color-swatch.is-default {
+  color: #1c2c47;
+}
+
+.color-swatch:hover {
+  border-color: #3878e4;
+}
+
+.color-swatch.is-chosen {
+  outline: 2px solid #3878e4;
+  outline-offset: 1px;
+}
+
+.selection-toolbar-row {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+/* What kind of text is selected, on top of the buttons. */
+.selection-kind {
+  padding: 0 4px 4px;
+  border-bottom: 1px solid #edf1f7;
+  color: #71829b;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: .2px;
+  white-space: nowrap;
+}
+
+.selection-tool {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-width: 30px;
+  height: 30px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: #4f6280;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.selection-tool:hover,
+.selection-tool:focus-visible {
+  background: #edf4ff;
+  color: #3370d9;
+}
+
+.selection-divider {
+  width: 1px;
+  height: 18px;
+  margin: 0 4px;
+  background: #e3e9f2;
+}
+
+.selection-input {
+  width: 260px;
+  padding: 8px 8px;
+  border: 1px solid #d6e2f5;
+  border-radius: 4px;
+  background: #fff;
+  color: #2b3d59;
+  font: inherit;
+  font-size: 12px;
+  outline: none;
+  resize: none;
+}
+
+.selection-input:focus {
+  border-color: #8fb3f2;
+}
+
+.selection-comment {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.selection-comment-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}

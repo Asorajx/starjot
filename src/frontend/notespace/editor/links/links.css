@@ -1,0 +1,110 @@
+/* =========================
+   Links and Comments in Notes
+   ========================= */
+
+.note-editable a,
+.block-content a,
+.note-remarks a,
+.comment-popover a {
+  color: var(--blue);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* Commented words get a soft highlight; the open comment's words are highlighted more strongly. */
+.comment-mark {
+  border-bottom: 2px solid #f0c341;
+  background: #fff6d6;
+  cursor: pointer;
+}
+
+.comment-mark.is-active {
+  background: #ffe9a3;
+}
+
+/* Markers sit in the right-hand page padding, beside the commented line. */
+.comment-layer {
+  position: absolute;
+  top: 0;
+  right: -40px;
+  width: 0;
+}
+
+.comment-marker-wrap {
+  position: absolute;
+  right: 0;
+}
+
+.comment-marker {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 22px;
+  padding: 0;
+  border: 1px solid #f1d98a;
+  border-radius: 4px;
+  background: #fff8df;
+  color: #b0861a;
+  cursor: pointer;
+}
+
+.comment-marker:hover,
+.comment-marker.is-open {
+  border-color: #e5b52c;
+  background: #ffefb5;
+}
+
+.comment-popover {
+  position: absolute;
+  top: 28px;
+  right: 0;
+  z-index: 30;
+  width: 240px;
+  padding: 12px 16px;
+  border: 1px solid #e0e8f4;
+  border-radius: 4px;
+  background: #fff;
+  box-shadow: 0 14px 40px rgba(28, 54, 96, .16);
+}
+
+.comment-popover p {
+  margin: 0 0 12px;
+  color: #3a4b64;
+  font-size: 12px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.comment-popover-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  color: #97a4b6;
+  font-size: 10px;
+}
+
+.comment-delete {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: #d23f3f;
+  font: inherit;
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.comment-delete:hover {
+  background: #fff1f1;
+}
+
+@media (max-width: 700px) {
+  .comment-layer {
+    right: -14px;
+  }
+}

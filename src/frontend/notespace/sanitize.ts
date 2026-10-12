@@ -1,5 +1,5 @@
-import { isColorClass } from './editor/colors';
-import { safeImageAttributes } from './editor/images';
+import { isColorClass } from './editor/format/colors';
+import { safeImageAttributes } from './editor/images/images';
 
 
 /* =========================

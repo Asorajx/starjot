@@ -1,0 +1,111 @@
+/* =========================
+   Emoji Picker
+   ========================= */
+
+/* Opens just below the "Add icon" button, over the note rather than pushing it down. */
+.emoji-picker {
+  position: absolute;
+  top: 34px;
+  left: 0;
+  z-index: 40;
+  width: 316px;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--paper);
+  box-shadow: 0 14px 40px rgba(28, 54, 96, .16);
+}
+
+.emoji-tabs {
+  display: flex;
+  gap: 2px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--line);
+}
+
+.emoji-tab {
+  flex: 1;
+  height: 30px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  font-size: 16px;
+  cursor: pointer;
+  filter: grayscale(.6);
+  opacity: .7;
+}
+
+.emoji-tab:hover,
+.emoji-tab.is-active {
+  background: var(--blue-soft);
+  filter: none;
+  opacity: 1;
+}
+
+.emoji-group-name {
+  margin: 8px 4px 4px;
+  color: #94a1b3;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+/* Eight emoji per row. */
+.emoji-grid {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 2px;
+}
+
+.emoji-option {
+  height: 34px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+.emoji-option:hover,
+.emoji-option.is-current {
+  background: var(--blue-soft);
+}
+
+.emoji-footer {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+}
+
+.emoji-input {
+  flex: 1;
+  min-width: 0;
+  height: 30px;
+  padding: 0 8px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 12px;
+}
+
+.emoji-remove {
+  height: 30px;
+  padding: 0 12px;
+  border: 1px solid #f6cfcf;
+  border-radius: 4px;
+  background: transparent;
+  color: #d23f3f;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+@media (max-width: 700px) {
+  .note-details {
+    grid-template-columns: 90px minmax(0, 1fr);
+  }
+}

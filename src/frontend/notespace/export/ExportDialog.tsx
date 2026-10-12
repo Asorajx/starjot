@@ -4,9 +4,11 @@ import { Icon } from '../../components/Icon';
 import { childrenOf } from '../store';
 import { exportHtml, exportPdf, type ExportLayout } from './exportHtml';
 import { exportMarkdown } from './exportMarkdown';
-import { exportedNotes } from './exportPages';
+import { exportedNotes } from './exportNotes';
 import { DETAIL_PARTS, EXPORT_FORMATS, PAGE_FORMATS, SCALE_MAX, SCALE_MIN, type ExportSettings } from './exportSettings';
 import { exportText } from './exportText';
+import { Switch } from '../../components/Switch';
+import { useEscape } from '../../lib/useDismiss';
 
 type ExportDialogProps = {
   noteId: string;
@@ -47,22 +49,6 @@ function Choice<T extends string>({ label, value, options, disabled = false, onC
       </select>
       <Icon name="chevron-down" size={14} />
     </span>
-  );
-}
-
-function Switch({ label, on, disabled = false, onChange }: { label: string; on: boolean; disabled?: boolean; onChange: (on: boolean) => void }) {
-  return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={on}
-      aria-label={label}
-      disabled={disabled}
-      className={`preview-switch setting-switch ${on ? 'preview-switch--on' : ''}`}
-      onClick={() => onChange(!on)}
-    >
-      <span />
-    </button>
   );
 }
 
@@ -120,22 +106,9 @@ export function ExportDialog({ noteId, measure, onClose }: ExportDialogProps) {
   const change = (changes: Partial<ExportSettings>) => updatePreferences({ exportSettings: { ...settings, ...changes } });
 
   /* The Export button is focused once, when the window opens (not after every change, which would */
-  /* pull the focus out of the scale box while typing). */
-  const close = useRef(onClose);
-  close.current = onClose;
+  /* pull the focus out of the scale box while typing). Escape closes the window. */
   useEffect(() => exportRef.current?.focus(), []);
-
-  /* Escape closes the window; stopping it here keeps the note editor from also handling it. */
-  useEffect(() => {
-    function handleKeyDown(event: KeyboardEvent) {
-      if (event.key !== 'Escape') return;
-      event.preventDefault();
-      event.stopImmediatePropagation();
-      close.current();
-    }
-    window.addEventListener('keydown', handleKeyDown, true);
-    return () => window.removeEventListener('keydown', handleKeyDown, true);
-  }, []);
+  useEscape(true, onClose);
 
   async function run() {
     const chosen: ExportSettings = { ...settings, content: text ? 'text' : settings.content, subpages: settings.subpages && hasSubpages };

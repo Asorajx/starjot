@@ -1,9 +1,10 @@
 import type { Note } from '../../../shared/types/note';
 import { loadImage } from '../imageStore';
 import { childrenOf, getNote } from '../store';
-import { drawingFile } from '../editor/images';
-import { pageAddress } from '../editor/links';
-import { contentCopy, dataUrl, detailRows, downloadFile, exportFileName, hasRemarks, type ExportSettings } from './exportPages';
+import { drawingFile } from '../editor/images/images';
+import { pageAddress } from '../editor/links/links';
+import { contentCopy, detailRows, exportFileName, hasRemarks, type ExportSettings } from './exportNotes';
+import { dataUrl, downloadFile } from '../../lib/files';
 
 /* What converting a page needs: the pages in the file (and the headings their links jump to), */
 /* and the pictures, already loaded as data addresses (none for a text-only export). */

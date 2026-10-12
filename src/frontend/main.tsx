@@ -2,12 +2,23 @@ import { createRoot } from 'react-dom/client';
 import { App } from './app/App';
 import { applyTheme } from './app/preferences';
 import { removeUnusedImages } from './notespace/imageStore';
-import { imageIdsIn } from './notespace/editor/images';
+import { imageIdsIn } from './notespace/editor/images/images';
 import { getNotes, isStorageAvailable } from './notespace/store';
 
 /* Styles load in their original cascade order to preserve the design. */
 import './app/styles.css';
-import './notespace/notespace.css';
+import './notespace/home.css';
+import './notespace/editor/editor.css';
+import './notespace/editor/text/text.css';
+import './notespace/editor/code/code.css';
+import './notespace/editor/links/links.css';
+import './notespace/editor/format/format.css';
+import './components/emoji-picker.css';
+import './notespace/editor/images/images.css';
+import './notespace/editor/tables/tables.css';
+import './notespace/editor/drawing/drawing.css';
+import './notespace/export/export.css';
+import './notespace/print.css';
 import './workboard/workboard.css';
 import './settings/settings.css';
 import './app/responsive.css';

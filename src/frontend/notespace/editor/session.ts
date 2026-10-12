@@ -1,12 +1,12 @@
 import { useSyncExternalStore } from 'react';
 import { getNote, scheduleSave, subscribe, updateNote } from '../store';
 import { cleanHtml } from '../sanitize';
-import { markRange, newCommentId, unmark } from './comments';
+import { markRange, newCommentId, unmark } from './comments/comments';
 import { History, TypingSteps, type HistoryEntry } from './history';
-import { charBesideCaret } from './dom';
-import { getOffset } from './caret';
-import { typeAfterLink } from './links';
-import type { StickyState } from './blockModel';
+import { charBesideCaret } from './text/dom';
+import { getOffset } from './text/caret';
+import { typeAfterLink } from './links/links';
+import type { StickyState } from './text/blockModel';
 import type { DrawingLayerInfo, DrawingStroke } from '../../../shared/types/note';
 
 /* Each editor (continuous or structured) registers these actions with the session. */

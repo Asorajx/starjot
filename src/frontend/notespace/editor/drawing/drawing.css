@@ -1,0 +1,557 @@
+/* =========================
+   Drawing
+   ========================= */
+
+/* The column is the drawing's starting point, so strokes are placed from its top-left corner. */
+.editor-wrap .editor-width {
+  position: relative;
+}
+
+/* The drawing sits over the note's text and never takes the mouse. Strokes may reach past the */
+/* column's sides into the page around it. Ink strokes use this colour (light text in dark mode). */
+.drawing-layer {
+  position: absolute;
+  z-index: 2;
+  color: #1c2c47;
+  pointer-events: none;
+}
+
+/* Layers under the text sit beneath the note's text (which is lifted to z-index 1), and above a */
+/* paginated note's sheets. */
+.drawing-layer.is-below {
+  z-index: 0;
+}
+
+.editor-wrap .editor-width > :not(.page-sheets, .drawing-layer, style) {
+  position: relative;
+  z-index: 1;
+}
+
+.drawing-layer svg {
+  display: block;
+  overflow: visible;
+}
+
+.drawing-stroke {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* A highlighter is see-through, so the words under it stay readable. */
+.drawing-stroke.is-highlighter {
+  opacity: .4;
+}
+
+/* Strokes inside the Select tool's box glow, so it is clear which ones it takes. */
+.drawing-stroke[data-selected] {
+  filter: drop-shadow(0 0 3px #3878e4);
+}
+
+/* Strokes the eraser has touched fade until it is lifted, when they are removed. */
+.drawing-stroke[data-erasing] {
+  opacity: .15;
+}
+
+/* In drawing mode this surface covers the page under the page bar and takes the mouse, pen or */
+/* finger, so the text cannot be selected or edited. It stays below the page bar (z-index 22), so */
+/* the page bar's panels and menus can still be used. */
+.editor-wrap .editor-layout {
+  position: relative;
+}
+
+.drawing-surface {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  cursor: crosshair;
+  touch-action: none;
+}
+
+/* An image or drawing selected before drawing mode keeps its bar and outline out of the way. */
+.editor-wrap.is-drawing .image-tools,
+.editor-wrap.is-drawing .image-resize {
+  display: none !important;
+}
+
+.editor-wrap.is-drawing .image-block.is-selected {
+  outline: none;
+}
+
+.drawing-surface.is-eraser {
+  cursor: none;
+}
+
+/* The Select tool's box: a dashed outline with eight handles, and its buttons below it. */
+.drawing-selection-box {
+  position: absolute;
+  border: 1.5px dashed #3878e4;
+  cursor: move;
+}
+
+.drawing-selection-handle {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border: 1.5px solid #3878e4;
+  border-radius: 50%;
+  background: #ffffff;
+  transform: translate(-50%, -50%);
+}
+
+.drawing-selection-handle.is-nw {
+  left: 0;
+  top: 0;
+  cursor: nwse-resize;
+}
+
+.drawing-selection-handle.is-n {
+  left: 50%;
+  top: 0;
+  cursor: ns-resize;
+}
+
+.drawing-selection-handle.is-ne {
+  left: 100%;
+  top: 0;
+  cursor: nesw-resize;
+}
+
+.drawing-selection-handle.is-e {
+  left: 100%;
+  top: 50%;
+  cursor: ew-resize;
+}
+
+.drawing-selection-handle.is-se {
+  left: 100%;
+  top: 100%;
+  cursor: nwse-resize;
+}
+
+.drawing-selection-handle.is-s {
+  left: 50%;
+  top: 100%;
+  cursor: ns-resize;
+}
+
+.drawing-selection-handle.is-sw {
+  left: 0;
+  top: 100%;
+  cursor: nesw-resize;
+}
+
+.drawing-selection-handle.is-w {
+  left: 0;
+  top: 50%;
+  cursor: ew-resize;
+}
+
+.drawing-selection-bar {
+  position: absolute;
+  top: calc(100% + 12px);
+  left: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid #e0e8f4;
+  border-radius: 4px;
+  background: #fff;
+  box-shadow: 0 8px 24px rgba(28, 54, 96, .12);
+  white-space: nowrap;
+  cursor: default;
+}
+
+/* Picked strokes keep their exact box: it has no handles, and is moved with the arrow keys. */
+.drawing-selection-box.is-picked {
+  cursor: default;
+}
+
+/* Wrapped or in front of the text, before the Anchor button. */
+.drawing-wrap-choice {
+  display: inline-flex;
+  gap: 2px;
+  margin-right: 4px;
+  padding-right: 4px;
+  border-right: 1px solid #e0e8f4;
+}
+
+.drawing-selection-bar.is-end {
+  left: auto;
+  right: 0;
+}
+
+.drawing-selection-bar .btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.drawing-eraser {
+  position: absolute;
+  border: 1.5px solid #71829b;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, .5);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+/* The toolbar stays at the right side of the pane, just under the page bar, while the page */
+/* scrolls (also sideways, for paginated notes wider than the pane). */
+.drawing-dock {
+  position: sticky;
+  top: 60px;
+  left: 0;
+  z-index: 21;
+  width: var(--pane-width, 100%);
+  height: 0;
+}
+
+.drawing-toolbar {
+  position: absolute;
+  top: 0;
+  right: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid #e0e8f4;
+  border-radius: 4px;
+  background: #fff;
+  box-shadow: 0 8px 24px rgba(28, 54, 96, .12);
+}
+
+.drawing-tool {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: #71829b;
+}
+
+.drawing-tool:hover:not(:disabled),
+.drawing-tool.selected {
+  color: #3878e4;
+  background: #edf4ff;
+}
+
+.drawing-tool:disabled {
+  opacity: .4;
+  cursor: default;
+}
+
+.drawing-tool:focus-visible {
+  outline: 2px solid #5591ed;
+  outline-offset: 2px;
+}
+
+.drawing-toolbar-rule {
+  width: 20px;
+  height: 1px;
+  margin: 4px 0;
+  background: #e0e8f4;
+}
+
+/* Ink is shown half light, half dark: it follows the theme. */
+.drawing-color-dot {
+  width: 18px;
+  height: 18px;
+  border: 1px solid #d5deea;
+  border-radius: 50%;
+}
+
+.drawing-color-dot.is-ink,
+.drawing-swatch.is-ink {
+  background: linear-gradient(135deg, #1c2c47 50%, #ffffff 50%);
+}
+
+/* Menus open to the left of the toolbar. */
+.drawing-menu-anchor {
+  position: relative;
+}
+
+.drawing-menu {
+  position: absolute;
+  top: 0;
+  right: calc(100% + 12px);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 200px;
+  padding: 12px;
+  border: 1px solid #e0e8f4;
+  border-radius: 4px;
+  background: #fff;
+  box-shadow: 0 18px 55px rgba(28, 54, 96, .16);
+}
+
+.drawing-menu-heading {
+  display: flex;
+  justify-content: space-between;
+  color: #344962;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.drawing-menu-heading strong {
+  color: #71829b;
+  font-weight: 600;
+}
+
+/* Sliders in Starjot's own style: a thin rounded track and a round white handle. */
+.drawing-slider {
+  width: 100%;
+  height: 8px;
+  margin: 4px 0;
+  border-radius: 4px;
+  background: #e0e8f4;
+  appearance: none;
+  cursor: pointer;
+}
+
+.drawing-slider::-webkit-slider-thumb {
+  width: 16px;
+  height: 16px;
+  border: 2px solid #3878e4;
+  border-radius: 50%;
+  background: #ffffff;
+  appearance: none;
+}
+
+.drawing-slider::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border: 2px solid #3878e4;
+  border-radius: 50%;
+  background: #ffffff;
+}
+
+.drawing-slider:focus-visible {
+  outline: 2px solid #5591ed;
+  outline-offset: 2px;
+}
+
+.drawing-size-presets {
+  display: flex;
+  justify-content: space-between;
+}
+
+.drawing-size-preset {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 1px solid #e0e8f4;
+  border-radius: 4px;
+  background: #fff;
+}
+
+.drawing-size-preset span {
+  border-radius: 50%;
+  background: #344962;
+}
+
+.drawing-size-preset:hover,
+.drawing-size-preset.selected {
+  border-color: #3878e4;
+  background: #edf4ff;
+}
+
+.drawing-swatches {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.drawing-swatch {
+  width: 100%;
+  aspect-ratio: 1;
+  padding: 0;
+  border: 1px solid #d5deea;
+  border-radius: 4px;
+}
+
+.drawing-swatch:hover {
+  border-color: #71829b;
+}
+
+.drawing-swatch.selected {
+  outline: 2px solid #3878e4;
+  outline-offset: 2px;
+}
+
+.drawing-wheel-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.drawing-wheel {
+  position: relative;
+  border-radius: 50%;
+  cursor: crosshair;
+  touch-action: none;
+}
+
+/* Darkens the wheel to the chosen brightness. */
+.drawing-wheel-shade {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.drawing-wheel-thumb {
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  border: 2px solid;
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, .4);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+/* The layers menu: one row per layer, top first, with the note's text as a fixed row. */
+.drawing-layers {
+  width: 248px;
+}
+
+.drawing-layer-add {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: #71829b;
+}
+
+.drawing-layer-add:hover:not(:disabled) {
+  color: #3878e4;
+  background: #edf4ff;
+}
+
+.drawing-layer-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.drawing-layer-row {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  min-height: 32px;
+  padding: 0 4px;
+  border-radius: 4px;
+}
+
+.drawing-layer-row.is-active {
+  background: #edf4ff;
+}
+
+.drawing-layer-row.is-text {
+  gap: 8px;
+  padding: 0 8px;
+  border: 1px dashed #d5deea;
+  color: #71829b;
+  font-size: 12px;
+}
+
+.drawing-layer-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  padding: 4px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: #344962;
+  font: inherit;
+  font-size: 12px;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.drawing-layer-row.is-active .drawing-layer-name {
+  color: #3878e4;
+  font-weight: 700;
+}
+
+.drawing-layer-row.is-hidden .drawing-layer-name {
+  opacity: .5;
+}
+
+.drawing-layer-input {
+  flex: 1;
+  min-width: 0;
+  height: 26px;
+  padding: 0 4px;
+  border: 1px solid #3878e4;
+  border-radius: 4px;
+  background: #fff;
+  color: #344962;
+  font: inherit;
+  font-size: 12px;
+  outline: none;
+}
+
+.drawing-layer-button {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: #71829b;
+}
+
+.drawing-layer-button:hover:not(:disabled) {
+  color: #3878e4;
+  background: #dfeaff;
+}
+
+.drawing-layer-button:disabled,
+.drawing-layer-add:disabled {
+  opacity: .35;
+  cursor: default;
+}
+
+.drawing-hex {
+  width: 100%;
+  height: 32px;
+  padding: 0 8px;
+  border: 1px solid #d5deea;
+  border-radius: 4px;
+  background: #fff;
+  color: #344962;
+  font: inherit;
+  font-size: 12px;
+}
+
+.drawing-hex:focus {
+  outline: none;
+  border-color: #3878e4;
+}
+
+.drawing-hex.is-invalid {
+  border-color: #e5484d;
+}

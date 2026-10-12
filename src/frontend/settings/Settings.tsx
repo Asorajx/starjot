@@ -1,6 +1,7 @@
 import { useEffect, type CSSProperties, type ReactNode } from 'react';
 import { Icon, type IconName } from '../components/Icon';
 import { updatePreferences, usePreferences, type Preferences } from '../app/preferences';
+import { Switch } from '../components/Switch';
 
 export type SettingsSection = 'general' | 'appearance' | 'workspace' | 'storage' | 'about';
 
@@ -30,15 +31,6 @@ export const SETTING_TABS: { id: SettingsSection; label: string; icon: IconName 
 
 function Toggle({ on = true }: { on?: boolean }) {
   return <span className={`preview-switch ${on ? 'preview-switch--on' : ''}`} aria-hidden="true"><span /></span>;
-}
-
-/* The same switch as Toggle, but one that really turns a setting on and off. */
-function Switch({ label, on, onChange }: { label: string; on: boolean; onChange: (on: boolean) => void }) {
-  return (
-    <button type="button" role="switch" aria-checked={on} aria-label={label} className={`preview-switch setting-switch ${on ? 'preview-switch--on' : ''}`} onClick={() => onChange(!on)}>
-      <span />
-    </button>
-  );
 }
 
 function Row({ title, description, children }: { title: ReactNode; description: string; children: ReactNode }) {

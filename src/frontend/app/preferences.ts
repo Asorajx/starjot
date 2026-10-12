@@ -1,8 +1,8 @@
 import { useSyncExternalStore } from 'react';
 import { readPreferences, writePreferences } from '../../backend/storage/preferencesStorage';
-import { clampSize, HEX_COLOR, INK } from '../notespace/editor/drawing';
+import { clampSize, HEX_COLOR, INK } from '../notespace/editor/drawing/drawing';
 import { normalizeExportSettings, type ExportSettings } from '../notespace/export/exportSettings';
-import { isColorClass, type ColorClass } from '../notespace/editor/colors';
+import { isColorClass, type ColorClass } from '../notespace/editor/format/colors';
 
 /* App-wide preferences that apply to every note and screen; the backend saves them. */
 export type Theme = 'light' | 'dark';

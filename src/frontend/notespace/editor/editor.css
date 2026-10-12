@@ -1,0 +1,1508 @@
+/* =========================
+   Notespace Editor
+   ========================= */
+
+.editor-wrap {
+  background: #fff;
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.editor-layout {
+  display: grid;
+  grid-template-columns: 188px minmax(0,1fr) 256px;
+  flex: 1;
+  min-height: calc(100vh - 131px);
+}
+
+.outline-item {
+  display: block;
+  font-size: 11px;
+  line-height: 1.4;
+  padding: 12px 8px;
+  margin-bottom: 8px;
+  border-left: 2px solid transparent;
+  color: #98a5b4;
+}
+
+.outline-item:hover {
+  color: #526fbb;
+}
+
+.outline-item--active {
+  border-left-color: #4380f0;
+  color: #3772d8;
+  font-weight: 700;
+  background: #f7faff;
+}
+
+.editor-canvas {
+  min-width: 0;
+  padding: 56px clamp(28px,6%,76px) 72px;
+  background: white;
+}
+
+.editor-width {
+  width: 100%;
+  max-width: 745px;
+  margin: 0 auto;
+}
+
+.editor-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 10px;
+  color: #9aa6b5;
+  margin-bottom: 20px;
+}
+
+.page-type {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #708cc7;
+  font-weight: 780;
+  letter-spacing: .85px;
+}
+
+.meta-dot {
+  color: #d0d6e0;
+}
+
+.editor-width>h1 {
+  font-size: clamp(26px,2.5vw,36px);
+  letter-spacing: -1.35px;
+  line-height: 1.22;
+  margin: 0 0 12px;
+  color: #1c2c47;
+  font-weight: 790;
+}
+
+.article-rule {
+  margin: 32px 0 36px;
+  border-top: 1px solid #edf0f5;
+}
+
+.article-body {
+  max-width: 680px;
+  color: #56657b;
+}
+
+.document-tagline,
+.overline {
+  font-size: 9px;
+  letter-spacing: 1.4px;
+  color: #83a1d8;
+  font-weight: 800;
+  margin-bottom: 12px;
+  display: block;
+}
+
+.article-body h2,
+.block-content h2 {
+  font-size: 20px;
+  letter-spacing: -.5px;
+  font-weight: 770;
+  color: #2b3d59;
+  margin: 20px 0 16px;
+  line-height: 1.36;
+}
+
+.article-body h2:first-of-type {
+  margin-top: 8px;
+}
+
+.article-body p,
+.block-content p {
+  font-size: 12.6px;
+  line-height: 1.96;
+  color: #65738a;
+  margin: 0 0 16px;
+}
+
+.article-body ul,
+.block-content ul {
+  padding-left: 20px;
+  margin: 4px 0 24px;
+  color: #66758c;
+  font-size: 12.5px;
+  line-height: 1.9;
+}
+
+.article-body li,
+.block-content li {
+  margin-bottom: 8px;
+}
+
+.article-body strong,
+.block-content strong {
+  color: #41546e;
+}
+
+.article-body blockquote,
+.block-content blockquote {
+  border-left: 3px solid #bcd1ff;
+  background: #f7faff;
+  padding: 12px 20px;
+  margin: 24px 0 28px;
+  font-size: 12px;
+  font-style: italic;
+  color: #6c84b6;
+  line-height: 1.9;
+  border-radius: 0 8px 8px 0;
+}
+
+.document-end {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #c1c9d5;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 1.1px;
+  margin-top: 60px;
+  white-space: nowrap;
+}
+
+.document-end span {
+  height: 1px;
+  background: #eff1f5;
+  flex: 1;
+}
+
+.side-setting>strong {
+  font-size: 11px;
+  color: #455775;
+}
+
+.editor-mode-options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+/* Split right, split down, stack and unsplit, two to a row. */
+.option-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.option-grid.is-single {
+  grid-template-columns: 1fr;
+}
+
+.option-tile {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 8px;
+  border: 1px solid #e9edf3;
+  border-radius: 4px;
+  background: #fff;
+  color: #586b86;
+  font: inherit;
+  font-size: 10px;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+}
+
+.option-tile:hover:not(:disabled) {
+  border-color: #c3d5f4;
+}
+
+.option-tile.selected {
+  border-color: #8bb3fb;
+  background: #f7faff;
+  color: #4d7ee3;
+}
+
+.option-tile:disabled {
+  color: #b7c0cd;
+  cursor: default;
+}
+
+/* A row of small choices under an option, such as the page size of a paginated note. */
+.option-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 12px;
+}
+
+.option-row > span {
+  flex: 1;
+  color: #526581;
+  font-size: 11px;
+  font-weight: 650;
+}
+
+.option-chip {
+  height: 28px;
+  padding: 0 8px;
+  border: 1px solid #e9edf3;
+  border-radius: 4px;
+  background: #fff;
+  color: #586b86;
+  font: inherit;
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.option-chip:hover {
+  border-color: #c3d5f4;
+}
+
+.option-chip.selected {
+  border-color: #8bb3fb;
+  background: #f7faff;
+  color: #4d7ee3;
+}
+
+.option-tile em {
+  margin-left: auto;
+  color: #8496af;
+  font-size: 9px;
+  font-style: normal;
+}
+
+.mode-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #fff;
+  border: 1px solid #e9edf3;
+  border-radius: 4px;
+  padding: 12px 8px;
+  text-align: left;
+}
+
+.mode-option.selected {
+  border-color: #8bb3fb;
+  background: #f7faff;
+  box-shadow: 0 0 0 2px #eaf2ff;
+}
+
+.mode-option:hover {
+  border-color: #c3d5f4;
+}
+
+.mode-icon {
+  color: #8496af;
+  display: grid;
+  place-items: center;
+  width: 25px;
+  height: 25px;
+  flex-shrink: 0;
+}
+
+.mode-option.selected .mode-icon {
+  color: #4d7ee3;
+}
+
+.mode-option>span:nth-child(2) {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.mode-option strong {
+  font-size: 10px;
+  color: #586b86;
+  white-space: nowrap;
+}
+
+.mode-radio {
+  width: 13px;
+  height: 13px;
+  border: 1.5px solid #d0d8e5;
+  border-radius: 50%;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.mode-option.selected .mode-radio {
+  border-color: #4781e5;
+}
+
+.mode-option.selected .mode-radio::before {
+  content: "";
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  position: absolute;
+  top: 2.5px;
+  left: 2.5px;
+  background: #4781e5;
+}
+
+.side-setting--border {
+  border-top: 1px solid #e9edf4;
+  padding-top: 24px;
+  margin-top: 24px;
+}
+
+.layout-option {
+  height: 34px;
+  background: #fff;
+  border: 1px solid #dfe9fc;
+  border-radius: 4px;
+  padding: 0 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #5c7db5;
+  font-size: 10px;
+  margin-bottom: 8px;
+}
+
+.side-setting > strong + .layout-option {
+  margin-top: 12px;
+}
+
+.layout-option span {
+  margin-left: auto;
+}
+
+.layout-option--disabled {
+  border-color: #edf0f4;
+  color: #adb8c5;
+}
+
+.layout-option em {
+  margin-left: auto;
+  color: #a3adbb;
+  font-size: 9px;
+  font-style: normal;
+}
+
+.structured-document {
+  padding-bottom: 20px;
+}
+
+.editable-block {
+  position: relative;
+  margin: 8px 0 12px;
+  padding: 4px 4px 4px 20px;
+  border-radius: 4px;
+}
+
+.editable-block:hover {
+  background: #f8faff;
+}
+
+.block-handle {
+  position: absolute;
+  left: 0;
+  top: 8px;
+  color: #a8b4c5;
+}
+
+.block-content h2 {
+  margin: 2px 0 4px;
+}
+
+.block-content p {
+  margin: 0;
+}
+
+.block-content ul {
+  margin: 0;
+}
+
+.block-content blockquote {
+  margin: 0;
+}
+
+
+/* =========================
+   Editable Notespace Documents
+   ========================= */
+
+/* Notes now use the full document width; optional panels float above it. */
+.editor-wrap .editor-layout {
+  display: block;
+  min-height: calc(100vh - 131px);
+}
+
+.editor-wrap .editor-canvas {
+  padding: 52px clamp(28px, 5vw, 80px) 84px;
+}
+
+.editor-wrap .editor-width {
+  max-width: 805px;
+}
+
+.note-title-input {
+  display: block;
+  width: 100%;
+  margin: 0 0 12px;
+  padding: 0;
+  background: transparent;
+  color: #1c2c47;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  outline: none;
+  font: inherit;
+  font-size: clamp(26px, 2.5vw, 36px);
+  font-weight: 790;
+  line-height: 1.3;
+  letter-spacing: -1.35px;
+}
+
+.note-title-input:focus {
+  border-color: #a7c5f5;
+  box-shadow: 0 0 0 3px #edf4ff;
+}
+
+.note-title-input::placeholder {
+  color: #a5b5cb;
+}
+
+.note-editable {
+  min-height: 270px;
+  padding: 4px 0;
+  outline: none;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.note-editable:focus {
+  outline: none;
+}
+
+.note-editable h2,
+.structured-document h2,
+.note-editable h3,
+.structured-document h3 {
+  scroll-margin-top: 100px;
+}
+
+.note-editable h3,
+.block-content h3 {
+  color: #364a66;
+  font-size: 16px;
+  margin: 24px 0 12px;
+}
+
+
+/* =========================
+   Page Bar
+   ========================= */
+
+/* The bar at the top of each page. It has no border and shares the page's background, so it reads */
+/* as part of the page rather than a separate toolbar. It stays in view while the page scrolls. */
+/* In a narrow pane (a split or stacked tab) the buttons wrap onto a second row instead of */
+/* spilling out of the pane. */
+.page-bar {
+  position: sticky;
+  top: 0;
+  left: 0;
+  z-index: 22;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  min-height: 48px;
+  padding: 0 20px 0 12px;
+  background: #f7f9fc;
+  transition: opacity .2s ease;
+}
+
+.editor-page-bar {
+  background: #fff;
+}
+
+/* Faded away while typing. It keeps its space, so the note does not jump when it comes back. */
+.page-bar.is-hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.page-bar .editor-breadcrumb {
+  margin-left: 8px;
+}
+
+.page-bar-fill {
+  flex: 1;
+}
+
+.page-bar-group {
+  display: inline-flex;
+  gap: 2px;
+}
+
+.page-bar-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: #71829b;
+}
+
+.page-bar-button:hover:not(:disabled),
+.page-bar-button.selected {
+  color: #3878e4;
+  background: #edf4ff;
+}
+
+.page-bar-button:disabled {
+  opacity: .4;
+  cursor: default;
+}
+
+/* A starred note shows a filled yellow star, like the stars in the note lists. */
+.star-button.is-starred,
+.star-button.is-starred:hover {
+  color: #e2a520;
+}
+
+.star-button.is-starred svg {
+  fill: currentColor;
+}
+
+/* Saved shows a green tick, saving a spinning loader, and a refused save an orange warning. */
+.save-status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 4px;
+  color: #56a48b;
+}
+
+.save-status.is-saving {
+  color: #8792a3;
+}
+
+.save-status.is-saving svg {
+  animation: save-spin .9s linear infinite;
+}
+
+.save-status.is-unsaved {
+  color: #b45309;
+}
+
+@keyframes save-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Red "Unstick" state: the selection is inside an existing sticky group. */
+.note-sticky-button.is-unstick,
+.note-sticky-button.is-unstick:hover {
+  color: #d23f3f;
+  background: #fff1f1;
+  border-color: #f8d2d2;
+}
+
+.page-bar-button:focus-visible,
+.flyout-close:focus-visible,
+.note-toc-links button:focus-visible {
+  outline: 2px solid #5591ed;
+  outline-offset: 2px;
+}
+
+
+/* =========================
+   Optional Contents and Preferences Panels
+   ========================= */
+
+/* Both panels are overlays, so closed panels never reserve document space. */
+.editor-flyout {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 24px;
+  z-index: 32;
+  width: min(305px, calc(100vw - 35px));
+  max-height: min(650px, 76vh);
+  overflow-y: auto;
+  padding: 20px;
+  background: #fff;
+  border: 1px solid #e0e8f4;
+  border-radius: 4px;
+  box-shadow: 0 18px 55px rgba(28, 54, 96, .16);
+}
+
+.flyout-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 24px;
+  color: #344962;
+  font-size: 13px;
+}
+
+.flyout-close {
+  display: grid;
+  place-items: center;
+  width: 27px;
+  height: 27px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: #95a3b7;
+}
+
+.flyout-close:hover {
+  background: #f2f6fd;
+  color: #4c78cb;
+}
+
+.note-toc-links {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.note-toc-links .outline-item {
+  width: 100%;
+  margin: 0;
+  padding: 12px 12px;
+  border-top: 0;
+  border-right: 0;
+  border-bottom: 0;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.note-toc-links .outline-item:hover,
+.note-toc-links .outline-item--active {
+  background: #f3f7ff;
+  color: #3370d9;
+}
+
+.note-toc-links .outline-item--nested {
+  padding-left: 28px;
+}
+
+.toc-empty {
+  margin: 8px 4px;
+  color: #91a0b3;
+  font-size: 11px;
+  line-height: 1.7;
+}
+
+.flyout-footnote {
+  display: flex;
+  gap: 8px;
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid #edf1f7;
+  color: #9aa9bd;
+  font-size: 10px;
+  line-height: 1.6;
+}
+
+.editor-flyout .side-setting--border {
+  margin-top: 24px;
+  padding-top: 20px;
+}
+
+.note-switch-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 0;
+  color: #526581;
+  font-size: 11px;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.note-switch-row input {
+  width: 17px;
+  height: 17px;
+  accent-color: #397bf0;
+  cursor: pointer;
+}
+
+.note-switch-row input:disabled {
+  cursor: not-allowed;
+}
+
+/* Block text is edited inside the structured document, which is one editable area. */
+/* pre-wrap matches the continuous editor, so line breaks look the same in both modes. */
+.block-content {
+  min-height: 19px;
+  outline: none;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.structured-document[contenteditable="true"] {
+  outline: none;
+}
+
+@media (max-width: 700px) {
+  .editor-wrap .editor-canvas {
+    padding: 36px 24px 64px;
+  }
+
+  .editor-flyout {
+    right: 9px;
+    top: calc(100% + 5px);
+  }
+}
+
+
+/* =========================
+   Compact Document Layout
+   ========================= */
+
+/* The editor is wider and starts closer to the toolbar without fixed side panels. */
+/* It is a container, so the note can follow the width of its pane in a split or stacked tab. */
+.editor-wrap .editor-layout {
+  container-type: inline-size;
+  min-height: calc(100vh - 58px);
+}
+
+/* The same side padding in both modes keeps text in place when switching modes. It also leaves */
+/* room for the block controls and a gap from the left edge, where a hidden sidebar can be revealed. */
+.editor-wrap .editor-canvas {
+  padding: 28px clamp(72px, 7vw, 104px) 60px;
+}
+
+/* A paginated note sits on white page-sized sheets over a grey background. The column is as */
+/* wide as a page, with the page margin as padding; the sheets are drawn behind the text. */
+/* Pages wider than the pane (landscape, or zoomed in) scroll sideways with the pane itself, so the */
+/* scrollbar sits at the bottom of the window rather than below the last page. The page widens to */
+/* fit them, while its page bar keeps the pane's width (measured in NoteEditor) and stays in view. */
+.editor-wrap.is-paginated {
+  width: max-content;
+  min-width: 100%;
+}
+
+.editor-wrap.is-paginated > .page-bar {
+  width: var(--pane-width, 100%);
+}
+
+/* A CSS container hides its content's width from the page around it, so a paginated note's layout */
+/* is not one (its pages are never as narrow as the container rules are for). */
+.editor-wrap.is-paginated .editor-layout {
+  container-type: normal;
+}
+
+.editor-wrap .editor-canvas.is-paginated {
+  background: #e9edf3;
+}
+
+.editor-width.is-paginated {
+  position: relative;
+  margin: 0 auto;
+}
+
+.page-sheets {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.page-sheet {
+  position: absolute;
+  left: 0;
+  right: 0;
+  border: 1px solid #dde3ec;
+  border-radius: 4px;
+  background: #ffffff;
+}
+
+.page-number {
+  position: absolute;
+  bottom: 40px;
+  left: 0;
+  right: 0;
+  color: #a4adbb;
+  font-size: 10px;
+  text-align: center;
+}
+
+/* A line that would cross a page's bottom margin starts on the next page instead. The extra */
+/* space is only shown on screen; printing breaks pages by itself. */
+@media screen {
+  .page-pushed {
+    margin-top: var(--page-push) !important;
+  }
+}
+
+/* A narrow pane keeps just enough room for the block controls. */
+@container (max-width: 600px) {
+  .editor-wrap .editor-canvas:not(.is-paginated) {
+    padding: 24px 24px 56px 40px;
+  }
+
+  .note-details {
+    grid-template-columns: 90px minmax(0, 1fr);
+  }
+}
+
+.editor-wrap .editor-width {
+  max-width: 1120px;
+}
+
+.editor-wrap .article-body {
+  max-width: 100%;
+}
+
+.editor-wrap .editor-meta {
+  margin-bottom: 12px;
+}
+
+.editor-wrap .note-title-input {
+  margin-bottom: 8px;
+}
+
+.editor-wrap .article-rule {
+  margin: 20px 0 20px;
+}
+
+/* The breadcrumb occupies the former category label area beside All notes. */
+.editor-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  max-width: min(48vw, 510px);
+  color: #8795a9;
+  font-size: 11px;
+}
+
+/* The category and parent pages in the breadcrumb are links to those pages. */
+.editor-crumb-link {
+  flex-shrink: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.editor-crumb-link:hover,
+.editor-crumb-link:focus-visible {
+  color: var(--blue);
+  text-decoration: underline;
+}
+
+/* A shown parent step. A long parent title shrinks before the current page title does. */
+.editor-crumb-step {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 4;
+  min-width: 40px;
+}
+
+.editor-crumb-parent {
+  min-width: 0;
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* "…" stands in for the pages between the category and the parent page. */
+.editor-crumb-folded {
+  position: relative;
+  flex-shrink: 0;
+}
+
+/* The full path, shown below "…". The top padding bridges the gap so the pointer can move into it. */
+.editor-crumb-path {
+  position: absolute;
+  top: 100%;
+  left: -12px;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  min-width: 200px;
+  max-width: 320px;
+  padding: 4px;
+  margin-top: 4px;
+  border: 1px solid #e2e8f1;
+  border-radius: 4px;
+  background: #ffffff;
+  box-shadow: 0 8px 24px rgb(15 23 42 / 12%);
+}
+
+.editor-crumb-path::before {
+  content: "";
+  position: absolute;
+  inset: -8px 0 auto;
+  height: 8px;
+}
+
+.editor-crumb-path-item {
+  padding: 4px 12px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: #526581;
+  font: inherit;
+  font-size: 12px;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.editor-crumb-path-item:hover,
+.editor-crumb-path-item:focus-visible {
+  background: var(--blue-soft);
+  color: var(--blue);
+  outline: none;
+}
+
+.editor-crumb-path-item.is-current {
+  color: #22344f;
+  font-weight: 650;
+  cursor: default;
+}
+
+.editor-crumb-path-item.is-current:hover {
+  background: transparent;
+  color: #22344f;
+}
+
+.editor-breadcrumb-separator {
+  color: #c7cfdb;
+}
+
+.editor-crumb-current {
+  min-width: 48px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #526581;
+  font-weight: 630;
+}
+
+/* Markdown-generated headings, lists and code share the same look in both modes. */
+.note-editable h1,
+.block-content h1 {
+  margin: 16px 0 12px;
+  color: #22344f;
+  font-size: 27px;
+  line-height: 1.3;
+}
+
+.note-editable h4,
+.block-content h4 {
+  margin: 12px 0 8px;
+  color: #394b66;
+  font-size: 14px;
+}
+
+/* Heading 5 is the smallest heading; older notes may also have level 6, shown the same way. */
+.note-editable h5,
+.note-editable h6,
+.block-content h5,
+.block-content h6 {
+  margin: 12px 0 8px;
+  color: #4b5b74;
+  font-size: 13px;
+}
+
+.note-editable ol,
+.block-content ol {
+  padding-left: 24px;
+  margin: 8px 0 16px;
+  color: #65738a;
+  font-size: 12.6px;
+  line-height: 1.9;
+}
+
+.note-editable pre,
+.block-content pre {
+  margin: 12px 0 20px;
+  padding: 40px 16px 16px;
+  overflow-x: auto;
+  border: 1px solid #e2eaf6;
+  border-radius: 4px;
+
+  /* The lighter top band holds the language picker without covering any code. */
+  background: linear-gradient(#eef2fa, #eef2fa) top / 100% 30px no-repeat, #f6f8fd;
+  color: #273c5e;
+  font: 12px/1.7 ui-monospace, SFMono-Regular, Consolas, monospace;
+  white-space: pre-wrap;
+  tab-size: 2;
+}
+
+.note-editable code,
+.block-content code {
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+}
+
+/* Code inside a line of text (`code` in Markdown) gets a soft background so it stands out. */
+.note-editable :not(pre) > code,
+.block-content :not(pre) > code {
+  padding: 1px 4px;
+  border-radius: 4px;
+  background: #eef2fa;
+  color: #273c5e;
+  font-size: .92em;
+}
+
+.note-editable hr,
+.block-content hr {
+  margin: 16px 0;
+  border: 0;
+  border-top: 1px solid #e0e7f2;
+}
+
+@media (max-width: 700px) {
+  .editor-wrap .editor-canvas {
+    padding: 24px 16px 56px;
+  }
+
+  .editor-breadcrumb {
+    gap: 8px;
+    max-width: 34vw;
+  }
+
+  /* Phones only have room for the current page title. */
+  .editor-breadcrumb > :not(.editor-crumb-current) {
+    display: none;
+  }
+}
+
+
+/* =========================
+   Mode Switching
+   ========================= */
+
+/* A quick fade when changing between continuous and structured layouts. */
+.note-content.is-switching {
+  animation: note-mode-fade .22s ease-out;
+}
+
+@keyframes note-mode-fade {
+  from {
+    opacity: 0;
+    transform: translateY(3px);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .note-content.is-switching {
+    animation: none;
+  }
+}
+
+
+/* =========================
+   Page Options
+   ========================= */
+
+.zoom-control {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 4px;
+  border: 1px solid #e0e8f4;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.zoom-button,
+.zoom-value {
+  height: 32px;
+  border: 0;
+  background: transparent;
+  color: #4f6280;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.zoom-button {
+  display: grid;
+  place-items: center;
+  width: 34px;
+}
+
+.zoom-value {
+  min-width: 58px;
+  border-right: 1px solid #e0e8f4;
+  border-left: 1px solid #e0e8f4;
+}
+
+.zoom-button:hover,
+.zoom-value:hover {
+  background: #f3f7ff;
+  color: #3370d9;
+}
+
+.note-switch-row span {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Red removal button; disabled while the page is locked. */
+.danger-option {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 12px 12px;
+  border: 1px solid #f6cfcf;
+  border-radius: 4px;
+  background: #fff5f5;
+  color: #d23f3f;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.danger-option:hover {
+  border-color: #eea9a9;
+  background: #ffeaea;
+}
+
+.danger-option:disabled {
+  opacity: .5;
+  cursor: not-allowed;
+}
+
+.page-locked {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #b0861a;
+  font-weight: 700;
+}
+
+
+/* =========================
+   Note Header
+   ========================= */
+
+/* The emoji picker opens under the header buttons, so the header is its positioning parent. */
+.note-header {
+  position: relative;
+}
+
+.note-icon {
+  display: block;
+  margin: 0 0 8px -4px;
+  padding: 2px 4px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  font-size: 44px;
+  line-height: 1.1;
+  cursor: pointer;
+}
+
+.note-icon:hover:not(:disabled) {
+  background: var(--blue-soft);
+}
+
+.note-icon:disabled {
+  cursor: default;
+}
+
+.note-header-actions {
+  display: flex;
+  gap: 4px;
+  margin: 0 0 8px -8px;
+}
+
+.note-header-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 26px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: #94a1b3;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.note-header-action:hover {
+  background: var(--blue-soft);
+  color: var(--blue);
+}
+
+/* Details are a two-column list: labels on the left, values on the right. */
+.note-details {
+  display: grid;
+  grid-template-columns: 110px minmax(0, 1fr);
+  align-items: center;
+  gap: 2px 12px;
+  margin: 4px 0 0;
+  font-size: 12px;
+}
+
+.note-details dt {
+  color: #94a1b3;
+  font-weight: 600;
+}
+
+.note-details dd {
+  min-height: 30px;
+  display: flex;
+  align-items: center;
+  margin: 0;
+  color: #4b5b74;
+}
+
+/* Remarks look like the other detail fields, but can hold several lines and simple formatting. */
+.note-details dt.note-remarks-label {
+  align-self: start;
+  line-height: 30px;
+}
+
+.note-details dd.note-remarks-cell {
+  align-items: stretch;
+}
+
+.note-remarks {
+  position: relative;
+  width: 100%;
+  max-width: 560px;
+  min-height: 30px;
+  padding: 4px 8px;
+  margin-left: -8px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  color: #4b5b74;
+  font-size: 12px;
+  line-height: 1.7;
+  outline: none;
+  overflow-wrap: anywhere;
+}
+
+.note-remarks:hover:not([contenteditable="false"]) {
+  border-color: var(--line);
+}
+
+.note-remarks:focus {
+  border-color: #a7c5f5;
+}
+
+/* The placeholder sits on top of the empty field, so it never gets in the way of typing. */
+.note-remarks.is-empty::before {
+  content: attr(data-placeholder);
+  position: absolute;
+  top: 4px;
+  left: 8px;
+  color: #a4adbb;
+  pointer-events: none;
+}
+
+.note-remarks p,
+.note-remarks ul,
+.note-remarks ol,
+.note-remarks blockquote,
+.note-remarks pre {
+  margin: 0;
+}
+
+.note-remarks ul,
+.note-remarks ol {
+  padding-left: 20px;
+}
+
+.note-remarks h1,
+.note-remarks h2,
+.note-remarks h3,
+.note-remarks h4,
+.note-remarks h5 {
+  margin: 4px 0 0;
+  color: #2c3d58;
+  font-size: 13px;
+}
+
+.note-remarks blockquote {
+  padding-left: 8px;
+  border-left: 2px solid #e2e8f1;
+}
+
+.note-remarks pre {
+  padding: 4px 8px;
+  border-radius: 4px;
+  background: #f6f8fd;
+  font: 11px/1.6 ui-monospace, SFMono-Regular, Consolas, monospace;
+  white-space: pre-wrap;
+}
+
+.note-remarks hr {
+  margin: 4px 0;
+  border: 0;
+  border-top: 1px solid #e2e8f1;
+}
+
+/* The number of comments, next to Hide details. */
+.note-comment-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 26px;
+  padding: 0 8px;
+  color: #94a1b3;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+/* The Pages row: a small fold button with the page count, then the pages side by side as small */
+/* chips that wrap onto more lines only when needed. A page's own sub-pages follow it, marked "↳". */
+/* The label stays level with the first line. */
+.note-details dt.note-pages-label {
+  align-self: start;
+  line-height: 30px;
+}
+
+.note-details dd.note-pages {
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 2px 0;
+}
+
+.note-pages-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 26px;
+  padding: 0 8px 0 4px;
+  margin-left: -4px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: #4b5b74;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.note-pages-toggle:hover {
+  background: var(--blue-soft);
+  color: var(--blue);
+}
+
+.note-pages-toggle .icon {
+  transition: transform .15s ease;
+}
+
+/* The arrow points right, towards where the list opens, and turns to point back left (to close */
+/* it) while the list is open. */
+.note-pages-toggle .icon.is-turned {
+  transform: rotate(180deg);
+}
+
+.note-page-list,
+.note-page-list li {
+  display: contents;
+}
+
+.note-page-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.note-page-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 200px;
+  height: 24px;
+  padding: 0 8px;
+  border: 1px solid #e2e8f1;
+  border-radius: 4px;
+  background: transparent;
+  color: #4b5b74;
+  font: inherit;
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.note-page-link:hover {
+  border-color: #a7c5f5;
+  background: var(--blue-soft);
+  color: var(--blue);
+}
+
+.note-page-list .note-page-list .note-page-link::before {
+  content: "↳";
+  color: #a4adbb;
+}
+
+.note-page-icon {
+  font-size: 13px;
+  line-height: 1;
+}
+
+.note-page-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.note-detail-field {
+  width: 100%;
+  max-width: 420px;
+  height: 30px;
+  padding: 0 8px;
+  margin-left: -8px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: transparent;
+  color: #4b5b74;
+  font: inherit;
+  font-size: 12px;
+}
+
+.note-detail-field:hover:not(:disabled):not([readonly]) {
+  border-color: var(--line);
+}
+
+.note-detail-field:focus {
+  border-color: #a7c5f5;
+  outline: none;
+}
+
+.note-detail-field:disabled {
+  opacity: 1;
+  appearance: none;
+}
+
+.note-detail-field::placeholder {
+  color: #b2bccb;
+}

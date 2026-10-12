@@ -1,0 +1,229 @@
+/* =========================
+   Images
+   ========================= */
+
+/* An image sits in the text like a word: words can come before and after it, and it moves to */
+/* the next line when there is no room. Its height follows its width, so it keeps its shape, and */
+/* it is never wider than its line. */
+.note-editable .image-block,
+.block-content .image-block {
+  display: inline-block;
+  position: relative;
+  max-width: 100%;
+  margin: 4px 0;
+  border-radius: 4px;
+  vertical-align: bottom;
+  line-height: 0;
+  cursor: pointer;
+  user-select: none;
+}
+
+/* Centred: on a line of its own, so the text before and after it goes above and below. */
+.note-editable .image-block[data-align="center"],
+.block-content .image-block[data-align="center"] {
+  display: block;
+  margin: 8px auto;
+}
+
+/* Right: at the right edge, with the text running down its left side. */
+.note-editable .image-block[data-align="right"],
+.block-content .image-block[data-align="right"] {
+  float: right;
+  margin: 4px 0 8px 16px;
+}
+
+/* Left, with text beside it: at the left edge, with the text running down its right side. */
+.note-editable .image-block[data-align="wrap-left"],
+.block-content .image-block[data-align="wrap-left"] {
+  float: left;
+  margin: 4px 16px 8px 0;
+}
+
+/* A drawing anchored into the text. Its Ink strokes use the text colour. When snapping is turned */
+/* off, it keeps the place it was drawn: moved down from its line and in from its side. */
+.image-block.drawing-block {
+  color: #1c2c47;
+}
+
+.note-editable .image-block.drawing-block,
+.block-content .image-block.drawing-block {
+  margin-top: calc(4px + var(--offset-y, 0px));
+}
+
+.note-editable .image-block.drawing-block[data-align="wrap-left"],
+.block-content .image-block.drawing-block[data-align="wrap-left"] {
+  margin-left: var(--offset-x, 0px);
+}
+
+.note-editable .image-block.drawing-block[data-align="right"],
+.block-content .image-block.drawing-block[data-align="right"] {
+  margin-right: var(--offset-x, 0px);
+}
+
+.drawing-ink {
+  position: relative;
+  display: block;
+}
+
+.drawing-block svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+/* In front of the text: the block takes no room at the start of its line, and its strokes are */
+/* placed from there, over the words. Only the strokes themselves can be clicked, so the words */
+/* under them can still be clicked and selected. */
+.note-editable .image-block.drawing-block[data-wrap="front"],
+.block-content .image-block.drawing-block[data-wrap="front"] {
+  display: inline-block;
+  float: none;
+  width: 0 !important;
+  height: 0;
+  margin: 0;
+  vertical-align: top;
+  outline: none;
+  cursor: default;
+}
+
+.image-block.drawing-block[data-wrap="front"] .drawing-ink {
+  position: absolute;
+  top: var(--offset-y, 0px);
+  left: var(--offset-x, 0px);
+  z-index: 2;
+  width: var(--drawing-width, 100px);
+  pointer-events: none;
+}
+
+.image-block.drawing-block[data-wrap="front"] path {
+  pointer-events: stroke;
+  cursor: pointer;
+}
+
+.image-block.drawing-block[data-wrap="front"] .image-resize {
+  pointer-events: auto;
+}
+
+.image-block.drawing-block[data-wrap="front"].is-selected .drawing-ink {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+}
+
+/* A right image near the end of the note (or of a block) never hangs below it. */
+.note-body::after,
+.block-content::after {
+  content: "";
+  display: block;
+  clear: both;
+}
+
+.image-block img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 4px;
+}
+
+.image-block.is-selected {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+}
+
+.image-block.is-missing {
+  min-height: 48px;
+  border: 1px dashed #cbd5e4;
+  background: #f7f9fc;
+}
+
+.image-block.is-missing::after {
+  content: "Image not available";
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: #94a1b3;
+  font-size: 11px;
+  line-height: 1;
+}
+
+/* The resize handle sits on the selected image's corner (the left corner of a right image). */
+.image-resize {
+  position: absolute;
+  right: -5px;
+  bottom: -5px;
+  display: none;
+  width: 10px;
+  height: 10px;
+  border: 2px solid #fff;
+  border-radius: 2px;
+  background: var(--blue);
+  cursor: nwse-resize;
+}
+
+.image-block[data-align="right"] .image-resize {
+  right: auto;
+  left: -5px;
+  cursor: nesw-resize;
+}
+
+.image-block.is-selected .image-resize,
+.image-block.is-resizing .image-resize {
+  display: block;
+}
+
+.note-body.is-locked .image-resize,
+.note-editable[contenteditable="false"] .image-resize {
+  display: none !important;
+}
+
+/* The bar above a selected image. */
+.image-tools {
+  position: fixed;
+  z-index: 72;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px;
+  border: 1px solid #dfe7f3;
+  border-radius: 4px;
+  background: #ffffff;
+  box-shadow: 0 10px 30px rgba(28, 54, 96, .18);
+}
+
+.image-tools-divider {
+  width: 1px;
+  height: 20px;
+  margin: 0 4px;
+  background: #e3e9f2;
+}
+
+.image-tools-comment {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.image-tools-comment .selection-input {
+  width: 220px;
+}
+
+/* An image shown full size over the page; a click beside it or Escape closes it. */
+.image-viewer {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: grid;
+  place-items: center;
+  padding: 32px;
+  background: rgba(15, 23, 38, .78);
+  cursor: zoom-out;
+}
+
+.image-viewer img {
+  max-width: 100%;
+  max-height: 100%;
+  border-radius: 4px;
+  background: #ffffff;
+  cursor: default;
+}
