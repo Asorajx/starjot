@@ -365,8 +365,8 @@ export function SelectionToolbar({ session, locked }: SelectionToolbarProps) {
             </button>
           )}
           {!locked && <span className="selection-divider" />}
-          <button type="button" className="selection-tool selection-tool--text" onMouseDown={keepSelection} onClick={() => setMode('comment')}>
-            <Icon name="message-square" size={15} /> Comment
+          <button type="button" className="selection-tool selection-tool--text" aria-label="Comment" onMouseDown={keepSelection} onClick={() => setMode('comment')}>
+            <Icon name="message-square" size={15} /> <span className="selection-tool-label">Comment</span>
           </button>
         </div>
       )}

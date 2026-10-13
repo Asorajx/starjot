@@ -251,13 +251,15 @@
     border-radius: 0;
   }
 
+  /* The menu row stops short of the close button, so its items never scroll underneath it. The */
+  /* line below the row is drawn on the content instead, so it still runs the full width. */
   .settings-nav {
     display: flex;
     gap: 8px;
     overflow-x: auto;
-    padding: 8px 56px 8px 8px;
+    margin-right: 56px;
+    padding: 8px;
     border-right: 0;
-    border-bottom: 1px solid var(--line);
   }
 
   .settings-title,
@@ -280,9 +282,10 @@
 
   .settings-content {
     padding: 24px 16px;
+    border-top: 1px solid var(--line);
   }
 
-  /* The close button stays at the end of the menu row; the menu scrolls underneath it. */
+  /* The close button stays at the end of the menu row, beside the scrolling menu. */
   .settings-close {
     position: fixed;
     top: 8px;
@@ -295,6 +298,16 @@
 
   .settings-section-title {
     font-size: 20px;
+  }
+
+  /* The selection toolbar fits a phone's width with its 44px buttons: no gaps between them, and */
+  /* Comment shows only its icon. */
+  .selection-toolbar-row {
+    gap: 0;
+  }
+
+  .selection-tool-label {
+    display: none;
   }
 
   .settings-panel-subtitle {
@@ -412,5 +425,13 @@
   /* The sidebar popup starts below the taller tab bar. */
   .app-shell.sidebar-floating .sidebar {
     top: 108px;
+  }
+}
+
+/* Without a pointer to hover with, only the open tab has its close button. On other tabs it was */
+/* invisible but still took most of the tab, so tapping to switch tabs closed them instead. */
+@media (hover: none) {
+  .window-tab:not(.is-active) > .window-tab-close {
+    display: none;
   }
 }

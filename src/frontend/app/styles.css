@@ -671,6 +671,56 @@ p {
   color: var(--ink);
 }
 
+/* On a phone with more than two tabs (see OtherTabs in WindowBar.tsx), the open tab takes the */
+/* room left beside the one tab holding the others. */
+.window-tabs.is-gathered {
+  flex: 1;
+}
+
+.window-tabs.is-gathered .window-tab.is-active {
+  flex: 1 1 auto;
+}
+
+.window-tab-others {
+  flex: 0 0 auto;
+}
+
+.window-tab-others .window-tab-main {
+  padding-right: 12px;
+}
+
+.window-tab-others.is-open {
+  background: #e2e7ee;
+}
+
+/* The list of the other tabs, below their tab: each row switches to its tab, and its × closes it. */
+.tab-list-menu {
+  width: min(280px, calc(100vw - 16px));
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.tab-list-row {
+  display: flex;
+  align-items: center;
+}
+
+.tab-list-row .page-menu-item {
+  flex: 1;
+  min-width: 0;
+}
+
+.tab-list-row .page-menu-item span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tab-list-row .window-tab-close {
+  margin-right: 0;
+  opacity: 1;
+}
+
 .window-new-tab:disabled {
   opacity: .4;
   cursor: default;
