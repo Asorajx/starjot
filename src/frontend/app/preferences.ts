@@ -7,6 +7,10 @@ import { isColorClass, type ColorClass } from '../notespace/editor/format/colors
 /* App-wide preferences that apply to every note and screen; the backend saves them. */
 export type Theme = 'light' | 'dark';
 
+/* How tightly the app's frame is laid out (sidebar, tabs, lists, menus). Notes' text is not */
+/* affected. */
+export type Density = 'comfortable' | 'compact';
+
 /* How the page moves when a heading is chosen in Contents: a smooth slide, or an instant jump. */
 export type ContentsScroll = 'smooth' | 'instant';
 
@@ -33,6 +37,7 @@ export type DrawingPreferences = {
 
 export type Preferences = {
   theme: Theme;
+  density: Density;
 
   /* Note zoom as a multiplier: 1 is 100%. */
   zoom: number;
@@ -93,13 +98,14 @@ function loadDrawing(saved: unknown): DrawingPreferences {
 /* Light mode is the default; once a theme is chosen in Settings it is remembered between visits. */
 function load(): Preferences {
   const defaults: Preferences = {
-    theme: 'light', zoom: 1, sidebarCollapsed: false, contentsScroll: 'smooth', notesSort: 'edited', hideHeaderWhileTyping: true, drawing: loadDrawing(null),
+    theme: 'light', density: 'comfortable', zoom: 1, sidebarCollapsed: false, contentsScroll: 'smooth', notesSort: 'edited', hideHeaderWhileTyping: true, drawing: loadDrawing(null),
     exportSettings: normalizeExportSettings(null),
     recentColors: []
   };
   const saved = readPreferences();
   return {
     theme: saved.theme === 'dark' || saved.theme === 'light' ? saved.theme : defaults.theme,
+    density: saved.density === 'compact' ? 'compact' : defaults.density,
     zoom: typeof saved.zoom === 'number' ? clampZoom(saved.zoom) : defaults.zoom,
     sidebarCollapsed: saved.sidebarCollapsed === true,
     contentsScroll: saved.contentsScroll === 'instant' ? 'instant' : 'smooth',
@@ -125,9 +131,11 @@ export function updatePreferences(changes: Partial<Preferences>) {
   listeners.forEach(listener => listener());
 }
 
-/* The theme is a data-theme attribute on <html>, which the dark stylesheet looks for. */
+/* The theme and density are data-theme and data-density attributes on <html>, which the dark */
+/* stylesheet and app/density.css look for. */
 export function applyTheme() {
   document.documentElement.dataset.theme = preferences.theme;
+  document.documentElement.dataset.density = preferences.density;
 }
 
 export function getPreferences() {

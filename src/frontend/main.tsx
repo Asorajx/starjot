@@ -26,6 +26,7 @@ import './notespace/print.css';
 import './boardspace/boardspace.css';
 import './settings/settings.css';
 import './app/responsive.css';
+import './app/density.css';
 import './boardspace/timeline.css';
 import './app/dark-theme.css';
 import './app/dark-overrides.css';

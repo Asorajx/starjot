@@ -1,0 +1,158 @@
+/* =========================
+   Compact Density
+   ========================= */
+
+/* Settings → Appearance → Interface density. Compact tightens the app's frame (sidebar, tab bar, */
+/* note bar, lists, tiles, menus and Settings) so more fits on screen. A note's own text and */
+/* spacing are never changed here. The touch-screen rules in responsive.css still keep buttons */
+/* at least 44px on touch screens. */
+
+/* Sidebar */
+[data-density="compact"] .sidebar-search {
+  height: 32px;
+  margin-bottom: 8px;
+}
+
+[data-density="compact"] .sidebar-icons {
+  padding-bottom: 8px;
+}
+
+[data-density="compact"] .sidebar-icon {
+  width: 32px;
+  height: 32px;
+}
+
+[data-density="compact"] .sidebar-lists {
+  padding: 8px 0;
+}
+
+[data-density="compact"] .sidebar-list + .sidebar-list {
+  margin-top: 16px;
+}
+
+[data-density="compact"] .sidebar-section-label {
+  padding-bottom: 4px;
+}
+
+[data-density="compact"] .sidebar-list ul {
+  gap: 0;
+}
+
+[data-density="compact"] .sidebar-link {
+  height: 28px;
+}
+
+[data-density="compact"] .sidebar-bottom {
+  padding: 4px 0 8px;
+}
+
+[data-density="compact"] .sidebar-top {
+  height: 32px;
+  margin-bottom: 4px;
+}
+
+/* Tab bar and note bar. Touch screens keep their taller tab bar (see responsive.css), so the */
+/* tabs stay 44px high and line up with the +. */
+@media not (pointer: coarse) {
+  [data-density="compact"] .window-bar {
+    height: 32px;
+  }
+
+  [data-density="compact"] .window-tab {
+    height: 28px;
+  }
+
+  [data-density="compact"] .window-new-tab {
+    margin-bottom: 0;
+  }
+
+  [data-density="compact"] .page-bar {
+    min-height: 40px;
+  }
+
+  /* The sidebar popup and search start just below the shorter bars. */
+  [data-density="compact"] .app-shell.sidebar-floating .sidebar,
+  [data-density="compact"] .search-window {
+    top: 80px;
+  }
+}
+
+/* Pages */
+[data-density="compact"] .content-pad {
+  padding-top: 32px;
+  padding-bottom: 32px;
+}
+
+[data-density="compact"] .page-intro {
+  margin-bottom: 24px;
+}
+
+[data-density="compact"] .home-section {
+  margin-bottom: 32px;
+}
+
+[data-density="compact"] .home-section-heading {
+  margin-bottom: 12px;
+}
+
+[data-density="compact"] .starjot-home-intro {
+  margin-bottom: 32px;
+}
+
+/* Note tiles and lists */
+[data-density="compact"] .note-tiles {
+  gap: 8px;
+}
+
+[data-density="compact"] .note-tile {
+  min-height: 88px;
+  padding: 8px 12px;
+}
+
+[data-density="compact"] .recent-row,
+[data-density="compact"] .note-row-open {
+  min-height: 44px;
+}
+
+[data-density="compact"] .note-row-open {
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+
+[data-density="compact"] .recent-columns {
+  height: 32px;
+}
+
+/* Starjot Home and Boardspace cards */
+[data-density="compact"] .quick-note,
+[data-density="compact"] .home-resume,
+[data-density="compact"] .board-summary-item {
+  padding: 12px;
+}
+
+[data-density="compact"] .task-card {
+  padding: 16px 16px 12px;
+}
+
+/* Menus and search */
+[data-density="compact"] .page-menu-item {
+  height: 28px;
+}
+
+[data-density="compact"] .search-result {
+  padding: 4px 12px;
+}
+
+/* Settings */
+[data-density="compact"] .settings-nav-item {
+  height: 32px;
+}
+
+[data-density="compact"] .settings-group {
+  margin-bottom: 24px;
+}
+
+[data-density="compact"] .setting-row {
+  min-height: 52px;
+  padding: 8px 0;
+}

@@ -363,10 +363,6 @@
     font-size: 11px;
   }
 
-  .fake-segment span {
-    padding: 8px 4px;
-    font-size: 11px;
-  }
 }
 
 @media (max-width:385px) {

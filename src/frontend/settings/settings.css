@@ -188,28 +188,6 @@
   color: #617793;
 }
 
-.fake-segment {
-  border: 1px solid #e6ecf4;
-  border-radius: 4px;
-  display: flex;
-  padding: 4px;
-  gap: 4px;
-  color: #637992;
-  font-size: 11px;
-  align-items: center;
-}
-
-.fake-segment span {
-  padding: 8px 12px;
-  white-space: nowrap;
-}
-
-.fake-segment .chosen {
-  background: #e9f1fe;
-  color: #4874c7;
-  border-radius: 4px;
-}
-
 .setting-segment {
   display: flex;
   align-items: center;

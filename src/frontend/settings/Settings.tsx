@@ -121,7 +121,7 @@ function Heading({ title, subtitle }: { title: string; subtitle: string }) {
    ========================= */
 
 function SettingsSectionContent({ section }: { section: SettingsSection }) {
-  const { theme, contentsScroll, hideHeaderWhileTyping, drawing } = usePreferences();
+  const { theme, density, contentsScroll, hideHeaderWhileTyping, drawing } = usePreferences();
   const set = (changes: Partial<Preferences>) => updatePreferences(changes);
 
   if (section === 'general') {
@@ -156,8 +156,13 @@ function SettingsSectionContent({ section }: { section: SettingsSection }) {
           </Row>
         </Group>
         <Group title="Layout and colour">
-          <Row preview title="Interface density" description="A more spacious or a more compact layout.">
-            <div className="fake-segment"><span className="chosen">Comfortable</span><span>Compact</span></div>
+          <Row title="Interface density" description="How much room the sidebar, tabs, lists and menus take. Notes' text stays the same.">
+            <Segmented
+              label="Interface density"
+              value={density}
+              options={[{ value: 'comfortable', label: 'Comfortable' }, { value: 'compact', label: 'Compact' }]}
+              onChange={value => set({ density: value })}
+            />
           </Row>
           <Row preview title="Accent colour" description="Blue is the current accent colour.">
             {/* --dot is a CSS variable that sets each colour swatch. */}

@@ -30,6 +30,15 @@ describe('preferences', () => {
     expect(zoom()).toBe(1);
   });
 
+  it('starts comfortable, and remembers compact density on <html>', async () => {
+    const preferences = await openApp();
+    expect(preferences.getPreferences().density).toBe('comfortable');
+    preferences.updatePreferences({ density: 'compact' });
+    expect(document.documentElement.dataset.density).toBe('compact');
+    vi.resetModules();
+    expect((await openApp()).getPreferences().density).toBe('compact');
+  });
+
   it('starts in light mode, even when the computer prefers dark mode', async () => {
     const original = window.matchMedia;
     window.matchMedia = ((query: string) => ({ matches: query.includes('dark'), media: query })) as unknown as typeof window.matchMedia;
