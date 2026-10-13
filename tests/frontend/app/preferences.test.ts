@@ -83,6 +83,7 @@ describe('preferences', () => {
     localStorage.setItem('starjot-preferences-v1', JSON.stringify({ drawing: { tool: 'eraser', pen: { color: 'red', size: 99 }, highlighter: { color: '#30a46c' } } }));
     const preferences = await openApp();
     expect(preferences.getPreferences().drawing).toEqual({
+      enabled: true,
       tool: 'eraser',
       pen: { color: 'ink', size: 48 },
       highlighter: { color: '#30a46c', size: 18 },
@@ -106,6 +107,17 @@ describe('start screen, spaces and sidebar', () => {
     expect(startScreen).toBe('start');
     expect(spaces).toEqual({ notes: true, boardspace: true });
     expect(sidebar).toEqual({ starred: true, recent: true, categories: false, hiddenCategories: [] });
+  });
+
+  it('starts new notes continuous and pageless on A4, with drawing turned on', async () => {
+    const { newNotes, drawing } = (await openApp()).getPreferences();
+    expect(newNotes).toEqual({ mode: 'continuous', layout: 'pageless', pageSize: 'a4' });
+    expect(drawing.enabled).toBe(true);
+    vi.resetModules();
+    save({ newNotes: { mode: 'blocks', layout: 'sideways' }, drawing: { enabled: false } });
+    const loaded = (await openApp()).getPreferences();
+    expect(loaded.newNotes).toEqual({ mode: 'blocks', layout: 'pageless', pageSize: 'a4' });
+    expect(loaded.drawing.enabled).toBe(false);
   });
 
   it('remembers the choices, and never loads with every space off', async () => {

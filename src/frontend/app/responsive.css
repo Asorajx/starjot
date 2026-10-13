@@ -328,14 +328,6 @@
     min-width: 0;
   }
 
-  .fake-select {
-    min-width: 116px;
-    max-width: 126px;
-    padding: 0 8px;
-    gap: 4px;
-    font-size: 11px;
-  }
-
 }
 
 @media (max-width:385px) {
@@ -370,10 +362,6 @@
 
   .setting-value {
     margin-top: 4px;
-  }
-
-  .fake-select {
-    min-width: 160px;
   }
 }
 

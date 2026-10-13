@@ -6,6 +6,7 @@ import { SAMPLE_CONTENT, SAMPLE_NOTES } from '../../backend/data/sampleNotes';
 import { readCategories, writeCategories } from '../../backend/storage/categoriesStorage';
 import { readNotes, writeNotes } from '../../backend/storage/notesStorage';
 import { isEmoji } from '../../shared/emoji';
+import { getPreferences } from '../app/preferences';
 import type { Category, Note, NoteAccent, NoteChanges, NoteComment, SaveStatus } from '../../shared/types/note';
 
 /* The frontend's note store: it checks and tidies notes, and tells React when they change. */
@@ -216,14 +217,16 @@ export function getNote(id: string) {
 }
 
 /* A new note can start in a category, for example the one being filtered on the home page. */
-/* A sub-page is created inside a parent note and starts in the parent's category. */
+/* A sub-page is created inside a parent note and starts in the parent's category. Its view and */
+/* layout come from Settings → Notes → New notes. */
 export function createNote(category = '', parentId = '') {
   const now = new Date().toISOString();
+  const { mode, layout, pageSize } = getPreferences().newNotes;
   const note = normalizeNote({
     id: `note_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`,
     title: UNTITLED_NOTE, subtitle: '', preview: '', category, parentId,
     updatedAt: now, createdAt: now, openedAt: now, pinned: false, icon: '',
-    accent: 'indigo', mode: 'continuous', content: ''
+    accent: 'indigo', mode, layout, pageSize, content: ''
   }) as Note;
   setState({ notes: [note, ...state.notes] });
   save();

@@ -97,7 +97,7 @@ export function NoteEditor({ noteId, history, view, active, onClose, onOpenNote,
 
   /* Re-render when categories are renamed, so the breadcrumb stays current. */
   useCategories();
-  const { zoom, hideHeaderWhileTyping } = usePreferences();
+  const { zoom, hideHeaderWhileTyping, drawing: drawingSettings } = usePreferences();
   const [panel, setPanel] = useState<Panel>(null);
   const [switching, setSwitching] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -128,10 +128,10 @@ export function NoteEditor({ noteId, history, view, active, onClose, onOpenNote,
     return () => window.clearInterval(timer);
   }, [temporary]);
 
-  /* Drawing mode (the pencil in the page bar) lets the mouse draw over the note. A locked note */
-  /* shows its drawing but cannot be drawn on. */
+  /* Drawing mode (the pencil in the page bar) lets the mouse draw over the note. A locked note, */
+  /* or drawing turned off in Settings, shows the drawing but cannot be drawn on. */
   const [drawingMode, setDrawingMode] = useState(false);
-  const drawing = drawingMode && !locked;
+  const drawing = drawingMode && !locked && drawingSettings.enabled;
 
   /* The layer being drawn on. It starts as the top drawing layer, and moves to another one if */
   /* it is removed (or undone away). */
@@ -394,17 +394,19 @@ export function NoteEditor({ noteId, history, view, active, onClose, onOpenNote,
           <Icon name="link" size={17} />
         </button>
 
-        <button
-          type="button"
-          className={`page-bar-button ${drawing ? 'selected' : ''}`}
-          aria-pressed={drawing}
-          data-tooltip={drawing ? 'Stop drawing (Esc)' : 'Draw'}
-          aria-label={drawing ? 'Stop drawing' : 'Draw'}
-          disabled={locked}
-          onClick={toggleDrawing}
-        >
-          <Icon name="pencil" size={17} />
-        </button>
+        {drawingSettings.enabled && (
+          <button
+            type="button"
+            className={`page-bar-button ${drawing ? 'selected' : ''}`}
+            aria-pressed={drawing}
+            data-tooltip={drawing ? 'Stop drawing (Esc)' : 'Draw'}
+            aria-label={drawing ? 'Stop drawing' : 'Draw'}
+            disabled={locked}
+            onClick={toggleDrawing}
+          >
+            <Icon name="pencil" size={17} />
+          </button>
+        )}
 
         <button type="button" data-panel-toggle className={`page-bar-button ${panel === 'toc' ? 'selected' : ''}`} data-tooltip={panel === 'toc' ? undefined : 'Contents'} aria-label="Contents" aria-expanded={panel === 'toc'} aria-controls={`${panelId}-toc`} onClick={() => togglePanel('toc')}>
           <Icon name="list" size={17} />

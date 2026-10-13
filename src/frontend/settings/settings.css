@@ -193,26 +193,6 @@
   font-size: 12px;
 }
 
-.fake-select {
-  border: 1px solid #e8edf4;
-  border-radius: 4px;
-  height: 36px;
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  justify-content: space-between;
-  min-width: 164px;
-  padding: 0 12px;
-  color: #657892;
-  background: #fff;
-  font-size: 11px;
-  white-space: nowrap;
-}
-
-.fake-select svg {
-  color: #617793;
-}
-
 .setting-segment {
   display: flex;
   align-items: center;

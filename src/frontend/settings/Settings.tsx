@@ -106,10 +106,6 @@ function Segmented<T extends string>({ label, options, value, onChange }: {
   );
 }
 
-function FakeSelect({ children }: { children: ReactNode }) {
-  return <span className="fake-select">{children} <Icon name="chevron-down" size={14} /></span>;
-}
-
 function Heading({ title, subtitle }: { title: string; subtitle: string }) {
   return (
     <>
@@ -125,7 +121,7 @@ function Heading({ title, subtitle }: { title: string; subtitle: string }) {
    ========================= */
 
 function SettingsSectionContent({ section }: { section: SettingsSection }) {
-  const { theme, density, startScreen, spaces, sidebar, contentsScroll, hideHeaderWhileTyping, drawing } = usePreferences();
+  const { theme, density, startScreen, spaces, sidebar, newNotes, contentsScroll, hideHeaderWhileTyping, drawing } = usePreferences();
   const categories = useCategories();
   const set = (changes: Partial<Preferences>) => updatePreferences(changes);
 
@@ -273,7 +269,32 @@ function SettingsSectionContent({ section }: { section: SettingsSection }) {
       <>
         <Heading title="Notes" subtitle="How notes start and how the note screen behaves." />
         <Group title="New notes">
-          <Row preview title="Default note view" description="New notes start as continuous documents."><FakeSelect>Continuous</FakeSelect></Row>
+          <Row title="View" description="Continuous is one flowing document; Block shows each line as a block you can drag and move. Notes already made keep their own view.">
+            <Segmented
+              label="View for new notes"
+              value={newNotes.mode}
+              options={[{ value: 'continuous', label: 'Continuous' }, { value: 'blocks', label: 'Block' }]}
+              onChange={value => set({ newNotes: { ...newNotes, mode: value } })}
+            />
+          </Row>
+          <Row title="Layout" description="Pageless runs on without breaks; Paginated shows the note on pages, as it prints.">
+            <Segmented
+              label="Layout for new notes"
+              value={newNotes.layout}
+              options={[{ value: 'pageless', label: 'Pageless' }, { value: 'paginated', label: 'Paginated' }]}
+              onChange={value => set({ newNotes: { ...newNotes, layout: value } })}
+            />
+          </Row>
+          {newNotes.layout === 'paginated' && (
+            <Row title="Paper size" description="The page size new paginated notes start with.">
+              <Segmented
+                label="Paper size for new notes"
+                value={newNotes.pageSize}
+                options={[{ value: 'a4', label: 'A4' }, { value: 'letter', label: 'Letter' }]}
+                onChange={value => set({ newNotes: { ...newNotes, pageSize: value } })}
+              />
+            </Row>
+          )}
         </Group>
         <Group title="Reading and writing">
           <Row title="Contents scrolling" description="How the note scrolls when you choose a heading in Contents.">
@@ -295,8 +316,13 @@ function SettingsSectionContent({ section }: { section: SettingsSection }) {
   if (section === 'drawing') {
     return (
       <>
-        <Heading title="Drawing" subtitle="How drawings behave when they are selected and anchored into the text." />
-        <Group id="drawing" title="Anchoring">
+        <Heading title="Drawing" subtitle="Drawing over notes, and how drawings behave when they are anchored into the text." />
+        <Group title="Drawing">
+          <Row title="Drawing" description="The pencil in the note bar, for drawing over notes. Turned off, it is hidden; drawings already in notes still show.">
+            <Switch label="Drawing" on={drawing.enabled} onChange={on => set({ drawing: { ...drawing, enabled: on } })} />
+          </Row>
+        </Group>
+        {drawing.enabled && <Group id="drawing" title="Anchoring">
           <Row title="Strokes on the edge of a selection" description="When anchoring a drawing into the text, take the strokes mostly inside the box, or cut strokes at its edge.">
             <Segmented
               label="Strokes on the edge of a selection"
@@ -308,7 +334,7 @@ function SettingsSectionContent({ section }: { section: SettingsSection }) {
           <Row title="Snap anchored drawings to the text" description="An anchored drawing lines up with its line and the side of the text when it is anchored or moved. Turn off to keep it exactly where you place it.">
             <Switch label="Snap anchored drawings to the text" on={drawing.snap} onChange={value => set({ drawing: { ...drawing, snap: value } })} />
           </Row>
-        </Group>
+        </Group>}
       </>
     );
   }

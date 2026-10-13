@@ -4,6 +4,7 @@ import { clampSize, HEX_COLOR, INK } from '../notespace/editor/drawing/drawing';
 import { normalizeExportSettings, type ExportSettings } from '../notespace/export/exportSettings';
 import { isColorClass, type ColorClass } from '../notespace/editor/format/colors';
 import type { ScreenId } from './screens';
+import type { NoteMode, PageLayout, PageSize } from '../../shared/types/note';
 
 /* App-wide preferences that apply to every note and screen; the backend saves them. */
 export type Theme = 'light' | 'dark';
@@ -17,6 +18,10 @@ export type ContentsScroll = 'smooth' | 'instant';
 
 /* The order of the All notes list. */
 export type NotesSort = 'edited' | 'opened' | 'title';
+
+/* How a new note starts: continuous or block view, and pageless or on pages of a paper size. */
+/* Notes already made keep their own. */
+export type NewNotes = { mode: NoteMode; layout: PageLayout; pageSize: PageSize };
 
 /* Where Starjot opens when the address names no page: Starjot Home, or a space's home. */
 export type StartScreen = 'start' | ScreenId;
@@ -37,6 +42,10 @@ export type SidebarLists = { starred: boolean; recent: boolean; categories: bool
 export type DrawingToolName = 'pen' | 'highlighter' | 'eraser' | 'select';
 export type PenSettings = { color: string; size: number };
 export type DrawingPreferences = {
+
+  /* Drawing can be turned off in Settings: the pencil and its tools are hidden, but drawings */
+  /* already in notes still show. */
+  enabled: boolean;
   tool: DrawingToolName;
   pen: PenSettings;
   highlighter: PenSettings;
@@ -53,6 +62,7 @@ export type Preferences = {
   startScreen: StartScreen;
   spaces: Spaces;
   sidebar: SidebarLists;
+  newNotes: NewNotes;
 
   /* Note zoom as a multiplier: 1 is 100%. */
   zoom: number;
@@ -114,10 +124,20 @@ function loadSidebar(saved: unknown): SidebarLists {
   };
 }
 
+function loadNewNotes(saved: unknown): NewNotes {
+  const record = (saved && typeof saved === 'object' ? saved : {}) as Record<string, unknown>;
+  return {
+    mode: record.mode === 'blocks' ? 'blocks' : 'continuous',
+    layout: record.layout === 'paginated' ? 'paginated' : 'pageless',
+    pageSize: record.pageSize === 'letter' ? 'letter' : 'a4'
+  };
+}
+
 function loadDrawing(saved: unknown): DrawingPreferences {
   const record = (saved && typeof saved === 'object' ? saved : {}) as Record<string, unknown>;
   const tool = record.tool === 'highlighter' || record.tool === 'eraser' || record.tool === 'select' ? record.tool : 'pen';
   return {
+    enabled: record.enabled !== false,
     tool,
     pen: loadPen(record.pen, { color: INK, size: 3 }),
     highlighter: loadPen(record.highlighter, { color: '#ffd84d', size: 18 }),
@@ -130,7 +150,7 @@ function loadDrawing(saved: unknown): DrawingPreferences {
 /* Light mode is the default; once a theme is chosen in Settings it is remembered between visits. */
 function load(): Preferences {
   const defaults: Preferences = {
-    theme: 'light', density: 'comfortable', startScreen: 'start', spaces: loadSpaces(null), sidebar: loadSidebar(null), zoom: 1, sidebarCollapsed: false, contentsScroll: 'smooth', notesSort: 'edited', hideHeaderWhileTyping: true, drawing: loadDrawing(null),
+    theme: 'light', density: 'comfortable', startScreen: 'start', spaces: loadSpaces(null), sidebar: loadSidebar(null), newNotes: loadNewNotes(null), zoom: 1, sidebarCollapsed: false, contentsScroll: 'smooth', notesSort: 'edited', hideHeaderWhileTyping: true, drawing: loadDrawing(null),
     exportSettings: normalizeExportSettings(null),
     recentColors: []
   };
@@ -141,6 +161,7 @@ function load(): Preferences {
     startScreen: saved.startScreen === 'notes' || saved.startScreen === 'boardspace' ? saved.startScreen : defaults.startScreen,
     spaces: loadSpaces(saved.spaces),
     sidebar: loadSidebar(saved.sidebar),
+    newNotes: loadNewNotes(saved.newNotes),
     zoom: typeof saved.zoom === 'number' ? clampZoom(saved.zoom) : defaults.zoom,
     sidebarCollapsed: saved.sidebarCollapsed === true,
     contentsScroll: saved.contentsScroll === 'instant' ? 'instant' : 'smooth',

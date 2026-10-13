@@ -17,6 +17,15 @@ function openApp() {
    ========================= */
 
 describe('note store', () => {
+  it('starts new notes with the view and layout chosen in Settings', async () => {
+    let store = await openApp();
+    expect(store.createNote()).toMatchObject({ mode: 'continuous', layout: 'pageless', pageSize: 'a4' });
+    localStorage.setItem('starjot-preferences-v1', JSON.stringify({ newNotes: { mode: 'blocks', layout: 'paginated', pageSize: 'letter' } }));
+    vi.resetModules();
+    store = await openApp();
+    expect(store.createNote()).toMatchObject({ mode: 'blocks', layout: 'paginated', pageSize: 'letter' });
+  });
+
   it('starts with the sample notes', async () => {
     const store = await openApp();
     expect(store.getNote('atlas')?.title).toBe('Project Atlas — Research brief');
