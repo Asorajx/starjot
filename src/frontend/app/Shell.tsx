@@ -144,7 +144,7 @@ function SidebarList({ id, title, empty, children }: SidebarListProps) {
 }
 
 /* Notespace: starred notes, the notes opened most recently, and categories, each as chosen in */
-/* Settings → Notes → Sidebar. */
+/* Settings → Sidebar. */
 function NotespaceLists({ openNoteId, openCategoryId, onOpenNote, onOpenCategory }: Pick<SidebarProps, 'openNoteId' | 'openCategoryId' | 'onOpenNote' | 'onOpenCategory'>) {
   const notes = useNotes();
   const categories = useCategories();
@@ -168,7 +168,7 @@ function NotespaceLists({ openNoteId, openCategoryId, onOpenNote, onOpenCategory
       {sidebar.starred && <SidebarList id="sidebar-starred" title="Starred" empty="Star a note to keep it here.">{starred.map(link)}</SidebarList>}
       {sidebar.recent && <SidebarList id="sidebar-recent" title="Recent" empty="Notes you open appear here.">{recent.map(link)}</SidebarList>}
       {sidebar.categories && (
-        <SidebarList id="sidebar-categories" title="Categories" empty="Choose categories to show in Settings → Notes.">
+        <SidebarList id="sidebar-categories" title="Categories" empty="Choose categories to show in Settings → Sidebar.">
           {shownCategories.map(category => (
             <SidebarLink
               key={category.id}

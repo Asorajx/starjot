@@ -10,7 +10,7 @@ import { Switch } from '../components/Switch';
 import { useEscape } from '../lib/useDismiss';
 import { useFocusTrap } from '../lib/useFocusTrap';
 
-export type SettingsSection = 'general' | 'appearance' | 'spaces' | 'notes' | 'drawing' | 'storage' | 'about';
+export type SettingsSection = 'general' | 'appearance' | 'spaces' | 'sidebar' | 'notes' | 'drawing' | 'storage' | 'about';
 
 type SettingsProps = {
   section: SettingsSection;
@@ -32,7 +32,8 @@ const SETTING_GROUPS: { heading: string; tabs: SettingsTab[] }[] = [
     tabs: [
       { id: 'general', label: 'General', icon: 'sliders-horizontal' },
       { id: 'appearance', label: 'Appearance', icon: 'palette' },
-      { id: 'spaces', label: 'Spaces', icon: 'panels-top-left' }
+      { id: 'spaces', label: 'Spaces', icon: 'panels-top-left' },
+      { id: 'sidebar', label: 'Sidebar', icon: 'sidebar' }
     ]
   },
   {
@@ -219,6 +220,54 @@ function SettingsSectionContent({ section }: { section: SettingsSection }) {
     );
   }
 
+  /* What the sidebar lists, one group per space that is turned on. */
+  if (section === 'sidebar') {
+    return (
+      <>
+        <Heading title="Sidebar" subtitle="What the sidebar lists under each space." />
+        {spaces.notes && (
+          <Group title="Notespace">
+            <Row title="Starred" description="List your starred notes in the sidebar.">
+              <Switch label="Starred notes in the sidebar" on={sidebar.starred} onChange={on => set({ sidebar: { ...sidebar, starred: on } })} />
+            </Row>
+            <Row title="Recent" description="List the notes you opened lately in the sidebar.">
+              <Switch label="Recent notes in the sidebar" on={sidebar.recent} onChange={on => set({ sidebar: { ...sidebar, recent: on } })} />
+            </Row>
+            <Row title="Categories" description="List categories in the sidebar, to open their pages in one click. Choose which ones below.">
+              <Switch label="Categories in the sidebar" on={sidebar.categories} onChange={on => set({ sidebar: { ...sidebar, categories: on } })} />
+            </Row>
+            {sidebar.categories && (
+              <div className="setting-checks" role="group" aria-label="Categories shown in the sidebar">
+                {categories.length ? categories.map(category => (
+                  <label key={category.id} className="setting-check">
+                    <input
+                      type="checkbox"
+                      checked={!sidebar.hiddenCategories.includes(category.id)}
+                      onChange={event => set({
+                        sidebar: {
+                          ...sidebar,
+                          hiddenCategories: event.target.checked
+                            ? sidebar.hiddenCategories.filter(id => id !== category.id)
+                            : [...sidebar.hiddenCategories, category.id]
+                        }
+                      })}
+                    />
+                    <Icon name="folder" size={14} /> {category.name}
+                  </label>
+                )) : <p className="setting-checks-empty">No categories yet. Add them on the notes home with Edit categories.</p>}
+              </div>
+            )}
+          </Group>
+        )}
+        {spaces.boardspace && (
+          <Group title="Boardspace">
+            <Row preview title="Boards" description="Starred and recent boards, once Boardspace holds several boards. For now its sidebar lists the board's views."><span className="future-chip">Coming later</span></Row>
+          </Group>
+        )}
+      </>
+    );
+  }
+
   if (section === 'notes') {
     return (
       <>
@@ -238,38 +287,6 @@ function SettingsSectionContent({ section }: { section: SettingsSection }) {
           <Row title="Hide the note bar while typing" description="The bar above a note fades away while you type and comes back when you move the mouse.">
             <Switch label="Hide the note bar while typing" on={hideHeaderWhileTyping} onChange={value => set({ hideHeaderWhileTyping: value })} />
           </Row>
-        </Group>
-        <Group title="Sidebar">
-          <Row title="Starred" description="List your starred notes in the sidebar.">
-            <Switch label="Starred notes in the sidebar" on={sidebar.starred} onChange={on => set({ sidebar: { ...sidebar, starred: on } })} />
-          </Row>
-          <Row title="Recent" description="List the notes you opened lately in the sidebar.">
-            <Switch label="Recent notes in the sidebar" on={sidebar.recent} onChange={on => set({ sidebar: { ...sidebar, recent: on } })} />
-          </Row>
-          <Row title="Categories" description="List categories in the sidebar, to open their pages in one click. Choose which ones below.">
-            <Switch label="Categories in the sidebar" on={sidebar.categories} onChange={on => set({ sidebar: { ...sidebar, categories: on } })} />
-          </Row>
-          {sidebar.categories && (
-            <div className="setting-checks" role="group" aria-label="Categories shown in the sidebar">
-              {categories.length ? categories.map(category => (
-                <label key={category.id} className="setting-check">
-                  <input
-                    type="checkbox"
-                    checked={!sidebar.hiddenCategories.includes(category.id)}
-                    onChange={event => set({
-                      sidebar: {
-                        ...sidebar,
-                        hiddenCategories: event.target.checked
-                          ? sidebar.hiddenCategories.filter(id => id !== category.id)
-                          : [...sidebar.hiddenCategories, category.id]
-                      }
-                    })}
-                  />
-                  <Icon name="folder" size={14} /> {category.name}
-                </label>
-              )) : <p className="setting-checks-empty">No categories yet. Add them on the notes home with Edit categories.</p>}
-            </div>
-          )}
         </Group>
       </>
     );
