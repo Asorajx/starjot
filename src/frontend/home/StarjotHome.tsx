@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { Icon } from '../components/Icon';
 import { opensNewTab, type OpenById } from '../lib/clicks';
+import { usePreferences } from '../app/preferences';
 import { editedText, newestFirst } from '../notespace/NoteList';
 import { createNote, noteTitle, updateNote, useNotes } from '../notespace/store';
 import { BOARD_TABS } from '../boardspace/data';
@@ -93,10 +94,12 @@ function QuickNote({ onOpenNote }: { onOpenNote: OpenById }) {
    Starjot Home
    ========================= */
 
-/* The app's own home: a greeting, then one section per space so notes and boards are never mixed. */
-/* Notespace has a quick note and "Where you left off"; Boardspace has how many items each column holds. */
+/* The app's own home: a greeting, then one section per space turned on, so notes and boards are */
+/* never mixed. Notespace has a quick note and "Where you left off"; Boardspace has how many items */
+/* each column holds. */
 export function StarjotHome({ onOpenNote, onOpenNotespace, onOpenBoardspace, onOpenBoardView }: StarjotHomeProps) {
   const now = useNow();
+  const { spaces } = usePreferences();
   const lastEdited = newestFirst(useNotes())[0];
   const columns = BOARD_TABS.filter((view): view is { id: StatusTab; label: string } => view.id !== 'timeline');
 
@@ -107,10 +110,10 @@ export function StarjotHome({ onOpenNote, onOpenNotespace, onOpenBoardspace, onO
           {now.toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' })} · {now.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}
         </p>
         <h1>{greeting(now)}</h1>
-        <p>Pick up where you left off, or jot something down.</p>
+        <p>{spaces.notes ? 'Pick up where you left off, or jot something down.' : 'Here is where your board stands.'}</p>
       </header>
 
-      <section className="home-section" aria-labelledby="home-notespace">
+      {spaces.notes && <section className="home-section" aria-labelledby="home-notespace">
         <div className="home-section-heading">
           <h2 id="home-notespace"><Icon name="book-open" size={16} /> Notespace</h2>
           <button type="button" className="btn btn-sm btn-tertiary" onClick={event => onOpenNotespace(opensNewTab(event))}>Open Notespace <Icon name="arrow-right" size={14} /></button>
@@ -132,9 +135,9 @@ export function StarjotHome({ onOpenNote, onOpenNotespace, onOpenBoardspace, onO
             </div>
           )}
         </div>
-      </section>
+      </section>}
 
-      <section className="home-section" aria-labelledby="home-boardspace">
+      {spaces.boardspace && <section className="home-section" aria-labelledby="home-boardspace">
         <div className="home-section-heading">
           <h2 id="home-boardspace"><Icon name="layout-dashboard" size={16} /> Boardspace</h2>
           <button type="button" className="btn btn-sm btn-tertiary" onClick={onOpenBoardspace}>Open Boardspace <Icon name="arrow-right" size={14} /></button>
@@ -147,7 +150,7 @@ export function StarjotHome({ onOpenNote, onOpenNotespace, onOpenBoardspace, onO
             </button>
           ))}
         </div>
-      </section>
+      </section>}
     </div>
   );
 }

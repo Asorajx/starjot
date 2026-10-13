@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type DragEvent, type MouseEvent, type ReactNode } from 'react';
-import { updatePreferences, usePreferences } from './preferences';
+import { getPreferences, updatePreferences, usePreferences, type Spaces } from './preferences';
 import { MobileNav, Sidebar, Topbar, WindowControls } from './Shell';
 import { opensNewTab } from '../lib/clicks';
 import { useDismiss, useEscape } from '../lib/useDismiss';
@@ -106,25 +106,37 @@ function TabGroupFrame({ group, focused, onFocus, onDropTab, children }: TabGrou
    Application
    ========================= */
 
+/* Whether a place can be shown: it still exists, and its space is turned on. Starjot Home always can. */
+function placeAllowed(place: Place, spaces: Spaces) {
+  return placeExists(place) && (place.kind === 'start' || spaces.notes);
+}
+
+/* What Starjot shows when it opens: the page its address names (a refresh or a bookmark), or else */
+/* the start screen chosen in Settings. A space that is turned off is never opened. */
+function openingPage(): { screen: ScreenId; place: Place; view: BoardTab } {
+  const { spaces, startScreen } = getPreferences();
+  const address = parseAddress(window.location.hash);
+  if (address?.kind === 'board' && spaces.boardspace) return { screen: 'boardspace', place: { kind: 'start' }, view: address.view };
+  if (address?.kind === 'place' && placeAllowed(address.place, spaces)) return { screen: 'notes', place: address.place, view: 'todo' };
+  if (startScreen === 'boardspace' && spaces.boardspace) return { screen: 'boardspace', place: { kind: 'start' }, view: 'todo' };
+  return { screen: 'notes', place: startScreen === 'notes' && spaces.notes ? { kind: 'home' } : { kind: 'start' }, view: 'todo' };
+}
+
 /* Only navigation lives here; note content belongs to the Notespace store. */
 export function App() {
-  /* The page address the app was opened at (see address.ts), such as a bookmarked note or a */
-  /* refresh; anything else opens Starjot Home. */
-  const [startAddress] = useState(() => parseAddress(window.location.hash));
-  const [screenId, setScreenId] = useState<ScreenId>(startAddress?.kind === 'board' ? 'boardspace' : 'notes');
+  const [opening] = useState(openingPage);
+  const [screenId, setScreenId] = useState<ScreenId>(opening.screen);
 
-  /* Notespace's tab groups (one, or two after a split), each with its tabs and their histories. */
-  const [tabs, setTabs] = useState<Workspace>(() => newWorkspace(
-    startAddress?.kind === 'place' && placeExists(startAddress.place) ? startAddress.place : { kind: 'start' }
-  ));
-  const [workTab, setWorkTab] = useState<BoardTab>(startAddress?.kind === 'board' ? startAddress.view : 'todo');
+  /* The tab groups (one, or two after a split), each with its tabs and their histories. */
+  const [tabs, setTabs] = useState<Workspace>(() => newWorkspace(opening.place));
+  const [workTab, setWorkTab] = useState<BoardTab>(opening.view);
   /* Settings is a panel over the app: open or not, the section shown, and a group to highlight. */
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [settingsSection, setSettingsSection] = useState<SettingsSection>('general');
   const [settingsFocus, setSettingsFocus] = useState<string | null>(null);
   const clearSettingsFocus = useCallback(() => setSettingsFocus(null), []);
   const [noteFilter, setNoteFilter] = useState<NoteFilter>('all');
-  const { sidebarCollapsed } = usePreferences();
+  const { sidebarCollapsed, spaces } = usePreferences();
 
   /* The sidebar docks beside the page when the user chose so and the window has room; otherwise */
   /* it floats over the page as a popup. "hover" popups close when the pointer leaves them; */
@@ -174,6 +186,7 @@ export function App() {
   }
 
   function navigate(next: ScreenId) {
+    if (!spaces[next]) return;
     flushSave();
     setScreenId(next);
     if (next === 'notes') go({ kind: 'home' });
@@ -283,6 +296,18 @@ export function App() {
     setSwitcher({ ...switcher, selected: (switcher.selected + direction + switcher.ids.length) % switcher.ids.length });
   }
 
+  /* Turning a space off in Settings closes it: Boardspace gives way to the tabs, and tabs that */
+  /* have shown Notespace's pages start over on Starjot Home, so Back cannot lead into it. */
+  useEffect(() => {
+    if (!spaces.boardspace && screenId === 'boardspace') setScreenId('notes');
+    if (spaces.notes) return;
+    closedTabs.current = [];
+    if (tabs.groups.some(item => item.tabs.some(tab => tab.history.some(shown => shown.kind !== 'start')))) {
+      flushSave();
+      setTabs(newWorkspace({ kind: 'start' }));
+    }
+  }, [spaces.notes, spaces.boardspace]);
+
   /* Clicking or tabbing into a group makes it the focused group. */
   function focusOn(groupId: string) {
     if (tabs.focus !== groupId) setTabs(current => focusGroup(current, groupId));
@@ -318,12 +343,12 @@ export function App() {
       }
       const target = parseAddress(window.location.hash) ?? { kind: 'place' as const, place: { kind: 'start' as const } };
       flushSave();
-      if (target.kind === 'board') {
+      if (target.kind === 'board' && spaces.boardspace) {
         setScreenId('boardspace');
         setWorkTab(target.view);
         return;
       }
-      if (!placeExists(target.place)) {
+      if (target.kind === 'board' || !placeAllowed(target.place, spaces)) {
         window.history.replaceState(null, '', pageUrl(address));
         return;
       }
@@ -434,7 +459,7 @@ export function App() {
   /* Shown in the tab bar (or top bar) while floating, and at the top of the sidebar while docked, */
   /* in the same corner either way. */
   const windowControls = (
-    <WindowControls sidebarOpen={docked || popup !== null} onHome={goHome} onToggleSidebar={toggleSidebar} onSidebarHover={startPopup} onSidebarLeave={endPopup} onNewNote={fromSidebar(() => newNote())} />
+    <WindowControls sidebarOpen={docked || popup !== null} onHome={goHome} onToggleSidebar={toggleSidebar} onSidebarHover={startPopup} onSidebarLeave={endPopup} onNewNote={spaces.notes ? fromSidebar(() => newNote()) : undefined} />
   );
 
   /* Ctrl + K opens search, Ctrl + N creates a note while in Notespace, and Ctrl + \ docks or */
@@ -468,7 +493,7 @@ export function App() {
       } else if (key === 'k') {
         event.preventDefault();
         openSearch();
-      } else if (key === 'n' && screenId === 'notes') {
+      } else if (key === 'n' && screenId === 'notes' && spaces.notes) {
         event.preventDefault();
         newNote();
       } else if (key === 't' && event.shiftKey) {
@@ -677,6 +702,8 @@ export function App() {
         screen={screenId}
         space={screenId}
         openNoteId={screenId === 'notes' && place.kind === 'note' ? place.id : null}
+        openCategoryId={screenId === 'notes' && place.kind === 'category' ? place.id : null}
+        onOpenCategory={fromSidebar((id: string, inNewTab = false) => (inNewTab ? openInNewTab({ kind: 'category', id }) : go({ kind: 'category', id })))}
         boardView={screenId === 'boardspace' ? workTab : null}
         docked={docked}
         onNavigate={fromSidebar(navigate)}

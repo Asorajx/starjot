@@ -1,8 +1,11 @@
 import { useEffect, useRef, type CSSProperties, type ReactNode } from 'react';
 import { version } from '../../../package.json';
 import { BrandMark } from '../components/BrandMark';
+import { Dropdown } from '../components/Dropdown';
 import { Icon, type IconName } from '../components/Icon';
-import { updatePreferences, usePreferences, type Preferences } from '../app/preferences';
+import { updatePreferences, usePreferences, type Preferences, type StartScreen } from '../app/preferences';
+import { enabledScreens, SCREENS } from '../app/screens';
+import { useCategories } from '../notespace/store';
 import { Switch } from '../components/Switch';
 import { useEscape } from '../lib/useDismiss';
 import { useFocusTrap } from '../lib/useFocusTrap';
@@ -21,7 +24,8 @@ type SettingsProps = {
 
 type SettingsTab = { id: SettingsSection; label: string; icon: IconName };
 
-/* The menu down the left of the panel, in three groups. */
+/* The menu down the left of the panel, in three groups. Notespace's group is hidden while */
+/* Notespace is turned off. */
 const SETTING_GROUPS: { heading: string; tabs: SettingsTab[] }[] = [
   {
     heading: 'Starjot',
@@ -47,7 +51,6 @@ const SETTING_GROUPS: { heading: string; tabs: SettingsTab[] }[] = [
   }
 ];
 
-const SETTING_TABS = SETTING_GROUPS.flatMap(group => group.tabs);
 
 
 /* =========================
@@ -121,15 +124,29 @@ function Heading({ title, subtitle }: { title: string; subtitle: string }) {
    ========================= */
 
 function SettingsSectionContent({ section }: { section: SettingsSection }) {
-  const { theme, density, contentsScroll, hideHeaderWhileTyping, drawing } = usePreferences();
+  const { theme, density, startScreen, spaces, sidebar, contentsScroll, hideHeaderWhileTyping, drawing } = usePreferences();
+  const categories = useCategories();
   const set = (changes: Partial<Preferences>) => updatePreferences(changes);
 
   if (section === 'general') {
+    /* Starjot Home, or the home of a space that is turned on. */
+    const startOptions = [
+      { value: 'start' as StartScreen, label: 'Starjot Home', icon: 'home' as const },
+      ...enabledScreens(spaces).map(screen => ({ value: screen.id as StartScreen, label: screen.label, icon: screen.icon }))
+    ];
     return (
       <>
         <Heading title="General" subtitle="Everyday preferences for Starjot." />
         <Group title="Starting up">
-          <Row preview title="Start screen" description="Choose where Starjot opens."><FakeSelect>Starjot Home</FakeSelect></Row>
+          <Row title="Start screen" description="Where Starjot opens. A link to a page, a bookmark or a refresh still opens that page.">
+            <Dropdown
+              label="Start screen"
+              value={startOptions.some(option => option.value === startScreen) ? startScreen : 'start'}
+              options={startOptions}
+              alignEnd
+              onChange={value => set({ startScreen: value })}
+            />
+          </Row>
         </Group>
         <Group title="Help">
           <Row preview title="Show helpful tips" description="Show small hints while you explore Starjot."><Toggle /></Row>
@@ -179,12 +196,24 @@ function SettingsSectionContent({ section }: { section: SettingsSection }) {
   }
 
   if (section === 'spaces') {
+    const descriptions = { notes: 'Notes, sub-notes and categories.', boardspace: 'Tasks, their statuses, the timeline, and links to notes.' };
+    const onCount = SCREENS.filter(screen => spaces[screen.id]).length;
     return (
       <>
-        <Heading title="Spaces" subtitle="Choose which spaces appear in Starjot." />
+        <Heading title="Spaces" subtitle="Choose which spaces appear in Starjot. A space turned off is hidden everywhere; nothing in it is deleted." />
         <Group title="Available spaces">
-          <Row preview title={<><span className="setting-icon"><Icon name="book-open" size={19} /></span> Notespace</>} description="Notes, sub-notes and categories."><Toggle /></Row>
-          <Row preview title={<><span className="setting-icon"><Icon name="layout-dashboard" size={19} /></span> Boardspace</>} description="Tasks, their statuses, the timeline, and links to notes."><Toggle /></Row>
+          {SCREENS.map(screen => {
+            const last = spaces[screen.id] && onCount === 1;
+            return (
+              <Row
+                key={screen.id}
+                title={<><span className="setting-icon"><Icon name={screen.icon} size={19} /></span> {screen.label}</>}
+                description={last ? `${descriptions[screen.id]} At least one space stays on.` : descriptions[screen.id]}
+              >
+                <Switch label={screen.label} on={spaces[screen.id]} disabled={last} onChange={on => set({ spaces: { ...spaces, [screen.id]: on } })} />
+              </Row>
+            );
+          })}
         </Group>
       </>
     );
@@ -210,8 +239,37 @@ function SettingsSectionContent({ section }: { section: SettingsSection }) {
             <Switch label="Hide the note bar while typing" on={hideHeaderWhileTyping} onChange={value => set({ hideHeaderWhileTyping: value })} />
           </Row>
         </Group>
-        <Group title="Lists">
-          <Row preview title="Show recent notes" description="List the notes you opened lately in the sidebar."><Toggle /></Row>
+        <Group title="Sidebar">
+          <Row title="Starred" description="List your starred notes in the sidebar.">
+            <Switch label="Starred notes in the sidebar" on={sidebar.starred} onChange={on => set({ sidebar: { ...sidebar, starred: on } })} />
+          </Row>
+          <Row title="Recent" description="List the notes you opened lately in the sidebar.">
+            <Switch label="Recent notes in the sidebar" on={sidebar.recent} onChange={on => set({ sidebar: { ...sidebar, recent: on } })} />
+          </Row>
+          <Row title="Categories" description="List categories in the sidebar, to open their pages in one click. Choose which ones below.">
+            <Switch label="Categories in the sidebar" on={sidebar.categories} onChange={on => set({ sidebar: { ...sidebar, categories: on } })} />
+          </Row>
+          {sidebar.categories && (
+            <div className="setting-checks" role="group" aria-label="Categories shown in the sidebar">
+              {categories.length ? categories.map(category => (
+                <label key={category.id} className="setting-check">
+                  <input
+                    type="checkbox"
+                    checked={!sidebar.hiddenCategories.includes(category.id)}
+                    onChange={event => set({
+                      sidebar: {
+                        ...sidebar,
+                        hiddenCategories: event.target.checked
+                          ? sidebar.hiddenCategories.filter(id => id !== category.id)
+                          : [...sidebar.hiddenCategories, category.id]
+                      }
+                    })}
+                  />
+                  <Icon name="folder" size={14} /> {category.name}
+                </label>
+              )) : <p className="setting-checks-empty">No categories yet. Add them on the notes home with Edit categories.</p>}
+            </div>
+          )}
         </Group>
       </>
     );
@@ -279,7 +337,10 @@ function SettingsSectionContent({ section }: { section: SettingsSection }) {
 /* the left and the chosen section on the right. Escape, the close button or a click outside */
 /* closes it; the keyboard stays inside while it is open. On phones it fills the screen. */
 export function Settings({ section, onSectionChange, onClose, focus = null, onFocused }: SettingsProps) {
-  const current = SETTING_TABS.find(tab => tab.id === section) ?? SETTING_TABS[0];
+  const { spaces } = usePreferences();
+  const groups = SETTING_GROUPS.filter(group => spaces.notes || group.heading !== 'Notespace');
+  const tabs = groups.flatMap(group => group.tabs);
+  const current = tabs.find(tab => tab.id === section) ?? tabs[0];
   const windowRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLElement>(null);
 
@@ -307,15 +368,15 @@ export function Settings({ section, onSectionChange, onClose, focus = null, onFo
       <div className="settings-window" ref={windowRef} role="dialog" aria-modal="true" aria-labelledby="settings-title">
         <nav className="settings-nav" aria-label="Settings sections">
           <h2 id="settings-title" className="settings-title">Settings</h2>
-          {SETTING_GROUPS.map(group => (
+          {groups.map(group => (
             <div key={group.heading} className="settings-nav-group">
               <div className="settings-nav-heading">{group.heading}</div>
               {group.tabs.map(tab => (
                 <button
                   key={tab.id}
                   type="button"
-                  className={`settings-nav-item ${section === tab.id ? 'active' : ''}`}
-                  aria-current={section === tab.id ? 'true' : undefined}
+                  className={`settings-nav-item ${current.id === tab.id ? 'active' : ''}`}
+                  aria-current={current.id === tab.id ? 'true' : undefined}
                   onClick={() => onSectionChange(tab.id)}
                 >
                   <Icon name={tab.icon} size={17} /> {tab.label}
@@ -328,7 +389,7 @@ export function Settings({ section, onSectionChange, onClose, focus = null, onFo
           <button type="button" className="window-control settings-close" aria-label="Close settings" data-tooltip="Close (Esc)" data-tooltip-align="end" onClick={onClose}>
             <Icon name="x" size={18} />
           </button>
-          <SettingsSectionContent section={section} />
+          <SettingsSectionContent section={current.id} />
         </section>
       </div>
     </div>

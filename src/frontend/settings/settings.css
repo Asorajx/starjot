@@ -168,6 +168,31 @@
   pointer-events: none;
 }
 
+/* The categories to show in the sidebar, ticked one by one under their switch. */
+.setting-checks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 24px;
+  padding: 12px 0 16px;
+  border-bottom: 1px solid #eef1f5;
+}
+
+.setting-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 32px;
+  color: #34435d;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.setting-checks-empty {
+  margin: 0;
+  color: #5b6b82;
+  font-size: 12px;
+}
+
 .fake-select {
   border: 1px solid #e8edf4;
   border-radius: 4px;

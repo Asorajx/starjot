@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type MouseEve
 import { Dropdown, type DropdownOption } from '../components/Dropdown';
 import { Icon, type IconName } from '../components/Icon';
 import { opensNewTab } from '../lib/clicks';
+import { usePreferences, type Spaces } from '../app/preferences';
 import { useEscape } from '../lib/useDismiss';
 import { cleanHtml, htmlToText } from '../notespace/sanitize';
 import { starredNotes } from '../notespace/NoteList';
@@ -71,14 +72,14 @@ function noteEntry(note: Note): SearchEntry {
   };
 }
 
-/* Everything search can find, made again when notes or categories change. */
-function useEntries() {
+/* Everything search can find in the spaces turned on, made again when notes or categories change. */
+function useEntries(spaces: Spaces) {
   const notes = useNotes();
   const categories = useCategories();
   return useMemo(() => [
-    ...notes.map(noteEntry),
-    ...categories.map((category): SearchEntry => ({ kind: 'category', id: category.id, title: category.name, path: ['Category'], text: '', scope: category.id, updatedAt: '' })),
-    ...[...TASK_COLUMNS.values()].map(({ task, column }): SearchEntry => ({
+    ...(spaces.notes ? notes.map(noteEntry) : []),
+    ...(spaces.notes ? categories.map((category): SearchEntry => ({ kind: 'category', id: category.id, title: category.name, path: ['Category'], text: '', scope: category.id, updatedAt: '' })) : []),
+    ...(spaces.boardspace ? [...TASK_COLUMNS.values()] : []).map(({ task, column }): SearchEntry => ({
       kind: 'task',
       id: task.id,
       title: task.title,
@@ -87,16 +88,17 @@ function useEntries() {
       scope: 'boardspace',
       updatedAt: ''
     }))
-  ], [notes, categories]);
+  ], [notes, categories, spaces]);
 }
 
 type Group = { label: string; results: SearchResult[] };
 
 /* Before anything is typed: starred notes, then the most recent notes by day (when they were */
-/* last opened, or last edited for notes never opened here), each note once. After: notes, */
-/* categories, then Boardspace items, each best first. */
-function useGroups(entries: SearchEntry[], query: string, titleOnly: boolean, scope: string): Group[] {
-  const notes = useNotes();
+/* last opened, or last edited for notes never opened here), each note once (nothing while */
+/* Notespace is turned off). After: notes, categories, then Boardspace items, each best first. */
+function useGroups(entries: SearchEntry[], query: string, titleOnly: boolean, scope: string, withNotes: boolean): Group[] {
+  const allNotes = useNotes();
+  const notes = withNotes ? allNotes : [];
   return useMemo(() => {
     if (!query.trim()) {
       const byId = new Map(entries.map(entry => [entry.id, entry]));
@@ -241,25 +243,29 @@ export function SearchWindow({ initialQuery, inNewTab, onClose, onOpenNote, onOp
   const [selected, setSelected] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
-  const categories = useCategories();
-  const entries = useEntries();
-  const groups = useGroups(entries, query, titleOnly, scope);
+  const { spaces } = usePreferences();
+  const allCategories = useCategories();
+  const categories = spaces.notes ? allCategories : [];
+  const entries = useEntries(spaces);
+  const groups = useGroups(entries, query, titleOnly, scope, spaces.notes);
   const flat = groups.flatMap(group => group.results);
 
-  /* The rows are the results, then "Create new note" (its index is flat.length). */
-  const rowCount = flat.length + 1;
-  const index = Math.min(selected, rowCount - 1);
+  /* The rows are the results, then "Create new note" (its index is flat.length), which needs */
+  /* Notespace to be turned on. */
+  const canCreate = spaces.notes;
+  const rowCount = flat.length + (canCreate ? 1 : 0);
+  const index = Math.max(0, Math.min(selected, rowCount - 1));
   const current = flat[index] ?? null;
-  const creating = index === flat.length;
+  const creating = canCreate && index === flat.length;
   const newTitle = query.trim().slice(0, 160);
 
   /* A note created while searching in one category starts in it. */
   const newCategory = categories.some(category => category.id === scope) ? scope : '';
   const scopeOptions: DropdownOption<string>[] = [
     { value: 'all', label: 'Everything', icon: 'search' },
-    { value: 'notes', label: 'All notes', icon: 'book-open' },
+    ...(spaces.notes ? [{ value: 'notes', label: 'All notes', icon: 'book-open' as const }] : []),
     ...categories.map((category, at) => ({ value: category.id, label: category.name, icon: 'folder' as const, heading: at === 0 ? 'Categories' : undefined })),
-    { value: 'boardspace', label: 'Boardspace', icon: 'layout-dashboard', divider: true }
+    ...(spaces.boardspace ? [{ value: 'boardspace', label: 'Boardspace', icon: 'layout-dashboard' as const, divider: spaces.notes }] : [])
   ];
 
   useEscape(true, onClose);
@@ -306,7 +312,7 @@ export function SearchWindow({ initialQuery, inNewTab, onClose, onOpenNote, onOp
       event.preventDefault();
       const newTab = opensNewTab(event);
       if (current) open(current, newTab);
-      else create(newTab);
+      else if (canCreate) create(newTab);
     }
   }
 
@@ -365,7 +371,7 @@ export function SearchWindow({ initialQuery, inNewTab, onClose, onOpenNote, onOp
         <div className={`search-body ${showPreview ? 'has-preview' : ''}`}>
           <div className="search-results" id="search-results" role="listbox" aria-label="Results" ref={listRef}>
             {!flat.length && (
-              <p className="search-empty">{query.trim() ? `Nothing matches “${query.trim()}”.` : 'Notes you write will show here.'}</p>
+              <p className="search-empty">{query.trim() ? `Nothing matches “${query.trim()}”.` : spaces.notes ? 'Notes you write will show here.' : 'Type to search Boardspace.'}</p>
             )}
             {groups.map(group => (
               <div key={group.label} role="group" aria-label={group.label}>
@@ -398,7 +404,7 @@ export function SearchWindow({ initialQuery, inNewTab, onClose, onOpenNote, onOp
               </div>
             ))}
 
-            <div role="group" aria-label="New note" className="search-create-group">
+            {canCreate && <div role="group" aria-label="New note" className="search-create-group">
               <div
                 id={`search-option-${flat.length}`}
                 role="option"
@@ -415,7 +421,7 @@ export function SearchWindow({ initialQuery, inNewTab, onClose, onOpenNote, onOp
                   </span>
                 </span>
               </div>
-            </div>
+            </div>}
           </div>
           {showPreview && (creating ? <aside className="search-preview" aria-label="Preview"><CreatePreview title={newTitle} inNewTab={inNewTab} /></aside> : <PreviewPane entry={current?.entry ?? null} />)}
         </div>

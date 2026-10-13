@@ -92,3 +92,33 @@ describe('preferences', () => {
     });
   });
 });
+
+
+/* =========================
+   Start Screen, Spaces and Sidebar
+   ========================= */
+
+describe('start screen, spaces and sidebar', () => {
+  const save = (saved: object) => localStorage.setItem('starjot-preferences-v1', JSON.stringify(saved));
+
+  it('starts on Starjot Home with both spaces on, and Starred and Recent in the sidebar', async () => {
+    const { startScreen, spaces, sidebar } = (await openApp()).getPreferences();
+    expect(startScreen).toBe('start');
+    expect(spaces).toEqual({ notes: true, boardspace: true });
+    expect(sidebar).toEqual({ starred: true, recent: true, categories: false, hiddenCategories: [] });
+  });
+
+  it('remembers the choices, and never loads with every space off', async () => {
+    save({ startScreen: 'boardspace', spaces: { notes: false, boardspace: true }, sidebar: { recent: false, categories: true, hiddenCategories: ['work', 7] } });
+    const loaded = (await openApp()).getPreferences();
+    expect(loaded.startScreen).toBe('boardspace');
+    expect(loaded.spaces).toEqual({ notes: false, boardspace: true });
+    expect(loaded.sidebar).toEqual({ starred: true, recent: false, categories: true, hiddenCategories: ['work'] });
+
+    vi.resetModules();
+    save({ startScreen: 'garden', spaces: { notes: false, boardspace: false } });
+    const repaired = (await openApp()).getPreferences();
+    expect(repaired.startScreen).toBe('start');
+    expect(repaired.spaces).toEqual({ notes: true, boardspace: true });
+  });
+});

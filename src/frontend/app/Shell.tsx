@@ -2,8 +2,8 @@ import type { MouseEvent, ReactNode } from 'react';
 import { BrandMark } from '../components/BrandMark';
 import { opensNewTab, type OpenById } from '../lib/clicks';
 import { Icon, type IconName } from '../components/Icon';
-import { SCREENS, screenLabel, type ScreenId } from './screens';
-import { noteTitle, useNotes } from '../notespace/store';
+import { enabledScreens, screenLabel, type ScreenId } from './screens';
+import { noteTitle, useCategories, useNotes } from '../notespace/store';
 import { sortNotes, starredNotes } from '../notespace/NoteList';
 import { BOARD_TABS } from '../boardspace/data';
 import { updatePreferences, usePreferences } from './preferences';
@@ -20,8 +20,10 @@ type SidebarProps = NavigationProps & {
   /* The space whose lists are shown (the one open). */
   space: ScreenId;
   openNoteId: string | null;
+  openCategoryId: string | null;
   boardView: BoardTab | null;
   onOpenNote: OpenById;
+  onOpenCategory: OpenById;
   onOpenBoardView: (view: BoardTab) => void;
   /* Docked beside the page, or floating over it as a popup. Docked, Home and the sidebar button */
   /* (controls) sit at its top. */
@@ -52,7 +54,9 @@ type WindowControlsProps = {
   onToggleSidebar: () => void;
   onSidebarHover: (event: MouseEvent) => void;
   onSidebarLeave: () => void;
-  onNewNote: () => void;
+
+  /* Left out while Notespace is turned off, which hides the New note button. */
+  onNewNote?: () => void;
 };
 
 /* Home, the sidebar button, Notifications and New note, always at the top left of the window: at */
@@ -88,9 +92,11 @@ export function WindowControls({ sidebarOpen, onHome, onToggleSidebar, onSidebar
       >
         <Icon name="bell" size={17} /><span className="notification-dot" />
       </button>
-      <button type="button" className="window-control window-new-note" aria-label="New note" data-tooltip="New note" data-tooltip-align="start" onClick={onNewNote}>
-        <Icon name="square-pen" size={17} />
-      </button>
+      {onNewNote && (
+        <button type="button" className="window-control window-new-note" aria-label="New note" data-tooltip="New note" data-tooltip-align="start" onClick={onNewNote}>
+          <Icon name="square-pen" size={17} />
+        </button>
+      )}
     </div>
   );
 }
@@ -108,7 +114,7 @@ type SidebarLinkProps = {
   onClick: (event: MouseEvent) => void;
 };
 
-/* One line in a sidebar list: a note, or a view of the board. */
+/* One line in a sidebar list: a note, a category, or a view of the board. */
 function SidebarLink({ icon, emoji, label, current, onClick }: SidebarLinkProps) {
   return (
     <li>
@@ -137,11 +143,15 @@ function SidebarList({ id, title, empty, children }: SidebarListProps) {
   );
 }
 
-/* Notespace: starred notes, then the notes opened most recently. */
-function NotespaceLists({ openNoteId, onOpenNote }: Pick<SidebarProps, 'openNoteId' | 'onOpenNote'>) {
+/* Notespace: starred notes, the notes opened most recently, and categories, each as chosen in */
+/* Settings → Notes → Sidebar. */
+function NotespaceLists({ openNoteId, openCategoryId, onOpenNote, onOpenCategory }: Pick<SidebarProps, 'openNoteId' | 'openCategoryId' | 'onOpenNote' | 'onOpenCategory'>) {
   const notes = useNotes();
+  const categories = useCategories();
+  const { sidebar } = usePreferences();
   const starred = starredNotes(notes).slice(0, LIST_COUNT);
   const recent = sortNotes(notes.filter(note => note.openedAt), 'opened').slice(0, LIST_COUNT);
+  const shownCategories = categories.filter(category => !sidebar.hiddenCategories.includes(category.id));
   const link = (note: Note) => (
     <SidebarLink
       key={note.id}
@@ -155,8 +165,21 @@ function NotespaceLists({ openNoteId, onOpenNote }: Pick<SidebarProps, 'openNote
 
   return (
     <>
-      <SidebarList id="sidebar-starred" title="Starred" empty="Star a note to keep it here.">{starred.map(link)}</SidebarList>
-      <SidebarList id="sidebar-recent" title="Recent" empty="Notes you open appear here.">{recent.map(link)}</SidebarList>
+      {sidebar.starred && <SidebarList id="sidebar-starred" title="Starred" empty="Star a note to keep it here.">{starred.map(link)}</SidebarList>}
+      {sidebar.recent && <SidebarList id="sidebar-recent" title="Recent" empty="Notes you open appear here.">{recent.map(link)}</SidebarList>}
+      {sidebar.categories && (
+        <SidebarList id="sidebar-categories" title="Categories" empty="Choose categories to show in Settings → Notes.">
+          {shownCategories.map(category => (
+            <SidebarLink
+              key={category.id}
+              icon="folder"
+              label={category.name}
+              current={openCategoryId === category.id}
+              onClick={event => onOpenCategory(category.id, opensNewTab(event))}
+            />
+          ))}
+        </SidebarList>
+      )}
     </>
   );
 }
@@ -188,10 +211,14 @@ function BoardspaceLists({ boardView, onOpenBoardView }: Pick<SidebarProps, 'boa
 /* heading. Docked, it sits beside the page at full height, with the window controls across its */
 /* top. Otherwise it floats over the page as a popup below the note bar, opened by hovering the */
 /* sidebar button or the left edge of the window, or by the keyboard moving into it. */
-export function Sidebar({ screen, space, openNoteId, boardView, docked, controls, settingsOpen, onNavigate, onOpenNote, onOpenBoardView, onSearch, onSettings, onMouseEnter, onMouseLeave }: SidebarProps) {
-  const { theme } = usePreferences();
+export function Sidebar({ screen, space, openNoteId, openCategoryId, boardView, docked, controls, settingsOpen, onNavigate, onOpenNote, onOpenCategory, onOpenBoardView, onSearch, onSettings, onMouseEnter, onMouseLeave }: SidebarProps) {
+  const { theme, spaces: enabled } = usePreferences();
   const dark = theme === 'dark';
-  const spaces = SCREENS;
+  const spaces = enabledScreens(enabled);
+
+  /* Starjot Home sits in the tabs, so it counts as Notespace; with Notespace turned off, the */
+  /* sidebar shows the space that is on instead. */
+  const shown = enabled[space] ? space : spaces[0].id;
 
   return (
     <aside className="sidebar" aria-label="Sidebar" onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave}>
@@ -222,21 +249,21 @@ export function Sidebar({ screen, space, openNoteId, boardView, docked, controls
           <button
             key={item.id}
             type="button"
-            className={`sidebar-icon ${space === item.id ? 'is-active' : ''}`}
+            className={`sidebar-icon ${shown === item.id ? 'is-active' : ''}`}
             aria-label={item.label}
             aria-current={screen === item.id ? 'page' : undefined}
-            data-tooltip={space === item.id ? undefined : item.label}
+            data-tooltip={shown === item.id ? undefined : item.label}
             onClick={() => onNavigate(item.id)}
           >
             <Icon name={item.icon} size={18} />
-            {space === item.id && <span>{item.label}</span>}
+            {shown === item.id && <span>{item.label}</span>}
           </button>
         ))}
       </nav>
 
-      <nav className="sidebar-lists" aria-label={`${screenLabel(space)} shortcuts`}>
-        {space === 'notes'
-          ? <NotespaceLists openNoteId={openNoteId} onOpenNote={onOpenNote} />
+      <nav className="sidebar-lists" aria-label={`${screenLabel(shown)} shortcuts`}>
+        {shown === 'notes'
+          ? <NotespaceLists openNoteId={openNoteId} openCategoryId={openCategoryId} onOpenNote={onOpenNote} onOpenCategory={onOpenCategory} />
           : <BoardspaceLists boardView={boardView} onOpenBoardView={onOpenBoardView} />}
       </nav>
 
@@ -287,15 +314,16 @@ type MobileNavProps = NavigationProps & {
   onSettings: () => void;
 };
 
-/* Phones have no sidebar: Home and the spaces sit in a bar along the bottom. */
+/* Phones have no sidebar: Home and the spaces turned on sit in a bar along the bottom. */
 export function MobileNav({ screen, homeShown, settingsOpen, onNavigate, onHome, onSearch, onSettings }: MobileNavProps) {
+  const { spaces } = usePreferences();
   const current = (id: ScreenId) => screen === id && !homeShown;
   return (
     <nav className="mobile-nav" aria-label="Spaces">
       <button type="button" className={`mobile-link ${homeShown ? 'active' : ''}`} aria-current={homeShown ? 'page' : undefined} onClick={onHome}>
         <Icon name="home" size={20} /><span>Home</span>
       </button>
-      {SCREENS.map(item => (
+      {enabledScreens(spaces).map(item => (
         <button
           key={item.id}
           type="button"

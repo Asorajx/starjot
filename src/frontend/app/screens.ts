@@ -20,6 +20,11 @@ export const SCREENS: Screen[] = [
   { id: 'boardspace', label: 'Boardspace', icon: 'layout-dashboard' }
 ];
 
+/* The spaces turned on in Settings, in navigation order. */
+export function enabledScreens(spaces: Record<ScreenId, boolean>) {
+  return SCREENS.filter(screen => spaces[screen.id]);
+}
+
 export function screenLabel(id: ScreenId) {
   return SCREENS.find(screen => screen.id === id)?.label ?? id;
 }
