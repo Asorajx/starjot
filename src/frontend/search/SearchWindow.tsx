@@ -3,8 +3,8 @@ import { Dropdown, type DropdownOption } from '../components/Dropdown';
 import { Icon, type IconName } from '../components/Icon';
 import { useEscape } from '../lib/useDismiss';
 import { cleanHtml, htmlToText } from '../notespace/sanitize';
-import { newestFirst } from '../notespace/NoteList';
-import { ancestorsOf, categoryName, getNote, useCategories, useNotes } from '../notespace/store';
+import { starredNotes } from '../notespace/NoteList';
+import { ancestorsOf, categoryName, getNote, noteTitle, useCategories, useNotes } from '../notespace/store';
 import { BOARD_TABS } from '../boardspace/data';
 import { TASKS } from '../../backend/data/sampleTasks';
 import type { Note } from '../../shared/types/note';
@@ -61,9 +61,9 @@ function noteEntry(note: Note): SearchEntry {
   return {
     kind: 'note',
     id: note.id,
-    title: note.title || 'Untitled note',
+    title: noteTitle(note),
     icon: note.icon,
-    path: [categoryName(note.category), ...ancestorsOf(note.id).map(parent => parent.title || 'Untitled note')].filter(Boolean),
+    path: [categoryName(note.category), ...ancestorsOf(note.id).map(parent => noteTitle(parent))].filter(Boolean),
     text: text.filter(Boolean).join('\n'),
     scope: note.category,
     updatedAt: note.updatedAt ?? ''
@@ -103,7 +103,7 @@ function useGroups(entries: SearchEntry[], query: string, titleOnly: boolean, sc
         const entry = byId.get(note.id);
         return entry ? [{ entry, snippet: null, findTerm: '' }] : [];
       };
-      const starred = newestFirst(notes).filter(note => note.pinned).slice(0, STARRED_COUNT);
+      const starred = starredNotes(notes).slice(0, STARRED_COUNT);
       const lastSeen = (note: Note) => note.openedAt ?? note.updatedAt ?? '';
       const recent = notes
         .filter(note => !note.pinned)
@@ -156,7 +156,7 @@ function Preview({ entry }: { entry: SearchEntry }) {
     return (
       <article className="search-preview-page">
         <span className="search-preview-icon" aria-hidden="true">{note.icon || <Icon name="file-text" size={28} />}</span>
-        <h2>{note.title || 'Untitled note'}</h2>
+        <h2>{noteTitle(note)}</h2>
         {note.subtitle && <p className="search-preview-subtitle">{note.subtitle}</p>}
         {note.content
           ? <div className="search-preview-content" dangerouslySetInnerHTML={{ __html: cleanHtml(note.content) }} />
@@ -171,7 +171,7 @@ function Preview({ entry }: { entry: SearchEntry }) {
         <span className="search-preview-icon" aria-hidden="true"><Icon name="folder" size={28} /></span>
         <h2>{entry.title}</h2>
         <p className="search-preview-subtitle">{inside.length} {inside.length === 1 ? 'note' : 'notes'}</p>
-        <ul className="search-preview-list">{inside.slice(0, 8).map(note => <li key={note.id}>{note.icon ? `${note.icon} ` : ''}{note.title || 'Untitled note'}</li>)}</ul>
+        <ul className="search-preview-list">{inside.slice(0, 8).map(note => <li key={note.id}>{note.icon ? `${note.icon} ` : ''}{noteTitle(note)}</li>)}</ul>
       </article>
     );
   }
@@ -198,7 +198,7 @@ function CreatePreview({ title, inNewTab }: { title: string; inNewTab: boolean }
   return (
     <article className="search-preview-page">
       <span className="search-preview-icon" aria-hidden="true"><Icon name="plus" size={28} /></span>
-      <h2>{title || 'Untitled note'}</h2>
+      <h2>{noteTitle({ title })}</h2>
       <p className="search-preview-empty">Press Enter to create this note{inNewTab ? ' in a new tab' : ''}.</p>
     </article>
   );

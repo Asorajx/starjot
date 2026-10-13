@@ -57,12 +57,6 @@ export function tableSlice(table: HTMLTableElement, range: CellRange) {
   return slice;
 }
 
-/* A whole table as a rectangle. */
-export function wholeTable(table: HTMLTableElement): CellRange {
-  const { grid, width } = tableGrid(table);
-  return { top: 0, bottom: grid.length - 1, left: 0, right: width - 1 };
-}
-
 /* A table as tab-separated text, one row per line, as spreadsheets copy and paste it. */
 export function tableText(table: HTMLTableElement) {
   return Array.from(table.rows).map(row => Array.from(row.cells).map(cell => (cell.textContent ?? '').replace(/\s+/g, ' ').trim()).join('\t')).join('\n');

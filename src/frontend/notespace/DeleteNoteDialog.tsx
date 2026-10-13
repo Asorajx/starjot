@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { ConfirmDialog } from '../components/ConfirmDialog';
-import { childrenOf, getNote } from './store';
+import { childrenOf, getNote, noteTitle } from './store';
 
 type DeleteNoteDialogProps = {
   noteId: string;
@@ -25,7 +25,7 @@ const plural = (count: number) => `${count} sub-note${count === 1 ? '' : 's'}`;
 export function DeleteNoteDialog({ noteId, sub = false, onConfirm, onCancel }: DeleteNoteDialogProps) {
   const [withSubNotes, setWithSubNotes] = useState(false);
   const [askingAgain, setAskingAgain] = useState(false);
-  const title = getNote(noteId)?.title || 'Untitled note';
+  const title = noteTitle(getNote(noteId));
   const children = childrenOf(noteId);
   const deletable = children.filter(child => !child.locked);
   const lockedNote = deletable.length < children.length ? <p>Locked sub-notes are kept, and move up one level.</p> : null;
@@ -33,7 +33,7 @@ export function DeleteNoteDialog({ noteId, sub = false, onConfirm, onCancel }: D
   if (askingAgain) {
     return (
       <ConfirmDialog title={`Also delete ${plural(deletable.length)}?`} confirmLabel="Delete all" danger onConfirm={() => onConfirm(true)} onCancel={() => setAskingAgain(false)}>
-        <p><strong>{title}</strong> and {deletable.map(child => child.title || 'Untitled note').join(', ')} will be removed from this browser, with everything written in them. This cannot be undone.</p>
+        <p><strong>{title}</strong> and {deletable.map(child => noteTitle(child)).join(', ')} will be removed from this browser, with everything written in them. This cannot be undone.</p>
         {lockedNote}
       </ConfirmDialog>
     );

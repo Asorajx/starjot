@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from 'react';
 import { Icon } from '../../../components/Icon';
-import { getNote, useNotes } from '../../store';
+import { getNote, noteTitle, useNotes } from '../../store';
 import { copyPageLink, linkTarget, normalizeAddress, setLinkTarget, unwrapLink, type LinkTarget } from './links';
 import { LinkPreviewCard } from './LinkPreview';
 import type { EditorSession } from '../session';
@@ -30,7 +30,7 @@ const LINK_AREAS = '.note-body, [data-remarks], .comment-popover';
 /* The words shown for a page link's page, or "Note not found" once it is deleted. */
 function pageTitle(id: string) {
   const note = getNote(id);
-  return note ? note.title || 'Untitled note' : 'Note not found';
+  return note ? noteTitle(note) : 'Note not found';
 }
 
 /* A page link copies the page's address (see copyPageLink), so pasting it into a note makes the */
@@ -219,7 +219,7 @@ export function LinkTools({ session, locked, onOpenNote, onOpenNoteInNewTab }: L
   const query = address.trim().toLowerCase();
   const looksLikeAddress = /^[a-z][a-z0-9+.-]*:|^www\.|\.[a-z]{2,}(\/|$)/i.test(address.trim());
   const suggestions = editing && !page && query && !looksLikeAddress
-    ? notes.filter(note => (note.title || 'Untitled note').toLowerCase().includes(query)).slice(0, PAGE_SUGGESTIONS)
+    ? notes.filter(note => noteTitle(note).toLowerCase().includes(query)).slice(0, PAGE_SUGGESTIONS)
     : [];
 
   /* The bar sits under the link, or above it when there is no room below. */
@@ -276,10 +276,10 @@ export function LinkTools({ session, locked, onOpenNote, onOpenNoteInNewTab }: L
                   className="page-menu-item"
                   onClick={() => {
                     setPage(note.id);
-                    setAddress(note.title || 'Untitled note');
+                    setAddress(noteTitle(note));
                   }}
                 >
-                  <Icon name="file-text" size={14} /> {note.title || 'Untitled note'}
+                  <Icon name="file-text" size={14} /> {noteTitle(note)}
                 </button>
               ))}
             </span>

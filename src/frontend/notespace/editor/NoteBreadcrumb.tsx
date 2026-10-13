@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ancestorsOf, categoryName } from '../store';
+import { ancestorsOf, categoryName, noteTitle } from '../store';
 import type { Note } from '../../../shared/types/note';
 
 type NoteBreadcrumbProps = {
@@ -29,13 +29,13 @@ export function NoteBreadcrumb({ note, onOpenNote, onOpenCategory }: NoteBreadcr
     ...(category ? [{ key: 'category', label: category, open: () => onOpenCategory(note.category) }] : []),
     ...ancestorsOf(note.id).map(page => ({
       key: page.id,
-      label: `${page.icon ? `${page.icon} ` : ''}${page.title || 'Untitled note'}`,
+      label: `${page.icon ? `${page.icon} ` : ''}${noteTitle(page)}`,
       open: () => onOpenNote(page.id)
     }))
   ];
   const shown = trail.slice(-(VISIBLE_CRUMBS - 1));
   const folded = trail.slice(0, -(VISIBLE_CRUMBS - 1));
-  const title = note.title || 'Untitled note';
+  const title = noteTitle(note);
 
   return (
     <nav className="editor-breadcrumb" aria-label="Note breadcrumb">

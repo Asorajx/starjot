@@ -1,5 +1,5 @@
 import { safeHref } from '../../sanitize';
-import { getNote } from '../../store';
+import { getNote, noteTitle } from '../../store';
 import { escapeHtml } from '../../../lib/html';
 
 /* Where a link leads: a web or email address, or another page in Notespace. */
@@ -76,7 +76,7 @@ export function pageAddress(id: string) {
 
 /* Copy a link to a page: its address as plain text (opens the page in a browser, and pasted into */
 /* a note makes a page link), and the page link itself for apps that take formatted text. */
-export async function copyPageLink(id: string, words = getNote(id)?.title || 'Untitled note') {
+export async function copyPageLink(id: string, words = noteTitle(getNote(id))) {
   const address = pageAddress(id);
   if (typeof ClipboardItem === 'undefined') {
     await navigator.clipboard.writeText(address);

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent as ReactMouseEvent } from 'react';
 import { Icon } from '../../../components/Icon';
-import { canAddSubpage, createSubpage, useNotes } from '../../store';
+import { canAddSubpage, createSubpage, noteTitle, useNotes } from '../../store';
 import { caretIsInlineOnly, matchCommands, type SlashCommand } from './slashCommands';
 import { convertLine, createPageBlock, createPageMention, createTable, insertBlock, insertInline, lineAtCaret, type LineChange } from './lines';
 import { hydratePages } from './pageBlocks';
@@ -323,7 +323,7 @@ export function SlashMenu({ session, noteId, locked, onOpenNewPage }: SlashMenuP
               onClick={() => linkTo(page.id)}
             >
               <span className="slash-menu-icon">{page.icon || <Icon name="file-text" size={15} />}</span>
-              <span className="slash-menu-name">{page.title || 'Untitled note'}</span>
+              <span className="slash-menu-name">{noteTitle(page)}</span>
             </button>
           )) : <p className="slash-menu-empty">No notes found</p>}
         </>

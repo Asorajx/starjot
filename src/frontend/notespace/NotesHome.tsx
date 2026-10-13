@@ -3,7 +3,7 @@ import { ConfirmDialog } from '../components/ConfirmDialog';
 import { Dropdown } from '../components/Dropdown';
 import { Icon } from '../components/Icon';
 import { updatePreferences, usePreferences, type NotesSort } from '../app/preferences';
-import { newestFirst, NoteTable, NoteTile, sortNotes } from './NoteList';
+import { NoteTable, NoteTile, sortNotes, starredNotes } from './NoteList';
 import { useNoteMenu } from './NoteMenu';
 import { useImport } from './import/useImport';
 import {
@@ -163,7 +163,7 @@ export function NotesHome({ filter, onFilterChange, onOpen, onOpenInNewTab, onOp
   /* Re-render when categories are renamed, so each row shows the current name. */
   const categories = useCategories();
 
-  const starred = newestFirst(notes).filter(note => note.pinned);
+  const starred = starredNotes(notes);
   const starredShown = showAllStarred ? starred : starred.slice(0, STARRED_COUNT);
   const shown = sortNotes(notes.filter(note => filter === 'all' || note.category === filter), notesSort);
 

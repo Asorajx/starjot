@@ -1,6 +1,6 @@
 import { Icon } from '../components/Icon';
 import type { NotesSort } from '../app/preferences';
-import { categoryName, getNote, setPinned, updatedLabel } from './store';
+import { categoryName, getNote, noteTitle, setPinned, updatedLabel } from './store';
 import type { NoteMenu } from './NoteMenu';
 import type { Note } from '../../shared/types/note';
 
@@ -23,10 +23,15 @@ export function newestFirst(notes: Note[]) {
   return [...notes].sort((a, b) => (b.updatedAt ?? '').localeCompare(a.updatedAt ?? ''));
 }
 
+/* Starred notes, newest first. */
+export function starredNotes(notes: Note[]) {
+  return newestFirst(notes).filter(note => note.pinned);
+}
+
 /* Sort a list by last edited, last opened (never-opened notes go last) or title from A to Z. */
 export function sortNotes(notes: Note[], sort: NotesSort) {
   if (sort === 'title') {
-    return [...notes].sort((a, b) => (a.title || 'Untitled note').localeCompare(b.title || 'Untitled note', undefined, { sensitivity: 'base', numeric: true }));
+    return [...notes].sort((a, b) => noteTitle(a).localeCompare(noteTitle(b), undefined, { sensitivity: 'base', numeric: true }));
   }
   if (sort === 'opened') return [...notes].sort((a, b) => (b.openedAt ?? '').localeCompare(a.openedAt ?? ''));
   return newestFirst(notes);
@@ -47,7 +52,7 @@ export function openedLabel(note: Note) {
 function SubpageTag({ note }: { note: Note }) {
   const parent = getNote(note.parentId);
   if (!parent) return null;
-  const label = `In ‘${parent.title || 'Untitled note'}’`;
+  const label = `In ‘${noteTitle(parent)}’`;
   return <span className="note-subpage-tag" title={label}>{label}</span>;
 }
 
@@ -64,7 +69,7 @@ export function NoteTile({ note, onOpen, onMenu }: { note: Note; onOpen: OpenNot
     <button type="button" className="note-tile" onClick={() => onOpen(note.id)} onContextMenu={onMenu && (event => onMenu(event, note.id))}>
       <span className="note-tile-title">
         {note.icon ? <span className="note-tile-icon" aria-hidden="true">{note.icon}</span> : <Icon name="file-text" size={16} />}
-        <strong>{note.title || 'Untitled note'}</strong>
+        <strong>{noteTitle(note)}</strong>
         <LockedMark note={note} />
       </span>
       <SubpageTag note={note} />
@@ -82,7 +87,7 @@ function NoteRow({ note, onOpen, onMenu, time }: { note: Note; onOpen: OpenNote;
         <span className="recent-name">
           {note.icon && <span className="note-row-icon" aria-hidden="true">{note.icon}</span>}
           <span className="recent-text">
-            <span className="note-row-title"><strong>{note.title || 'Untitled note'}</strong><LockedMark note={note} /><SubpageTag note={note} /></span>
+            <span className="note-row-title"><strong>{noteTitle(note)}</strong><LockedMark note={note} /><SubpageTag note={note} /></span>
             <small>{note.subtitle || note.preview}</small>
           </span>
         </span>

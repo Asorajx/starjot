@@ -1,5 +1,5 @@
 import { iconMarkup } from '../../../components/Icon';
-import { categoryName, getNote, updatedLabel } from '../../store';
+import { categoryName, getNote, noteTitle, updatedLabel } from '../../store';
 import { hydrateImages } from '../images/images';
 import { escapeHtml } from '../../../lib/html';
 
@@ -44,7 +44,7 @@ export function hydratePages(root: Element | null) {
     mention.contentEditable = 'false';
     mention.classList.toggle('is-missing', !note);
     const icon = note?.icon ? escapeHtml(note.icon) : iconMarkup(note ? 'file-text' : 'file', 14);
-    const html = `<span class="page-mention-icon">${icon}</span><span class="page-mention-title">${escapeHtml(note ? note.title || 'Untitled note' : 'Note not found')}</span>`;
+    const html = `<span class="page-mention-icon">${icon}</span><span class="page-mention-title">${escapeHtml(note ? noteTitle(note) : 'Note not found')}</span>`;
     if (drawn.get(mention) === html && mention.firstChild) return;
     mention.innerHTML = html;
     drawn.set(mention, html);
@@ -62,7 +62,7 @@ export function hydratePages(root: Element | null) {
     const category = note ? categoryName(note.category) : '';
     const html = note
       ? `<span class="page-block-icon">${note.icon ? escapeHtml(note.icon) : iconMarkup('file-text', 18)}</span>`
-        + `<span class="page-block-text"><strong>${escapeHtml(note.title || 'Untitled note')}</strong>`
+        + `<span class="page-block-text"><strong>${escapeHtml(noteTitle(note))}</strong>`
         + `<small>${escapeHtml(note.subtitle || note.preview || 'Empty note')}</small>`
         + `<span class="page-block-meta">${category ? `${escapeHtml(category)} · ` : ''}${escapeHtml(updatedLabel(note))}</span></span>`
         + `<span class="page-block-sizes" role="group" aria-label="Block size">${sizes}</span>`
@@ -160,11 +160,4 @@ export function removePageBlocks(root: Element, id: string) {
     if (after?.nodeType === Node.TEXT_NODE && after.textContent?.startsWith(' ')) after.textContent = after.textContent.slice(1);
     block.remove();
   });
-}
-
-/* Ids of the pages shown as page blocks in a note's content. */
-export function embeddedPageIds(html: string) {
-  const template = document.createElement('template');
-  template.innerHTML = html;
-  return new Set(Array.from(template.content.querySelectorAll<HTMLElement>('.page-block[data-page]')).map(block => block.dataset.page as string));
 }

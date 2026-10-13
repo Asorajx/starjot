@@ -10,10 +10,7 @@
 }
 
 .editor-layout {
-  display: grid;
-  grid-template-columns: 188px minmax(0,1fr) 256px;
   flex: 1;
-  min-height: calc(100dvh - 131px);
 }
 
 .outline-item {
@@ -39,13 +36,11 @@
 
 .editor-canvas {
   min-width: 0;
-  padding: 56px clamp(28px,6%,76px) 72px;
   background: white;
 }
 
 .editor-width {
   width: 100%;
-  max-width: 745px;
   margin: 0 auto;
 }
 
@@ -69,15 +64,6 @@
 
 .meta-dot {
   color: #647797;
-}
-
-.editor-width>h1 {
-  font-size: clamp(26px,2.5vw,36px);
-  letter-spacing: -1.35px;
-  line-height: 1.22;
-  margin: 0 0 12px;
-  color: #1c2c47;
-  font-weight: 790;
 }
 
 .article-rule {
@@ -336,18 +322,9 @@
    Editable Notespace Documents
    ========================= */
 
-/* Notes now use the full document width; optional panels float above it. */
+/* Notes use the full document width; the Contents and Note settings panels float above it. */
 .editor-wrap .editor-layout {
   display: block;
-  min-height: calc(100dvh - 131px);
-}
-
-.editor-wrap .editor-canvas {
-  padding: 52px clamp(28px, 5vw, 80px) 84px;
-}
-
-.editor-wrap .editor-width {
-  max-width: 805px;
 }
 
 .note-title-input {
@@ -659,10 +636,6 @@
 }
 
 @media (max-width: 700px) {
-  .editor-wrap .editor-canvas {
-    padding: 32px 24px 64px;
-  }
-
   .editor-flyout {
     right: 9px;
     top: calc(100% + 5px);

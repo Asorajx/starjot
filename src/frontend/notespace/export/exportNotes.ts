@@ -1,5 +1,5 @@
 import type { Note } from '../../../shared/types/note';
-import { categoryName, childrenOf, getNote } from '../store';
+import { categoryName, childrenOf, getNote, UNTITLED_NOTE } from '../store';
 import { pageAddress } from '../editor/links/links';
 import type { DetailParts, ExportSettings } from './exportSettings';
 import { formatDate } from '../../lib/dates';
@@ -70,7 +70,7 @@ export function hasRemarks(note: Note) {
 
 /* A file name from the note's title, without characters that file systems do not allow. */
 export function exportFileName(title: string, extension: string) {
-  const name = title.replace(/[\\/:*?"<>|\u0000-\u001f]+/g, '-').replace(/\s+/g, ' ').trim().slice(0, 80) || 'Untitled note';
+  const name = title.replace(/[\\/:*?"<>|\u0000-\u001f]+/g, '-').replace(/\s+/g, ' ').trim().slice(0, 80) || UNTITLED_NOTE;
   return `${name}.${extension}`;
 }
 

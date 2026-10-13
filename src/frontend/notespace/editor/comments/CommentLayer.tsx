@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useState, type RefObject } from 'react';
 import { Icon } from '../../../components/Icon';
 import type { NoteComment } from '../../../../shared/types/note';
-import { getNote } from '../../store';
+import { getNote, noteTitle } from '../../store';
 import { pageIdFromAddress, textWithAddresses } from '../links/links';
 import { useSessionValue, type EditorSession } from '../session';
 import { zoomed } from '../../../lib/geometry';
@@ -20,7 +20,7 @@ function CommentText({ text }: { text: string }) {
         if (!('href' in part)) return part.text;
         const page = pageIdFromAddress(part.text);
         const note = page ? getNote(page) : undefined;
-        if (page && note) return <a key={index} className="page-link" data-page={page}>{note.title || 'Untitled note'}</a>;
+        if (page && note) return <a key={index} className="page-link" data-page={page}>{noteTitle(note)}</a>;
         return <a key={index} href={part.href} target="_blank" rel="noopener noreferrer">{part.text}</a>;
       })}
     </>

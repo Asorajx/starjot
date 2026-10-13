@@ -16,15 +16,6 @@
     padding-left: 64px;
     padding-right: 64px;
   }
-
-  .editor-layout {
-    grid-template-columns: 208px minmax(0,1fr) 280px;
-  }
-
-  .editor-canvas {
-    padding-left: 8%;
-    padding-right: 8%;
-  }
 }
 
 @media (max-width:1220px) {
@@ -35,14 +26,6 @@
 
   .content-pad {
     padding: 32px 32px;
-  }
-
-  .editor-layout {
-    grid-template-columns: 144px minmax(0,1fr) 222px;
-  }
-
-  .editor-canvas {
-    padding: 48px 32px;
   }
 
   .task-grid {
@@ -57,14 +40,6 @@
 @media (max-width:960px) {
   .topbar {
     padding: 0 24px;
-  }
-
-  .editor-layout {
-    grid-template-columns: minmax(0,1fr) 228px;
-  }
-
-  .editor-canvas {
-    padding: 48px 32px;
   }
 }
 
@@ -196,21 +171,6 @@
   .page-bar {
     padding: 0 8px;
     gap: 4px;
-  }
-
-  .editor-layout {
-    display: flex;
-    flex-direction: column;
-    min-height: 0;
-  }
-
-  .editor-canvas {
-    padding: 32px 24px 32px;
-    order: 1;
-  }
-
-  .editor-width>h1 {
-    font-size: 28px;
   }
 
   .article-body p,

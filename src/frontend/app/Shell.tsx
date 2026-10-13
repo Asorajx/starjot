@@ -2,8 +2,8 @@ import type { MouseEvent, ReactNode } from 'react';
 import { BrandMark } from '../components/BrandMark';
 import { Icon, type IconName } from '../components/Icon';
 import { SCREENS, screenLabel, type ScreenId } from './screens';
-import { useNotes } from '../notespace/store';
-import { newestFirst } from '../notespace/NoteList';
+import { noteTitle, useNotes } from '../notespace/store';
+import { sortNotes, starredNotes } from '../notespace/NoteList';
 import { BOARD_TABS } from '../boardspace/data';
 import { updatePreferences, usePreferences } from './preferences';
 import type { Note } from '../../shared/types/note';
@@ -139,17 +139,14 @@ function SidebarList({ id, title, empty, children }: SidebarListProps) {
 /* Notespace: starred notes, then the notes opened most recently. */
 function NotespaceLists({ openNoteId, onOpenNote }: Pick<SidebarProps, 'openNoteId' | 'onOpenNote'>) {
   const notes = useNotes();
-  const starred = newestFirst(notes).filter(note => note.pinned).slice(0, LIST_COUNT);
-  const recent = notes
-    .filter(note => note.openedAt)
-    .sort((a, b) => (b.openedAt ?? '').localeCompare(a.openedAt ?? ''))
-    .slice(0, LIST_COUNT);
+  const starred = starredNotes(notes).slice(0, LIST_COUNT);
+  const recent = sortNotes(notes.filter(note => note.openedAt), 'opened').slice(0, LIST_COUNT);
   const link = (note: Note) => (
     <SidebarLink
       key={note.id}
       icon="file-text"
       emoji={note.icon}
-      label={note.title || 'Untitled note'}
+      label={noteTitle(note)}
       current={openNoteId === note.id}
       onClick={() => onOpenNote(note.id)}
     />

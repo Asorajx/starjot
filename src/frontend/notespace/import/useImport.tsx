@@ -1,6 +1,6 @@
 import { useRef, useState, type DragEvent } from 'react';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
-import { getNote } from '../store';
+import { getNote, noteTitle } from '../store';
 import { IMPORT_ACCEPT, importFiles, type ImportResult } from './importNotes';
 
 
@@ -72,7 +72,7 @@ export function useImport(onOpen: (id: string) => void) {
           }}
           onCancel={() => setReport(null)}
         >
-          {created.length > 0 && <p>{created.map(id => getNote(id)?.title || 'Untitled note').join(', ')}</p>}
+          {created.length > 0 && <p>{created.map(id => noteTitle(getNote(id))).join(', ')}</p>}
           {report.failed.map(failure => <p key={failure.name}><strong>{failure.name}:</strong> {failure.reason}</p>)}
         </ConfirmDialog>
       )}

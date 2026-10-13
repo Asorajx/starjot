@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Icon } from '../../../components/Icon';
-import { categoryName, getNote, updatedLabel, useCategories, useNotes } from '../../store';
+import { categoryName, getNote, noteTitle, updatedLabel, useCategories, useNotes } from '../../store';
 import type { LinkTarget } from './links';
 
 
@@ -57,7 +57,7 @@ export function LinkPreviewCard({ target }: { target: LinkTarget }) {
     <>
       <span className="page-preview-title">
         {note.icon ? <span aria-hidden="true">{note.icon}</span> : <Icon name="file-text" size={16} />}
-        <strong>{note.title || 'Untitled note'}</strong>
+        <strong>{noteTitle(note)}</strong>
       </span>
       <span className="page-preview-meta">{category && `${category} · `}{updatedLabel(note)}</span>
       <span className="page-preview-text">{note.preview || note.subtitle || 'This note is empty.'}</span>

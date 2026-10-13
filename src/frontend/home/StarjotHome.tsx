@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { Icon } from '../components/Icon';
 import { editedText, newestFirst } from '../notespace/NoteList';
-import { createNote, updateNote, useNotes } from '../notespace/store';
+import { createNote, noteTitle, updateNote, useNotes } from '../notespace/store';
 import { BOARD_TABS } from '../boardspace/data';
 import { TASKS } from '../../backend/data/sampleTasks';
 import { readQuickNoteDraft, writeQuickNoteDraft } from '../../backend/storage/draftStorage';
@@ -121,7 +121,7 @@ export function StarjotHome({ onOpenNote, onOpenNotespace, onOpenBoardspace, onO
               <span className="home-card-label">Where you left off</span>
               <span className="note-tile-title">
                 {lastEdited.icon ? <span className="note-tile-icon" aria-hidden="true">{lastEdited.icon}</span> : <Icon name="file-text" size={16} />}
-                <strong>{lastEdited.title || 'Untitled note'}</strong>
+                <strong>{noteTitle(lastEdited)}</strong>
               </span>
               <span className="note-tile-text">{lastEdited.subtitle || lastEdited.preview || 'No content yet.'}</span>
               <span className="home-card-footer">

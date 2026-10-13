@@ -25,6 +25,8 @@ const REMARKS_LENGTH = 20000;
 /* sub-pages of their own. A note can hold any number of sub-pages. */
 export const MAX_PAGE_DEPTH = 2;
 
+export const UNTITLED_NOTE = 'Untitled note';
+
 /* Category names used before categories could be edited, matched to today's default categories. */
 const OLD_CATEGORY_NAMES: Record<string, string> = {
   personal: 'personal', projects: 'work', meetings: 'work', work: 'work', knowledge: 'school', school: 'school'
@@ -72,7 +74,7 @@ function normalizeNote(raw: unknown): Note | null {
 
   return {
     id,
-    title: text('title', 'Untitled note', 160),
+    title: text('title', UNTITLED_NOTE, 160),
     subtitle: text('subtitle', '', 250),
     preview: text('preview', '', 220),
     category: normalizeCategory(record.category ?? fallback.category),
@@ -219,7 +221,7 @@ export function createNote(category = '', parentId = '') {
   const now = new Date().toISOString();
   const note = normalizeNote({
     id: `note_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`,
-    title: 'Untitled note', subtitle: '', preview: '', category, parentId,
+    title: UNTITLED_NOTE, subtitle: '', preview: '', category, parentId,
     updatedAt: now, createdAt: now, openedAt: now, pinned: false, icon: '',
     accent: 'indigo', mode: 'continuous', content: ''
   }) as Note;
@@ -441,6 +443,11 @@ export function categoryNamed(name: string) {
 /* =========================
    Labels and Status
    ========================= */
+
+/* A note's title as shown, with a stand-in when it has none (or the note is missing). */
+export function noteTitle(note: { title?: string } | null | undefined) {
+  return note?.title || UNTITLED_NOTE;
+}
 
 export function updatedLabel(note: Note) {
   if (!note.updatedAt) return note.updated || 'Recently';

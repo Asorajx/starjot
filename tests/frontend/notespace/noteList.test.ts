@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { editedText, newestFirst, openedLabel, sortNotes } from '../../../src/frontend/notespace/NoteList';
+import { editedText, newestFirst, openedLabel, sortNotes, starredNotes } from '../../../src/frontend/notespace/NoteList';
+import { noteTitle } from '../../../src/frontend/notespace/store';
 import type { Note } from '../../../src/shared/types/note';
 
 /* Only the fields these helpers read are filled in. */
@@ -33,5 +34,18 @@ describe('note list helpers', () => {
     const recent = note({ id: 'recent', openedAt: '2026-10-09T00:00:00.000Z' });
     expect(sortNotes([never, old, recent], 'opened').map(item => item.id)).toEqual(['recent', 'old', 'never']);
     expect(openedLabel(never)).toBe('Not opened yet');
+  });
+
+  it('lists only starred notes, newest first', () => {
+    const older = note({ id: 'older', pinned: true, updatedAt: '2026-10-01T00:00:00.000Z' });
+    const plain = note({ id: 'plain', updatedAt: '2026-10-09T00:00:00.000Z' });
+    const newer = note({ id: 'newer', pinned: true, updatedAt: '2026-10-05T00:00:00.000Z' });
+    expect(starredNotes([older, plain, newer]).map(item => item.id)).toEqual(['newer', 'older']);
+  });
+
+  it('shows "Untitled note" for a note without a title, or a missing note', () => {
+    expect(noteTitle(note({ title: 'Plans' }))).toBe('Plans');
+    expect(noteTitle(note({ title: '' }))).toBe('Untitled note');
+    expect(noteTitle(undefined)).toBe('Untitled note');
   });
 });

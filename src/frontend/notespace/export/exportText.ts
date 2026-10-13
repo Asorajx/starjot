@@ -1,5 +1,5 @@
 import type { Note } from '../../../shared/types/note';
-import { childrenOf } from '../store';
+import { childrenOf, noteTitle } from '../store';
 import { contentCopy, detailRows, exportFileName, hasRemarks, type ExportSettings } from './exportNotes';
 import { downloadFile } from '../../lib/files';
 
@@ -89,7 +89,7 @@ function blocks(parent: Element): string {
 
 /* One page as plain text: its title (underlined), its details (when asked), then its text. */
 function pageText(note: Note, settings: ExportSettings) {
-  const title = `${note.icon ? `${note.icon} ` : ''}${note.title || 'Untitled note'}`;
+  const title = `${note.icon ? `${note.icon} ` : ''}${noteTitle(note)}`;
   const parts = [`${title}\n${'='.repeat(Math.min(40, title.length))}`];
   if (settings.details) {
     const chosen = settings.detailParts;
@@ -97,7 +97,7 @@ function pageText(note: Note, settings: ExportSettings) {
     if (rows.length) parts.push(rows.join('\n'));
     if (chosen.remarks && hasRemarks(note)) parts.push(`Remarks:\n${indent(blocks(contentCopy(note.remarks)), '    ')}`);
     const pages = chosen.pages ? childrenOf(note.id) : [];
-    if (pages.length) parts.push(`Sub-notes: ${pages.map(page => page.title || 'Untitled note').join(', ')}`);
+    if (pages.length) parts.push(`Sub-notes: ${pages.map(page => noteTitle(page)).join(', ')}`);
   }
   const text = blocks(contentCopy(note.content));
   if (text) parts.push(text);

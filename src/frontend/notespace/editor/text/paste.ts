@@ -2,7 +2,7 @@ import { cleanHtml } from '../../sanitize';
 import { deleteKeepingPages } from './pageBlocks';
 import { highlight } from '../code/code';
 import { isEmptyContent } from './dom';
-import { getNote } from '../../store';
+import { getNote, noteTitle } from '../../store';
 import { copiedPageLink, createLink, normalizeAddress, pageIdFromAddress, trimAddress, type LinkTarget } from '../links/links';
 
 /* Code fence languages written in Markdown, and the code block language each one becomes. */
@@ -97,7 +97,7 @@ function inlineNodes(text: string): (Node | string)[] {
       const { address: trimmed, rest } = trimAddress(written);
       const target = addressTarget(trimmed);
       if (!target) nodes.push(trimmed);
-      else nodes.push(createLink(target.kind === 'page' ? getNote(target.id)?.title || 'Untitled note' : trimmed, target));
+      else nodes.push(createLink(target.kind === 'page' ? noteTitle(getNote(target.id)) : trimmed, target));
       if (rest) nodes.push(rest);
     } else if (bold !== undefined || boldLine !== undefined) {
       nodes.push(element('strong', inlineNodes(bold ?? boldLine)));

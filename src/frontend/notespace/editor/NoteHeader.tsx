@@ -2,7 +2,7 @@ import { useLayoutEffect, useRef, useState, type ClipboardEvent, type KeyboardEv
 import { Dropdown } from '../../components/Dropdown';
 import { EmojiPicker } from '../../components/EmojiPicker';
 import { Icon } from '../../components/Icon';
-import { scheduleSave, updateNote, useCategories, useNotes } from '../store';
+import { noteTitle, scheduleSave, UNTITLED_NOTE, updateNote, useCategories, useNotes } from '../store';
 import { isEmptyContent, wrapLooseLines } from './text/dom';
 import { linkTypedAddress } from './links/links';
 import { applyMarkdownShortcut } from './text/markdown';
@@ -108,7 +108,7 @@ function PageList({ notes, parentId, onOpenNote }: PageListProps) {
         <li key={page.id}>
           <button type="button" className="note-page-link" data-preview-page={page.id} onClick={() => onOpenNote(page.id)}>
             {page.icon ? <span className="note-page-icon" aria-hidden="true">{page.icon}</span> : <Icon name="file-text" size={13} />}
-            <span className="note-page-title">{page.title || 'Untitled note'}</span>
+            <span className="note-page-title">{noteTitle(page)}</span>
           </button>
           <PageList notes={notes} parentId={page.id} onOpenNote={onOpenNote} />
         </li>
@@ -185,7 +185,7 @@ export function NoteHeader({ note, locked, onOpenNote }: NoteHeaderProps) {
         type="text"
         aria-label="Note title"
         maxLength={160}
-        placeholder="Untitled note"
+        placeholder={UNTITLED_NOTE}
         autoComplete="off"
         readOnly={locked}
         value={note.title}

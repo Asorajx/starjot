@@ -1,4 +1,4 @@
-import { categoryNamed, createNote, getNote, updateNote } from '../store';
+import { categoryNamed, createNote, getNote, UNTITLED_NOTE, updateNote } from '../store';
 import { readHtml } from './importHtml';
 import { readMarkdown } from './importMarkdown';
 import { readPdf } from './pdf/importPdf';
@@ -62,7 +62,7 @@ async function createNotes(imported: ImportedNote[]) {
   const idOf: IdOf = key => ids.get(key) ?? (getNote(key) ? key : undefined);
   for (const note of imported) {
     updateNote(ids.get(note.key) as string, {
-      title: note.title.slice(0, 160) || 'Untitled note',
+      title: note.title.slice(0, 160) || UNTITLED_NOTE,
       icon: note.icon ?? '',
       subtitle: note.description ?? '',
       remarks: note.remarks ?? '',

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { convertLine, createPageBlock, createPageMention, createTable, insertBlock, insertInline } from '../../../../../src/frontend/notespace/editor/text/lines';
-import { hydratePages, embeddedPageIds, pageWidth, setPageWidth } from '../../../../../src/frontend/notespace/editor/text/pageBlocks';
+import { hydratePages, pageWidth, setPageWidth } from '../../../../../src/frontend/notespace/editor/text/pageBlocks';
 import { handleBlockKeys, lineBelowTable } from '../../../../../src/frontend/notespace/editor/text/blockKeys';
 import { matchCommands } from '../../../../../src/frontend/notespace/editor/text/slashCommands';
 import { addColumn, removeColumn } from '../../../../../src/frontend/notespace/editor/tables/tables';
@@ -123,7 +123,6 @@ describe('slash command lines', () => {
     insertInline(range, createPageBlock('child'));
     expect(body.innerHTML).toBe('<p>Before <span class="page-block" data-page="child" data-size="small" data-width="100"></span> after</p>');
     expect(window.getSelection()?.focusNode?.textContent).toBe(' ');
-    expect(embeddedPageIds(body.innerHTML)).toEqual(new Set(['child']));
   });
 
   it('keeps page blocks, tables and toggles as separate structured blocks', () => {

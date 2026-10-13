@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { Icon } from '../components/Icon';
 import type { Place } from '../app/noteTabs';
-import { categoryName, getNote, isStorageAvailable, useCategories, useNotes, useSaveStatus } from './store';
+import { categoryName, getNote, isStorageAvailable, noteTitle, useCategories, useNotes, useSaveStatus } from './store';
 
 /* Where Back and Forward lead (null when there is nowhere to go), and what they do. */
 export type PageHistory = {
@@ -21,7 +21,7 @@ export function placeLabel(place: Place) {
   if (place.kind === 'start') return 'Home';
   if (place.kind === 'home') return 'Notespace';
   if (place.kind === 'category') return categoryName(place.id) || 'Category';
-  return getNote(place.id)?.title || 'Untitled note';
+  return noteTitle(getNote(place.id));
 }
 
 /* A note or category can be deleted while it is still in a tab's history. */

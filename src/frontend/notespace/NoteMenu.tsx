@@ -2,7 +2,7 @@ import { useState, type MouseEvent, type ReactNode } from 'react';
 import { DeleteNoteDialog } from './DeleteNoteDialog';
 import { Icon } from '../components/Icon';
 import { useDismiss } from '../lib/useDismiss';
-import { deleteNote, getNote } from './store';
+import { deleteNote, getNote, noteTitle } from './store';
 
 
 /* =========================
@@ -56,7 +56,7 @@ export function useNoteMenu({ onOpen, onOpenInNewTab }: NoteMenuActions): NoteMe
         <div
           className="page-menu note-menu"
           role="menu"
-          aria-label={`${note.title || 'Untitled note'} options`}
+          aria-label={`${noteTitle(note)} options`}
           style={{ top: Math.min(open.top, window.innerHeight - 120), left: Math.min(open.left, window.innerWidth - 200) }}
         >
           <button type="button" role="menuitem" className="page-menu-item" autoFocus onClick={() => run(onOpen)}>

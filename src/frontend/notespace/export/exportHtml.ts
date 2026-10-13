@@ -1,7 +1,7 @@
 import type { DrawingLayerInfo, DrawingStroke, Note } from '../../../shared/types/note';
 import { iconMarkup } from '../../components/Icon';
 import { loadImage } from '../imageStore';
-import { childrenOf } from '../store';
+import { childrenOf, noteTitle } from '../store';
 import { hydratePages } from '../editor/text/pageBlocks';
 import { drawingBottom, inDrawingOrder, strokeLayer, strokeMarkup, visibleLayers } from '../editor/drawing/drawing';
 import { contentCopy, detailRows, exportFileName, hasRemarks, pageAnchor, pageHref, type ExportSettings } from './exportNotes';
@@ -114,7 +114,7 @@ function detailsMarkup(note: Note, settings: ExportSettings, included: Set<strin
   if (pages.length) {
     const items = pages.map(page => {
       const icon = page.icon ? `<span class="note-page-icon" aria-hidden="true">${escapeHtml(page.icon)}</span>` : iconMarkup('file-text', 13);
-      return `<li><a class="note-page-link" href="${escapeHtml(pageHref(page.id, included))}">${icon}<span class="note-page-title">${escapeHtml(page.title || 'Untitled note')}</span></a></li>`;
+      return `<li><a class="note-page-link" href="${escapeHtml(pageHref(page.id, included))}">${icon}<span class="note-page-title">${escapeHtml(noteTitle(page))}</span></a></li>`;
     });
     rows.push(`<dt class="note-pages-label">Sub-notes</dt><dd class="note-pages"><ul class="note-page-list">${items.join('')}</ul></dd>`);
   }
@@ -128,7 +128,7 @@ async function pageMarkup(note: Note, settings: ExportSettings, included: Set<st
   const drawing = settings.content === 'everything' ? looseDrawing(note.drawing, note.drawingLayers, true) + looseDrawing(note.drawing, note.drawingLayers, false) : '';
   return `<article class="export-page" id="${pageAnchor(note.id)}">`
     + `<div class="editor-meta"><span class="page-type">${iconMarkup('file-text', 14)} DOCUMENT</span></div>`
-    + `<div class="note-header">${icon}<h1 class="note-title-input">${escapeHtml(note.title || 'Untitled note')}</h1>${settings.details ? detailsMarkup(note, settings, included) : ''}</div>`
+    + `<div class="note-header">${icon}<h1 class="note-title-input">${escapeHtml(noteTitle(note))}</h1>${settings.details ? detailsMarkup(note, settings, included) : ''}</div>`
     + '<div class="article-rule"></div>'
     + `<div class="note-content"><div class="note-body article-body continuous-document note-editable">${await pageContent(note, settings, included)}</div></div>`
     + drawing
@@ -166,7 +166,7 @@ async function buildDocument(notes: Note[], settings: ExportSettings, layout: Ex
   const printStyles = `@page { size: ${print.page}; margin: ${PRINT_MARGIN}px; } @media print { .export-root { zoom: ${print.zoom}; } }`;
   return '<!doctype html><html lang="en" data-theme="light"><head><meta charset="utf-8">'
     + '<meta name="viewport" content="width=device-width, initial-scale=1">'
-    + `<title>${escapeHtml(main.title || 'Untitled note')}</title>`
+    + `<title>${escapeHtml(noteTitle(main))}</title>`
     + `<style>${appStyles()}</style><style>${EXPORT_STYLES}${printStyles}</style></head>`
     + `<body><div class="editor-wrap export-root"><div class="editor-width" style="width: ${Math.round(layout.columnWidth)}px">`
     + pages.join('<hr class="export-divider">')

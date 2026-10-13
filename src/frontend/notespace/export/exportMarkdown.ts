@@ -1,6 +1,6 @@
 import type { Note } from '../../../shared/types/note';
 import { loadImage } from '../imageStore';
-import { childrenOf, getNote } from '../store';
+import { childrenOf, getNote, noteTitle } from '../store';
 import { drawingFile } from '../editor/images/images';
 import { pageAddress } from '../editor/links/links';
 import { contentCopy, detailRows, exportFileName, hasRemarks, type ExportSettings } from './exportNotes';
@@ -42,7 +42,7 @@ export function headingAnchor(text: string, taken: Set<string>) {
 
 /* The heading a page's section starts with: its icon and title. */
 function pageHeading(note: Note) {
-  return `${note.icon ? `${note.icon} ` : ''}${note.title || 'Untitled note'}`;
+  return `${note.icon ? `${note.icon} ` : ''}${noteTitle(note)}`;
 }
 
 function pageLink(id: string, context: Context) {

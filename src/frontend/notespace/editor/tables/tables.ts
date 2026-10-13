@@ -40,13 +40,9 @@ export function hasMergedCells(table: HTMLTableElement) {
   return Array.from(table.querySelectorAll<HTMLTableCellElement>('th, td')).some(cell => cell.rowSpan > 1 || cell.colSpan > 1);
 }
 
-/* The cells covering a grid row (or column), each listed once even when merged. */
+/* The cells covering a grid row, each listed once even when merged. */
 export function cellsInRow(table: HTMLTableElement, row: number) {
   return [...new Set(tableGrid(table).grid[row] ?? [])].filter(Boolean);
-}
-
-export function cellsInColumn(table: HTMLTableElement, column: number) {
-  return [...new Set(tableGrid(table).grid.map(line => line[column]))].filter(Boolean);
 }
 
 function emptyCell(tag: 'td' | 'th') {
