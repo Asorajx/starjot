@@ -134,3 +134,27 @@ describe('start screen, spaces and sidebar', () => {
     expect(repaired.spaces).toEqual({ notes: true, boardspace: true });
   });
 });
+
+
+/* =========================
+   Theme, Tips and Writing
+   ========================= */
+
+describe('theme, tips and writing', () => {
+  it('starts with tips, spellcheck and typing shortcuts on, and marks tips on <html>', async () => {
+    const preferences = await openApp();
+    const { tips, spellcheck, typingShortcuts } = preferences.getPreferences();
+    expect([tips, spellcheck, typingShortcuts]).toEqual([true, true, true]);
+    preferences.updatePreferences({ tips: false });
+    expect(document.documentElement.dataset.tips).toBe('off');
+  });
+
+  it('follows the computer for System, and shows light where it cannot tell', async () => {
+    localStorage.setItem('starjot-preferences-v1', JSON.stringify({ theme: 'system' }));
+    const preferences = await openApp();
+    expect(preferences.getPreferences().theme).toBe('system');
+    expect(preferences.shownTheme()).toBe('light');
+    preferences.applyTheme();
+    expect(document.documentElement.dataset.theme).toBe('light');
+  });
+});

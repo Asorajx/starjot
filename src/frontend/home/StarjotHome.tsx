@@ -94,6 +94,23 @@ function QuickNote({ onOpenNote }: { onOpenNote: OpenById }) {
    Starjot Home
    ========================= */
 
+/* One tip a day on Starjot Home, while helpful tips are on. */
+const TIPS = [
+  'Ctrl + K searches every note, category and board item.',
+  'Ctrl + click a note, anywhere, to open it in a new tab.',
+  'Hold Ctrl and tap Q to switch between your tabs.',
+  'Type / in a note for headings, tables, toggles, sub-notes and more.',
+  'Two hyphens (--) become an em dash; Undo straight after keeps the hyphens.',
+  'Star a note to keep it at the top of Notespace and in the sidebar.',
+  'Ctrl + F finds words in a note, and Ctrl + H replaces them.',
+  'Choose an accent colour in Settings → Appearance.'
+];
+
+function tipOfTheDay(now: Date) {
+  const day = Math.floor((now.getTime() - now.getTimezoneOffset() * 60000) / 86400000);
+  return TIPS[day % TIPS.length];
+}
+
 /* The app's own home: a greeting, then one section per space turned on, so notes and boards are */
 /* never mixed. Notespace has a quick note and "Where you left off"; Boardspace has how many items */
 /* each column holds. */
@@ -110,7 +127,8 @@ export function StarjotHome({ onOpenNote, onOpenNotespace, onOpenBoardspace, onO
           {now.toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' })} · {now.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}
         </p>
         <h1>{greeting(now)}</h1>
-        <p>{spaces.notes ? 'Pick up where you left off, or jot something down.' : 'Here is where your board stands.'}</p>
+        <p className="starjot-home-subtitle">{spaces.notes ? 'Pick up where you left off, or jot something down.' : 'Here is where your board stands.'}</p>
+        <p className="starjot-home-tip hint"><Icon name="lightbulb" size={14} /> {tipOfTheDay(now)}</p>
       </header>
 
       {spaces.notes && <section className="home-section" aria-labelledby="home-notespace">

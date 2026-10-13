@@ -1,4 +1,5 @@
 import { emptyParagraph, placeCaret } from './dom';
+import { getPreferences } from '../../../app/preferences';
 
 
 /* =========================
@@ -81,8 +82,10 @@ function getMarker(line: HTMLElement, selection: Selection) {
 }
 
 /* Converts a marker typed at the start of an empty line. Returns true when it changed the document. */
-/* Space converts headings, lists and quotes; Enter converts ``` (code) and --- (divider). */
+/* Space converts headings, lists and quotes; Enter converts ``` (code) and --- (divider). Nothing */
+/* happens with typing shortcuts turned off in Settings. */
 export function applyMarkdownShortcut(event: KeyboardEvent, editable: HTMLElement) {
+  if (!getPreferences().typingShortcuts) return false;
   if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || event.isComposing) return false;
   if (event.key !== ' ' && event.key !== 'Enter') return false;
 
@@ -130,6 +133,7 @@ export function applyMarkdownShortcut(event: KeyboardEvent, editable: HTMLElemen
 /* beforeJoin starts that new undo step: it runs while the caret is still after the hyphens, which */
 /* is where Undo puts it back. Code keeps its hyphens. Returns true when it changed the text. */
 export function joinTypedDashes(event: InputEvent, editable: HTMLElement, beforeJoin: () => void = () => {}) {
+  if (!getPreferences().typingShortcuts) return false;
   if (event.inputType !== 'insertText' || event.data !== '-') return false;
   const selection = window.getSelection();
   const node = selection?.anchorNode;

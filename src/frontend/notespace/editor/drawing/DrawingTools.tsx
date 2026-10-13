@@ -252,7 +252,7 @@ export function DrawingTools({ session, strokes, layers, activeLayer, onActiveLa
           <button type="button" className="drawing-tool" data-tooltip="Drawing settings" data-tooltip-side="left" aria-label="Drawing settings" onClick={onOpenSettings}>
             <Icon name="settings" size={17} />
           </button>
-          <button type="button" className="drawing-tool" data-tooltip="Stop drawing (Esc)" data-tooltip-side="left" aria-label="Stop drawing" onClick={onClose}>
+          <button type="button" className="drawing-tool" data-tooltip="Stop drawing" data-shortcut="Esc" data-tooltip-side="left" aria-label="Stop drawing" onClick={onClose}>
             <Icon name="x" size={17} />
           </button>
         </div>

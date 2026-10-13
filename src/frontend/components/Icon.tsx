@@ -72,6 +72,7 @@ const PATHS = {
   'unlock': '<rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 7.5-2"/>',
   'minus': '<path d="M5 12h14"/>',
   'type': '<path d="M4 7V5h16v2M9 19h6M12 5v14"/>',
+  'keyboard': '<rect x="2" y="4" width="20" height="16" rx="2"/><path d="M6 8h.01M10 8h.01M14 8h.01M18 8h.01M8 12h.01M12 12h.01M16 12h.01M7 16h10"/>',
   'undo': '<path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/>',
   'redo': '<path d="m15 14 5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/>',
   'menu': '<path d="M4 6h16M4 12h16M4 18h16"/>',

@@ -1,5 +1,6 @@
 import { memo, useEffect, useLayoutEffect, useRef, type ClipboardEvent, type FormEvent, type KeyboardEvent, type MouseEvent } from 'react';
 import { cleanHtml } from '../../sanitize';
+import { usePreferences } from '../../../app/preferences';
 import { getRange, setOffset, setRange } from './caret';
 import { deleteKeepingPages, hydratePages } from './pageBlocks';
 import { handleBlockKeys } from './blockKeys';
@@ -31,6 +32,7 @@ type ContinuousEditorProps = {
 /* memo: typing updates the note, but the editor itself never needs to re-render for it. */
 export const ContinuousEditor = memo(function ContinuousEditor({ session, content, locked }: ContinuousEditorProps) {
   const bodyRef = useRef<HTMLDivElement>(null);
+  const { spellcheck } = usePreferences();
 
   /* The last selection inside the note, kept so toolbar clicks know what was selected. */
   const savedRange = useRef<Range | null>(null);
@@ -322,7 +324,7 @@ export const ContinuousEditor = memo(function ContinuousEditor({ session, conten
       data-note-editable=""
       contentEditable={!locked}
       suppressContentEditableWarning
-      spellCheck
+      spellCheck={spellcheck}
       role="textbox"
       aria-multiline="true"
       aria-label="Document content"

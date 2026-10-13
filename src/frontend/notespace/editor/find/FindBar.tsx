@@ -121,7 +121,8 @@ export function FindBar({ session, locked, content, within, replacing, initialWo
           aria-label={showReplace ? 'Hide replace' : 'Show replace'}
           aria-expanded={showReplace}
           disabled={locked}
-          data-tooltip={locked ? 'Unlock the note to replace words.' : showReplace ? 'Hide replace' : 'Replace (Ctrl+H)'}
+          data-tooltip={locked ? 'Unlock the note to replace words.' : showReplace ? 'Hide replace' : 'Replace'}
+          data-shortcut={locked || showReplace ? undefined : 'Ctrl + H'}
           data-tooltip-align="start"
           onClick={() => setShowReplace(value => !value)}
         >
@@ -130,9 +131,9 @@ export function FindBar({ session, locked, content, within, replacing, initialWo
         <input ref={queryRef} className="find-input" value={query} placeholder={scope ? 'Find in selection' : 'Find in note'} aria-label="Find" onChange={event => { setQuery(event.target.value); setCurrent(0); }} onKeyDown={handleFindKey} />
         <span className="find-count" aria-live="polite">{count}</span>
         <button type="button" className={`find-button ${matchCase ? 'is-on' : ''}`} aria-pressed={matchCase} aria-label="Match case" data-tooltip="Match case" onClick={() => setMatchCase(value => !value)}>Aa</button>
-        <button type="button" className="find-button" aria-label="Previous match" data-tooltip="Previous (Shift+Enter)" disabled={!matches.length} onClick={() => step(-1)}><Icon name="arrow-up" size={14} /></button>
-        <button type="button" className="find-button" aria-label="Next match" data-tooltip="Next (Enter)" disabled={!matches.length} onClick={() => step(1)}><Icon name="arrow-down" size={14} /></button>
-        <button type="button" className="find-button" aria-label="Close find" data-tooltip="Close (Esc)" data-tooltip-align="end" onClick={onClose}><Icon name="x" size={14} /></button>
+        <button type="button" className="find-button" aria-label="Previous match" data-tooltip="Previous" data-shortcut="Shift + Enter" disabled={!matches.length} onClick={() => step(-1)}><Icon name="arrow-up" size={14} /></button>
+        <button type="button" className="find-button" aria-label="Next match" data-tooltip="Next" data-shortcut="Enter" disabled={!matches.length} onClick={() => step(1)}><Icon name="arrow-down" size={14} /></button>
+        <button type="button" className="find-button" aria-label="Close find" data-tooltip="Close" data-shortcut="Esc" data-tooltip-align="end" onClick={onClose}><Icon name="x" size={14} /></button>
       </div>
 
       {scope && (

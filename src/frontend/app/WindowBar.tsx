@@ -97,6 +97,7 @@ export function WindowBar({ group, onSelect, onClose, onNew, leading }: WindowBa
         type="button"
         className="window-new-tab"
         data-tooltip={full ? `A stack holds up to ${STACK_LIMIT} tabs` : 'New tab'}
+        data-shortcut={full ? undefined : 'Ctrl + T'}
         data-tooltip-align={group.stacked ? 'start' : undefined}
         aria-label="New note in a new tab"
         disabled={full}

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { getOffset, setOffset } from '../../../../../src/frontend/notespace/editor/text/caret';
+import { updatePreferences } from '../../../../../src/frontend/app/preferences';
 import { applyMarkdownShortcut, joinTypedDashes } from '../../../../../src/frontend/notespace/editor/text/markdown';
 import { stickyStateForRange, toggleStickyRange } from '../../../../../src/frontend/notespace/editor/text/stickyDom';
 
@@ -110,7 +111,18 @@ describe('typed dashes', () => {
     expect(divider.querySelector('hr')).not.toBeNull();
   });
 
-  it('leaves code, and other typing, alone', () => {
+  it('does nothing with typing shortcuts turned off in Settings', () => {
+    updatePreferences({ typingShortcuts: false });
+    const body = editor('<p>a--</p>');
+    placeCaret(body.querySelector('p')?.firstChild as Node, 3);
+    expect(joinTypedDashes(typed('-'), body)).toBe(false);
+    const heading = editor('<p>#</p>');
+    placeCaret(heading.querySelector('p')?.firstChild as Node, 1);
+    expect(applyMarkdownShortcut(press(' '), heading)).toBe(false);
+    updatePreferences({ typingShortcuts: true });
+  });
+
+    it('leaves code, and other typing, alone', () => {
     const code = editor('<pre><code>a--</code></pre>');
     placeCaret(code.querySelector('code')?.firstChild as Node, 3);
     expect(joinTypedDashes(typed('-'), code)).toBe(false);

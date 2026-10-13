@@ -7,7 +7,8 @@ import type { ScreenId } from './screens';
 import type { NoteMode, PageLayout, PageSize } from '../../shared/types/note';
 
 /* App-wide preferences that apply to every note and screen; the backend saves them. */
-export type Theme = 'light' | 'dark';
+/* System follows the computer's light or dark mode. */
+export type Theme = 'light' | 'dark' | 'system';
 
 /* How tightly the app's frame is laid out (sidebar, tabs, lists, menus). Notes' text is not */
 /* affected. */
@@ -80,6 +81,13 @@ export type Preferences = {
 
   /* Fade the page bar above a note while typing, until the mouse moves. */
   hideHeaderWhileTyping: boolean;
+
+  /* Helpful tips: shortcuts in tooltips, the tip on Starjot Home and hints in empty lists. */
+  tips: boolean;
+
+  /* The browser's spelling check in notes, and Markdown shortcuts and "--" while typing. */
+  spellcheck: boolean;
+  typingShortcuts: boolean;
   drawing: DrawingPreferences;
 
   /* The choices last made in the Export window. */
@@ -155,13 +163,13 @@ function loadDrawing(saved: unknown): DrawingPreferences {
 /* Light mode is the default; once a theme is chosen in Settings it is remembered between visits. */
 function load(): Preferences {
   const defaults: Preferences = {
-    theme: 'light', accent: 'blue', density: 'comfortable', startScreen: 'start', spaces: loadSpaces(null), sidebar: loadSidebar(null), newNotes: loadNewNotes(null), zoom: 1, sidebarCollapsed: false, contentsScroll: 'smooth', notesSort: 'edited', hideHeaderWhileTyping: true, drawing: loadDrawing(null),
+    theme: 'light', accent: 'blue', density: 'comfortable', startScreen: 'start', spaces: loadSpaces(null), sidebar: loadSidebar(null), newNotes: loadNewNotes(null), zoom: 1, sidebarCollapsed: false, contentsScroll: 'smooth', notesSort: 'edited', hideHeaderWhileTyping: true, tips: true, spellcheck: true, typingShortcuts: true, drawing: loadDrawing(null),
     exportSettings: normalizeExportSettings(null),
     recentColors: []
   };
   const saved = readPreferences();
   return {
-    theme: saved.theme === 'dark' || saved.theme === 'light' ? saved.theme : defaults.theme,
+    theme: saved.theme === 'dark' || saved.theme === 'light' || saved.theme === 'system' ? saved.theme : defaults.theme,
     accent: ACCENTS.find(accent => accent === saved.accent) ?? defaults.accent,
     density: saved.density === 'compact' ? 'compact' : defaults.density,
     startScreen: saved.startScreen === 'notes' || saved.startScreen === 'boardspace' ? saved.startScreen : defaults.startScreen,
@@ -173,6 +181,9 @@ function load(): Preferences {
     contentsScroll: saved.contentsScroll === 'instant' ? 'instant' : 'smooth',
     notesSort: saved.notesSort === 'opened' || saved.notesSort === 'title' ? saved.notesSort : defaults.notesSort,
     hideHeaderWhileTyping: saved.hideHeaderWhileTyping !== false,
+    tips: saved.tips !== false,
+    spellcheck: saved.spellcheck !== false,
+    typingShortcuts: saved.typingShortcuts !== false,
     drawing: loadDrawing(saved.drawing),
     exportSettings: normalizeExportSettings(saved.exportSettings),
     recentColors: Array.isArray(saved.recentColors) ? saved.recentColors.filter((name): name is ColorClass => isColorClass(String(name))).slice(0, RECENT_COLORS) : []
@@ -193,11 +204,28 @@ export function updatePreferences(changes: Partial<Preferences>) {
   listeners.forEach(listener => listener());
 }
 
-/* The theme, accent and density are data-theme, data-accent and data-density attributes on */
-/* <html>, which the dark stylesheet, app/accents.css and app/density.css look for. */
+/* The light or dark theme shown: the chosen one, or the computer's for System. */
+const systemDark = typeof window !== 'undefined' && window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
+
+export function shownTheme(): 'light' | 'dark' {
+  if (preferences.theme !== 'system') return preferences.theme;
+  return systemDark?.matches ? 'dark' : 'light';
+}
+
+/* With System chosen, the app follows the computer's mode as it changes. */
+systemDark?.addEventListener?.('change', () => {
+  if (preferences.theme !== 'system') return;
+  applyTheme();
+  listeners.forEach(listener => listener());
+});
+
+/* The theme, accent, density and helpful tips are data-theme, data-accent, data-density and */
+/* data-tips attributes on <html>, which the dark stylesheet, app/accents.css, app/density.css */
+/* and the hint styles look for. */
 export function applyTheme() {
-  document.documentElement.dataset.theme = preferences.theme;
+  document.documentElement.dataset.theme = shownTheme();
   document.documentElement.dataset.accent = preferences.accent;
+  document.documentElement.dataset.tips = preferences.tips ? 'on' : 'off';
   document.documentElement.dataset.density = preferences.density;
 }
 

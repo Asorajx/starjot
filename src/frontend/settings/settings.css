@@ -382,3 +382,57 @@
     background: transparent;
   }
 }
+
+
+/* =========================
+   Keyboard Shortcuts
+   ========================= */
+
+.shortcut-note {
+  margin: 0 0 8px;
+  color: #5b6b82;
+  font-size: 12px;
+}
+
+.shortcut-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 8px 0;
+  border-bottom: 1px solid #eef1f5;
+  color: #34435d;
+  font-size: 13px;
+}
+
+.shortcut-keys,
+.shortcut-way {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 4px;
+}
+
+.shortcut-keys {
+  gap: 8px;
+}
+
+.shortcut-or {
+  color: #5b6b82;
+  font-size: 12px;
+}
+
+.shortcut-keys kbd {
+  min-width: 24px;
+  padding: 0 4px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--paper);
+  color: #34435d;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 22px;
+  text-align: center;
+}

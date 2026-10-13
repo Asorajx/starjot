@@ -6,7 +6,7 @@ import { enabledScreens, screenLabel, type ScreenId } from './screens';
 import { noteTitle, useCategories, useNotes } from '../notespace/store';
 import { sortNotes, starredNotes } from '../notespace/NoteList';
 import { BOARD_TABS } from '../boardspace/data';
-import { updatePreferences, usePreferences } from './preferences';
+import { shownTheme, updatePreferences, usePreferences } from './preferences';
 import type { Note } from '../../shared/types/note';
 import type { BoardTab } from '../../shared/types/task';
 
@@ -74,7 +74,8 @@ export function WindowControls({ sidebarOpen, onHome, onToggleSidebar, onSidebar
         className="window-control sidebar-button"
         aria-label="Sidebar"
         aria-expanded={sidebarOpen}
-        data-tooltip="Sidebar (Ctrl + \)"
+        data-tooltip="Sidebar"
+        data-shortcut="Ctrl + \"
         data-tooltip-align="start"
         onClick={onToggleSidebar}
         onMouseEnter={onSidebarHover}
@@ -93,7 +94,7 @@ export function WindowControls({ sidebarOpen, onHome, onToggleSidebar, onSidebar
         <Icon name="bell" size={17} /><span className="notification-dot" />
       </button>
       {onNewNote && (
-        <button type="button" className="window-control window-new-note" aria-label="New note" data-tooltip="New note" data-tooltip-align="start" onClick={onNewNote}>
+        <button type="button" className="window-control window-new-note" aria-label="New note" data-tooltip="New note" data-shortcut="Ctrl + N" data-tooltip-align="start" onClick={onNewNote}>
           <Icon name="square-pen" size={17} />
         </button>
       )}
@@ -136,9 +137,9 @@ type SidebarListProps = {
 /* A titled list; with nothing in it, a short line says what will appear there. */
 function SidebarList({ id, title, empty, children }: SidebarListProps) {
   return (
-    <section className="sidebar-list" aria-labelledby={id}>
+    <section className={`sidebar-list ${children.length ? '' : 'is-empty'}`} aria-labelledby={id}>
       <h3 id={id} className="sidebar-section-label">{title}</h3>
-      {children.length ? <ul>{children}</ul> : <p className="sidebar-empty">{empty}</p>}
+      {children.length ? <ul>{children}</ul> : <p className="sidebar-empty hint">{empty}</p>}
     </section>
   );
 }
@@ -212,8 +213,8 @@ function BoardspaceLists({ boardView, onOpenBoardView }: Pick<SidebarProps, 'boa
 /* top. Otherwise it floats over the page as a popup below the note bar, opened by hovering the */
 /* sidebar button or the left edge of the window, or by the keyboard moving into it. */
 export function Sidebar({ screen, space, openNoteId, openCategoryId, boardView, docked, controls, settingsOpen, onNavigate, onOpenNote, onOpenCategory, onOpenBoardView, onSearch, onSettings, onMouseEnter, onMouseLeave }: SidebarProps) {
-  const { theme, spaces: enabled } = usePreferences();
-  const dark = theme === 'dark';
+  const { spaces: enabled } = usePreferences();
+  const dark = shownTheme() === 'dark';
   const spaces = enabledScreens(enabled);
 
   /* Starjot Home sits in the tabs, so it counts as Notespace; with Notespace turned off, the */

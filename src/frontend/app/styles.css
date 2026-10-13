@@ -811,6 +811,20 @@ p {
   animation: tooltip-in .12s ease .4s both;
 }
 
+/* With helpful tips on, a button's keyboard shortcut (data-shortcut) follows its name. */
+:root:not([data-tips="off"]) [data-shortcut]:hover::after,
+:root:not([data-tips="off"]) [data-shortcut]:focus-visible::after {
+  content: attr(data-tooltip) " (" attr(data-shortcut) ")";
+}
+
+/* With helpful tips off, hints (such as the tip on Starjot Home) and shortcut badges are */
+/* hidden, and so is a sidebar list with nothing in it. */
+[data-tips="off"] .hint,
+[data-tips="off"] .sidebar-search-key,
+[data-tips="off"] .sidebar-list.is-empty {
+  display: none;
+}
+
 [data-tooltip]:focus-visible::after {
   animation-delay: 0s;
 }

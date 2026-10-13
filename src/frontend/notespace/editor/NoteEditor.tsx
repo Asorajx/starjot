@@ -372,10 +372,10 @@ export function NoteEditor({ noteId, history, view, active, onClose, onOpenNote,
         <SaveStatus />
 
         <span className="page-bar-group" role="group" aria-label="Undo and redo">
-          <button type="button" className="page-bar-button" data-tooltip="Undo (Ctrl + Z)" aria-label="Undo (Ctrl + Z)" disabled={!canUndo || locked} onMouseDown={keepSelection} onClick={() => session.undo()}>
+          <button type="button" className="page-bar-button" data-tooltip="Undo" data-shortcut="Ctrl + Z" aria-label="Undo" disabled={!canUndo || locked} onMouseDown={keepSelection} onClick={() => session.undo()}>
             <Icon name="undo" size={17} />
           </button>
-          <button type="button" className="page-bar-button" data-tooltip="Redo (Ctrl + Y)" aria-label="Redo (Ctrl + Y)" disabled={!canRedo || locked} onMouseDown={keepSelection} onClick={() => session.redo()}>
+          <button type="button" className="page-bar-button" data-tooltip="Redo" data-shortcut="Ctrl + Y" aria-label="Redo" disabled={!canRedo || locked} onMouseDown={keepSelection} onClick={() => session.redo()}>
             <Icon name="redo" size={17} />
           </button>
         </span>
@@ -399,7 +399,8 @@ export function NoteEditor({ noteId, history, view, active, onClose, onOpenNote,
             type="button"
             className={`page-bar-button ${drawing ? 'selected' : ''}`}
             aria-pressed={drawing}
-            data-tooltip={drawing ? 'Stop drawing (Esc)' : 'Draw'}
+            data-tooltip={drawing ? 'Stop drawing' : 'Draw'}
+            data-shortcut={drawing ? 'Esc' : undefined}
             aria-label={drawing ? 'Stop drawing' : 'Draw'}
             disabled={locked}
             onClick={toggleDrawing}

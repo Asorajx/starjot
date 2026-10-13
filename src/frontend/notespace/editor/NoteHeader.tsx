@@ -2,6 +2,7 @@ import { useLayoutEffect, useRef, useState, type ClipboardEvent, type KeyboardEv
 import { Dropdown } from '../../components/Dropdown';
 import { EmojiPicker } from '../../components/EmojiPicker';
 import { Icon } from '../../components/Icon';
+import { usePreferences } from '../../app/preferences';
 import { noteTitle, scheduleSave, UNTITLED_NOTE, updateNote, useCategories, useNotes } from '../store';
 import { isEmptyContent, wrapLooseLines } from './text/dom';
 import { linkTypedAddress } from './links/links';
@@ -32,6 +33,7 @@ type RemarksFieldProps = {
 /* and so do Ctrl + B / I / U. The field keeps its own undo, separate from the note's. */
 function RemarksField({ note, locked }: RemarksFieldProps) {
   const ref = useRef<HTMLDivElement>(null);
+  const { spellcheck } = usePreferences();
   const [empty, setEmpty] = useState(!note.remarks);
 
   /* Filled once per note; after that the browser owns the text while typing, like the note itself. */
@@ -84,7 +86,7 @@ function RemarksField({ note, locked }: RemarksFieldProps) {
       role="textbox"
       aria-multiline="true"
       aria-label="Remarks"
-      spellCheck
+      spellCheck={spellcheck}
       onKeyDown={handleKeyDown}
       onInput={save}
       onPaste={handlePaste}

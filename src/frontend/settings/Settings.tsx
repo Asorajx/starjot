@@ -10,7 +10,7 @@ import { Switch } from '../components/Switch';
 import { useEscape } from '../lib/useDismiss';
 import { useFocusTrap } from '../lib/useFocusTrap';
 
-export type SettingsSection = 'general' | 'appearance' | 'spaces' | 'sidebar' | 'notes' | 'drawing' | 'storage' | 'about';
+export type SettingsSection = 'general' | 'appearance' | 'spaces' | 'sidebar' | 'notes' | 'typing' | 'drawing' | 'shortcuts' | 'storage' | 'about';
 
 type SettingsProps = {
   section: SettingsSection;
@@ -23,6 +23,77 @@ type SettingsProps = {
 };
 
 type SettingsTab = { id: SettingsSection; label: string; icon: IconName };
+
+/* The keyboard shortcuts, as Keyboard shortcuts lists them: what each does and its keys (one */
+/* list of keys per way of doing it). */
+type Shortcut = { action: string; keys: string[][] };
+
+const SHORTCUT_GROUPS: { title: string; note?: string; shortcuts: Shortcut[] }[] = [
+  {
+    title: 'Everywhere',
+    shortcuts: [
+      { action: 'Search', keys: [['Ctrl', 'K']] },
+      { action: 'New note', keys: [['Ctrl', 'N']] },
+      { action: 'Dock or undock the sidebar', keys: [['Ctrl', '\\']] },
+      { action: 'Switch tabs (hold Ctrl, tap Q, let go to switch)', keys: [['Ctrl', 'Q']] },
+      { action: 'Open a note in a new tab', keys: [['Ctrl', 'Click']] },
+      { action: 'Close a window or menu, or go back', keys: [['Esc']] }
+    ]
+  },
+  {
+    title: 'Tabs',
+    note: 'In a browser tab, the browser keeps these for its own tabs; they work in the desktop app.',
+    shortcuts: [
+      { action: 'New tab', keys: [['Ctrl', 'T']] },
+      { action: 'Close tab', keys: [['Ctrl', 'W']] },
+      { action: 'Reopen the last closed tab', keys: [['Ctrl', 'Shift', 'T']] },
+      { action: 'Next or previous tab', keys: [['Ctrl', 'Tab'], ['Ctrl', 'Shift', 'Tab']] }
+    ]
+  },
+  {
+    title: 'In a note',
+    shortcuts: [
+      { action: 'Find, and find and replace', keys: [['Ctrl', 'F'], ['Ctrl', 'H']] },
+      { action: 'Undo and redo', keys: [['Ctrl', 'Z'], ['Ctrl', 'Y']] },
+      { action: 'Bold, italic and underline', keys: [['Ctrl', 'B'], ['Ctrl', 'I'], ['Ctrl', 'U']] },
+      { action: 'Zoom in, out and back to 100%', keys: [['Ctrl', '='], ['Ctrl', '−'], ['Ctrl', '0']] },
+      { action: 'Open or close a toggle', keys: [['Ctrl', 'Enter']] }
+    ]
+  }
+];
+
+/* What can be typed into a note's text to format it, listed in Notespace → Typing. */
+const LINE_SHORTCUTS: Shortcut[] = [
+  { action: 'Heading 1 to 5', keys: [['#', 'Space'], ['#####', 'Space']] },
+  { action: 'Bulleted and numbered list', keys: [['-', 'Space'], ['1.', 'Space']] },
+  { action: 'Quote', keys: [['>', 'Space']] },
+  { action: 'Code block and divider', keys: [['```', 'Enter'], ['---', 'Enter']] }
+];
+
+const ANYWHERE_SHORTCUTS: Shortcut[] = [
+  { action: 'Em dash (Undo straight after keeps the hyphens)', keys: [['-', '-']] }
+];
+
+/* One row per shortcut: what it does, and its keys (with "or" between different ways). */
+function ShortcutRows({ shortcuts }: { shortcuts: Shortcut[] }) {
+  return (
+    <>
+      {shortcuts.map(shortcut => (
+        <div key={shortcut.action} className="shortcut-row">
+          <span>{shortcut.action}</span>
+          <span className="shortcut-keys">
+            {shortcut.keys.map((keys, way) => (
+              <span key={way} className="shortcut-way">
+                {way > 0 && <span className="shortcut-or">or</span>}
+                {keys.map((key, at) => <kbd key={at}>{key}</kbd>)}
+              </span>
+            ))}
+          </span>
+        </div>
+      ))}
+    </>
+  );
+}
 
 /* The accent colours' names, as Settings shows them. */
 const ACCENT_NAMES: Record<Accent, string> = {
@@ -45,12 +116,14 @@ const SETTING_GROUPS: { heading: string; tabs: SettingsTab[] }[] = [
     heading: 'Notespace',
     tabs: [
       { id: 'notes', label: 'Notes', icon: 'file-text' },
+      { id: 'typing', label: 'Typing', icon: 'type' },
       { id: 'drawing', label: 'Drawing', icon: 'pencil' }
     ]
   },
   {
     heading: 'More',
     tabs: [
+      { id: 'shortcuts', label: 'Keyboard shortcuts', icon: 'keyboard' },
       { id: 'storage', label: 'Storage', icon: 'hard-drive' },
       { id: 'about', label: 'About', icon: 'info' }
     ]
@@ -62,11 +135,6 @@ const SETTING_GROUPS: { heading: string; tabs: SettingsTab[] }[] = [
 /* =========================
    Settings Building Blocks
    ========================= */
-
-/* A switch drawn for a setting that does not work yet. */
-function Toggle({ on = true }: { on?: boolean }) {
-  return <span className={`preview-switch ${on ? 'preview-switch--on' : ''}`} aria-hidden="true"><span /></span>;
-}
 
 /* One setting: its name and what it does on the left, its control on the right. Settings that */
 /* do not work yet are marked "Preview". */
@@ -126,7 +194,7 @@ function Heading({ title, subtitle }: { title: string; subtitle: string }) {
    ========================= */
 
 function SettingsSectionContent({ section }: { section: SettingsSection }) {
-  const { theme, accent, density, startScreen, spaces, sidebar, newNotes, contentsScroll, hideHeaderWhileTyping, drawing } = usePreferences();
+  const { theme, accent, density, startScreen, spaces, sidebar, newNotes, contentsScroll, hideHeaderWhileTyping, tips, spellcheck, typingShortcuts, drawing } = usePreferences();
   const categories = useCategories();
   const set = (changes: Partial<Preferences>) => updatePreferences(changes);
 
@@ -151,7 +219,9 @@ function SettingsSectionContent({ section }: { section: SettingsSection }) {
           </Row>
         </Group>
         <Group title="Help">
-          <Row preview title="Show helpful tips" description="Show small hints while you explore Starjot."><Toggle /></Row>
+          <Row title="Show helpful tips" description="Keyboard shortcuts in button tooltips, a tip on Starjot Home, and hints in empty lists.">
+            <Switch label="Show helpful tips" on={tips} onChange={on => set({ tips: on })} />
+          </Row>
         </Group>
       </>
     );
@@ -162,13 +232,14 @@ function SettingsSectionContent({ section }: { section: SettingsSection }) {
       <>
         <Heading title="Appearance" subtitle="The little details that make Starjot feel like yours." />
         <Group title="Theme">
-          <Row title="Theme" description="A light or dark interface. The moon or sun at the bottom of the sidebar switches it too.">
+          <Row title="Theme" description="Light, dark, or System to follow your computer. The moon or sun at the bottom of the sidebar switches between light and dark too.">
             <Segmented
               label="Theme"
               value={theme}
               options={[
                 { value: 'light', label: <><Icon name="sun" size={14} /> Light</> },
-                { value: 'dark', label: <><Icon name="moon" size={14} /> Dark</> }
+                { value: 'dark', label: <><Icon name="moon" size={14} /> Dark</> },
+                { value: 'system', label: <><Icon name="monitor" size={14} /> System</> }
               ]}
               onChange={value => set({ theme: value })}
             />
@@ -321,10 +392,36 @@ function SettingsSectionContent({ section }: { section: SettingsSection }) {
               onChange={value => set({ contentsScroll: value })}
             />
           </Row>
+          <Row title="Spellcheck" description="Underline misspelt words in notes and their remarks, using your browser's dictionary.">
+            <Switch label="Spellcheck" on={spellcheck} onChange={on => set({ spellcheck: on })} />
+          </Row>
           <Row title="Hide the note bar while typing" description="The bar above a note fades away while you type and comes back when you move the mouse.">
             <Switch label="Hide the note bar while typing" on={hideHeaderWhileTyping} onChange={value => set({ hideHeaderWhileTyping: value })} />
           </Row>
         </Group>
+      </>
+    );
+  }
+
+  if (section === 'typing') {
+    return (
+      <>
+        <Heading title="Typing" subtitle="What can be typed into a note's text to format it as you write." />
+        <Group title="Typing shortcuts">
+          <Row title="Typing shortcuts" description="Turn the shortcuts below on or off. Turned off, notes keep exactly what you type. Type / for the command menu either way.">
+            <Switch label="Typing shortcuts" on={typingShortcuts} onChange={on => set({ typingShortcuts: on })} />
+          </Row>
+        </Group>
+        {typingShortcuts && (
+          <>
+            <Group title="At the start of an empty line">
+              <ShortcutRows shortcuts={LINE_SHORTCUTS} />
+            </Group>
+            <Group title="Anywhere in a line">
+              <ShortcutRows shortcuts={ANYWHERE_SHORTCUTS} />
+            </Group>
+          </>
+        )}
       </>
     );
   }
@@ -351,6 +448,20 @@ function SettingsSectionContent({ section }: { section: SettingsSection }) {
             <Switch label="Snap anchored drawings to the text" on={drawing.snap} onChange={value => set({ drawing: { ...drawing, snap: value } })} />
           </Row>
         </Group>}
+      </>
+    );
+  }
+
+  if (section === 'shortcuts') {
+    return (
+      <>
+        <Heading title="Keyboard shortcuts" subtitle="On a Mac, Cmd works in place of Ctrl, except for Ctrl + Q. What can be typed into notes is in Notespace → Typing." />
+        {SHORTCUT_GROUPS.map(group => (
+          <Group key={group.title} title={group.title}>
+            {group.note && <p className="shortcut-note">{group.note}</p>}
+            <ShortcutRows shortcuts={group.shortcuts} />
+          </Group>
+        ))}
       </>
     );
   }
@@ -445,7 +556,7 @@ export function Settings({ section, onSectionChange, onClose, focus = null, onFo
           ))}
         </nav>
         <section className="settings-content" ref={contentRef} aria-label={`${current.label} settings`}>
-          <button type="button" className="window-control settings-close" aria-label="Close settings" data-tooltip="Close (Esc)" data-tooltip-align="end" onClick={onClose}>
+          <button type="button" className="window-control settings-close" aria-label="Close settings" data-tooltip="Close" data-shortcut="Esc" data-tooltip-align="end" onClick={onClose}>
             <Icon name="x" size={18} />
           </button>
           <SettingsSectionContent section={current.id} />

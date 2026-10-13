@@ -22,10 +22,20 @@
   letter-spacing: -.6px;
 }
 
-.starjot-home-intro > p:last-child {
+.starjot-home-subtitle {
   margin: 0;
   color: #68788f;
   font-size: 13px;
+}
+
+/* The tip of the day (hidden with helpful tips off, see .hint). */
+.starjot-home-tip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 12px 0 0;
+  color: var(--accent-text);
+  font-size: 12px;
 }
 
 /* The quick note and "Where you left off" sit side by side, and stack when there is no room. */

@@ -349,7 +349,7 @@ export function SearchWindow({ initialQuery, inNewTab, onClose, onOpenNote, onOp
           >
             <Icon name="panels-top-left" size={18} />
           </button>
-          <button type="button" className="window-control" aria-label="Close search" data-tooltip="Close (Esc)" data-tooltip-align="end" onClick={onClose}>
+          <button type="button" className="window-control" aria-label="Close search" data-tooltip="Close" data-shortcut="Esc" data-tooltip-align="end" onClick={onClose}>
             <Icon name="x" size={18} />
           </button>
         </div>

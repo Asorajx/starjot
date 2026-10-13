@@ -1,5 +1,6 @@
 import { memo, useLayoutEffect, useRef, type DragEvent, type MouseEvent } from 'react';
 import { Icon } from '../../../components/Icon';
+import { usePreferences } from '../../../app/preferences';
 import { blockType, type DocBlock } from './blockModel';
 import { hydratePages } from './pageBlocks';
 import { hydrateTables } from '../tables/tables';
@@ -24,6 +25,7 @@ type BlockContentProps = {
 const BlockContent = memo(function BlockContent({ block, register }: BlockContentProps) {
   const ref = useRef<HTMLDivElement>(null);
   const type = blockType(block.html);
+  const { spellcheck } = usePreferences();
 
   useLayoutEffect(() => {
     const element = ref.current;
@@ -36,7 +38,7 @@ const BlockContent = memo(function BlockContent({ block, register }: BlockConten
     return () => register(block.id, null);
   }, [block.id, block.version, register]);
 
-  return <div ref={ref} className={`block-content block-content--${type}`} data-note-editable="" spellCheck />;
+  return <div ref={ref} className={`block-content block-content--${type}`} data-note-editable="" spellCheck={spellcheck} />;
 }, (previous, next) => previous.block.id === next.block.id && previous.block.version === next.block.version && previous.register === next.register);
 
 

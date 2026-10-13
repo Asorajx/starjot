@@ -203,7 +203,7 @@ export function NotesHome({ filter, onFilterChange, onOpen, onOpenInNewTab, onOp
         </div>
         {starred.length
           ? <div className="note-tiles">{starredShown.map(note => <NoteTile key={note.id} note={note} onOpen={onOpen} onMenu={noteMenu.onContextMenu} />)}</div>
-          : <p className="home-hint">Star a note with the ☆ in the list below to keep it here.</p>}
+          : <p className="home-hint hint">Star a note with the ☆ in the list below to keep it here.</p>}
       </section>
 
       <section className="home-section" aria-labelledby="all-notes-heading">
