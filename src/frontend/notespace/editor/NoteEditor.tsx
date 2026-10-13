@@ -37,6 +37,10 @@ import { zoomed } from '../../lib/geometry';
 
 type Panel = 'toc' | 'settings' | null;
 
+/* A note's 100% zoom shows it at this size, so its text reads comfortably (about 15.6px for */
+/* body text, which is styled at 13px). Zoom and Small text scale from here. */
+const BASE_SCALE = 1.2;
+
 /* Small text shows a note at this share of its size. */
 const SMALL_TEXT_SCALE = 0.875;
 
@@ -147,7 +151,7 @@ export function NoteEditor({ noteId, history, view, active, onClose, onOpenNote,
   /* Small text and Full width only apply to pageless notes. */
   const smallText = Boolean(note?.smallText && !geometry);
   const fullWidth = Boolean(note?.fullWidth && !geometry);
-  const noteZoom = zoom * (smallText ? SMALL_TEXT_SCALE : 1);
+  const noteZoom = BASE_SCALE * zoom * (smallText ? SMALL_TEXT_SCALE : 1);
 
   /* Pages wider than the pane scroll sideways. The page bar stays in view by being exactly as wide */
   /* as the pane, which CSS cannot read from inside the scrolling pane, so it is measured here. */
