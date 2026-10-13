@@ -11,17 +11,18 @@ import { findWhenOpened } from '../notespace/editor/find/pendingFind';
 import type { ViewControls } from '../notespace/editor/EditorPanels';
 import { NoteEditor } from '../notespace/editor/NoteEditor';
 import { PageBar, placeExists, placeLabel, type PageHistory } from '../notespace/PageBar';
-import { createNote, flushSave, getNote, updateNote } from '../notespace/store';
+import { createNote, flushSave, updateNote } from '../notespace/store';
 import { Settings, type SettingsSection } from '../settings/Settings';
 import { Boardspace } from '../boardspace/Boardspace';
 import type { BoardTab } from '../../shared/types/task';
 import {
   activeTab, addTab, canAddTab, canStack, closeTab, currentPlace, focusedGroup, focusGroup, goTo, isOpenInStack, isSplit, moveTab, newTab,
-  newWorkspace, selectTab, splitWorkspace, stackGroup, step, stepPlace, unsplit, updateTab, type NoteTab, type Place, type TabGroup,
+  newWorkspace, samePlace, selectTab, splitWorkspace, stackGroup, step, stepPlace, unsplit, updateTab, type NoteTab, type Place, type TabGroup,
   type Workspace
 } from './noteTabs';
 import { DocumentTitle, StackSpine, TAB_DRAG_TYPE, WindowBar } from './WindowBar';
 import { screenLabel, type ScreenId } from './screens';
+import { addressOf, parseAddress } from './address';
 
 
 /* =========================
@@ -103,17 +104,16 @@ function TabGroupFrame({ group, focused, onFocus, onDropTab, children }: TabGrou
 
 /* Only navigation lives here; note content belongs to the Notespace store. */
 export function App() {
-  const [screenId, setScreenId] = useState<ScreenId>('notes');
+  /* The page address the app was opened at (see address.ts), such as a bookmarked note or a */
+  /* refresh; anything else opens Starjot Home. */
+  const [startAddress] = useState(() => parseAddress(window.location.hash));
+  const [screenId, setScreenId] = useState<ScreenId>(startAddress?.kind === 'board' ? 'boardspace' : 'notes');
 
   /* Notespace's tab groups (one, or two after a split), each with its tabs and their histories. */
-  /* A page's own address (#note=id, see pageAddress) opens that page; anything else opens Starjot */
-  /* Home. */
-  const [tabs, setTabs] = useState<Workspace>(() => {
-    const id = window.location.hash.match(/^#note=([a-zA-Z0-9_-]{1,90})$/)?.[1];
-    if (id) window.history.replaceState(null, '', window.location.pathname + window.location.search);
-    return newWorkspace(id && getNote(id) ? { kind: 'note', id } : { kind: 'start' });
-  });
-  const [workTab, setWorkTab] = useState<BoardTab>('todo');
+  const [tabs, setTabs] = useState<Workspace>(() => newWorkspace(
+    startAddress?.kind === 'place' && placeExists(startAddress.place) ? startAddress.place : { kind: 'start' }
+  ));
+  const [workTab, setWorkTab] = useState<BoardTab>(startAddress?.kind === 'board' ? startAddress.view : 'todo');
   /* Settings is a panel over the app: open or not, the section shown, and a group to highlight. */
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [settingsSection, setSettingsSection] = useState<SettingsSection>('general');
@@ -222,16 +222,57 @@ export function App() {
     if (tabs.focus !== groupId) setTabs(current => focusGroup(current, groupId));
   }
 
-  /* A page address entered while the app is open opens that page in the focused tab. */
+  /* The browser's address follows the place shown (see address.ts). Going somewhere new adds a */
+  /* step to the browser's history; switching tabs, or the first address, only replaces it, as */
+  /* switching browser tabs is not a step either. */
+  const pageUrl = (hash: string) => window.location.pathname + window.location.search + hash;
+  const address = addressOf(screenId === 'boardspace' ? { kind: 'board', view: workTab } : { kind: 'place', place });
+  const tabKey = `${tabs.focus}:${activeTab(group).id}`;
+  const synced = useRef({ address: '', tabKey: '' });
   useEffect(() => {
-    function handleHashChange() {
-      const id = window.location.hash.match(/^#note=([a-zA-Z0-9_-]{1,90})$/)?.[1];
-      if (!id) return;
-      window.history.replaceState(null, '', window.location.pathname + window.location.search);
-      if (getNote(id)) openNote(id);
+    const last = synced.current;
+    synced.current = { address, tabKey };
+    if (window.location.hash === address) return;
+    if (!last.address || last.tabKey !== tabKey) window.history.replaceState(null, '', pageUrl(address));
+    else window.history.pushState(null, '', pageUrl(address));
+  }, [address, tabKey]);
+
+  /* Back and Forward (the browser's buttons, Alt + arrows, a mouse's side buttons, a phone's back */
+  /* gesture), or an address typed in. An open window (Search, Settings, the sidebar popup) closes */
+  /* first and the page stays. Otherwise the tab shown steps back or forward when that is where */
+  /* the address leads, or goes there. */
+  useEffect(() => {
+    function handlePopState() {
+      if (searchState || settingsOpen || popup) {
+        setSearchState(null);
+        setSettingsOpen(false);
+        setPopup(null);
+        window.history.pushState(null, '', pageUrl(address));
+        return;
+      }
+      const target = parseAddress(window.location.hash) ?? { kind: 'place' as const, place: { kind: 'start' as const } };
+      flushSave();
+      if (target.kind === 'board') {
+        setScreenId('boardspace');
+        setWorkTab(target.view);
+        return;
+      }
+      if (!placeExists(target.place)) {
+        window.history.replaceState(null, '', pageUrl(address));
+        return;
+      }
+      setScreenId('notes');
+      const tab = activeTab(group);
+      changeTab(group.id, tab.id, current => {
+        const back = stepPlace(current, -1, placeExists);
+        const forward = stepPlace(current, 1, placeExists);
+        if (back && samePlace(back, target.place)) return step(current, -1, placeExists);
+        if (forward && samePlace(forward, target.place)) return step(current, 1, placeExists);
+        return goTo(current, target.place);
+      });
     }
-    window.addEventListener('hashchange', handleHashChange);
-    return () => window.removeEventListener('hashchange', handleHashChange);
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
   });
 
   /* In Notespace, DocumentTitle names the browser tab after the focused page instead. */
