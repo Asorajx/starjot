@@ -41,15 +41,26 @@
   pointer-events: none;
 }
 
-.editable-block:hover .block-controls {
-  visibility: visible;
-  opacity: 1;
-  pointer-events: auto;
+/* Only devices that really hover (a mouse); a tapped block on a phone keeps a "sticky" hover. */
+@media (hover: hover) {
+  .editable-block:hover .block-controls {
+    visibility: visible;
+    opacity: 1;
+    pointer-events: auto;
+  }
 }
 
-/* Touch screens have no hover, so they show the controls on the selected block instead. */
+/* Touch screens have no hover. There a block shows its highlight and controls only while text in */
+/* it is selected (or several blocks are), not just because the caret is in it, so they stay out */
+/* of the way while typing. */
 @media (hover: none) {
-  .editable-block.is-selected .block-controls {
+  .structured-document .editable-block.is-selected:not(.has-selection) {
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .editable-block.has-selection .block-controls,
+  .editable-block.is-picked .block-controls {
     visibility: visible;
     opacity: 1;
     pointer-events: auto;

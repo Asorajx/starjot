@@ -3,6 +3,7 @@ import { Dropdown, type DropdownOption } from '../components/Dropdown';
 import { Icon, type IconName } from '../components/Icon';
 import { useEscape } from '../lib/useDismiss';
 import { cleanHtml, htmlToText } from '../notespace/sanitize';
+import { newestFirst } from '../notespace/NoteList';
 import { ancestorsOf, categoryName, getNote, useCategories, useNotes } from '../notespace/store';
 import { BOARD_TABS } from '../boardspace/data';
 import { TASKS } from '../../backend/data/sampleTasks';
@@ -29,7 +30,9 @@ type SearchWindowProps = {
   onCreateNote: (title: string, category: string, inNewTab: boolean) => void;
 };
 
-/* How many recently opened notes show before anything is typed, and how many notes match at most. */
+/* Before anything is typed: how many starred and recent notes show. And how many notes match at */
+/* most once something is typed. */
+const STARRED_COUNT = 8;
 const RECENT_COUNT = 20;
 const RESULT_COUNT = 50;
 
@@ -88,24 +91,29 @@ function useEntries() {
 
 type Group = { label: string; results: SearchResult[] };
 
-/* Before anything is typed: recently opened notes by day. After: notes, categories, then */
-/* Boardspace items, each best first. */
+/* Before anything is typed: starred notes, then the most recent notes by day (when they were */
+/* last opened, or last edited for notes never opened here), each note once. After: notes, */
+/* categories, then Boardspace items, each best first. */
 function useGroups(entries: SearchEntry[], query: string, titleOnly: boolean, scope: string): Group[] {
   const notes = useNotes();
   return useMemo(() => {
     if (!query.trim()) {
       const byId = new Map(entries.map(entry => [entry.id, entry]));
-      const recent = notes
-        .filter(note => note.openedAt)
-        .sort((a, b) => (b.openedAt ?? '').localeCompare(a.openedAt ?? ''))
-        .slice(0, RECENT_COUNT);
-      const groups: Group[] = [];
-      for (const note of recent) {
-        const label = dayGroup(note.openedAt ?? '');
+      const resultFor = (note: Note): SearchResult[] => {
         const entry = byId.get(note.id);
-        if (!entry) continue;
+        return entry ? [{ entry, snippet: null, findTerm: '' }] : [];
+      };
+      const starred = newestFirst(notes).filter(note => note.pinned).slice(0, STARRED_COUNT);
+      const lastSeen = (note: Note) => note.openedAt ?? note.updatedAt ?? '';
+      const recent = notes
+        .filter(note => !note.pinned)
+        .sort((a, b) => lastSeen(b).localeCompare(lastSeen(a)))
+        .slice(0, RECENT_COUNT);
+      const groups: Group[] = starred.length ? [{ label: 'Starred', results: starred.flatMap(resultFor) }] : [];
+      for (const note of recent) {
+        const label = dayGroup(lastSeen(note));
         if (groups[groups.length - 1]?.label !== label) groups.push({ label, results: [] });
-        groups[groups.length - 1].results.push({ entry, snippet: null, findTerm: '' });
+        groups[groups.length - 1].results.push(...resultFor(note));
       }
       return groups;
     }
@@ -356,7 +364,7 @@ export function SearchWindow({ initialQuery, inNewTab, onClose, onOpenNote, onOp
         <div className={`search-body ${showPreview ? 'has-preview' : ''}`}>
           <div className="search-results" id="search-results" role="listbox" aria-label="Results" ref={listRef}>
             {!flat.length && (
-              <p className="search-empty">{query.trim() ? `Nothing matches “${query.trim()}”.` : 'Notes you open will show here.'}</p>
+              <p className="search-empty">{query.trim() ? `Nothing matches “${query.trim()}”.` : 'Notes you write will show here.'}</p>
             )}
             {groups.map(group => (
               <div key={group.label} role="group" aria-label={group.label}>

@@ -1,5 +1,5 @@
 import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type MouseEvent as ReactMouseEvent } from 'react';
-import { changeZoom, usePreferences } from '../../app/preferences';
+import { changeZoom, updatePreferences, usePreferences } from '../../app/preferences';
 import { DeleteNoteDialog } from '../DeleteNoteDialog';
 import { FindBar } from './find/FindBar';
 import { takeFindForNote } from './find/pendingFind';
@@ -34,12 +34,16 @@ import { pageGeometry, pageStep, usePages } from './layout/pagination';
 import { EditorSession, useSessionValue } from './session';
 import { StructuredEditor } from './text/StructuredEditor';
 import { zoomed } from '../../lib/geometry';
+import { useMediaQuery } from '../../lib/useMediaQuery';
+import { usePinch } from '../../lib/usePinch';
 
 type Panel = 'toc' | 'settings' | null;
 
 /* A note's 100% zoom shows it at this size, so its text reads comfortably (about 15.6px for */
-/* body text, which is styled at 13px). Zoom and Small text scale from here. */
+/* body text, which is styled at 13px). Zoom and Small text scale from here. Phones (the phone */
+/* layout starts at 700px wide) keep the note's own size: 1.2 fits too few words on a line. */
 const BASE_SCALE = 1.2;
+const PHONE_BASE_SCALE = 1;
 
 /* Small text shows a note at this share of its size. */
 const SMALL_TEXT_SCALE = 0.875;
@@ -151,17 +155,22 @@ export function NoteEditor({ noteId, history, view, active, onClose, onOpenNote,
   /* Small text and Full width only apply to pageless notes. */
   const smallText = Boolean(note?.smallText && !geometry);
   const fullWidth = Boolean(note?.fullWidth && !geometry);
-  const noteZoom = BASE_SCALE * zoom * (smallText ? SMALL_TEXT_SCALE : 1);
 
   /* Pages wider than the pane scroll sideways. The page bar stays in view by being exactly as wide */
-  /* as the pane, which CSS cannot read from inside the scrolling pane, so it is measured here. */
+  /* as the pane, which CSS cannot read from inside the scrolling pane, so it is measured here. The */
+  /* room left for the page beside the canvas's padding is measured too (see noteZoom). */
   const wrapRef = useRef<HTMLDivElement>(null);
   const paginated = Boolean(geometry);
+  const [pageRoom, setPageRoom] = useState(0);
   useLayoutEffect(() => {
     const wrap = wrapRef.current;
     const scroller = session.scroller();
     if (!paginated || !wrap || !scroller) return;
-    const measure = () => wrap.style.setProperty('--pane-width', `${scroller.clientWidth}px`);
+    const measure = () => {
+      wrap.style.setProperty('--pane-width', `${scroller.clientWidth}px`);
+      const style = canvasRef.current && getComputedStyle(canvasRef.current);
+      setPageRoom(scroller.clientWidth - (style ? parseFloat(style.paddingLeft) + parseFloat(style.paddingRight) : 0));
+    };
     measure();
     const observer = new ResizeObserver(measure);
     observer.observe(scroller);
@@ -170,6 +179,18 @@ export function NoteEditor({ noteId, history, view, active, onClose, onOpenNote,
       wrap.style.removeProperty('--pane-width');
     };
   }, [paginated, session, revision]);
+
+  /* 100% shows notes at BASE_SCALE. A paginated page too wide for the pane at that size (on a */
+  /* phone, say) is shown at the size that fits instead, so 100% means "the whole page width"; */
+  /* zooming in from there scrolls sideways. */
+  const phone = useMediaQuery('(max-width: 700px)');
+  const fitScale = geometry && pageRoom > 0 ? pageRoom / geometry.width : Infinity;
+  const noteZoom = Math.min(phone ? PHONE_BASE_SCALE : BASE_SCALE, fitScale) * zoom * (smallText ? SMALL_TEXT_SCALE : 1);
+
+  /* Pinching on a phone zooms the note, like − and + in Note settings (in steps of 10%). */
+  usePinch(canvasRef, zoom, next => {
+    if (Math.round(next * 10) / 10 !== zoom) updatePreferences({ zoom: next });
+  });
 
   /* Remember when the note was opened, and save pending edits when leaving it. */
   useEffect(() => {

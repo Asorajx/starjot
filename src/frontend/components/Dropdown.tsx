@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type CSSProperties, type KeyboardEvent } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type KeyboardEvent } from 'react';
 import { useEscape } from '../lib/useDismiss';
 import { Icon, type IconName } from './Icon';
 
@@ -50,6 +50,19 @@ type DropdownProps<T extends string> = {
 /* opens or chooses, and Escape or Tab closes. A click anywhere else closes it too. */
 export function Dropdown<T extends string>({ value, options, onChange, label, prefix, className = 'dropdown-button', alignEnd, disabled = false, wrapperClassName = '', style }: DropdownProps<T>) {
   const [open, setOpen] = useState(false);
+
+  /* A menu that would run past the right edge of the screen (on a phone, say) lines up with the */
+  /* button's right edge instead. Checked each time it opens, before it is shown. */
+  const [flipped, setFlipped] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    if (!open) {
+      setFlipped(false);
+      return;
+    }
+    const menu = menuRef.current?.getBoundingClientRect();
+    if (menu && !alignEnd && menu.right > window.innerWidth - 8) setFlipped(true);
+  }, [open, alignEnd]);
   const chosen = Math.max(0, options.findIndex(option => option.value === value));
   const [active, setActive] = useState(chosen);
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -123,7 +136,7 @@ export function Dropdown<T extends string>({ value, options, onChange, label, pr
       </button>
 
       {open && (
-        <div className={`page-menu dropdown-menu ${alignEnd ? 'is-end' : ''}`} id={listId} role="listbox" aria-label={label}>
+        <div ref={menuRef} className={`page-menu dropdown-menu ${alignEnd || flipped ? 'is-end' : ''}`} id={listId} role="listbox" aria-label={label}>
           {options.map((option, index) => (
             <div key={option.value} role="presentation">
               {option.divider && <div className="dropdown-divider" role="presentation" />}

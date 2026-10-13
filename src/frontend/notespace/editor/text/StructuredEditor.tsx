@@ -860,6 +860,7 @@ export const StructuredEditor = memo(function StructuredEditor({ session, conten
       key={block.id}
       block={block}
       selected={block.id === selection.activeId}
+      ranged={block.id === selection.activeId && !selection.collapsed}
       picked={selection.picked.length > 1 && selection.picked.includes(block.id)}
       dragging={draggingIds.includes(block.id)}
       drop={dropMark?.id === block.id ? dropMark.side : null}

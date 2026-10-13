@@ -13,7 +13,7 @@
   display: grid;
   grid-template-columns: 188px minmax(0,1fr) 256px;
   flex: 1;
-  min-height: calc(100vh - 131px);
+  min-height: calc(100dvh - 131px);
 }
 
 .outline-item {
@@ -339,7 +339,7 @@
 /* Notes now use the full document width; optional panels float above it. */
 .editor-wrap .editor-layout {
   display: block;
-  min-height: calc(100vh - 131px);
+  min-height: calc(100dvh - 131px);
 }
 
 .editor-wrap .editor-canvas {
@@ -678,14 +678,17 @@
 /* It is a container, so the note can follow the width of its pane in a split or stacked tab. */
 .editor-wrap .editor-layout {
   container-type: inline-size;
-  min-height: calc(100vh - 58px);
+  min-height: calc(100dvh - 58px);
 }
 
 /* The same side padding in both modes keeps text in place when switching modes. It also leaves */
 /* room for the block controls and a gap from the left edge, where a hidden sidebar can be revealed. */
 /* It is noticeably wider than Full width's, so the two settings look different at any size. */
+/* Two-finger pinching zooms the note (see usePinch), so the browser's own pinch is turned off */
+/* here; scrolling with one finger still works. */
 .editor-wrap .editor-canvas {
   padding: 28px clamp(96px, 9vw, 144px) 60px;
+  touch-action: pan-x pan-y;
 }
 
 /* Small text (Note settings) zooms the column to 0.875 (see NoteEditor). Its widest size is */
@@ -768,10 +771,15 @@
   }
 }
 
-/* A narrow pane keeps just enough room for the block controls. */
+/* A narrow pane keeps just enough room for the block controls. A paginated note's pages carry */
+/* their own margins, so it only keeps a thin edge, leaving the page as much width as it can. */
 @container (max-width: 600px) {
   .editor-wrap .editor-canvas:not(.is-paginated) {
     padding: 24px 24px 64px 48px;
+  }
+
+  .editor-wrap .editor-canvas.is-paginated {
+    padding: 16px 16px 64px;
   }
 
   .note-details {

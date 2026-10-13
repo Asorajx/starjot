@@ -47,6 +47,9 @@ const BlockContent = memo(function BlockContent({ block, register }: BlockConten
 type BlockRowProps = {
   block: DocBlock;
   selected: boolean;
+
+  /* Text in this block is selected (not just the caret in it). */
+  ranged: boolean;
   picked: boolean;
   dragging: boolean;
   drop: 'before' | 'after' | null;
@@ -57,8 +60,8 @@ type BlockRowProps = {
 
 /* One block with its hover controls: "+" adds a block below (Alt + click: above), the grip reorders. */
 /* The controls are marked non-editable so typing and deleting can never change them. */
-export function BlockRow({ block, selected, picked, dragging, drop, register, onAdd, onDragStart }: BlockRowProps) {
-  const classes = ['editable-block', selected && 'is-selected', picked && 'is-picked', dragging && 'is-dragging', drop && `drop-${drop}`]
+export function BlockRow({ block, selected, ranged, picked, dragging, drop, register, onAdd, onDragStart }: BlockRowProps) {
+  const classes = ['editable-block', selected && 'is-selected', ranged && 'has-selection', picked && 'is-picked', dragging && 'is-dragging', drop && `drop-${drop}`]
     .filter(Boolean).join(' ');
 
   /* Keep the caret where it is when a control is pressed. */

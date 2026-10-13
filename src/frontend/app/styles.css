@@ -104,8 +104,12 @@ p {
    Application Layout
    ========================= */
 
+/* The app is as tall as the visible screen. On phones 100vh also counts the area behind the */
+/* browser's address bar, which pushed the bottom bar off screen; 100dvh follows the visible */
+/* height as the address bar shows and hides (100vh stays as the fallback for older browsers). */
 .app-shell {
   height: 100vh;
+  height: 100dvh;
   min-height: 540px;
   display: flex;
   overflow: hidden;

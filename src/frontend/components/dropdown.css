@@ -39,6 +39,7 @@
   left: 0;
   z-index: 80;
   min-width: 200px;
+  max-width: calc(100vw - 16px);
   max-height: 320px;
   overflow-y: auto;
 }
