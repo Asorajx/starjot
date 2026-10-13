@@ -640,15 +640,9 @@
   cursor: pointer;
 }
 
-.note-switch-row input {
-  width: 17px;
-  height: 17px;
-  accent-color: #397bf0;
-  cursor: pointer;
-}
-
-.note-switch-row input:disabled {
-  cursor: not-allowed;
+/* A row whose switch cannot be used, such as Small text on a paginated note. */
+.note-switch-row:has(.setting-switch:disabled) {
+  cursor: default;
 }
 
 /* Block text is edited inside the structured document, which is one editable area. */
@@ -689,8 +683,27 @@
 
 /* The same side padding in both modes keeps text in place when switching modes. It also leaves */
 /* room for the block controls and a gap from the left edge, where a hidden sidebar can be revealed. */
+/* It is noticeably wider than Full width's, so the two settings look different at any size. */
 .editor-wrap .editor-canvas {
-  padding: 28px clamp(72px, 7vw, 104px) 60px;
+  padding: 28px clamp(96px, 9vw, 144px) 60px;
+}
+
+/* Small text (Note settings) zooms the column to 0.875 (see NoteEditor). Its widest size is */
+/* raised by the same amount (1120px / 0.875), so the column stays as wide on screen and the */
+/* smaller text fits more words on each line. */
+.editor-wrap.is-small-text .editor-width {
+  max-width: 1280px;
+}
+
+/* Full width (Note settings): the column fills the pane. The left padding keeps the 64px the */
+/* block controls sit in (see text.css); the right side has none, so it can be narrower. */
+.editor-wrap.is-full-width .editor-width {
+  max-width: none;
+}
+
+.editor-wrap.is-full-width .editor-canvas {
+  padding-right: 32px;
+  padding-left: 64px;
 }
 
 /* A paginated note sits on white page-sized sheets over a grey background. The column is as */

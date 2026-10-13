@@ -259,6 +259,17 @@
   transition: transform .15s ease;
 }
 
+/* A switch that cannot be used right now is greyed out, on or off. */
+.setting-switch:disabled {
+  background: #eef1f5;
+  cursor: not-allowed;
+}
+
+.setting-switch:disabled>span {
+  background: #f8f9fb;
+  box-shadow: 0 1px 2px #b4bfcd;
+}
+
 .color-options {
   display: flex;
   gap: 8px;

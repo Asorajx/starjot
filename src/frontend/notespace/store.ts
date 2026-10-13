@@ -92,6 +92,8 @@ function normalizeNote(raw: unknown): Note | null {
     layout: record.layout === 'paginated' ? 'paginated' : 'pageless',
     pageSize: record.pageSize === 'letter' ? 'letter' : 'a4',
     landscape: record.landscape === true,
+    smallText: record.smallText === true,
+    fullWidth: record.fullWidth === true,
     locked: record.locked === true,
     unlockedUntil: typeof record.unlockedUntil === 'string' && !Number.isNaN(Date.parse(record.unlockedUntil)) ? record.unlockedUntil : null,
     remarks: cleanHtml(String(record.remarks ?? '').slice(0, REMARKS_LENGTH)),
@@ -247,6 +249,8 @@ export function updateNote(id: string, changes: NoteChanges, persist = true) {
   if (changes.layout === 'pageless' || changes.layout === 'paginated') next.layout = changes.layout;
   if (changes.pageSize === 'a4' || changes.pageSize === 'letter') next.pageSize = changes.pageSize;
   if (typeof changes.landscape === 'boolean') next.landscape = changes.landscape;
+  if (typeof changes.smallText === 'boolean') next.smallText = changes.smallText;
+  if (typeof changes.fullWidth === 'boolean') next.fullWidth = changes.fullWidth;
   if (changes.remarks !== undefined) next.remarks = cleanHtml(String(changes.remarks).slice(0, REMARKS_LENGTH));
   if (changes.comments) next.comments = normalizeComments(changes.comments);
   if (changes.drawing) next.drawing = normalizeDrawing(changes.drawing);
@@ -272,6 +276,7 @@ export function setPinned(id: string, pinned: boolean) {
   setState({ notes: state.notes.map(note => (note.id === id ? { ...note, pinned } : note)) });
   save();
 }
+
 
 /* =========================
    Locking

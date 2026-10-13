@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { getPreferences } from '../../app/preferences';
 import { STACK_LIMIT } from '../../app/noteTabs';
+import { Switch } from '../../components/Switch';
 import { Icon, type IconName } from '../../components/Icon';
 import type { EditorSession } from './session';
 import type { Note, NoteMode, PageLayout, PageSize } from '../../../shared/types/note';
@@ -99,7 +100,7 @@ type NoteSettingsProps = {
   onStickyIndicatorChange: (visible: boolean) => void;
   onZoom: (direction: -1 | 0 | 1) => void;
   onLockChange: (locked: boolean) => void;
-  onPageChange: (changes: { layout?: PageLayout; pageSize?: PageSize; landscape?: boolean }) => void;
+  onPageChange: (changes: { layout?: PageLayout; pageSize?: PageSize; landscape?: boolean; smallText?: boolean; fullWidth?: boolean }) => void;
   onCopyLink: () => Promise<void>;
 
   /* Opens the Export window. */
@@ -242,7 +243,27 @@ export function NoteSettings({
           data-tooltip-wrap=""
         >
           <span>Show sticky indicators</span>
-          <input type="checkbox" checked={note.stickyIndicator} onChange={event => onStickyIndicatorChange(event.target.checked)} />
+          <Switch label="Show sticky indicators" on={note.stickyIndicator} onChange={onStickyIndicatorChange} />
+        </label>
+
+        {/* Pages have a fixed paper size, so these two only work on pageless notes. */}
+        <label
+          className="note-switch-row"
+          data-tooltip={note.layout === 'paginated' ? 'Only for Pageless notes.' : 'Smaller text, so more words fit on each line. The note keeps its width.'}
+          data-tooltip-align="start"
+          data-tooltip-wrap=""
+        >
+          <span>Small text</span>
+          <Switch label="Small text" on={note.smallText} disabled={note.layout === 'paginated'} onChange={smallText => onPageChange({ smallText })} />
+        </label>
+        <label
+          className="note-switch-row"
+          data-tooltip={note.layout === 'paginated' ? 'Only for Pageless notes.' : 'Let the text use the full width of the window, with less space at the sides.'}
+          data-tooltip-align="start"
+          data-tooltip-wrap=""
+        >
+          <span>Full width</span>
+          <Switch label="Full width" on={note.fullWidth} disabled={note.layout === 'paginated'} onChange={fullWidth => onPageChange({ fullWidth })} />
         </label>
       </div>
 

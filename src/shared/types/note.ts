@@ -42,6 +42,11 @@ export type Note = {
   pageSize: PageSize;
   landscape: boolean;
 
+  /* Pageless notes only: smallText makes the note's text smaller while it keeps its width, and */
+  /* fullWidth lets the text use the full width of the pane instead of a centred column. */
+  smallText: boolean;
+  fullWidth: boolean;
+
   /* A locked note can be read, selected and commented on, but not edited. */
   locked: boolean;
 
@@ -111,7 +116,8 @@ export type DrawingLayerInfo = {
 
 /* The fields an editor may change; everything else is managed by the store. */
 export type NoteChanges = Partial<Pick<Note,
-  'title' | 'subtitle' | 'category' | 'icon' | 'content' | 'mode' | 'stickyIndicator' | 'layout' | 'pageSize' | 'landscape' | 'locked' | 'detailsHidden'
+  'title' | 'subtitle' | 'category' | 'icon' | 'content' | 'mode' | 'stickyIndicator' | 'layout' | 'pageSize' | 'landscape' | 'smallText' | 'fullWidth' | 'locked'
+  | 'detailsHidden'
   | 'pagesHidden' | 'comments' | 'remarks' | 'drawing' | 'drawingLayers'>>;
 
 /* A user-defined group of notes, such as "Work". Notes refer to it by id, so renaming is safe. */

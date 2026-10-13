@@ -37,6 +37,9 @@ import { zoomed } from '../../lib/geometry';
 
 type Panel = 'toc' | 'settings' | null;
 
+/* Small text shows a note at this share of its size. */
+const SMALL_TEXT_SCALE = 0.875;
+
 type NoteEditorProps = {
   noteId: string;
 
@@ -64,7 +67,6 @@ type NoteEditorProps = {
   /* Opens Settings at one group of settings (the drawing toolbar's settings button). */
   onOpenSettings: (section: SettingsSection) => void;
 };
-
 
 
 /* =========================
@@ -141,6 +143,11 @@ export function NoteEditor({ noteId, history, view, active, onClose, onOpenNote,
   const frameRef = useRef<HTMLDivElement>(null);
   const geometry = note?.layout === 'paginated' ? pageGeometry(note.pageSize, note.landscape) : null;
   const pages = usePages(session, frameRef, geometry, `${note?.mode}-${revision}`);
+
+  /* Small text and Full width only apply to pageless notes. */
+  const smallText = Boolean(note?.smallText && !geometry);
+  const fullWidth = Boolean(note?.fullWidth && !geometry);
+  const noteZoom = zoom * (smallText ? SMALL_TEXT_SCALE : 1);
 
   /* Pages wider than the pane scroll sideways. The page bar stays in view by being exactly as wide */
   /* as the pane, which CSS cannot read from inside the scrolling pane, so it is measured here. */
@@ -338,7 +345,7 @@ export function NoteEditor({ noteId, history, view, active, onClose, onOpenNote,
   const keepSelection = (event: ReactMouseEvent) => event.preventDefault();
 
   return (
-    <div ref={wrapRef} className={`editor-wrap ${locked ? 'is-locked' : ''} ${geometry ? 'is-paginated' : ''} ${drawing ? 'is-drawing' : ''}`}>
+    <div ref={wrapRef} className={`editor-wrap ${locked ? 'is-locked' : ''} ${geometry ? 'is-paginated' : ''} ${drawing ? 'is-drawing' : ''} ${smallText ? 'is-small-text' : ''} ${fullWidth ? 'is-full-width' : ''}`}>
       <PageBar history={history} className={`editor-page-bar ${typing && !panel ? 'is-hidden' : ''}`}>
         <NoteBreadcrumb note={note} onOpenNote={onOpenNote} onOpenCategory={onOpenCategory} />
         <span className="page-bar-fill" />
@@ -447,10 +454,11 @@ export function NoteEditor({ noteId, history, view, active, onClose, onOpenNote,
           />
         )}
         <main className={`editor-canvas ${geometry ? 'is-paginated' : ''}`} ref={canvasRef} onMouseDown={continueBelow}>
-          {/* Zoom scales everything in the note, using the CSS zoom property. A paginated note's */}
+          {/* Zoom scales everything in the note, using the CSS zoom property (Small text lowers it */}
+          {/* a little more, so drawings stay lined up with the text). A paginated note's */}
           {/* column is exactly one page wide, with the page margin as its padding, and as tall as */}
           {/* its pages; the sheets are drawn behind it. */}
-          <div ref={frameRef} className={`editor-width ${geometry ? 'is-paginated' : ''}`} style={{ zoom, ...(geometry ? pageFrameStyle(geometry, pages) : {}) }}>
+          <div ref={frameRef} className={`editor-width ${geometry ? 'is-paginated' : ''}`} style={{ zoom: noteZoom, ...(geometry ? pageFrameStyle(geometry, pages) : {}) }}>
             {/* Printing uses the note's page size and margin. */}
             {geometry && active && (
               <style>{`@media print { @page { size: ${note.pageSize === 'a4' ? 'A4' : 'letter'} ${note.landscape ? 'landscape' : 'portrait'}; margin: 1in; } }`}</style>

@@ -22,6 +22,17 @@ describe('note store', () => {
     expect(store.getNote('atlas')?.title).toBe('Project Atlas — Research brief');
   });
 
+  it('keeps Small text and Full width per note, off for notes saved before they existed', async () => {
+    let store = await openApp();
+    expect(store.getNote('atlas')).toMatchObject({ smallText: false, fullWidth: false });
+    const note = store.createNote();
+    store.updateNote(note.id, { smallText: true, fullWidth: true });
+    vi.resetModules();
+    store = await openApp();
+    expect(store.getNote(note.id)).toMatchObject({ smallText: true, fullWidth: true });
+    expect(store.getNote('atlas')).toMatchObject({ smallText: false, fullWidth: false });
+  });
+
   it('creates, cleans and saves a note so it is still there after reopening', async () => {
     let store = await openApp();
     const note = store.createNote();
