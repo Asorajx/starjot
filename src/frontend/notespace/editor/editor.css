@@ -178,7 +178,7 @@
 }
 
 
-/* Choices side by side: two to a row, three for the quick actions at the top of Note options, */
+/* Choices side by side: two to a row, three for the quick actions at the top of Note settings, */
 /* or four icon-only buttons for the view (their names are in the tooltips). */
 .option-grid {
   display: grid;
@@ -1027,7 +1027,7 @@
 
 
 /* =========================
-   Page Options
+   Note Settings
    ========================= */
 
 .zoom-control {

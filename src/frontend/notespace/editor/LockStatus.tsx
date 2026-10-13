@@ -16,7 +16,7 @@ type LockStatusProps = {
 
 /* A lock icon in the page bar of a locked note; its tooltip says whether the note is locked or how */
 /* long it stays unlocked. Clicking it unlocks the note for a few minutes (it locks itself again after */
-/* that long without an edit) or for good (lock it again in Page options), or locks it straight away. */
+/* that long without an edit) or for good (lock it again in Note settings), or locks it straight away. */
 export function LockStatus({ noteId, temporary, unlockedUntil }: LockStatusProps) {
   const [open, setOpen] = useState(false);
   const minutes = unlockedUntil ? Math.max(1, Math.ceil((Date.parse(unlockedUntil) - Date.now()) / 60000)) : 0;

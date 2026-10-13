@@ -733,7 +733,7 @@ p {
   animation-delay: 0s;
 }
 
-/* Longer explanations (such as in Page options) wrap onto several lines. */
+/* Longer explanations (such as in Note settings) wrap onto several lines. */
 [data-tooltip][data-tooltip-wrap]::after {
   width: max-content;
   max-width: 240px;

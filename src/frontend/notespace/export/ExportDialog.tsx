@@ -84,7 +84,7 @@ function ScaleField({ value, onChange }: { value: number; onChange: (value: numb
    Export Window
    ========================= */
 
-/* The Export window, opened from Page options: the format and what goes into the file. The */
+/* The Export window, opened from Note settings: the format and what goes into the file. The */
 /* choices are remembered for the next export. PDF opens the browser's print window, where the */
 /* note can be saved as a PDF; the other formats download a file. */
 export function ExportDialog({ noteId, measure, onClose }: ExportDialogProps) {

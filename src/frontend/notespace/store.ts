@@ -252,7 +252,7 @@ export function updateNote(id: string, changes: NoteChanges, persist = true) {
   if (changes.drawing) next.drawing = normalizeDrawing(changes.drawing);
   if (changes.drawingLayers) next.drawingLayers = normalizeLayers(changes.drawingLayers);
 
-  /* Locking or unlocking from Page options ends any short unlock. */
+  /* Locking or unlocking from Note settings ends any short unlock. */
   if (typeof changes.locked === 'boolean') {
     next.locked = changes.locked;
     next.unlockedUntil = null;

@@ -13,7 +13,7 @@ import type { SettingsSection } from '../../settings/Settings';
 import { CodeLanguagePickers } from './code/CodeLanguagePickers';
 import { CommentLayer } from './comments/CommentLayer';
 import { ContinuousEditor } from './text/ContinuousEditor';
-import { PageOptions, TableOfContents, type ViewControls } from './EditorPanels';
+import { NoteSettings, TableOfContents, type ViewControls } from './EditorPanels';
 import { SelectionToolbar } from './format/SelectionToolbar';
 import { SlashMenu } from './text/SlashMenu';
 import { TableTools } from './tables/TableTools';
@@ -35,7 +35,7 @@ import { EditorSession, useSessionValue } from './session';
 import { StructuredEditor } from './text/StructuredEditor';
 import { zoomed } from '../../lib/geometry';
 
-type Panel = 'toc' | 'options' | null;
+type Panel = 'toc' | 'settings' | null;
 
 type NoteEditorProps = {
   noteId: string;
@@ -397,7 +397,7 @@ export function NoteEditor({ noteId, history, view, active, onClose, onOpenNote,
 
         {note.locked && <LockStatus noteId={note.id} temporary={temporary} unlockedUntil={note.unlockedUntil} />}
 
-        <button type="button" data-panel-toggle data-tooltip-align="end" className={`page-bar-button ${panel === 'options' ? 'selected' : ''}`} data-tooltip={panel === 'options' ? undefined : 'Note options'} aria-label="Note options" aria-expanded={panel === 'options'} aria-controls={`${panelId}-options`} onClick={() => togglePanel('options')}>
+        <button type="button" data-panel-toggle data-tooltip-align="end" className={`page-bar-button ${panel === 'settings' ? 'selected' : ''}`} data-tooltip={panel === 'settings' ? undefined : 'Note settings'} aria-label="Note settings" aria-expanded={panel === 'settings'} aria-controls={`${panelId}-settings`} onClick={() => togglePanel('settings')}>
           <Icon name="sliders-horizontal" size={17} />
         </button>
 
@@ -415,10 +415,10 @@ export function NoteEditor({ noteId, history, view, active, onClose, onOpenNote,
         )}
 
         <TableOfContents id={`${panelId}-toc`} session={session} content={note.content} open={panel === 'toc'} onClose={() => setPanel(null)} />
-        <PageOptions
-          id={`${panelId}-options`}
+        <NoteSettings
+          id={`${panelId}-settings`}
           note={note}
-          open={panel === 'options'}
+          open={panel === 'settings'}
           zoom={zoom}
           view={view}
           onClose={() => setPanel(null)}

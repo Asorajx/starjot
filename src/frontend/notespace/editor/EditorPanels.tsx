@@ -72,10 +72,10 @@ export function TableOfContents({ id, session, content, open, onClose }: TableOf
 
 
 /* =========================
-   Page Options
+   Note Settings
    ========================= */
 
-/* What Page options can do with the tab group the note is shown in (see app/noteTabs.ts). */
+/* What Note settings can do with the tab group the note is shown in (see app/noteTabs.ts). */
 /* split: the direction of a split window, or null. tabCount: the tabs in this note's group. */
 export type ViewControls = {
   split: 'right' | 'down' | null;
@@ -88,7 +88,7 @@ export type ViewControls = {
   onUnsplit: () => void;
 };
 
-type PageOptionsProps = {
+type NoteSettingsProps = {
   id: string;
   note: Note;
   open: boolean;
@@ -124,9 +124,9 @@ const SPLITS: { id: 'right' | 'down'; title: string; tooltip: string; icon: Icon
   { id: 'down', title: 'Split down', tooltip: 'Open a second group of tabs below this one, showing this note again.', icon: 'split-down' }
 ];
 
-export function PageOptions({
+export function NoteSettings({
   id, note, open, zoom, view, onClose, onModeChange, onStickyIndicatorChange, onZoom, onLockChange, onPageChange, onCopyLink, onExport, onDelete
-}: PageOptionsProps) {
+}: NoteSettingsProps) {
   /* "Copied" shows until the panel is closed. */
   const [copied, setCopied] = useState(false);
   useEffect(() => {
@@ -138,10 +138,10 @@ export function PageOptions({
     : `A stack holds up to ${STACK_LIMIT} tabs.`;
 
   return (
-    <section className="editor-flyout editor-preferences-flyout" id={id} aria-label="Note options" hidden={!open}>
+    <section className="editor-flyout note-settings-flyout" id={id} aria-label="Note settings" hidden={!open}>
       <div className="flyout-heading">
-        <strong>Note options</strong>
-        <button type="button" className="flyout-close" aria-label="Close note options" onClick={onClose}><Icon name="x" size={17} /></button>
+        <strong>Note settings</strong>
+        <button type="button" className="flyout-close" aria-label="Close note settings" onClick={onClose}><Icon name="x" size={17} /></button>
       </div>
 
       <div className="option-grid is-three">
