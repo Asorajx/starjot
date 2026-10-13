@@ -24,8 +24,8 @@
 }
 
 .structured-document .editable-block.is-selected {
-  background: #f9fbff;
-  box-shadow: inset 2px 0 #abc9fc;
+  background: var(--accent-faint);
+  box-shadow: inset 2px 0 var(--accent-line);
 }
 
 .block-controls {
@@ -95,13 +95,13 @@
 
 .block-controls .block-control:hover,
 .block-controls .block-control:focus-visible {
-  color: #2e70e7;
-  background: #e9f2ff;
+  color: var(--accent-text);
+  background: var(--accent-soft);
 }
 
 .structured-document .editable-block.is-picked {
-  background: #eef4ff;
-  box-shadow: inset 2px 0 #6f9ff0;
+  background: var(--accent-soft);
+  box-shadow: inset 2px 0 var(--accent);
 }
 
 .editable-block.is-dragging {
@@ -115,7 +115,7 @@
   left: 60px;
   right: 0;
   height: 2px;
-  background: #347af4;
+  background: var(--accent);
   pointer-events: none;
 }
 
@@ -139,7 +139,7 @@
     right: 0;
     top: -25px;
     z-index: 2;
-    background: #f8fbff;
+    background: var(--accent-faint);
     border-radius: 4px;
   }
 }
@@ -170,7 +170,7 @@
   top: 2px;
   bottom: 2px;
   width: 7px;
-  border: 2px solid #a9c4f4;
+  border: 2px solid var(--accent-line);
   pointer-events: none;
   transition: border-color .15s ease;
 }
@@ -189,7 +189,7 @@
 
 .sticky-group:hover::before,
 .sticky-group:hover::after {
-  border-color: #4f8cf0;
+  border-color: var(--accent);
 }
 
 .sticky-indicators-off .sticky-group::before,
@@ -205,7 +205,7 @@
 
 .sticky-group.is-revealed::before,
 .sticky-group.is-revealed::after {
-  border-color: #4f8cf0;
+  border-color: var(--accent);
 }
 
 @media (max-width: 700px) {
@@ -270,8 +270,8 @@
 }
 
 .slash-menu-item.is-active {
-  background: var(--blue-soft);
-  color: var(--blue);
+  background: var(--accent-soft);
+  color: var(--accent-text);
 }
 
 /* Each block type has a small square icon, like a preview of the block. */
@@ -321,7 +321,7 @@
 }
 
 .slash-menu-search:focus {
-  border-color: #a7c5f5;
+  border-color: var(--accent-line);
   outline: none;
 }
 
@@ -352,7 +352,7 @@
 }
 
 .page-block:hover {
-  border-color: #a7c5f5;
+  border-color: var(--accent-line);
 }
 
 .page-block-icon {
@@ -442,11 +442,11 @@
 
 .page-block:hover .page-block-resize::after,
 .page-block.is-resizing .page-block-resize::after {
-  background: #a7c5f5;
+  background: var(--accent-line);
 }
 
 .page-block.is-resizing {
-  border-color: #a7c5f5;
+  border-color: var(--accent-line);
   cursor: ew-resize;
 }
 
@@ -528,8 +528,8 @@
 }
 
 .page-block-size.is-active {
-  background: var(--blue-soft);
-  color: var(--blue);
+  background: var(--accent-soft);
+  color: var(--accent-text);
 }
 
 /* A page mention (from / → Link to page): the page's icon and title as text, which cannot be */
@@ -537,10 +537,10 @@
 .note-editable .page-mention,
 .block-content .page-mention {
   display: inline;
-  color: var(--blue);
+  color: var(--accent-text);
   font-weight: 600;
   text-decoration: underline;
-  text-decoration-color: #b9cdf0;
+  text-decoration-color: var(--accent-line);
   text-underline-offset: 3px;
   cursor: pointer;
   user-select: all;

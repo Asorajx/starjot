@@ -47,7 +47,7 @@
 }
 
 .recent-row:hover {
-  background: #f8faff;
+  background: var(--accent-faint);
 }
 
 .recent-name {
@@ -202,9 +202,9 @@
   position: absolute;
   inset: 8px;
   z-index: 40;
-  border: 2px dashed var(--blue);
+  border: 2px dashed var(--accent);
   border-radius: 4px;
-  background: rgba(239, 245, 255, .85);
+  background: color-mix(in srgb, var(--accent-soft) 85%, transparent);
   pointer-events: none;
 }
 
@@ -213,7 +213,7 @@
   top: 40%;
   display: block;
   padding: 24px;
-  color: #2f5fc4;
+  color: var(--accent-text);
   font-size: 16px;
   font-weight: 700;
   text-align: center;
@@ -243,7 +243,7 @@
 
 .note-tile:hover {
   border-color: #c9d7ee;
-  background: var(--blue-soft);
+  background: var(--accent-soft);
 }
 
 .note-tile-title {
@@ -365,8 +365,8 @@
 }
 
 .note-pin:hover {
-  background: var(--blue-soft);
-  color: var(--blue);
+  background: var(--accent-soft);
+  color: var(--accent-text);
 }
 
 /* A gold fill with a darker outline, so the star still stands out 3:1 against white. */
@@ -453,9 +453,9 @@
 }
 
 .category-filter.is-active {
-  border-color: var(--blue);
-  background: var(--blue-soft);
-  color: var(--blue);
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent-text);
 }
 
 .category-count {
@@ -481,8 +481,8 @@
 /* The whole chip shows that its name is being edited; the input itself has no focus ring, which */
 /* would stick out of the chip. */
 .category-edit:focus-within {
-  border-color: #8fb3f2;
-  box-shadow: 0 0 0 2px #eaf2ff;
+  border-color: var(--accent-line);
+  box-shadow: 0 0 0 2px var(--accent-soft);
 }
 
 .category-name-input {

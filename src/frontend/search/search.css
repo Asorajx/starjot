@@ -61,7 +61,7 @@
 }
 
 .search-preview-toggle[aria-pressed="true"] {
-  color: var(--blue);
+  color: var(--accent-text);
 }
 
 .search-filters {
@@ -89,9 +89,9 @@
 }
 
 .search-filter.is-active {
-  border-color: var(--blue);
-  background: var(--blue-soft);
-  color: var(--blue);
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent-text);
 }
 
 /* Results on the left; with the preview on, it takes the right side. */
@@ -129,7 +129,7 @@
 }
 
 .search-result.is-selected {
-  background: #edf3ff;
+  background: var(--accent-soft);
 }
 
 .search-result-icon {
@@ -184,7 +184,7 @@
 }
 
 .search-create .search-result-icon {
-  color: var(--blue);
+  color: var(--accent-text);
 }
 
 .search-empty {

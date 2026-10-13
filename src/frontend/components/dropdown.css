@@ -64,13 +64,13 @@
 
 /* The highlighted option (by pointer or arrow keys) uses the same blue as a hovered menu item. */
 .dropdown-item.is-active {
-  background: var(--blue-soft);
-  color: var(--blue);
+  background: var(--accent-soft);
+  color: var(--accent-text);
 }
 
 .dropdown-check {
   margin-left: auto;
-  color: var(--blue);
+  color: var(--accent-text);
 }
 
 /* The chevron turns upside down while the menu is open. */

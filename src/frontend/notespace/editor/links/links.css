@@ -6,7 +6,7 @@
 .block-content a,
 .note-remarks a,
 .comment-popover a {
-  color: var(--blue);
+  color: var(--accent-text);
   text-decoration: underline;
   text-underline-offset: 2px;
 }

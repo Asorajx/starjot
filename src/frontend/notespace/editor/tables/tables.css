@@ -69,8 +69,8 @@
 }
 
 .table-grip:hover {
-  background: var(--blue-soft);
-  color: var(--blue);
+  background: var(--accent-soft);
+  color: var(--accent-text);
 }
 
 /* Row grips sit across the table's left edge and column grips across its top edge. */
@@ -92,8 +92,8 @@
 
 .table-line-grip:hover,
 .table-line-grip:active {
-  border-color: #a7c5f5;
-  color: var(--blue);
+  border-color: var(--accent-line);
+  color: var(--accent-text);
 }
 
 .table-line-grip:active {
@@ -104,9 +104,9 @@
 .table-pick {
   position: fixed;
   z-index: 50;
-  border: 2px solid var(--blue);
+  border: 2px solid var(--accent);
   border-radius: 4px;
-  background: rgba(37, 99, 235, .06);
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
   pointer-events: none;
 }
 
@@ -114,7 +114,7 @@
 .table-drop {
   position: fixed;
   z-index: 56;
-  background: var(--blue);
+  background: var(--accent);
   pointer-events: none;
 }
 
@@ -144,11 +144,11 @@
 .table-resize::after {
   content: "";
   position: absolute;
-  background: #a7c5f5;
+  background: var(--accent-line);
 }
 
 .table-resize.is-active::after {
-  background: var(--blue);
+  background: var(--accent);
 }
 
 .table-resize.is-column::after {
@@ -175,7 +175,7 @@
 .table-range {
   position: fixed;
   z-index: 50;
-  border: 2px dashed var(--blue);
+  border: 2px dashed var(--accent);
   border-radius: 4px;
   pointer-events: none;
 }
@@ -201,8 +201,8 @@
 }
 
 .table-cell-action:hover {
-  border-color: #a7c5f5;
-  color: var(--blue);
+  border-color: var(--accent-line);
+  color: var(--accent-text);
 }
 
 .table-menu,
@@ -239,8 +239,8 @@
 
 .table-menu-item:hover:not(:disabled),
 .page-menu-item:hover:not(:disabled) {
-  background: var(--blue-soft);
-  color: var(--blue);
+  background: var(--accent-soft);
+  color: var(--accent-text);
 }
 
 .table-menu-item:disabled,
@@ -319,7 +319,7 @@
 }
 
 .table-switch.is-on {
-  background: var(--blue);
+  background: var(--accent);
 }
 
 .table-switch.is-on > span {

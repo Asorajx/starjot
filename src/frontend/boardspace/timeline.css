@@ -30,7 +30,7 @@
   margin: 0;
   padding: 12px 24px;
   border-top: 1px solid var(--line);
-  background: #f9fbff;
+  background: var(--accent-faint);
   color: var(--muted-deep);
   font-size: 11px;
   line-height: 1.55;

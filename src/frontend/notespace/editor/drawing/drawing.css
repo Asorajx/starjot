@@ -45,7 +45,7 @@
 
 /* Strokes inside the Select tool's box glow, so it is clear which ones it takes. */
 .drawing-stroke[data-selected] {
-  filter: drop-shadow(0 0 3px #3878e4);
+  filter: drop-shadow(0 0 3px var(--accent));
 }
 
 /* Strokes the eraser has touched fade until it is lifted, when they are removed. */
@@ -85,7 +85,7 @@
 /* The Select tool's box: a dashed outline with eight handles, and its buttons below it. */
 .drawing-selection-box {
   position: absolute;
-  border: 1.5px dashed #3878e4;
+  border: 1.5px dashed var(--accent);
   cursor: move;
 }
 
@@ -93,7 +93,7 @@
   position: absolute;
   width: 10px;
   height: 10px;
-  border: 1.5px solid #3878e4;
+  border: 1.5px solid var(--accent);
   border-radius: 50%;
   background: #ffffff;
   transform: translate(-50%, -50%);
@@ -237,8 +237,8 @@
 
 .drawing-tool:hover:not(:disabled),
 .drawing-tool.selected {
-  color: #2f72e3;
-  background: #edf4ff;
+  color: var(--accent-text);
+  background: var(--accent-soft);
 }
 
 .drawing-tool:disabled {
@@ -247,7 +247,7 @@
 }
 
 .drawing-tool:focus-visible {
-  outline: 2px solid #5591ed;
+  outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
 
@@ -318,7 +318,7 @@
 .drawing-slider::-webkit-slider-thumb {
   width: 16px;
   height: 16px;
-  border: 2px solid #3878e4;
+  border: 2px solid var(--accent);
   border-radius: 50%;
   background: #ffffff;
   appearance: none;
@@ -327,13 +327,13 @@
 .drawing-slider::-moz-range-thumb {
   width: 12px;
   height: 12px;
-  border: 2px solid #3878e4;
+  border: 2px solid var(--accent);
   border-radius: 50%;
   background: #ffffff;
 }
 
 .drawing-slider:focus-visible {
-  outline: 2px solid #5591ed;
+  outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
 
@@ -360,8 +360,8 @@
 
 .drawing-size-preset:hover,
 .drawing-size-preset.selected {
-  border-color: #3878e4;
-  background: #edf4ff;
+  border-color: var(--accent);
+  background: var(--accent-soft);
 }
 
 .drawing-swatches {
@@ -383,7 +383,7 @@
 }
 
 .drawing-swatch.selected {
-  outline: 2px solid #3878e4;
+  outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
 
@@ -438,8 +438,8 @@
 }
 
 .drawing-layer-add:hover:not(:disabled) {
-  color: #2f72e3;
-  background: #edf4ff;
+  color: var(--accent-text);
+  background: var(--accent-soft);
 }
 
 .drawing-layer-list {
@@ -461,7 +461,7 @@
 }
 
 .drawing-layer-row.is-active {
-  background: #edf4ff;
+  background: var(--accent-soft);
 }
 
 .drawing-layer-row.is-text {
@@ -489,7 +489,7 @@
 }
 
 .drawing-layer-row.is-active .drawing-layer-name {
-  color: #2f72e3;
+  color: var(--accent-text);
   font-weight: 700;
 }
 
@@ -502,7 +502,7 @@
   min-width: 0;
   height: 26px;
   padding: 0 4px;
-  border: 1px solid #3878e4;
+  border: 1px solid var(--accent);
   border-radius: 4px;
   background: #fff;
   color: #344962;
@@ -525,8 +525,8 @@
 }
 
 .drawing-layer-button:hover:not(:disabled) {
-  color: #2f72e3;
-  background: #dfeaff;
+  color: var(--accent-text);
+  background: var(--accent-soft);
 }
 
 .drawing-layer-button:disabled,
@@ -549,7 +549,7 @@
 
 .drawing-hex:focus {
   outline: none;
-  border-color: #3878e4;
+  border-color: var(--accent);
 }
 
 .drawing-hex.is-invalid {

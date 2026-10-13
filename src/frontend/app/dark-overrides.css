@@ -7,17 +7,17 @@
   background: var(--bg);
 }
 
-/* Sticky brackets slightly brighter than the generated colour, so they read like the light theme's. */
+/* Sticky brackets brighter than the dark accent line, so they read like the light theme's. */
 [data-theme="dark"] .sticky-group::before,
 [data-theme="dark"] .sticky-group::after {
-  border-color: hsl(218 55% 46%);
+  border-color: color-mix(in srgb, var(--accent) 70%, black);
 }
 
 [data-theme="dark"] .sticky-group:hover::before,
 [data-theme="dark"] .sticky-group:hover::after,
 [data-theme="dark"] .sticky-group.is-revealed::before,
 [data-theme="dark"] .sticky-group.is-revealed::after {
-  border-color: hsl(218 85% 64%);
+  border-color: color-mix(in srgb, var(--accent) 80%, white);
 }
 
 /* Code token colours brightened for a dark background. */
@@ -148,5 +148,5 @@
 }
 
 [data-theme="dark"] ::highlight(find-scope) {
-  background-color: #1e2a3d;
+  background-color: var(--accent-soft);
 }

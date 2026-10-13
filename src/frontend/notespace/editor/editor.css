@@ -24,14 +24,14 @@
 }
 
 .outline-item:hover {
-  color: #526fbb;
+  color: var(--accent-text);
 }
 
 .outline-item--active {
-  border-left-color: #4380f0;
-  color: #3772d8;
+  border-left-color: var(--accent);
+  color: var(--accent-text);
   font-weight: 700;
-  background: #f7faff;
+  background: var(--accent-faint);
 }
 
 .editor-canvas {
@@ -57,7 +57,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  color: #5374bc;
+  color: var(--accent-text);
   font-weight: 780;
   letter-spacing: .85px;
 }
@@ -80,7 +80,7 @@
 .overline {
   font-size: 11px;
   letter-spacing: 1.4px;
-  color: #4975c6;
+  color: var(--accent-text);
   font-weight: 800;
   margin-bottom: 12px;
   display: block;
@@ -129,8 +129,8 @@
 
 .article-body blockquote,
 .block-content blockquote {
-  border-left: 3px solid #bcd1ff;
-  background: #f7faff;
+  border-left: 3px solid var(--accent-tint);
+  background: var(--accent-faint);
   padding: 12px 24px;
   margin: 24px 0 32px;
   font-size: 12px;
@@ -216,9 +216,9 @@
 }
 
 .option-tile.selected {
-  border-color: #8bb3fb;
-  background: #f7faff;
-  color: #3b71e0;
+  border-color: var(--accent-line);
+  background: var(--accent-faint);
+  color: var(--accent-text);
 }
 
 .option-tile:disabled {
@@ -259,9 +259,9 @@
 }
 
 .option-chip.selected {
-  border-color: #8bb3fb;
-  background: #f7faff;
-  color: #3b71e0;
+  border-color: var(--accent-line);
+  background: var(--accent-faint);
+  color: var(--accent-text);
 }
 
 .option-tile em {
@@ -291,7 +291,7 @@
 }
 
 .editable-block:hover {
-  background: #f8faff;
+  background: var(--accent-faint);
 }
 
 .block-handle {
@@ -345,8 +345,8 @@
 }
 
 .note-title-input:focus {
-  border-color: #a7c5f5;
-  box-shadow: 0 0 0 3px #edf4ff;
+  border-color: var(--accent-line);
+  box-shadow: 0 0 0 3px var(--accent-soft);
 }
 
 .note-title-input::placeholder {
@@ -442,8 +442,8 @@
 
 .page-bar-button:hover:not(:disabled),
 .page-bar-button.selected {
-  color: #2f72e3;
-  background: #edf4ff;
+  color: var(--accent-text);
+  background: var(--accent-soft);
 }
 
 .page-bar-button:disabled {
@@ -502,7 +502,7 @@
 .page-bar-button:focus-visible,
 .flyout-close:focus-visible,
 .note-toc-links button:focus-visible {
-  outline: 2px solid #5591ed;
+  outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
 
@@ -550,7 +550,7 @@
 
 .flyout-close:hover {
   background: #f2f6fd;
-  color: #4674c9;
+  color: var(--accent-text);
 }
 
 .note-toc-links {
@@ -573,8 +573,8 @@
 
 .note-toc-links .outline-item:hover,
 .note-toc-links .outline-item--active {
-  background: #f3f7ff;
-  color: #3370d9;
+  background: var(--accent-faint);
+  color: var(--accent-text);
 }
 
 .note-toc-links .outline-item--nested {
@@ -803,7 +803,7 @@
 
 .editor-crumb-link:hover,
 .editor-crumb-link:focus-visible {
-  color: var(--blue);
+  color: var(--accent-text);
   text-decoration: underline;
 }
 
@@ -871,8 +871,8 @@
 
 .editor-crumb-path-item:hover,
 .editor-crumb-path-item:focus-visible {
-  background: var(--blue-soft);
-  color: var(--blue);
+  background: var(--accent-soft);
+  color: var(--accent-text);
   outline: none;
 }
 
@@ -1056,8 +1056,8 @@
 
 .zoom-button:hover,
 .zoom-value:hover {
-  background: #f3f7ff;
-  color: #3370d9;
+  background: var(--accent-faint);
+  color: var(--accent-text);
 }
 
 .note-switch-row span {
@@ -1125,7 +1125,7 @@
 }
 
 .note-icon:hover:not(:disabled) {
-  background: var(--blue-soft);
+  background: var(--accent-soft);
 }
 
 .note-icon:disabled {
@@ -1155,8 +1155,8 @@
 }
 
 .note-header-action:hover {
-  background: var(--blue-soft);
-  color: var(--blue);
+  background: var(--accent-soft);
+  color: var(--accent-text);
 }
 
 /* Details are a two-column list: labels on the left, values on the right. */
@@ -1213,7 +1213,7 @@
 }
 
 .note-remarks:focus {
-  border-color: #a7c5f5;
+  border-color: var(--accent-line);
 }
 
 /* The placeholder sits on top of the empty field, so it never gets in the way of typing. */
@@ -1311,8 +1311,8 @@
 }
 
 .note-pages-toggle:hover {
-  background: var(--blue-soft);
-  color: var(--blue);
+  background: var(--accent-soft);
+  color: var(--accent-text);
 }
 
 .note-pages-toggle .icon {
@@ -1354,9 +1354,9 @@
 }
 
 .note-page-link:hover {
-  border-color: #a7c5f5;
-  background: var(--blue-soft);
-  color: var(--blue);
+  border-color: var(--accent-line);
+  background: var(--accent-soft);
+  color: var(--accent-text);
 }
 
 .note-page-list .note-page-list .note-page-link::before {
@@ -1432,7 +1432,7 @@
 }
 
 .note-detail-field:focus {
-  border-color: #a7c5f5;
+  border-color: var(--accent-line);
   outline: none;
 }
 

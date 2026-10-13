@@ -64,8 +64,8 @@
 
 .find-button:hover:not(:disabled),
 .find-button.is-on {
-  background: var(--blue-soft);
-  color: var(--blue);
+  background: var(--accent-soft);
+  color: var(--accent-text);
 }
 
 .find-button:disabled {
@@ -98,7 +98,7 @@
   padding: 0;
   border: 0;
   background: none;
-  color: var(--blue);
+  color: var(--accent-text);
   font: inherit;
   font-size: 12px;
   font-weight: 600;
@@ -116,5 +116,5 @@
 }
 
 ::highlight(find-scope) {
-  background-color: #e8f0ff;
+  background-color: var(--accent-soft);
 }

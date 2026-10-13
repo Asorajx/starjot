@@ -9,10 +9,8 @@
   --muted: #66748a;
   --muted-deep: #66748a;
   --line: #e9edf3;
-  --blue: #3b74eb;
-  --blue-deep: #2d64d8;
-  --blue-soft: #eef4ff;
-  --dark-blue: #17346c;
+
+  /* The accent colour variables (--accent and its shades) are in app/accents.css. */
   --shadow: none;
   color-scheme: light;
 }
@@ -55,7 +53,7 @@ select:focus-visible,
 textarea:focus-visible,
 summary:focus-visible,
 [tabindex]:not([tabindex="-1"]):focus-visible {
-  outline: 2px solid var(--blue);
+  outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
 
@@ -76,8 +74,8 @@ p {
 }
 
 ::selection {
-  background: #c6d9ff;
-  color: #123c88;
+  background: var(--accent-tint);
+  color: var(--accent-ink);
 }
 
 .startup-placeholder {
@@ -161,7 +159,7 @@ p {
 
 /* The focus outline goes around the whole box, not just the text inside it. */
 .sidebar-search:has(input:focus-visible) {
-  outline: 2px solid var(--blue);
+  outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
 
@@ -224,8 +222,8 @@ p {
 }
 
 .sidebar-icon.is-active {
-  background: #edf3ff;
-  color: #2e6bdd;
+  background: var(--accent-soft);
+  color: var(--accent-text);
 }
 
 .sidebar-icon[aria-disabled="true"] {
@@ -303,8 +301,8 @@ p {
 }
 
 .sidebar-link.is-current {
-  background: #edf3ff;
-  color: #2e6bdd;
+  background: var(--accent-soft);
+  color: var(--accent-text);
 }
 
 .sidebar-link.is-current svg {
@@ -351,7 +349,7 @@ p {
   padding: 8px 16px;
   border: 0;
   border-radius: 4px;
-  background: var(--blue);
+  background: var(--accent);
   color: #fff;
   font: inherit;
   font-size: 13px;
@@ -413,7 +411,7 @@ p {
   right: 5px;
   top: 4px;
   border-radius: 50%;
-  background: var(--blue);
+  background: var(--accent);
 }
 
 .main-scroll {
@@ -458,11 +456,11 @@ p {
 
 /* A tab dragged over a group outlines it; dropping moves the tab into it. */
 .tab-group.is-drop-target {
-  box-shadow: inset 0 0 0 2px var(--blue);
+  box-shadow: inset 0 0 0 2px var(--accent);
 }
 
 .tab-group.is-drop-target > .window-bar {
-  background: var(--blue-soft);
+  background: var(--accent-soft);
 }
 
 .tab-group-body {
@@ -554,7 +552,7 @@ p {
 }
 
 .stack-spine-main:hover {
-  color: var(--blue);
+  color: var(--accent-text);
 }
 
 .stack-spine-main .icon {
@@ -750,8 +748,8 @@ p {
 }
 
 .tab-switcher .page-menu-item.is-selected {
-  background: var(--blue-soft);
-  color: var(--blue-deep);
+  background: var(--accent-soft);
+  color: var(--accent-text);
 }
 
 .window-new-tab:disabled {
@@ -923,7 +921,7 @@ p {
 }
 
 .btn:focus-visible {
-  outline: 2px solid var(--blue);
+  outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
 
@@ -940,14 +938,14 @@ p {
 }
 
 .btn-primary {
-  border-color: var(--blue);
-  background: var(--blue);
+  border-color: var(--accent);
+  background: var(--accent);
   color: #fff;
 }
 
 .btn-primary:hover:not(:disabled) {
-  border-color: var(--blue-deep);
-  background: var(--blue-deep);
+  border-color: var(--accent-deep);
+  background: var(--accent-deep);
 }
 
 .btn-secondary,
@@ -960,15 +958,15 @@ p {
 .btn-secondary:hover:not(:disabled),
 .btn-quiet:hover:not(:disabled) {
   border-color: #c9d7ee;
-  background: var(--blue-soft);
+  background: var(--accent-soft);
 }
 
 .btn-tertiary {
-  color: var(--blue);
+  color: var(--accent-text);
 }
 
 .btn-tertiary:hover:not(:disabled) {
-  background: var(--blue-soft);
+  background: var(--accent-soft);
 }
 
 .btn-danger {
@@ -1161,7 +1159,7 @@ p {
   width: 16px;
   height: 16px;
   margin: 0;
-  accent-color: var(--blue);
+  accent-color: var(--accent);
 }
 
 .dialog-actions {

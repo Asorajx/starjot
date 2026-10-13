@@ -23,6 +23,10 @@ export type NotesSort = 'edited' | 'opened' | 'title';
 /* Notes already made keep their own. */
 export type NewNotes = { mode: NoteMode; layout: PageLayout; pageSize: PageSize };
 
+/* The accent colour, in the order Settings shows them (see app/accents.css). */
+export const ACCENTS = ['blue', 'indigo', 'violet', 'rose', 'amber', 'teal', 'slate', 'sage'] as const;
+export type Accent = (typeof ACCENTS)[number];
+
 /* Where Starjot opens when the address names no page: Starjot Home, or a space's home. */
 export type StartScreen = 'start' | ScreenId;
 
@@ -58,6 +62,7 @@ export type DrawingPreferences = {
 
 export type Preferences = {
   theme: Theme;
+  accent: Accent;
   density: Density;
   startScreen: StartScreen;
   spaces: Spaces;
@@ -150,13 +155,14 @@ function loadDrawing(saved: unknown): DrawingPreferences {
 /* Light mode is the default; once a theme is chosen in Settings it is remembered between visits. */
 function load(): Preferences {
   const defaults: Preferences = {
-    theme: 'light', density: 'comfortable', startScreen: 'start', spaces: loadSpaces(null), sidebar: loadSidebar(null), newNotes: loadNewNotes(null), zoom: 1, sidebarCollapsed: false, contentsScroll: 'smooth', notesSort: 'edited', hideHeaderWhileTyping: true, drawing: loadDrawing(null),
+    theme: 'light', accent: 'blue', density: 'comfortable', startScreen: 'start', spaces: loadSpaces(null), sidebar: loadSidebar(null), newNotes: loadNewNotes(null), zoom: 1, sidebarCollapsed: false, contentsScroll: 'smooth', notesSort: 'edited', hideHeaderWhileTyping: true, drawing: loadDrawing(null),
     exportSettings: normalizeExportSettings(null),
     recentColors: []
   };
   const saved = readPreferences();
   return {
     theme: saved.theme === 'dark' || saved.theme === 'light' ? saved.theme : defaults.theme,
+    accent: ACCENTS.find(accent => accent === saved.accent) ?? defaults.accent,
     density: saved.density === 'compact' ? 'compact' : defaults.density,
     startScreen: saved.startScreen === 'notes' || saved.startScreen === 'boardspace' ? saved.startScreen : defaults.startScreen,
     spaces: loadSpaces(saved.spaces),
@@ -187,10 +193,11 @@ export function updatePreferences(changes: Partial<Preferences>) {
   listeners.forEach(listener => listener());
 }
 
-/* The theme and density are data-theme and data-density attributes on <html>, which the dark */
-/* stylesheet and app/density.css look for. */
+/* The theme, accent and density are data-theme, data-accent and data-density attributes on */
+/* <html>, which the dark stylesheet, app/accents.css and app/density.css look for. */
 export function applyTheme() {
   document.documentElement.dataset.theme = preferences.theme;
+  document.documentElement.dataset.accent = preferences.accent;
   document.documentElement.dataset.density = preferences.density;
 }
 

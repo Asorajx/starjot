@@ -36,7 +36,7 @@
 }
 
 .home-card-label {
-  color: var(--blue);
+  color: var(--accent-text);
   font-size: 11px;
   font-weight: 700;
 }
@@ -93,7 +93,7 @@
   padding: 0;
   border: 0;
   background: none;
-  color: var(--blue);
+  color: var(--accent-text);
   font: inherit;
   font-weight: 700;
   text-decoration: underline;
@@ -106,9 +106,9 @@
   flex-direction: column;
   gap: 8px;
   padding: 16px;
-  border: 1px solid #dce7fb;
+  border: 1px solid var(--accent-tint);
   border-radius: 4px;
-  background: var(--blue-soft);
+  background: var(--accent-soft);
 }
 
 
@@ -141,7 +141,7 @@
 
 .board-summary-item:hover {
   border-color: #c9d7ee;
-  background: var(--blue-soft);
+  background: var(--accent-soft);
 }
 
 .board-summary-count {

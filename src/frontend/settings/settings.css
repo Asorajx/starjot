@@ -71,8 +71,8 @@
 }
 
 .settings-nav-item.active {
-  background: #eaf2ff;
-  color: #2e6bdd;
+  background: var(--accent-soft);
+  color: var(--accent-text);
 }
 
 .settings-content {
@@ -219,12 +219,12 @@
 }
 
 .setting-segment button:hover {
-  color: #346fea;
+  color: var(--accent-text);
 }
 
 .setting-segment .chosen {
-  background: #e9f1fe;
-  color: #3b6fd0;
+  background: var(--accent-soft);
+  color: var(--accent-text);
 }
 
 .preview-switch {
@@ -247,7 +247,7 @@
 }
 
 .preview-switch--on {
-  background: #5d92eb;
+  background: var(--accent);
 }
 
 .preview-switch--on>span {
@@ -275,27 +275,36 @@
   box-shadow: 0 1px 2px #b4bfcd;
 }
 
-.color-options {
-  display: flex;
+/* The accent swatches: each shows its accent (from app/accents.css); the chosen one has a ring */
+/* in its own colour and a tick. */
+/* Two even rows of four. */
+.accent-options {
+  display: grid;
+  grid-template-columns: repeat(4, auto);
   gap: 8px;
 }
 
-.color-dot {
-  height: 20px;
-  width: 20px;
+.accent-swatch {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 2px solid var(--paper);
   border-radius: 50%;
-  background: var(--dot);
-  border: 2px solid white;
-  box-shadow: 0 0 0 1px #e3e8f0;
+  background: var(--accent);
+  box-shadow: 0 0 0 1px #d5deea;
+  color: #fff;
 }
 
-.selected-color {
-  box-shadow: 0 0 0 2px #94b6f8;
+.accent-swatch.is-chosen {
+  box-shadow: 0 0 0 2px var(--accent);
 }
 
 .setting-icon {
   display: inline-flex;
-  color: #4e76bf;
+  color: var(--accent-text);
 }
 
 .future-chip {
@@ -312,9 +321,9 @@
   display: flex;
   gap: 12px;
   align-items: flex-start;
-  color: #5878a4;
-  background: #f1f6ff;
-  border: 1px solid #e3edfd;
+  color: var(--accent-text);
+  background: var(--accent-faint);
+  border: 1px solid var(--accent-tint);
   border-radius: 4px;
   padding: 16px 16px;
   line-height: 1.7;
@@ -332,8 +341,8 @@
 }
 
 .about-card {
-  background: #f5f8ff;
-  border: 1px solid #e6eefe;
+  background: var(--accent-faint);
+  border: 1px solid var(--accent-tint);
   border-radius: 4px;
   display: flex;
   align-items: center;
@@ -366,7 +375,7 @@
 @keyframes settings-highlight {
   0%,
   40% {
-    background: #edf4ff;
+    background: var(--accent-soft);
   }
 
   100% {

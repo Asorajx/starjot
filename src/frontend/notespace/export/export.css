@@ -76,7 +76,7 @@
 }
 
 .export-number:focus {
-  border-color: #3878e4;
+  border-color: var(--accent);
   outline: none;
 }
 
@@ -104,7 +104,7 @@
   width: 14px;
   height: 14px;
   margin: 0;
-  accent-color: #3878e4;
+  accent-color: var(--accent);
   cursor: pointer;
 }
 

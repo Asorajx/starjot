@@ -1,9 +1,9 @@
-import { useEffect, useRef, type CSSProperties, type ReactNode } from 'react';
+import { useEffect, useRef, type ReactNode } from 'react';
 import { version } from '../../../package.json';
 import { BrandMark } from '../components/BrandMark';
 import { Dropdown } from '../components/Dropdown';
 import { Icon, type IconName } from '../components/Icon';
-import { updatePreferences, usePreferences, type Preferences, type StartScreen } from '../app/preferences';
+import { ACCENTS, updatePreferences, usePreferences, type Accent, type Preferences, type StartScreen } from '../app/preferences';
 import { enabledScreens, SCREENS } from '../app/screens';
 import { useCategories } from '../notespace/store';
 import { Switch } from '../components/Switch';
@@ -23,6 +23,11 @@ type SettingsProps = {
 };
 
 type SettingsTab = { id: SettingsSection; label: string; icon: IconName };
+
+/* The accent colours' names, as Settings shows them. */
+const ACCENT_NAMES: Record<Accent, string> = {
+  blue: 'Blue', indigo: 'Indigo', violet: 'Violet', rose: 'Rose', amber: 'Amber', teal: 'Teal', slate: 'Slate', sage: 'Sage'
+};
 
 /* The menu down the left of the panel, in three groups. Notespace's group is hidden while */
 /* Notespace is turned off. */
@@ -121,7 +126,7 @@ function Heading({ title, subtitle }: { title: string; subtitle: string }) {
    ========================= */
 
 function SettingsSectionContent({ section }: { section: SettingsSection }) {
-  const { theme, density, startScreen, spaces, sidebar, newNotes, contentsScroll, hideHeaderWhileTyping, drawing } = usePreferences();
+  const { theme, accent, density, startScreen, spaces, sidebar, newNotes, contentsScroll, hideHeaderWhileTyping, drawing } = usePreferences();
   const categories = useCategories();
   const set = (changes: Partial<Preferences>) => updatePreferences(changes);
 
@@ -178,12 +183,23 @@ function SettingsSectionContent({ section }: { section: SettingsSection }) {
               onChange={value => set({ density: value })}
             />
           </Row>
-          <Row preview title="Accent colour" description="Blue is the current accent colour.">
-            {/* --dot is a CSS variable that sets each colour swatch. */}
-            <div className="color-options">
-              <span className="color-dot selected-color" style={{ '--dot': '#3976ed' } as CSSProperties} />
-              <span className="color-dot" style={{ '--dot': '#7c6be6' } as CSSProperties} />
-              <span className="color-dot" style={{ '--dot': '#14a38b' } as CSSProperties} />
+          <Row title="Accent colour" description={`Buttons, links, selections and focus outlines. Now: ${ACCENT_NAMES[accent]}.`}>
+            <div className="accent-options" role="radiogroup" aria-label="Accent colour">
+              {ACCENTS.map(option => (
+                <button
+                  key={option}
+                  type="button"
+                  role="radio"
+                  aria-checked={accent === option}
+                  aria-label={ACCENT_NAMES[option]}
+                  data-tooltip={ACCENT_NAMES[option]}
+                  data-accent={option}
+                  className={`accent-swatch ${accent === option ? 'is-chosen' : ''}`}
+                  onClick={() => set({ accent: option })}
+                >
+                  {accent === option && <Icon name="check" size={14} />}
+                </button>
+              ))}
             </div>
           </Row>
         </Group>
@@ -365,7 +381,7 @@ function SettingsSectionContent({ section }: { section: SettingsSection }) {
       <Group title="Application">
         <Row title="Version" description="The version of Starjot you are using."><span className="fake-text">{version}</span></Row>
         <Row title="Build" description="Runs in the browser; a Windows app is planned."><span className="fake-text">Browser preview</span></Row>
-        <Row title="Design system" description="The shared look used across Starjot."><span className="fake-text">Light and dark · Blue accent</span></Row>
+        <Row title="Design system" description="The shared look used across Starjot."><span className="fake-text">Light and dark · {ACCENT_NAMES[accent]} accent</span></Row>
       </Group>
     </>
   );

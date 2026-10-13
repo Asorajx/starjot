@@ -1,0 +1,112 @@
+/* =========================
+   Accent Colours
+   ========================= */
+
+/* The accent colour, chosen in Settings → Appearance and set by data-accent on <html> (see */
+/* preferences.ts); blue is the default. accent fills buttons, switches, focus rings and active */
+/* lines; accent-deep is its pressed shade; accent-text is readable text (links, chosen items) */
+/* and accent-ink darker text on the tint; accent-line is light borders; tint, soft and faint */
+/* are the selection, chosen and hover backgrounds, strongest first. The line and backgrounds */
+/* are worked out from the accent's own hue at the same lightness and colourfulness (OKLCH), so */
+/* every accent shows as clearly; Slate and Sage use gentler tints to keep their quiet look */
+/* (otherwise Slate matches Blue and Sage turns mint). Each accent's values keep */
+/* white text on the accent, and accent text on white and on the soft tint, readable (4.5:1; */
+/* tests/frontend/app/accents.test.ts checks this). The dark theme converts every block. The */
+/* swatches in Settings (.accent-swatch) take their colours from the same blocks. */
+
+:root,
+.accent-swatch[data-accent="blue"] {
+  --accent: #3570e6;
+  --accent-deep: #2d64d8;
+  --accent-text: #2d64d8;
+  --accent-ink: #123c88;
+  --accent-line: #a5c3fa;
+  --accent-tint: #cbddfe;
+  --accent-soft: #e9f1ff;
+  --accent-faint: #f7faff;
+}
+
+:root[data-accent="indigo"],
+.accent-swatch[data-accent="indigo"] {
+  --accent: #5650d8;
+  --accent-deep: #4741c4;
+  --accent-text: #4741c4;
+  --accent-ink: #252170;
+  --accent-line: #b6bdf9;
+  --accent-tint: #d4daff;
+  --accent-soft: #ecefff;
+  --accent-faint: #f8f9ff;
+}
+
+:root[data-accent="violet"],
+.accent-swatch[data-accent="violet"] {
+  --accent: #7b45d6;
+  --accent-deep: #6a37c2;
+  --accent-text: #6a37c2;
+  --accent-ink: #391c70;
+  --accent-line: #c6b8f4;
+  --accent-tint: #dfd6fe;
+  --accent-soft: #f1edff;
+  --accent-faint: #faf8ff;
+}
+
+:root[data-accent="rose"],
+.accent-swatch[data-accent="rose"] {
+  --accent: #c92f63;
+  --accent-deep: #b02654;
+  --accent-text: #b02654;
+  --accent-ink: #621531;
+  --accent-line: #f3acba;
+  --accent-tint: #feced6;
+  --accent-soft: #ffeaee;
+  --accent-faint: #fff7f8;
+}
+
+:root[data-accent="amber"],
+.accent-swatch[data-accent="amber"] {
+  --accent: #a35b00;
+  --accent-deep: #8c4e00;
+  --accent-text: #8c4e00;
+  --accent-ink: #4a2900;
+  --accent-line: #ebb68a;
+  --accent-tint: #fad4b6;
+  --accent-soft: #ffecde;
+  --accent-faint: #fff8f3;
+}
+
+:root[data-accent="teal"],
+.accent-swatch[data-accent="teal"] {
+  --accent: #0b7d72;
+  --accent-deep: #096b62;
+  --accent-text: #096b62;
+  --accent-ink: #043a35;
+  --accent-line: #80d5c9;
+  --accent-tint: #b2eae1;
+  --accent-soft: #daf8f2;
+  --accent-faint: #f1fcfa;
+}
+
+:root[data-accent="slate"],
+.accent-swatch[data-accent="slate"] {
+  --accent: #4c5a72;
+  --accent-deep: #3d4a5f;
+  --accent-text: #3d4a5f;
+  --accent-ink: #1d2431;
+  --accent-line: #b5c3dc;
+  --accent-tint: #d3ddee;
+  --accent-soft: #ebf0fa;
+  --accent-faint: #f7f9fd;
+}
+
+/* Sage: a deeper green for text and buttons, with soft grey-greens for highlights. */
+:root[data-accent="sage"],
+.accent-swatch[data-accent="sage"] {
+  --accent: #56725a;
+  --accent-deep: #48614c;
+  --accent-text: #48614c;
+  --accent-ink: #243327;
+  --accent-line: #a9ceae;
+  --accent-tint: #cbe4ce;
+  --accent-soft: #e6f5e8;
+  --accent-faint: #f6fbf6;
+}

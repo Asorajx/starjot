@@ -67,11 +67,12 @@ function isAccent({ s, l }) {
 }
 
 /* Text: dark text becomes light; very light text (such as white on a blue button) is kept. */
-/* Greyish text loses most of its blue tint, so the dark theme reads as neutral black and grey. */
-function convertText(hsl) {
+/* Greyish text loses most of its blue tint, so the dark theme reads as neutral black and grey; */
+/* the accent's own text colours (keepTint) keep theirs, so a green accent stays green. */
+function convertText(hsl, keepTint = false) {
   const { l } = hsl;
   if (l > 88) return hsl;
-  const s = hsl.s < 60 ? hsl.s * 0.3 : hsl.s;
+  const s = hsl.s < 60 && !keepTint ? hsl.s * 0.3 : hsl.s;
   if (l < 55) return { ...hsl, s, l: 100 - l * 0.8 };
   if (l < 70) return { ...hsl, s, l: 56.8 - (l - 55) * 0.9 };
   return { ...hsl, s, l: 44 - (l - 70) * 0.6 };
@@ -94,10 +95,33 @@ function luminance({ h, s, l }) {
 const SURFACE = { h: 0, s: 0, l: 10 };
 const READABLE = 4.5;
 
-function readable(hsl) {
-  let color = hsl;
-  while (color.l < 100 && (luminance(color) + 0.05) / (luminance(SURFACE) + 0.05) < READABLE) color = { ...color, l: color.l + 1 };
+/* The accent's backgrounds and lines keep its hue in the dark theme, as darker, quieter tints */
+/* at these lightnesses, so chosen and highlighted items show the accent as they do in the light */
+/* theme (grey would make every accent look alike). Their saturation follows the light colour's, */
+/* so quiet accents such as Slate and Sage stay quiet. */
+const ACCENT_SHADES = { '--accent-faint': 13, '--accent-soft': 17, '--accent-tint': 24, '--accent-line': 36 };
+
+/* Accent text sits on the accent's soft and tint backgrounds too, so it is measured against */
+/* the lighter of them (as grey of the same lightness), and the darker accent ink, used on the */
+/* tint (selected text), against the tint. */
+const SOFT_SURFACE = { h: 0, s: 0, l: 19 };
+const TINT_SURFACE = { h: 0, s: 0, l: 26 };
+
+/* Accent fills (focus rings, active lines, switches) need a contrast of 3:1 to be seen. */
+const VISIBLE = 3;
+
+/* Measured as written (format rounds to whole numbers). A colour that already reaches the */
+/* ratio is kept; otherwise it is lightened a step at a time. */
+function lighten(hsl, against, ratio) {
+  const reaches = color => (luminance({ h: Math.round(color.h), s: Math.round(color.s), l: Math.round(color.l) }) + 0.05) / (luminance(against) + 0.05) >= ratio;
+  if (reaches(hsl)) return hsl;
+  let color = { ...hsl, l: Math.ceil(hsl.l) };
+  while (color.l < 100 && !reaches(color)) color = { ...color, l: color.l + 1 };
   return color;
+}
+
+function readable(hsl, against = SURFACE) {
+  return lighten(hsl, against, READABLE);
 }
 
 /* Backgrounds, like the dark mode of most apps: the page is near-black, white surfaces (cards, */
@@ -130,13 +154,20 @@ function convertShadow(color) {
 /* Pick the conversion from the property, or from the variable's name for custom properties. */
 function kindOf(property) {
   if (SHADOW_PROPERTIES.has(property) || property === '--shadow') return 'shadow';
-  if (/border|outline|--line/.test(property)) return 'border';
-  if (/^(color|caret-color|fill|stroke|text-decoration-color|accent-color)$|--ink|--muted|--dark-blue/.test(property)) return 'text';
+  if (/border|outline|--line|--accent-line/.test(property)) return 'border';
+  if (/^(color|caret-color|fill|stroke|text-decoration-color|accent-color)$|^--ink|--muted|--accent-(text|ink)/.test(property)) return 'text';
   return 'background';
 }
 
 function convertValue(property, value) {
   if (property === '--bg') return format(PAGE, 1);
+  if (property in ACCENT_SHADES) {
+    return value.replace(COLOR, match => {
+      const color = parseColor(match);
+      const hsl = toHsl(color);
+      return format({ h: hsl.h, s: hsl.s * 0.35, l: ACCENT_SHADES[property] }, color.a);
+    });
+  }
   const kind = kindOf(property);
   return value.replace(COLOR, match => {
     const color = parseColor(match);
@@ -144,8 +175,11 @@ function convertValue(property, value) {
     const hsl = toHsl(color);
     const isWhite = color.r === 255 && color.g === 255 && color.b === 255;
     const neutral = isNeutral(color);
-    const converted = kind === 'text' ? convertText(hsl) : kind === 'border' ? convertBorder(hsl, neutral) : convertBackground(hsl, isWhite, neutral);
+    const converted = kind === 'text' ? convertText(hsl, property.startsWith('--accent')) : kind === 'border' ? convertBorder(hsl, neutral) : convertBackground(hsl, isWhite, neutral);
     if (property === 'color') return format(readable(converted), color.a);
+    if (property === '--accent-text') return format(readable(converted, SOFT_SURFACE), color.a);
+    if (property === '--accent-ink') return format(readable(converted, TINT_SURFACE), color.a);
+    if (property === '--accent') return format(lighten(converted, SURFACE, VISIBLE), color.a);
     return format(converted, color.a);
   });
 }

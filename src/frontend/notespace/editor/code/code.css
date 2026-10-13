@@ -44,7 +44,7 @@
 }
 
 .code-lang-select:focus-visible {
-  outline: 2px solid #5591ed;
+  outline: 2px solid var(--accent);
   outline-offset: 1px;
 }
 

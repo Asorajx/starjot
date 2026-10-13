@@ -106,7 +106,7 @@
 }
 
 .image-block.drawing-block[data-wrap="front"].is-selected .drawing-ink {
-  outline: 2px solid var(--blue);
+  outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
 
@@ -126,7 +126,7 @@
 }
 
 .image-block.is-selected {
-  outline: 2px solid var(--blue);
+  outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
 
@@ -157,7 +157,7 @@
   height: 10px;
   border: 2px solid #fff;
   border-radius: 4px;
-  background: var(--blue);
+  background: var(--accent);
   cursor: nwse-resize;
 }
 

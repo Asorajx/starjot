@@ -37,7 +37,7 @@
 
 .emoji-tab:hover,
 .emoji-tab.is-active {
-  background: var(--blue-soft);
+  background: var(--accent-soft);
   filter: none;
   opacity: 1;
 }
@@ -67,7 +67,7 @@
 
 .emoji-option:hover,
 .emoji-option.is-current {
-  background: var(--blue-soft);
+  background: var(--accent-soft);
 }
 
 .emoji-footer {

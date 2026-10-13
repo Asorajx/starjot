@@ -106,8 +106,8 @@
   }
 
   .mobile-link.active {
-    color: #3371e1;
-    background: #f7faff;
+    color: var(--accent-text);
+    background: var(--accent-faint);
   }
 
   .content-pad {

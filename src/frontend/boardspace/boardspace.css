@@ -76,12 +76,12 @@
 }
 
 .board-tab:hover {
-  color: #5177b6;
+  color: var(--accent-text);
 }
 
 .board-tab.active {
-  color: #366ed7;
-  border-bottom-color: #417be9;
+  color: var(--accent-text);
+  border-bottom-color: var(--accent);
 }
 
 .tab-count {
@@ -93,8 +93,8 @@
 }
 
 .board-tab.active .tab-count {
-  background: #eaf2ff;
-  color: #3673db;
+  background: var(--accent-soft);
+  color: var(--accent-text);
 }
 
 .board-panel-content {
@@ -259,7 +259,7 @@
   padding: 8px 0;
   border-top: 1px solid #f0f2f6;
   gap: 8px;
-  color: #4876c0;
+  color: var(--accent-text);
   font-size: 11px;
   white-space: nowrap;
 }
@@ -321,7 +321,7 @@
 
 .board-bottom-note {
   margin-top: 24px;
-  background: #f8faff;
+  background: var(--accent-faint);
   border: 1px solid #ecf1fa;
   border-radius: 4px;
   display: flex;
