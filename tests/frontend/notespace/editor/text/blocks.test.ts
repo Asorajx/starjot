@@ -251,6 +251,35 @@ describe('table and toggle keys', () => {
 
 
 /* =========================
+   List Keys
+   ========================= */
+
+describe('Backspace at the start of a list item', () => {
+  it('turns the first item of a list at the top of a note into a normal line', () => {
+    const body = editor('<ol><li>Design</li><li>Build</li></ol>');
+    placeCaret(body.querySelector('li')?.firstChild as Node, 0);
+    expect(handleBlockKeys(press('Backspace'), body)?.kind).toBe('lines');
+    expect(body.innerHTML).toBe('<p>Design</p><ol><li>Build</li></ol>');
+  });
+
+  it('splits the list around an item in the middle, and keeps its own list below it', () => {
+    const body = editor('<ul><li>a</li><li>b<ul><li>c</li></ul></li><li>d</li></ul>');
+    placeCaret(body.querySelectorAll('li')[1].firstChild as Node, 0);
+    handleBlockKeys(press('Backspace'), body);
+    expect(body.innerHTML).toBe('<ul><li>a</li></ul><p>b</p><ul><li>c</li></ul><ul><li>d</li></ul>');
+  });
+
+  it('leaves Backspace elsewhere in the item, and in a list inside another, to the browser', () => {
+    const body = editor('<ul><li>ab<ul><li>c</li></ul></li></ul>');
+    placeCaret(body.querySelector('li')?.firstChild as Node, 1);
+    expect(handleBlockKeys(press('Backspace'), body)).toBeNull();
+    placeCaret(body.querySelector('ul ul li')?.firstChild as Node, 0);
+    expect(handleBlockKeys(press('Backspace'), body)).toBeNull();
+  });
+});
+
+
+/* =========================
    Moving Around Tables
    ========================= */
 

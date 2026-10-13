@@ -34,7 +34,7 @@ export function lineBelowTable(table: HTMLElement) {
 
 
 /* =========================
-   Keys Inside Tables and Toggles
+   Keys Inside Tables, Toggles and Lists
    ========================= */
 
 /* blocked: the key was stopped and nothing changed. changed: text changed inside the same line. */
@@ -380,11 +380,36 @@ export function typeOutsideComment(event: InputEvent) {
   return true;
 }
 
-/* Keys with special meaning in table cells and toggle lists. Returns null for every other key. */
+/* Backspace at the start of a list item (not inside another list) turns it into a normal line, */
+/* as in most editors; the browser would otherwise do nothing for a list at the top of a note. */
+/* Items after it move into a new list below the line, and lists inside the item follow the line. */
+function listKeys(event: KeyboardEvent, root: HTMLElement): KeyResult | null {
+  if (event.key !== 'Backspace' || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return null;
+  if (!window.getSelection()?.isCollapsed) return null;
+  const item = closestAtCaret<HTMLLIElement>('li');
+  const list = item?.parentElement;
+  if (!item || !list || !root.contains(item) || !list.matches('ul, ol') || list.parentElement?.closest('li')) return null;
+  if (!caretAtEdge(item, 'start')) return null;
+  event.preventDefault();
+
+  const nested = Array.from(item.children).filter(child => child.matches('ul, ol'));
+  const paragraph = document.createElement('p');
+  paragraph.append(...Array.from(item.childNodes).filter(node => !nested.includes(node as Element)));
+  withBreak(paragraph);
+
+  const rest = document.createElement(list.tagName.toLowerCase());
+  while (item.nextElementSibling) rest.append(item.nextElementSibling);
+  item.remove();
+  list.after(paragraph, ...nested, ...(rest.childElementCount ? [rest] : []));
+  if (!list.childElementCount) list.remove();
+  return { kind: 'lines', focus: paragraph, atEnd: false };
+}
+
+/* Keys with special meaning in table cells, toggle lists and lists. Returns null for every other key. */
 export function handleBlockKeys(event: KeyboardEvent, root: HTMLElement): KeyResult | null {
   leavePageLink(event);
   leaveCommentMark(event);
   const cell = closestAtCaret<HTMLTableCellElement>('td, th');
   if (cell && root.contains(cell)) return cellKeys(event, cell);
-  return enterTableKeys(event) ?? toggleKeys(event);
+  return enterTableKeys(event) ?? toggleKeys(event) ?? listKeys(event, root);
 }

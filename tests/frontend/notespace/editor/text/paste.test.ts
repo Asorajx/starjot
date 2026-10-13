@@ -191,6 +191,22 @@ describe('pasting Markdown tables', () => {
 
 
 /* =========================
+   Pasting Numbered Lines
+   ========================= */
+
+describe('pasting numbered lines', () => {
+  it('keeps a numbered line that does not start at 1 as text, such as a section heading', () => {
+    expect(markdown('11. Design Diagrams and Wireframes\nThis section describes them.\n11.1 Design Scope')).toBeNull();
+  });
+
+  it('still makes a list from 1, and keeps the numbers that carry it on', () => {
+    expect(markdown('1. First\n2. Second')).toBe('<ol><li>First</li><li>Second</li></ol>');
+    expect(markdown('2. Second\n3. Third')).toBeNull();
+  });
+});
+
+
+/* =========================
    Pasting Tab-Separated Tables
    ========================= */
 

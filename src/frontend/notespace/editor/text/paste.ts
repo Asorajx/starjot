@@ -161,8 +161,13 @@ export function markdownLines(plain: string) {
     const fence = text.match(FENCE);
     const heading = text.match(HEADING);
     const divider = DIVIDER.test(text);
-    const item = divider ? null : text.match(LIST_ITEM);
+    const listed = divider ? null : text.match(LIST_ITEM);
     const quoted = text.match(QUOTE);
+
+    /* A numbered list starts at 1. Any other number starts no list unless it carries on a */
+    /* numbered list above, so a section heading such as "11. Design" keeps its number as text. */
+    const continues = lists.some(frame => frame.list.tagName === 'OL');
+    const item = listed && /^\d/.test(listed[2]) && parseInt(listed[2], 10) !== 1 && !continues ? null : listed;
 
     /* Lists continue past blank lines, so items separated by a blank line stay in one list. */
     if (!text.trim()) {
