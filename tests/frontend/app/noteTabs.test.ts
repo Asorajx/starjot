@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
-  activeTab, addTab, closeTab, currentPlace, focusedGroup, goTo, isOpenInStack, moveTab, newTab, newWorkspace, selectTab, splitWorkspace,
-  stackGroup, step, stepPlace, unsplit, type Place, type Workspace
+  activeTab, addTab, closeTab, currentPlace, cycleTab, focusedGroup, goTo, isOpenInStack, moveTab, newTab, newWorkspace, reopenTab, selectTab,
+  splitWorkspace, stackGroup, step, stepPlace, unsplit, type Place, type Workspace
 } from '../../../src/frontend/app/noteTabs';
 
 const home: Place = { kind: 'home' };
@@ -162,5 +162,59 @@ describe('stacked tabs', () => {
     const workspace = stackGroup(newWorkspace(note('a')));
     const group = workspace.groups[0];
     expect(closeTab(workspace, group.id, group.tabs[1].id).groups[0].stacked).toBe(false);
+  });
+});
+
+
+/* =========================
+   Reopening Closed Tabs
+   ========================= */
+
+describe('reopening closed tabs', () => {
+  it('brings a closed tab back where it was, with its history, and makes it active', () => {
+    let workspace = newWorkspace(home);
+    const group = workspace.groups[0].id;
+    const middle = goTo(newTab(note('a')), note('b'));
+    workspace = addTab(addTab(workspace, group, middle), group, newTab(note('c')));
+    workspace = closeTab(workspace, group, middle.id);
+
+    const reopened = reopenTab(workspace, { tab: middle, groupId: group, index: 1 });
+    const tabs = reopened.groups[0].tabs;
+    expect(tabs.map(tab => tab.id)[1]).toBe(middle.id);
+    expect(activeTab(reopened.groups[0]).id).toBe(middle.id);
+    expect(currentPlace(tabs[1])).toEqual(note('b'));
+    expect(stepPlace(tabs[1], -1, everything)).toEqual(note('a'));
+  });
+
+  it('uses the focused group when its own group has closed, and never adds a tab twice', () => {
+    const workspace = newWorkspace(home);
+    const tab = newTab(note('a'));
+    const reopened = reopenTab(workspace, { tab, groupId: 'gone', index: 5 });
+    expect(reopened.groups[0].tabs.map(item => item.id)).toEqual([workspace.groups[0].tabs[0].id, tab.id]);
+    expect(reopenTab(reopened, { tab, groupId: 'gone', index: 0 })).toBe(reopened);
+  });
+});
+
+
+/* =========================
+   Switching Tabs
+   ========================= */
+
+describe('switching tabs with Ctrl + Tab', () => {
+  it('goes to the next or previous tab, wrapping around at the ends', () => {
+    let workspace = newWorkspace(home);
+    const group = workspace.groups[0].id;
+    const [first] = workspace.groups[0].tabs;
+    const second = newTab(note('a'));
+    workspace = addTab(workspace, group, second);
+    expect(activeTab(workspace.groups[0]).id).toBe(second.id);
+    expect(activeTab(cycleTab(workspace, 1).groups[0]).id).toBe(first.id);
+    expect(activeTab(cycleTab(workspace, -1).groups[0]).id).toBe(first.id);
+    expect(activeTab(cycleTab(cycleTab(workspace, 1), 1).groups[0]).id).toBe(second.id);
+  });
+
+  it('changes nothing with one tab', () => {
+    const workspace = newWorkspace(home);
+    expect(cycleTab(workspace, 1)).toBe(workspace);
   });
 });

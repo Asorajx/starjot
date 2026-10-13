@@ -196,3 +196,44 @@ export function StackSpine({ groupId, tabId, place, active, onSelect, onClose }:
     </div>
   );
 }
+
+
+/* =========================
+   Tab Switcher
+   ========================= */
+
+type TabSwitcherProps = {
+  tabs: NoteTab[];
+  selected: number;
+  onPick: (id: string) => void;
+};
+
+/* The list Ctrl + Q shows while Ctrl is held: every open tab, the most recently used first, with */
+/* the one Ctrl's release will switch to highlighted (see App.tsx). It only appears after a short */
+/* moment, so a quick Ctrl + Q (back to the last tab) does not flash it. A click picks a tab too. */
+export function TabSwitcher({ tabs, selected, onPick }: TabSwitcherProps) {
+  /* Re-render when notes or categories are renamed, so the titles stay current. */
+  useNotes();
+  useCategories();
+  return (
+    <div className="page-menu tab-switcher" role="listbox" aria-label="Switch tab">
+      {tabs.map((tab, index) => {
+        const place = currentPlace(tab);
+        return (
+          <button
+            key={tab.id}
+            type="button"
+            role="option"
+            aria-selected={index === selected}
+            className={`page-menu-item ${index === selected ? 'is-selected' : ''}`}
+            onMouseDown={event => event.preventDefault()}
+            onClick={() => onPick(tab.id)}
+          >
+            <Icon name={PLACE_ICONS[place.kind]} size={14} />
+            <span>{placeLabel(place)}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}

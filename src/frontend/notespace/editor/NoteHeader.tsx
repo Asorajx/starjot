@@ -10,11 +10,12 @@ import { deleteSelection, insertPasted, pastedMarkdown } from './text/paste';
 import { pastedSource } from './text/clipboard';
 import type { Note } from '../../../shared/types/note';
 import { formatDate } from '../../lib/dates';
+import { opensNewTab, type OpenById } from '../../lib/clicks';
 
 type NoteHeaderProps = {
   note: Note;
   locked: boolean;
-  onOpenNote: (id: string) => void;
+  onOpenNote: OpenById;
 };
 
 /* Every page inside a page, at any depth (only one level today, but older notes may have more). */
@@ -94,7 +95,7 @@ function RemarksField({ note, locked }: RemarksFieldProps) {
 type PageListProps = {
   notes: Note[];
   parentId: string;
-  onOpenNote: (id: string) => void;
+  onOpenNote: OpenById;
 };
 
 /* The sub-pages of a page, oldest first (the order they were added), each followed by its own */
@@ -106,7 +107,7 @@ function PageList({ notes, parentId, onOpenNote }: PageListProps) {
     <ul className="note-page-list">
       {pages.map(page => (
         <li key={page.id}>
-          <button type="button" className="note-page-link" data-preview-page={page.id} onClick={() => onOpenNote(page.id)}>
+          <button type="button" className="note-page-link" data-preview-page={page.id} onClick={event => onOpenNote(page.id, opensNewTab(event))}>
             {page.icon ? <span className="note-page-icon" aria-hidden="true">{page.icon}</span> : <Icon name="file-text" size={13} />}
             <span className="note-page-title">{noteTitle(page)}</span>
           </button>

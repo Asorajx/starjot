@@ -1,5 +1,6 @@
 import type { MouseEvent, ReactNode } from 'react';
 import { BrandMark } from '../components/BrandMark';
+import { opensNewTab, type OpenById } from '../lib/clicks';
 import { Icon, type IconName } from '../components/Icon';
 import { SCREENS, screenLabel, type ScreenId } from './screens';
 import { noteTitle, useNotes } from '../notespace/store';
@@ -20,7 +21,7 @@ type SidebarProps = NavigationProps & {
   space: ScreenId;
   openNoteId: string | null;
   boardView: BoardTab | null;
-  onOpenNote: (id: string) => void;
+  onOpenNote: OpenById;
   onOpenBoardView: (view: BoardTab) => void;
   /* Docked beside the page, or floating over it as a popup. Docked, Home and the sidebar button */
   /* (controls) sit at its top. */
@@ -104,7 +105,7 @@ type SidebarLinkProps = {
   emoji?: string;
   label: string;
   current: boolean;
-  onClick: () => void;
+  onClick: (event: MouseEvent) => void;
 };
 
 /* One line in a sidebar list: a note, or a view of the board. */
@@ -148,7 +149,7 @@ function NotespaceLists({ openNoteId, onOpenNote }: Pick<SidebarProps, 'openNote
       emoji={note.icon}
       label={noteTitle(note)}
       current={openNoteId === note.id}
-      onClick={() => onOpenNote(note.id)}
+      onClick={event => onOpenNote(note.id, opensNewTab(event))}
     />
   );
 

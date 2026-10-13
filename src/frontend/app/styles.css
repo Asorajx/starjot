@@ -721,6 +721,39 @@ p {
   opacity: 1;
 }
 
+/* Ctrl + Q's tab switcher, at the top centre of the window. It shows only after a short delay, so */
+/* a quick Ctrl + Q that jumps back to the last tab does not flash it. */
+.tab-switcher {
+  top: 96px;
+  left: 50%;
+  width: min(360px, calc(100vw - 16px));
+  max-height: 60vh;
+  overflow-y: auto;
+  transform: translateX(-50%);
+  animation: tab-switcher-in 1ms 150ms both;
+}
+
+@keyframes tab-switcher-in {
+  from {
+    visibility: hidden;
+  }
+
+  to {
+    visibility: visible;
+  }
+}
+
+.tab-switcher .page-menu-item span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tab-switcher .page-menu-item.is-selected {
+  background: var(--blue-soft);
+  color: var(--blue-deep);
+}
+
 .window-new-tab:disabled {
   opacity: .4;
   cursor: default;

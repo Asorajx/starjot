@@ -1,5 +1,6 @@
 import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type MouseEvent as ReactMouseEvent } from 'react';
 import { changeZoom, usePreferences } from '../../app/preferences';
+import type { OpenById } from '../../lib/clicks';
 import { DeleteNoteDialog } from '../DeleteNoteDialog';
 import { FindBar } from './find/FindBar';
 import { takeFindForNote } from './find/pendingFind';
@@ -62,11 +63,11 @@ type NoteEditorProps = {
 
   /* Leaves the note (Escape, or after deleting it). */
   onClose: () => void;
-  onOpenNote: (id: string) => void;
+  onOpenNote: OpenById;
 
   /* Opens a page in a new tab (Ctrl + click or double-click on a page link). */
   onOpenNoteInNewTab: (id: string) => void;
-  onOpenCategory: (id: string) => void;
+  onOpenCategory: OpenById;
 
   /* Opens a sub-page just added with the slash menu, ready to be named. */
   onOpenNewPage: (id: string) => void;

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type MouseEvent } from 'react';
 import { Dropdown, type DropdownOption } from '../components/Dropdown';
 import { Icon, type IconName } from '../components/Icon';
+import { opensNewTab } from '../lib/clicks';
 import { useEscape } from '../lib/useDismiss';
 import { cleanHtml, htmlToText } from '../notespace/sanitize';
 import { starredNotes } from '../notespace/NoteList';
@@ -303,7 +304,7 @@ export function SearchWindow({ initialQuery, inNewTab, onClose, onOpenNote, onOp
       setSelected((index + step + rowCount) % rowCount);
     } else if (event.key === 'Enter') {
       event.preventDefault();
-      const newTab = event.ctrlKey || event.metaKey;
+      const newTab = opensNewTab(event);
       if (current) open(current, newTab);
       else create(newTab);
     }
@@ -381,7 +382,7 @@ export function SearchWindow({ initialQuery, inNewTab, onClose, onOpenNote, onOp
                       aria-selected={at === index}
                       className={`search-result ${at === index ? 'is-selected' : ''}`}
                       onMouseMove={() => at !== index && setSelected(at)}
-                      onClick={(event: MouseEvent) => open(result, event.ctrlKey || event.metaKey)}
+                      onClick={(event: MouseEvent) => open(result, opensNewTab(event))}
                     >
                       <span className="search-result-icon" aria-hidden="true">{entry.icon || <Icon name={KIND_ICONS[entry.kind]} size={16} />}</span>
                       <span className="search-result-text">
@@ -404,7 +405,7 @@ export function SearchWindow({ initialQuery, inNewTab, onClose, onOpenNote, onOp
                 aria-selected={creating}
                 className={`search-result search-create ${creating ? 'is-selected' : ''}`}
                 onMouseMove={() => !creating && setSelected(flat.length)}
-                onClick={(event: MouseEvent) => create(event.ctrlKey || event.metaKey)}
+                onClick={(event: MouseEvent) => create(opensNewTab(event))}
               >
                 <span className="search-result-icon" aria-hidden="true"><Icon name="plus" size={16} /></span>
                 <span className="search-result-text">

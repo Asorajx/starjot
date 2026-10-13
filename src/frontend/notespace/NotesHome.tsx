@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { Dropdown } from '../components/Dropdown';
 import { Icon } from '../components/Icon';
+import { opensNewTab, type OpenById } from '../lib/clicks';
 import { updatePreferences, usePreferences, type NotesSort } from '../app/preferences';
 import { NoteTable, NoteTile, sortNotes, starredNotes } from './NoteList';
 import { useNoteMenu } from './NoteMenu';
@@ -17,9 +18,9 @@ export type NoteFilter = 'all' | string;
 type NotesHomeProps = {
   filter: NoteFilter;
   onFilterChange: (filter: NoteFilter) => void;
-  onOpen: (id: string) => void;
+  onOpen: OpenById;
   onOpenInNewTab: (id: string) => void;
-  onOpenCategory: (id: string) => void;
+  onOpenCategory: OpenById;
   onCreate: () => void;
 };
 
@@ -35,7 +36,7 @@ type CategoryBarProps = {
   notes: Note[];
   filter: NoteFilter;
   onFilterChange: (filter: NoteFilter) => void;
-  onOpenCategory: (id: string) => void;
+  onOpenCategory: OpenById;
 };
 
 /* One pill per category filters All notes; Edit categories swaps the pills for name fields. */
@@ -65,7 +66,7 @@ function CategoryBar({ notes, filter, onFilterChange, onOpenCategory }: Category
             {chip('all', 'All', notes.length)}
             {categories.map(category => chip(category.id, category.name, count(category.id)))}
             {filter !== 'all' && (
-              <button type="button" className="btn btn-sm btn-tertiary" onClick={() => onOpenCategory(filter)}>
+              <button type="button" className="btn btn-sm btn-tertiary" onClick={event => onOpenCategory(filter, opensNewTab(event))}>
                 Open {categoryName(filter)} <Icon name="arrow-right" size={14} />
               </button>
             )}

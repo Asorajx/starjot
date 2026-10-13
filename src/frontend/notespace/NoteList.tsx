@@ -1,10 +1,11 @@
 import { Icon } from '../components/Icon';
+import { opensNewTab, type OpenById } from '../lib/clicks';
 import type { NotesSort } from '../app/preferences';
 import { categoryName, getNote, noteTitle, setPinned, updatedLabel } from './store';
 import type { NoteMenu } from './NoteMenu';
 import type { Note } from '../../shared/types/note';
 
-type OpenNote = (id: string) => void;
+type OpenNote = OpenById;
 type OpenMenu = NoteMenu['onContextMenu'];
 
 
@@ -66,7 +67,7 @@ function LockedMark({ note }: { note: Note }) {
 export function NoteTile({ note, onOpen, onMenu }: { note: Note; onOpen: OpenNote; onMenu?: OpenMenu }) {
   const category = categoryName(note.category);
   return (
-    <button type="button" className="note-tile" onClick={() => onOpen(note.id)} onContextMenu={onMenu && (event => onMenu(event, note.id))}>
+    <button type="button" className="note-tile" onClick={event => onOpen(note.id, opensNewTab(event))} onContextMenu={onMenu && (event => onMenu(event, note.id))}>
       <span className="note-tile-title">
         {note.icon ? <span className="note-tile-icon" aria-hidden="true">{note.icon}</span> : <Icon name="file-text" size={16} />}
         <strong>{noteTitle(note)}</strong>
@@ -83,7 +84,7 @@ export function NoteTile({ note, onOpen, onMenu }: { note: Note; onOpen: OpenNot
 function NoteRow({ note, onOpen, onMenu, time }: { note: Note; onOpen: OpenNote; onMenu?: OpenMenu; time: string }) {
   return (
     <div className="recent-row note-row" onContextMenu={onMenu && (event => onMenu(event, note.id))}>
-      <button type="button" className="note-row-open" onClick={() => onOpen(note.id)}>
+      <button type="button" className="note-row-open" onClick={event => onOpen(note.id, opensNewTab(event))}>
         <span className="recent-name">
           {note.icon && <span className="note-row-icon" aria-hidden="true">{note.icon}</span>}
           <span className="recent-text">

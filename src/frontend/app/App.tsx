@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type DragEvent, type MouseEvent, type ReactNode } from 'react';
 import { updatePreferences, usePreferences } from './preferences';
 import { MobileNav, Sidebar, Topbar, WindowControls } from './Shell';
-import { useDismiss } from '../lib/useDismiss';
+import { opensNewTab } from '../lib/clicks';
+import { useDismiss, useEscape } from '../lib/useDismiss';
 import { useMediaQuery } from '../lib/useMediaQuery';
 import { CategoryPage } from '../notespace/CategoryPage';
 import { NotesHome, type NoteFilter } from '../notespace/NotesHome';
@@ -16,11 +17,11 @@ import { Settings, type SettingsSection } from '../settings/Settings';
 import { Boardspace } from '../boardspace/Boardspace';
 import type { BoardTab } from '../../shared/types/task';
 import {
-  activeTab, addTab, canAddTab, canStack, closeTab, currentPlace, focusedGroup, focusGroup, goTo, isOpenInStack, isSplit, moveTab, newTab,
-  newWorkspace, samePlace, selectTab, splitWorkspace, stackGroup, step, stepPlace, unsplit, updateTab, type NoteTab, type Place, type TabGroup,
-  type Workspace
+  activeTab, addTab, canAddTab, canStack, closeTab, currentPlace, cycleTab, focusedGroup, focusGroup, goTo, isOpenInStack, isSplit, moveTab, newTab,
+  newWorkspace, reopenTab, samePlace, selectTab, splitWorkspace, stackGroup, step, stepPlace, unsplit, updateTab, type ClosedTab, type NoteTab,
+  type Place, type TabGroup, type Workspace
 } from './noteTabs';
-import { DocumentTitle, StackSpine, TAB_DRAG_TYPE, WindowBar } from './WindowBar';
+import { DocumentTitle, StackSpine, TAB_DRAG_TYPE, TabSwitcher, WindowBar } from './WindowBar';
 import { screenLabel, type ScreenId } from './screens';
 import { addressOf, parseAddress } from './address';
 
@@ -31,6 +32,9 @@ import { addressOf, parseAddress } from './address';
 
 /* Below this width a stacked group has no room for two open tabs, so only its active tab is open. */
 const TWO_OPEN_WIDTH = 760;
+
+/* Ctrl + Shift + T can bring back this many closed tabs. */
+const CLOSED_TAB_LIMIT = 20;
 
 type TabGroupFrameProps = {
   group: TabGroup;
@@ -186,7 +190,18 @@ export function App() {
     requestAnimationFrame(() => document.querySelector(`[data-tab="${tabId}"]`)?.scrollTo(0, 0));
   }
 
-  const openNote = (id: string) => go({ kind: 'note', id });
+  /* Ctrl + click opens a place in a new tab beside the active one (see opensNewTab). A full stack */
+  /* has no room for another tab, so the place opens in the active tab instead. */
+  function openInNewTab(next: Place) {
+    if (!canAddTab(group)) {
+      go(next);
+      return;
+    }
+    setScreenId('notes');
+    changeTabs(current => addTab(current, group.id, newTab(next), true));
+  }
+
+  const openNote = (id: string, inNewTab = false) => (inNewTab ? openInNewTab({ kind: 'note', id }) : go({ kind: 'note', id }));
 
   /* Select the placeholder title so typing replaces it straight away. */
   function focusTitle(tabId = activeTab(group).id) {
@@ -207,14 +222,65 @@ export function App() {
     focusTitle(tab.id);
   }
 
-  /* Ctrl + click or double-click on a page link opens the page in a new tab beside the active one. */
-  /* A full stack has no room for another tab, so the page opens in the active tab instead. */
-  function openNoteInNewTab(id: string) {
-    if (!canAddTab(group)) {
-      openNote(id);
+  /* Ctrl + click or double-click on a page link opens the page in a new tab. */
+  const openNoteInNewTab = (id: string) => openInNewTab({ kind: 'note', id });
+
+  /* Closed tabs, newest last, so Ctrl + Shift + T can bring them back like a browser. */
+  const closedTabs = useRef<ClosedTab[]>([]);
+
+  function closeTabIn(groupId: string, tabId: string) {
+    const owner = tabs.groups.find(item => item.id === groupId);
+    const index = owner ? owner.tabs.findIndex(tab => tab.id === tabId) : -1;
+    if (owner && index >= 0) closedTabs.current = [...closedTabs.current, { tab: owner.tabs[index], groupId, index }].slice(-CLOSED_TAB_LIMIT);
+    changeTabs(current => closeTab(current, groupId, tabId));
+  }
+
+  /* The last closed tab comes back where it was. One showing a note deleted since steps back to */
+  /* a place that still exists, and a tab with nothing left is skipped. */
+  function reopenClosedTab() {
+    while (closedTabs.current.length) {
+      const closed = closedTabs.current[closedTabs.current.length - 1];
+      closedTabs.current = closedTabs.current.slice(0, -1);
+      const tab = placeExists(currentPlace(closed.tab)) ? closed.tab : step(closed.tab, -1, placeExists) ?? step(closed.tab, 1, placeExists);
+      if (!tab) continue;
+      setScreenId('notes');
+      changeTabs(current => reopenTab(current, { ...closed, tab }));
       return;
     }
-    changeTabs(current => addTab(current, group.id, newTab({ kind: 'note', id }), true));
+  }
+
+  /* Tab ids, the most recently shown first, for Ctrl + Q's switcher (see moveSwitcher). */
+  const recentTabs = useRef<string[]>([]);
+  const shownTab = activeTab(group).id;
+  useEffect(() => {
+    recentTabs.current = [shownTab, ...recentTabs.current.filter(id => id !== shownTab)];
+  }, [shownTab]);
+
+  /* The switcher while Ctrl is held after Ctrl + Q: the tabs it lists and the one picked. */
+  const [switcher, setSwitcher] = useState<{ ids: string[]; selected: number } | null>(null);
+  const allTabs = tabs.groups.flatMap(item => item.tabs);
+  useEscape(switcher !== null, () => setSwitcher(null));
+
+  function switchTo(id: string) {
+    setSwitcher(null);
+    const owner = tabs.groups.find(item => item.tabs.some(tab => tab.id === id));
+    if (!owner) return;
+    setScreenId('notes');
+    changeTabs(current => selectTab(current, owner.id, id));
+  }
+
+  /* Like Alt + Tab, for tabs: Ctrl + Q lists every tab, the most recently used first, with the one */
+  /* used before this one picked, so a quick Ctrl + Q goes back to it. Each further Q (or ↓) picks */
+  /* the next one, ↑ the one before; letting go of Ctrl or Enter switches. Shift + Q is left alone: */
+  /* Ctrl + Shift + Q quits Chrome and Edge, and a page cannot stop it. */
+  function moveSwitcher(direction: -1 | 1) {
+    if (!switcher) {
+      const open = allTabs.map(tab => tab.id);
+      const ids = [...recentTabs.current.filter(id => open.includes(id)), ...open.filter(id => !recentTabs.current.includes(id))];
+      if (ids.length > 1) setSwitcher({ ids, selected: direction === 1 ? 1 : ids.length - 1 });
+      return;
+    }
+    setSwitcher({ ...switcher, selected: (switcher.selected + direction + switcher.ids.length) % switcher.ids.length });
   }
 
   /* Clicking or tabbing into a group makes it the focused group. */
@@ -372,32 +438,81 @@ export function App() {
   );
 
   /* Ctrl + K opens search, Ctrl + N creates a note while in Notespace, and Ctrl + \ docks or */
-  /* undocks the sidebar. Alt is ignored because AltGr counts as Ctrl + Alt, and some keyboards */
-  /* type \ with AltGr. Pending edits are saved when the page is hidden. */
+  /* undocks the sidebar. Tabs work like a browser's: Ctrl + T opens search for a new tab, Ctrl + W */
+  /* closes the current tab (or the open search or settings), Ctrl + Shift + T brings back the */
+  /* last closed tab, and Ctrl + Tab / Ctrl + Shift + Tab go to the next / previous tab. In a */
+  /* browser tab the browser keeps these for itself; they reach the app in the desktop app. */
+  /* Ctrl + Q works in both: it opens the tab switcher (see moveSwitcher), and letting go of Ctrl */
+  /* switches. Alt is ignored because AltGr counts as Ctrl + Alt, and some keyboards type \ with */
+  /* AltGr. Pending edits are saved when the page is hidden. */
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
+      if (switcher && (event.key === 'ArrowDown' || event.key === 'ArrowUp')) {
+        event.preventDefault();
+        moveSwitcher(event.key === 'ArrowDown' ? 1 : -1);
+        return;
+      }
+      if (switcher && event.key === 'Enter') {
+        event.preventDefault();
+        switchTo(switcher.ids[switcher.selected]);
+        return;
+      }
       if (!(event.ctrlKey || event.metaKey) || event.altKey) return;
-      if (event.key.toLowerCase() === 'k') {
+      const key = event.key.toLowerCase();
+      if (key === 'q' && event.ctrlKey && !event.metaKey && !event.shiftKey) {
+        event.preventDefault();
+        moveSwitcher(1);
+      } else if (key === 'tab') {
+        event.preventDefault();
+        if (screenId === 'notes' && !searchState && !settingsOpen) changeTabs(current => cycleTab(current, event.shiftKey ? -1 : 1));
+      } else if (key === 'k') {
         event.preventDefault();
         openSearch();
-      } else if (event.key.toLowerCase() === 'n' && screenId === 'notes') {
+      } else if (key === 'n' && screenId === 'notes') {
         event.preventDefault();
         newNote();
+      } else if (key === 't' && event.shiftKey) {
+        event.preventDefault();
+        reopenClosedTab();
+      } else if (key === 't') {
+        event.preventDefault();
+        setScreenId('notes');
+        openSearch('', group.id);
+      } else if (key === 'w' && !event.shiftKey) {
+        event.preventDefault();
+        if (searchState || settingsOpen) {
+          setSearchState(null);
+          setSettingsOpen(false);
+        } else if (screenId === 'notes') {
+          closeTabIn(group.id, activeTab(group).id);
+        }
       } else if (event.key === '\\') {
         event.preventDefault();
         toggleSidebar();
       }
     }
+    function handleKeyUp(event: KeyboardEvent) {
+      if (switcher && event.key === 'Control') switchTo(switcher.ids[switcher.selected]);
+    }
     function handleHidden() {
       if (document.visibilityState === 'hidden') flushSave();
     }
+
+    /* Leaving the window while Ctrl is held never sends its release, so the switcher just closes. */
+    function closeSwitcher() {
+      setSwitcher(null);
+    }
     document.addEventListener('keydown', handleKeyDown);
+    document.addEventListener('keyup', handleKeyUp);
     document.addEventListener('visibilitychange', handleHidden);
     window.addEventListener('pagehide', flushSave);
+    window.addEventListener('blur', closeSwitcher);
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('keyup', handleKeyUp);
       document.removeEventListener('visibilitychange', handleHidden);
       window.removeEventListener('pagehide', flushSave);
+      window.removeEventListener('blur', closeSwitcher);
     };
   });
 
@@ -425,9 +540,11 @@ export function App() {
       onStack: () => fromHere(stackGroup),
       onUnsplit: () => changeTabs(unsplit)
     };
-    const openHere = (id: string) => goHere({ kind: 'note', id });
-    const openCategory = (id: string) => goHere({ kind: 'category', id });
-    const openHome = () => goHere({ kind: 'home' });
+    /* Each opens here, or in a new tab when asked (Ctrl + click). */
+    const openPlace = (next: Place, inNewTab = false) => (inNewTab ? openInNewTab(next) : goHere(next));
+    const openHere = (id: string, inNewTab = false) => openPlace({ kind: 'note', id }, inNewTab);
+    const openCategory = (id: string, inNewTab = false) => openPlace({ kind: 'category', id }, inNewTab);
+    const openHome = (inNewTab = false) => openPlace({ kind: 'home' }, inNewTab);
 
     /* Leaving a page (Escape, or deleting the note) goes back, or to the notes home when there is no back. */
     const closePage = () => (history.back ? goBack() : openHome());
@@ -460,7 +577,7 @@ export function App() {
         <>
           <PageBar history={history}>
             <nav className="editor-breadcrumb" aria-label="Breadcrumb">
-              <button type="button" className="editor-crumb-link" onClick={openHome}>Notespace</button>
+              <button type="button" className="editor-crumb-link" onClick={event => openHome(opensNewTab(event))}>Notespace</button>
               <span className="editor-breadcrumb-separator">/</span>
               <span className="editor-crumb-current">{placeLabel(shown)}</span>
             </nav>
@@ -512,7 +629,7 @@ export function App() {
               group={tabGroup}
               leading={!docked && tabGroup.id === tabs.groups[0].id ? windowControls : null}
               onSelect={id => changeTabs(current => selectTab(current, tabGroup.id, id))}
-              onClose={id => changeTabs(current => closeTab(current, tabGroup.id, id))}
+              onClose={id => closeTabIn(tabGroup.id, id)}
               onNew={() => openSearch('', tabGroup.id)}
             />
             <div className="tab-group-body">
@@ -535,7 +652,7 @@ export function App() {
                         place={currentPlace(tab)}
                         active={isActive}
                         onSelect={() => changeTabs(current => selectTab(current, tabGroup.id, tab.id))}
-                        onClose={() => changeTabs(current => closeTab(current, tabGroup.id, tab.id))}
+                        onClose={() => closeTabIn(tabGroup.id, tab.id)}
                       />
                     )}
                     {renderTab(tabGroup, tab)}
@@ -587,6 +704,13 @@ export function App() {
           onClose={() => setSettingsOpen(false)}
           focus={settingsFocus}
           onFocused={clearSettingsFocus}
+        />
+      )}
+      {switcher && (
+        <TabSwitcher
+          tabs={switcher.ids.flatMap(id => allTabs.filter(tab => tab.id === id))}
+          selected={switcher.selected}
+          onPick={switchTo}
         />
       )}
       {searchState && (

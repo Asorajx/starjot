@@ -21,6 +21,9 @@ export type Workspace = { groups: TabGroup[]; direction: 'right' | 'down'; focus
 /* Back and forward can go this many places back at most. */
 const HISTORY_LIMIT = 50;
 
+/* A tab that was closed, remembered so Ctrl + Shift + T can bring it back where it was. */
+export type ClosedTab = { tab: NoteTab; groupId: string; index: number };
+
 /* A window holds at most this many tab groups. */
 const GROUP_LIMIT = 2;
 
@@ -132,6 +135,16 @@ export function selectTab(workspace: Workspace, groupId: string, tabId: string):
   return { ...changeGroup(workspace, groupId, group => withActive(group, tabId)), focus: groupId };
 }
 
+/* The next (1) or previous (-1) tab of the focused group becomes active, wrapping around at the */
+/* ends, as Ctrl + Tab does in a browser. */
+export function cycleTab(workspace: Workspace, direction: -1 | 1): Workspace {
+  const group = focusedGroup(workspace);
+  if (group.tabs.length < 2) return workspace;
+  const index = group.tabs.indexOf(activeTab(group));
+  const next = group.tabs[(index + direction + group.tabs.length) % group.tabs.length];
+  return selectTab(workspace, group.id, next.id);
+}
+
 export function focusGroup(workspace: Workspace, groupId: string): Workspace {
   return workspace.focus === groupId || !workspace.groups.some(group => group.id === groupId) ? workspace : { ...workspace, focus: groupId };
 }
@@ -170,6 +183,16 @@ export function closeTab(workspace: Workspace, groupId: string, tabId: string): 
     stackStart: clampStart({ ...group, tabs }, group.stackStart > index ? group.stackStart - 1 : group.stackStart)
   };
   return changeGroup(workspace, groupId, () => withActive({ ...shrunk, active: '' }, active));
+}
+
+/* Bring back a closed tab, with its history, at its old place in its group (or in the focused */
+/* group, when its own has closed since or is a full stack), and make it active. */
+export function reopenTab(workspace: Workspace, closed: ClosedTab): Workspace {
+  const group = workspace.groups.find(item => item.id === closed.groupId && canAddTab(item)) ?? focusedGroup(workspace);
+  if (!canAddTab(group) || group.tabs.some(tab => tab.id === closed.tab.id)) return workspace;
+  const index = Math.min(closed.index, group.tabs.length);
+  const tabs = [...group.tabs.slice(0, index), closed.tab, ...group.tabs.slice(index)];
+  return selectTab(changeGroup(workspace, group.id, () => ({ ...group, tabs })), group.id, closed.tab.id);
 }
 
 

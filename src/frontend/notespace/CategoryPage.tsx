@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { Icon } from '../components/Icon';
+import type { OpenById } from '../lib/clicks';
 import { newestFirst, NoteTable } from './NoteList';
 import { useNoteMenu } from './NoteMenu';
 import { categoryName, useCategories, useNotes } from './store';
@@ -7,7 +8,7 @@ import { categoryName, useCategories, useNotes } from './store';
 type CategoryPageProps = {
   categoryId: string;
   onBack: () => void;
-  onOpen: (id: string) => void;
+  onOpen: OpenById;
   onOpenInNewTab: (id: string) => void;
   onCreate: (categoryId: string) => void;
 };

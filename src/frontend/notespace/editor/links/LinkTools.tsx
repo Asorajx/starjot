@@ -4,6 +4,7 @@ import { getNote, noteTitle, useNotes } from '../../store';
 import { copyPageLink, linkTarget, normalizeAddress, setLinkTarget, unwrapLink, type LinkTarget } from './links';
 import { LinkPreviewCard } from './LinkPreview';
 import type { EditorSession } from '../session';
+import { opensNewTab } from '../../../lib/clicks';
 import { useDismiss } from '../../../lib/useDismiss';
 
 type LinkToolsProps = {
@@ -111,7 +112,7 @@ export function LinkTools({ session, locked, onOpenNote, onOpenNoteInNewTab }: L
     /* like any link on a page that cannot be edited (addresses always open in a new browser tab). */
     function handleClick(event: MouseEvent) {
       const found = linkAt(event.target);
-      const command = event.ctrlKey || event.metaKey;
+      const command = opensNewTab(event);
       const readOnly = latest.current.locked || !found?.closest('[contenteditable="true"]');
       if (!found || !(command || readOnly)) return;
       event.preventDefault();

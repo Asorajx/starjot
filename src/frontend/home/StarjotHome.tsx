@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { Icon } from '../components/Icon';
+import { opensNewTab, type OpenById } from '../lib/clicks';
 import { editedText, newestFirst } from '../notespace/NoteList';
 import { createNote, noteTitle, updateNote, useNotes } from '../notespace/store';
 import { BOARD_TABS } from '../boardspace/data';
@@ -9,8 +10,8 @@ import type { BoardTab, StatusTab } from '../../shared/types/task';
 import { quickNoteParts } from './quickNote';
 
 type StarjotHomeProps = {
-  onOpenNote: (id: string) => void;
-  onOpenNotespace: () => void;
+  onOpenNote: OpenById;
+  onOpenNotespace: (inNewTab?: boolean) => void;
   onOpenBoardspace: () => void;
   onOpenBoardView: (view: BoardTab) => void;
 };
@@ -40,7 +41,7 @@ function useNow() {
 
 /* One plain box: Save (or Ctrl + Enter) makes a note without a category, titled from the first */
 /* line. The text is kept as a draft until it is saved. */
-function QuickNote({ onOpenNote }: { onOpenNote: (id: string) => void }) {
+function QuickNote({ onOpenNote }: { onOpenNote: OpenById }) {
   const [text, setText] = useState(readQuickNoteDraft);
   const [saved, setSaved] = useState<{ id: string; title: string } | null>(null);
 
@@ -78,7 +79,7 @@ function QuickNote({ onOpenNote }: { onOpenNote: (id: string) => void }) {
       <div className="home-card-footer">
         <span className="quick-note-status" role="status">
           {saved
-            ? <>Saved “{saved.title}”. <button type="button" className="text-link" onClick={() => onOpenNote(saved.id)}>Open it</button></>
+            ? <>Saved “{saved.title}”. <button type="button" className="text-link" onClick={event => onOpenNote(saved.id, opensNewTab(event))}>Open it</button></>
             : 'Ctrl + Enter saves'}
         </span>
         <button className="btn btn-sm btn-primary" type="submit" disabled={!text.trim()}>Save</button>
@@ -112,7 +113,7 @@ export function StarjotHome({ onOpenNote, onOpenNotespace, onOpenBoardspace, onO
       <section className="home-section" aria-labelledby="home-notespace">
         <div className="home-section-heading">
           <h2 id="home-notespace"><Icon name="book-open" size={16} /> Notespace</h2>
-          <button type="button" className="btn btn-sm btn-tertiary" onClick={onOpenNotespace}>Open Notespace <Icon name="arrow-right" size={14} /></button>
+          <button type="button" className="btn btn-sm btn-tertiary" onClick={event => onOpenNotespace(opensNewTab(event))}>Open Notespace <Icon name="arrow-right" size={14} /></button>
         </div>
         <div className="starjot-home-grid">
           <QuickNote onOpenNote={onOpenNote} />
@@ -126,7 +127,7 @@ export function StarjotHome({ onOpenNote, onOpenNotespace, onOpenBoardspace, onO
               <span className="note-tile-text">{lastEdited.subtitle || lastEdited.preview || 'No content yet.'}</span>
               <span className="home-card-footer">
                 <span className="note-tile-meta">{editedText(lastEdited)}</span>
-                <button className="btn btn-sm btn-secondary" type="button" onClick={() => onOpenNote(lastEdited.id)}>Continue <Icon name="arrow-right" size={14} /></button>
+                <button className="btn btn-sm btn-secondary" type="button" onClick={event => onOpenNote(lastEdited.id, opensNewTab(event))}>Continue <Icon name="arrow-right" size={14} /></button>
               </span>
             </div>
           )}

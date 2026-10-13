@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { DeleteNoteDialog } from '../../DeleteNoteDialog';
 import { Icon } from '../../../components/Icon';
+import { opensNewTab, type OpenById } from '../../../lib/clicks';
 import { deleteNote, getNote, separatePage, useNotes } from '../../store';
 import { deleteKeepingPages, hydratePages, pageBlocksIn, removePageBlocks, setPageWidth, stepOverPage, type PageSize } from './pageBlocks';
 import { lineBelowTable, typeOutsideComment } from './blockKeys';
@@ -12,7 +13,7 @@ import type { EditorSession } from '../session';
 type BlockWidgetsProps = {
   session: EditorSession;
   locked: boolean;
-  onOpenNote: (id: string) => void;
+  onOpenNote: OpenById;
 };
 
 /* A preview of a page, shown for a page block or a page listed in the note's details. */
@@ -76,7 +77,7 @@ export function BlockWidgets({ session, locked, onOpenNote }: BlockWidgetsProps)
       /* A page block or a page mention opens its page with a normal click. */
       if (block) {
         event.preventDefault();
-        if (getNote(block.dataset.page ?? '')) open(block.dataset.page as string);
+        if (getNote(block.dataset.page ?? '')) open(block.dataset.page as string, opensNewTab(event));
         return;
       }
 

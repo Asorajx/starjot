@@ -1,15 +1,17 @@
 import { useState } from 'react';
 import { ancestorsOf, categoryName, noteTitle } from '../store';
+import { opensNewTab, type OpenById } from '../../lib/clicks';
 import type { Note } from '../../../shared/types/note';
 
 type NoteBreadcrumbProps = {
   note: Note;
-  onOpenNote: (id: string) => void;
-  onOpenCategory: (id: string) => void;
+  onOpenNote: OpenById;
+  onOpenCategory: OpenById;
 };
 
-/* One step of the path above the current page: its category or a parent page. */
-type Crumb = { key: string; label: string; open: () => void };
+/* One step of the path above the current page: its category or a parent page. Ctrl + click */
+/* opens it in a new tab. */
+type Crumb = { key: string; label: string; open: (inNewTab: boolean) => void };
 
 /* Only this many steps are shown, counting the current page; the rest fold into "…". */
 const VISIBLE_CRUMBS = 2;
@@ -26,11 +28,11 @@ export function NoteBreadcrumb({ note, onOpenNote, onOpenCategory }: NoteBreadcr
   const [pathOpen, setPathOpen] = useState(false);
   const category = categoryName(note.category);
   const trail: Crumb[] = [
-    ...(category ? [{ key: 'category', label: category, open: () => onOpenCategory(note.category) }] : []),
+    ...(category ? [{ key: 'category', label: category, open: (inNewTab: boolean) => onOpenCategory(note.category, inNewTab) }] : []),
     ...ancestorsOf(note.id).map(page => ({
       key: page.id,
       label: `${page.icon ? `${page.icon} ` : ''}${noteTitle(page)}`,
-      open: () => onOpenNote(page.id)
+      open: (inNewTab: boolean) => onOpenNote(page.id, inNewTab)
     }))
   ];
   const shown = trail.slice(-(VISIBLE_CRUMBS - 1));
@@ -61,7 +63,7 @@ export function NoteBreadcrumb({ note, onOpenNote, onOpenCategory }: NoteBreadcr
                     role="menuitem"
                     className="editor-crumb-path-item"
                     style={{ paddingLeft: 12 + index * 12 }}
-                    onClick={crumb.open}
+                    onClick={event => crumb.open(opensNewTab(event))}
                   >
                     {crumb.label}
                   </button>
@@ -78,7 +80,7 @@ export function NoteBreadcrumb({ note, onOpenNote, onOpenCategory }: NoteBreadcr
 
       {shown.map(crumb => (
         <span key={crumb.key} className="editor-crumb-step">
-          <button type="button" className="editor-crumb-link editor-crumb-parent" onClick={crumb.open}>{crumb.label}</button>
+          <button type="button" className="editor-crumb-link editor-crumb-parent" onClick={event => crumb.open(opensNewTab(event))}>{crumb.label}</button>
           <span className="editor-breadcrumb-separator">/</span>
         </span>
       ))}
