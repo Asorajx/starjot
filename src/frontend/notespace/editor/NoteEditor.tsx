@@ -1,5 +1,5 @@
 import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type MouseEvent as ReactMouseEvent } from 'react';
-import { changeZoom, updatePreferences, usePreferences } from '../../app/preferences';
+import { changeZoom, usePreferences } from '../../app/preferences';
 import { DeleteNoteDialog } from '../DeleteNoteDialog';
 import { FindBar } from './find/FindBar';
 import { takeFindForNote } from './find/pendingFind';
@@ -35,7 +35,6 @@ import { EditorSession, useSessionValue } from './session';
 import { StructuredEditor } from './text/StructuredEditor';
 import { zoomed } from '../../lib/geometry';
 import { useMediaQuery } from '../../lib/useMediaQuery';
-import { usePinch } from '../../lib/usePinch';
 
 type Panel = 'toc' | 'settings' | null;
 
@@ -186,11 +185,6 @@ export function NoteEditor({ noteId, history, view, active, onClose, onOpenNote,
   const phone = useMediaQuery('(max-width: 700px)');
   const fitScale = geometry && pageRoom > 0 ? pageRoom / geometry.width : Infinity;
   const noteZoom = Math.min(phone ? PHONE_BASE_SCALE : BASE_SCALE, fitScale) * zoom * (smallText ? SMALL_TEXT_SCALE : 1);
-
-  /* Pinching on a phone zooms the note, like − and + in Note settings (in steps of 10%). */
-  usePinch(canvasRef, zoom, next => {
-    if (Math.round(next * 10) / 10 !== zoom) updatePreferences({ zoom: next });
-  });
 
   /* Remember when the note was opened, and save pending edits when leaving it. */
   useEffect(() => {

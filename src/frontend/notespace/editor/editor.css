@@ -657,11 +657,9 @@
 /* The same side padding in both modes keeps text in place when switching modes. It also leaves */
 /* room for the block controls and a gap from the left edge, where a hidden sidebar can be revealed. */
 /* It is noticeably wider than Full width's, so the two settings look different at any size. */
-/* Two-finger pinching zooms the note (see usePinch), so the browser's own pinch is turned off */
-/* here; scrolling with one finger still works. */
+/* On phones, pinching is left to the browser, which magnifies the screen without moving the text. */
 .editor-wrap .editor-canvas {
   padding: 28px clamp(96px, 9vw, 144px) 60px;
-  touch-action: pan-x pan-y;
 }
 
 /* Small text (Note settings) zooms the column to 0.875 (see NoteEditor). Its widest size is */
