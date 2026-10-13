@@ -1,43 +1,73 @@
-import { useEffect, type CSSProperties, type ReactNode } from 'react';
+import { useEffect, useRef, type CSSProperties, type ReactNode } from 'react';
+import { version } from '../../../package.json';
 import { BrandMark } from '../components/BrandMark';
 import { Icon, type IconName } from '../components/Icon';
 import { updatePreferences, usePreferences, type Preferences } from '../app/preferences';
 import { Switch } from '../components/Switch';
+import { useEscape } from '../lib/useDismiss';
+import { useFocusTrap } from '../lib/useFocusTrap';
 
-export type SettingsSection = 'general' | 'appearance' | 'spaces' | 'storage' | 'about';
+export type SettingsSection = 'general' | 'appearance' | 'spaces' | 'notes' | 'drawing' | 'storage' | 'about';
 
 type SettingsProps = {
   section: SettingsSection;
   onSectionChange: (section: SettingsSection) => void;
+  onClose: () => void;
 
-  /* A group of settings to scroll to and highlight once, such as "drawing" (from the drawing */
-  /* toolbar's settings button), and what to call once that is done. */
+  /* A group of settings to scroll to and highlight once, and what to call once that is done. */
   focus?: string | null;
   onFocused?: () => void;
 };
 
-/* Settings menu labels and icons; every option on these pages is display-only. */
-export const SETTING_TABS: { id: SettingsSection; label: string; icon: IconName }[] = [
-  { id: 'general', label: 'General', icon: 'sliders-horizontal' },
-  { id: 'appearance', label: 'Appearance', icon: 'palette' },
-  { id: 'spaces', label: 'Spaces', icon: 'panels-top-left' },
-  { id: 'storage', label: 'Storage', icon: 'hard-drive' },
-  { id: 'about', label: 'About', icon: 'info' }
+type SettingsTab = { id: SettingsSection; label: string; icon: IconName };
+
+/* The menu down the left of the panel, in three groups. */
+const SETTING_GROUPS: { heading: string; tabs: SettingsTab[] }[] = [
+  {
+    heading: 'Starjot',
+    tabs: [
+      { id: 'general', label: 'General', icon: 'sliders-horizontal' },
+      { id: 'appearance', label: 'Appearance', icon: 'palette' },
+      { id: 'spaces', label: 'Spaces', icon: 'panels-top-left' }
+    ]
+  },
+  {
+    heading: 'Notespace',
+    tabs: [
+      { id: 'notes', label: 'Notes', icon: 'file-text' },
+      { id: 'drawing', label: 'Drawing', icon: 'pencil' }
+    ]
+  },
+  {
+    heading: 'More',
+    tabs: [
+      { id: 'storage', label: 'Storage', icon: 'hard-drive' },
+      { id: 'about', label: 'About', icon: 'info' }
+    ]
+  }
 ];
+
+const SETTING_TABS = SETTING_GROUPS.flatMap(group => group.tabs);
 
 
 /* =========================
    Settings Building Blocks
    ========================= */
 
+/* A switch drawn for a setting that does not work yet. */
 function Toggle({ on = true }: { on?: boolean }) {
   return <span className={`preview-switch ${on ? 'preview-switch--on' : ''}`} aria-hidden="true"><span /></span>;
 }
 
-function Row({ title, description, children }: { title: ReactNode; description: string; children: ReactNode }) {
+/* One setting: its name and what it does on the left, its control on the right. Settings that */
+/* do not work yet are marked "Preview". */
+function Row({ title, description, preview = false, children }: { title: ReactNode; description: string; preview?: boolean; children: ReactNode }) {
   return (
-    <div className="setting-row">
-      <div className="setting-row-text"><strong>{title}</strong><p>{description}</p></div>
+    <div className={`setting-row ${preview ? 'is-preview' : ''}`}>
+      <div className="setting-row-text">
+        <strong>{title}{preview && <span className="preview-tag">Preview</span>}</strong>
+        <p>{description}</p>
+      </div>
       <div className="setting-value">{children}</div>
     </div>
   );
@@ -76,27 +106,93 @@ function FakeSelect({ children }: { children: ReactNode }) {
   return <span className="fake-select">{children} <Icon name="chevron-down" size={14} /></span>;
 }
 
+function Heading({ title, subtitle }: { title: string; subtitle: string }) {
+  return (
+    <>
+      <h3 className="settings-section-title">{title}</h3>
+      <p className="settings-panel-subtitle">{subtitle}</p>
+    </>
+  );
+}
+
 
 /* =========================
-   Settings Panels
+   Settings Sections
    ========================= */
 
-function SettingsPanel({ section }: { section: SettingsSection }) {
+function SettingsSectionContent({ section }: { section: SettingsSection }) {
   const { theme, contentsScroll, hideHeaderWhileTyping, drawing } = usePreferences();
   const set = (changes: Partial<Preferences>) => updatePreferences(changes);
 
   if (section === 'general') {
     return (
       <>
-        <h2>General</h2>
-        <p className="settings-panel-subtitle">A few everyday preferences for Starjot.</p>
-        <Group title="Application preferences">
-          <Row title="Start screen" description="Choose where the application opens by default."><FakeSelect>Notespace</FakeSelect></Row>
-          <Row title="Show helpful tips" description="Show small hints while you explore Starjot."><Toggle /></Row>
+        <Heading title="General" subtitle="Everyday preferences for Starjot." />
+        <Group title="Starting up">
+          <Row preview title="Start screen" description="Choose where Starjot opens."><FakeSelect>Starjot Home</FakeSelect></Row>
         </Group>
-        <Group title="Notespace preferences">
-          <Row title="Default note view" description="New notes start as continuous documents."><FakeSelect>Continuous</FakeSelect></Row>
-          <Row title="Show recent notes" description="Display your recently edited documents on Notespace home."><Toggle /></Row>
+        <Group title="Help">
+          <Row preview title="Show helpful tips" description="Show small hints while you explore Starjot."><Toggle /></Row>
+        </Group>
+      </>
+    );
+  }
+
+  if (section === 'appearance') {
+    return (
+      <>
+        <Heading title="Appearance" subtitle="The little details that make Starjot feel like yours." />
+        <Group title="Theme">
+          <Row title="Theme" description="A light or dark interface. The moon or sun at the bottom of the sidebar switches it too.">
+            <Segmented
+              label="Theme"
+              value={theme}
+              options={[
+                { value: 'light', label: <><Icon name="sun" size={14} /> Light</> },
+                { value: 'dark', label: <><Icon name="moon" size={14} /> Dark</> }
+              ]}
+              onChange={value => set({ theme: value })}
+            />
+          </Row>
+        </Group>
+        <Group title="Layout and colour">
+          <Row preview title="Interface density" description="A more spacious or a more compact layout.">
+            <div className="fake-segment"><span className="chosen">Comfortable</span><span>Compact</span></div>
+          </Row>
+          <Row preview title="Accent colour" description="Blue is the current accent colour.">
+            {/* --dot is a CSS variable that sets each colour swatch. */}
+            <div className="color-options">
+              <span className="color-dot selected-color" style={{ '--dot': '#3976ed' } as CSSProperties} />
+              <span className="color-dot" style={{ '--dot': '#7c6be6' } as CSSProperties} />
+              <span className="color-dot" style={{ '--dot': '#14a38b' } as CSSProperties} />
+            </div>
+          </Row>
+        </Group>
+        <div className="info-banner"><Icon name="info" size={17} /> Dark mode covers Notespace, Boardspace and Settings. The Gantt timeline in Boardspace stays light for now.</div>
+      </>
+    );
+  }
+
+  if (section === 'spaces') {
+    return (
+      <>
+        <Heading title="Spaces" subtitle="Choose which spaces appear in Starjot." />
+        <Group title="Available spaces">
+          <Row preview title={<><span className="setting-icon"><Icon name="book-open" size={19} /></span> Notespace</>} description="Notes, sub-notes and categories."><Toggle /></Row>
+          <Row preview title={<><span className="setting-icon"><Icon name="layout-dashboard" size={19} /></span> Boardspace</>} description="Tasks, their statuses, the timeline, and links to notes."><Toggle /></Row>
+        </Group>
+      </>
+    );
+  }
+
+  if (section === 'notes') {
+    return (
+      <>
+        <Heading title="Notes" subtitle="How notes start and how the note screen behaves." />
+        <Group title="New notes">
+          <Row preview title="Default note view" description="New notes start as continuous documents."><FakeSelect>Continuous</FakeSelect></Row>
+        </Group>
+        <Group title="Reading and writing">
           <Row title="Contents scrolling" description="How the note scrolls when you choose a heading in Contents.">
             <Segmented
               label="Contents scrolling"
@@ -109,7 +205,18 @@ function SettingsPanel({ section }: { section: SettingsSection }) {
             <Switch label="Hide the note bar while typing" on={hideHeaderWhileTyping} onChange={value => set({ hideHeaderWhileTyping: value })} />
           </Row>
         </Group>
-        <Group id="drawing" title="Drawing">
+        <Group title="Lists">
+          <Row preview title="Show recent notes" description="List the notes you opened lately in the sidebar."><Toggle /></Row>
+        </Group>
+      </>
+    );
+  }
+
+  if (section === 'drawing') {
+    return (
+      <>
+        <Heading title="Drawing" subtitle="How drawings behave when they are selected and anchored into the text." />
+        <Group id="drawing" title="Anchoring">
           <Row title="Strokes on the edge of a selection" description="When anchoring a drawing into the text, take the strokes mostly inside the box, or cut strokes at its edge.">
             <Segmented
               label="Strokes on the edge of a selection"
@@ -126,83 +233,33 @@ function SettingsPanel({ section }: { section: SettingsSection }) {
     );
   }
 
-  if (section === 'appearance') {
-    return (
-      <>
-        <h2>Appearance</h2>
-        <p className="settings-panel-subtitle">The little details that make Starjot feel like yours.</p>
-        <Group title="Interface">
-          <Row title="Theme" description="Choose a light or dark interface.">
-            <Segmented
-              label="Theme"
-              value={theme}
-              options={[
-                { value: 'light', label: <><Icon name="sun" size={14} /> Light</> },
-                { value: 'dark', label: <><Icon name="moon" size={14} /> Dark</> }
-              ]}
-              onChange={value => set({ theme: value })}
-            />
-          </Row>
-          <Row title="Interface density" description="Adjust spacing for a more spacious or compact layout.">
-            <div className="fake-segment"><span className="chosen">Comfortable</span><span>Compact</span></div>
-          </Row>
-          <Row title="Accent color" description="Blue is the current application accent.">
-            {/* --dot is a CSS variable that sets each colour swatch. */}
-            <div className="color-options">
-              <span className="color-dot selected-color" style={{ '--dot': '#3976ed' } as CSSProperties} />
-              <span className="color-dot" style={{ '--dot': '#7c6be6' } as CSSProperties} />
-              <span className="color-dot" style={{ '--dot': '#14a38b' } as CSSProperties} />
-            </div>
-          </Row>
-        </Group>
-        <div className="info-banner"><Icon name="info" size={17} /> Dark mode covers Notespace, Boardspace and Settings. The embedded Gantt timeline stays light for now.</div>
-      </>
-    );
-  }
-
-  if (section === 'spaces') {
-    return (
-      <>
-        <h2>Spaces</h2>
-        <p className="settings-panel-subtitle">Choose which spaces appear in Starjot.</p>
-        <Group title="Available spaces">
-          <Row title={<><span className="setting-icon"><Icon name="book-open" size={19} /></span> Notespace</>} description="A dedicated home for documents, notes, and knowledge."><Toggle /></Row>
-          <Row title={<><span className="setting-icon"><Icon name="layout-dashboard" size={19} /></span> Boardspace</>} description="A separate place for tasks, statuses, and linked note references."><Toggle /></Row>
-        </Group>
-        <div className="info-banner"><Icon name="info" size={17} /> These switches are only visual previews. Turning a space off is not built yet.</div>
-      </>
-    );
-  }
-
   if (section === 'storage') {
     return (
       <>
-        <h2>Storage</h2>
-        <p className="settings-panel-subtitle">Where your content may live in a future version.</p>
+        <Heading title="Storage" subtitle="Where your notes are kept." />
         <Group title="Local storage">
-          <Row title="Storage location" description="Local-first storage is a future implementation choice."><span className="future-chip">Not connected</span></Row>
-          <Row title="Offline content" description="Saved notes and work items are not available in this prototype."><span className="future-chip">Not available</span></Row>
+          <Row title="Storage location" description="Notes, categories and preferences are saved in this browser, and images in its database."><span className="fake-text">This browser</span></Row>
+          <Row title="Offline content" description="Everything is on this device, so Starjot works without an internet connection."><span className="fake-text">Available</span></Row>
         </Group>
         <Group title="Attachments">
-          <Row title="File attachments" description="Add documents, images, and other assets later."><span className="future-chip">Coming later</span></Row>
+          <Row preview title="File attachments" description="Add documents and other files to notes."><span className="future-chip">Coming later</span></Row>
         </Group>
-        <div className="info-banner"><Icon name="lock" size={17} /> This prototype uses mock data only. Nothing is saved to your device or sent to a server.</div>
+        <div className="info-banner"><Icon name="lock" size={17} /> Nothing is sent to a server. Each browser keeps its own notes, so clearing this site's data removes them.</div>
       </>
     );
   }
 
   return (
     <>
-      <h2>About</h2>
-      <p className="settings-panel-subtitle">A little context about the product you are exploring.</p>
+      <Heading title="About" subtitle="A little about Starjot." />
       <div className="about-card">
         <BrandMark size={52} />
         <div><h3>Starjot</h3><p>A calmer place to think and get things done.</p></div>
       </div>
-      <Group title="Application information">
-        <Row title="Version" description="Current interface preview."><span className="fake-text">0.1.0 — Phase 1</span></Row>
-        <Row title="Build" description="Frontend-only demonstration."><span className="fake-text">No backend connected</span></Row>
-        <Row title="Design system" description="A reusable visual foundation for future development."><span className="fake-text">Light UI · Blue accent</span></Row>
+      <Group title="Application">
+        <Row title="Version" description="The version of Starjot you are using."><span className="fake-text">{version}</span></Row>
+        <Row title="Build" description="Runs in the browser; a Windows app is planned."><span className="fake-text">Browser preview</span></Row>
+        <Row title="Design system" description="The shared look used across Starjot."><span className="fake-text">Light and dark · Blue accent</span></Row>
       </Group>
     </>
   );
@@ -210,11 +267,24 @@ function SettingsPanel({ section }: { section: SettingsSection }) {
 
 
 /* =========================
-   Settings Screen
+   Settings Panel
    ========================= */
 
-export function Settings({ section, onSectionChange, focus = null, onFocused }: SettingsProps) {
+/* Settings opens as a panel in the middle of the window, over whatever is open, with its menu on */
+/* the left and the chosen section on the right. Escape, the close button or a click outside */
+/* closes it; the keyboard stays inside while it is open. On phones it fills the screen. */
+export function Settings({ section, onSectionChange, onClose, focus = null, onFocused }: SettingsProps) {
   const current = SETTING_TABS.find(tab => tab.id === section) ?? SETTING_TABS[0];
+  const windowRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLElement>(null);
+
+  useEscape(true, onClose);
+  useFocusTrap(windowRef, '.settings-nav-item.active');
+
+  /* Each section starts at its top. */
+  useEffect(() => {
+    contentRef.current?.scrollTo(0, 0);
+  }, [section]);
 
   /* Scroll to the asked-for group and highlight it briefly, so it is easy to spot. */
   useEffect(() => {
@@ -228,31 +298,32 @@ export function Settings({ section, onSectionChange, focus = null, onFocused }: 
   }, [focus, onFocused]);
 
   return (
-    <div className="content-pad settings-page">
-      <div className="page-intro">
-        <div>
-          <h1>Settings</h1>
-          <p>Preferences for the way you work, all in one place.</p>
-        </div>
-      </div>
-      <div className="settings-layout">
-        <aside className="settings-nav">
-          <div className="settings-nav-heading">PREFERENCES</div>
-          {SETTING_TABS.map(tab => (
-            <button
-              key={tab.id}
-              type="button"
-              className={`settings-nav-item ${section === tab.id ? 'active' : ''}`}
-              aria-current={section === tab.id ? 'true' : undefined}
-              onClick={() => onSectionChange(tab.id)}
-            >
-              <Icon name={tab.icon} size={17} /> {tab.label}
-            </button>
+    <div className="dialog-backdrop settings-backdrop" onMouseDown={event => event.target === event.currentTarget && onClose()}>
+      <div className="settings-window" ref={windowRef} role="dialog" aria-modal="true" aria-labelledby="settings-title">
+        <nav className="settings-nav" aria-label="Settings sections">
+          <h2 id="settings-title" className="settings-title">Settings</h2>
+          {SETTING_GROUPS.map(group => (
+            <div key={group.heading} className="settings-nav-group">
+              <div className="settings-nav-heading">{group.heading}</div>
+              {group.tabs.map(tab => (
+                <button
+                  key={tab.id}
+                  type="button"
+                  className={`settings-nav-item ${section === tab.id ? 'active' : ''}`}
+                  aria-current={section === tab.id ? 'true' : undefined}
+                  onClick={() => onSectionChange(tab.id)}
+                >
+                  <Icon name={tab.icon} size={17} /> {tab.label}
+                </button>
+              ))}
+            </div>
           ))}
-        </aside>
-        <section className="settings-content" aria-label={`${current.label} preferences`}>
-          <SettingsPanel section={section} />
-          <div className="settings-disclaimer"><Icon name="info" size={15} /> Theme, Contents scrolling, Hide the note bar while typing and the Drawing options are saved. The other options are previews and do not change anything yet.</div>
+        </nav>
+        <section className="settings-content" ref={contentRef} aria-label={`${current.label} settings`}>
+          <button type="button" className="window-control settings-close" aria-label="Close settings" data-tooltip="Close (Esc)" data-tooltip-align="end" onClick={onClose}>
+            <Icon name="x" size={18} />
+          </button>
+          <SettingsSectionContent section={section} />
         </section>
       </div>
     </div>

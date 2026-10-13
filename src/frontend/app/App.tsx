@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type DragEvent, type MouseEvent, type ReactNode } from 'react';
 import { updatePreferences, usePreferences } from './preferences';
-import { MobileNav, Sidebar, Topbar, WindowControls, type SpaceId } from './Shell';
+import { MobileNav, Sidebar, Topbar, WindowControls } from './Shell';
 import { useDismiss } from '../lib/useDismiss';
 import { useMediaQuery } from '../lib/useMediaQuery';
 import { CategoryPage } from '../notespace/CategoryPage';
@@ -105,9 +105,6 @@ function TabGroupFrame({ group, focused, onFocus, onDropTab, children }: TabGrou
 export function App() {
   const [screenId, setScreenId] = useState<ScreenId>('notes');
 
-  /* The space whose lists the sidebar shows; it stays the same while Settings is open. */
-  const [space, setSpace] = useState<SpaceId>('notes');
-
   /* Notespace's tab groups (one, or two after a split), each with its tabs and their histories. */
   /* A page's own address (#note=id, see pageAddress) opens that page; anything else opens Starjot */
   /* Home. */
@@ -117,6 +114,8 @@ export function App() {
     return newWorkspace(id && getNote(id) ? { kind: 'note', id } : { kind: 'start' });
   });
   const [workTab, setWorkTab] = useState<BoardTab>('todo');
+  /* Settings is a panel over the app: open or not, the section shown, and a group to highlight. */
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [settingsSection, setSettingsSection] = useState<SettingsSection>('general');
   const [settingsFocus, setSettingsFocus] = useState<string | null>(null);
   const clearSettingsFocus = useCallback(() => setSettingsFocus(null), []);
@@ -157,22 +156,22 @@ export function App() {
   /* Pages opened from outside a tab (the sidebar, Ctrl + N) open in the focused group's active tab. */
   function go(next: Place, groupId = group.id, tabId = activeTab(group).id) {
     setScreenId('notes');
-    setSpace('notes');
     changeTab(groupId, tabId, tab => goTo(tab, next));
   }
 
-  /* Open Settings at one group of settings, such as the drawing settings from the drawing toolbar. */
-  function openSettings(section: SettingsSection, focus: string) {
+  /* Open the Settings panel, at a section (and a group to highlight) when asked, such as Drawing */
+  /* from the drawing toolbar; otherwise at the section last shown. */
+  function openSettings(section?: SettingsSection, focus: string | null = null) {
     flushSave();
-    setSettingsSection(section);
+    setPopup(null);
+    if (section) setSettingsSection(section);
     setSettingsFocus(focus);
-    setScreenId('settings');
+    setSettingsOpen(true);
   }
 
   function navigate(next: ScreenId) {
     flushSave();
     setScreenId(next);
-    if (next !== 'settings') setSpace(next);
     if (next === 'notes') go({ kind: 'home' });
   }
 
@@ -180,7 +179,6 @@ export function App() {
   function openBoardView(view: BoardTab) {
     flushSave();
     setScreenId('boardspace');
-    setSpace('boardspace');
     setWorkTab(view);
   }
 
@@ -300,7 +298,6 @@ export function App() {
       return null;
     }
     setScreenId('notes');
-    setSpace('notes');
     const tab = newTab(place);
     changeTabs(current => addTab(current, target.id, tab, true));
     return tab;
@@ -509,10 +506,8 @@ export function App() {
         ))}
       </div>
     );
-  } else if (screenId === 'boardspace') {
-    screen = <div className="main-scroll"><Boardspace tab={workTab} onTabChange={setWorkTab} /></div>;
   } else {
-    screen = <div className="main-scroll"><Settings section={settingsSection} onSectionChange={setSettingsSection} focus={settingsFocus} onFocused={clearSettingsFocus} /></div>;
+    screen = <div className="main-scroll"><Boardspace tab={workTab} onTabChange={setWorkTab} /></div>;
   }
 
   return (
@@ -522,7 +517,7 @@ export function App() {
       <button type="button" className="skip-link" onClick={() => document.getElementById('main-content')?.focus()}>Skip to content</button>
       <Sidebar
         screen={screenId}
-        space={space}
+        space={screenId}
         openNoteId={screenId === 'notes' && place.kind === 'note' ? place.id : null}
         boardView={screenId === 'boardspace' ? workTab : null}
         docked={docked}
@@ -531,6 +526,8 @@ export function App() {
         onOpenBoardView={fromSidebar(openBoardView)}
         controls={windowControls}
         onSearch={openSearch}
+        settingsOpen={settingsOpen}
+        onSettings={fromSidebar(() => openSettings())}
         onMouseEnter={cancelPopupTimer}
         onMouseLeave={() => {
           if (!docked) endPopup();
@@ -541,7 +538,16 @@ export function App() {
         {screenId === 'notes' && <DocumentTitle place={place} />}
         {screen}
       </div>
-      <MobileNav screen={screenId} homeShown={screenId === 'notes' && place.kind === 'start'} onNavigate={navigate} onHome={goHome} onSearch={() => openSearch()} />
+      <MobileNav screen={screenId} homeShown={screenId === 'notes' && place.kind === 'start'} settingsOpen={settingsOpen} onNavigate={navigate} onHome={goHome} onSearch={() => openSearch()} onSettings={() => openSettings()} />
+      {settingsOpen && (
+        <Settings
+          section={settingsSection}
+          onSectionChange={setSettingsSection}
+          onClose={() => setSettingsOpen(false)}
+          focus={settingsFocus}
+          onFocused={clearSettingsFocus}
+        />
+      )}
       {searchState && (
         <SearchWindow
           initialQuery={searchState.query}

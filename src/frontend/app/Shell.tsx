@@ -14,13 +14,10 @@ type NavigationProps = {
   onNavigate: (screen: ScreenId) => void;
 };
 
-/* The spaces the sidebar can show lists for (Settings is not one). */
-export type SpaceId = Exclude<ScreenId, 'settings'>;
-
 type SidebarProps = NavigationProps & {
 
-  /* The space whose lists are shown: the current one, or the last one used while in Settings. */
-  space: SpaceId;
+  /* The space whose lists are shown (the one open). */
+  space: ScreenId;
   openNoteId: string | null;
   boardView: BoardTab | null;
   onOpenNote: (id: string) => void;
@@ -32,6 +29,10 @@ type SidebarProps = NavigationProps & {
 
   /* Opens the search window, starting with any text already typed. */
   onSearch: (query: string) => void;
+
+  /* Settings opens as a panel; its button is marked while it is open. */
+  settingsOpen: boolean;
+  onSettings: () => void;
   onMouseEnter: () => void;
   onMouseLeave: () => void;
 };
@@ -189,10 +190,10 @@ function BoardspaceLists({ boardView, onOpenBoardView }: Pick<SidebarProps, 'boa
 /* heading. Docked, it sits beside the page at full height, with the window controls across its */
 /* top. Otherwise it floats over the page as a popup below the note bar, opened by hovering the */
 /* sidebar button or the left edge of the window, or by the keyboard moving into it. */
-export function Sidebar({ screen, space, openNoteId, boardView, docked, controls, onNavigate, onOpenNote, onOpenBoardView, onSearch, onMouseEnter, onMouseLeave }: SidebarProps) {
+export function Sidebar({ screen, space, openNoteId, boardView, docked, controls, settingsOpen, onNavigate, onOpenNote, onOpenBoardView, onSearch, onSettings, onMouseEnter, onMouseLeave }: SidebarProps) {
   const { theme } = usePreferences();
   const dark = theme === 'dark';
-  const spaces = SCREENS.filter(item => item.id !== 'settings');
+  const spaces = SCREENS;
 
   return (
     <aside className="sidebar" aria-label="Sidebar" onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave}>
@@ -244,13 +245,13 @@ export function Sidebar({ screen, space, openNoteId, boardView, docked, controls
       <div className="sidebar-bottom">
         <button
           type="button"
-          className={`sidebar-icon ${screen === 'settings' ? 'is-active' : ''}`}
+          className={`sidebar-icon ${settingsOpen ? 'is-active' : ''}`}
           aria-label="Settings"
-          aria-current={screen === 'settings' ? 'page' : undefined}
+          aria-expanded={settingsOpen}
           data-tooltip="Settings"
           data-tooltip-side="above"
           data-tooltip-align="start"
-          onClick={() => onNavigate('settings')}
+          onClick={onSettings}
         >
           <Icon name="settings" size={18} />
         </button>
@@ -282,19 +283,21 @@ type MobileNavProps = NavigationProps & {
 
   /* Starjot Home is shown in a Notespace tab, so it is marked instead of Notespace while open. */
   homeShown: boolean;
+  settingsOpen: boolean;
   onHome: () => void;
   onSearch: () => void;
+  onSettings: () => void;
 };
 
 /* Phones have no sidebar: Home and the spaces sit in a bar along the bottom. */
-export function MobileNav({ screen, homeShown, onNavigate, onHome, onSearch }: MobileNavProps) {
+export function MobileNav({ screen, homeShown, settingsOpen, onNavigate, onHome, onSearch, onSettings }: MobileNavProps) {
   const current = (id: ScreenId) => screen === id && !homeShown;
   return (
     <nav className="mobile-nav" aria-label="Spaces">
       <button type="button" className={`mobile-link ${homeShown ? 'active' : ''}`} aria-current={homeShown ? 'page' : undefined} onClick={onHome}>
         <Icon name="home" size={20} /><span>Home</span>
       </button>
-      {SCREENS.filter(item => item.id !== 'settings').map(item => (
+      {SCREENS.map(item => (
         <button
           key={item.id}
           type="button"
@@ -310,9 +313,9 @@ export function MobileNav({ screen, homeShown, onNavigate, onHome, onSearch }: M
       </button>
       <button
         type="button"
-        className={`mobile-link ${current('settings') ? 'active' : ''}`}
-        aria-current={current('settings') ? 'page' : undefined}
-        onClick={() => onNavigate('settings')}
+        className={`mobile-link ${settingsOpen ? 'active' : ''}`}
+        aria-expanded={settingsOpen}
+        onClick={onSettings}
       >
         <Icon name="settings" size={20} /><span>Settings</span>
       </button>

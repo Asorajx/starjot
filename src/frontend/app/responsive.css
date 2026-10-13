@@ -277,42 +277,63 @@
     min-height: 215px;
   }
 
-  .settings-layout {
+  /* On phones Settings fills the screen, with its menu as a scrolling row along the top. */
+  .settings-backdrop {
+    padding: 0;
+  }
+
+  .settings-window {
     grid-template-columns: 1fr;
+    grid-template-rows: auto minmax(0, 1fr);
+    width: 100%;
+    height: 100%;
+    border: 0;
+    border-radius: 0;
   }
 
   .settings-nav {
     display: flex;
-    overflow-x: auto;
     gap: 8px;
+    overflow-x: auto;
+    padding: 8px 56px 8px 8px;
     border-right: 0;
     border-bottom: 1px solid var(--line);
-    padding: 8px;
   }
 
+  .settings-title,
   .settings-nav-heading {
     display: none;
   }
 
-  .settings-nav-item {
-    width: auto;
-    white-space: nowrap;
-    padding: 0 12px;
-    margin: 0;
-    height: 37px;
-    font-size: 11px;
-    gap: 8px;
+  .settings-nav-group {
+    display: contents;
   }
 
-  .settings-nav-item svg {
-    width: 15px;
+  .settings-nav-item {
+    width: auto;
+    height: 40px;
+    margin: 0;
+    padding: 0 12px;
+    gap: 8px;
+    white-space: nowrap;
   }
 
   .settings-content {
     padding: 24px 16px;
   }
 
-  .settings-content>h2 {
+  /* The close button stays at the end of the menu row; the menu scrolls underneath it. */
+  .settings-close {
+    position: fixed;
+    top: 8px;
+    right: 8px;
+    z-index: 1;
+    width: 40px;
+    height: 40px;
+    background: var(--paper);
+  }
+
+  .settings-section-title {
     font-size: 20px;
   }
 

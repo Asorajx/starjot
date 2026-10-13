@@ -62,7 +62,7 @@ type NoteEditorProps = {
   onOpenNewPage: (id: string) => void;
 
   /* Opens Settings at one group of settings (the drawing toolbar's settings button). */
-  onOpenSettings: (section: SettingsSection, focus: string) => void;
+  onOpenSettings: (section: SettingsSection) => void;
 };
 
 
@@ -443,7 +443,7 @@ export function NoteEditor({ noteId, history, view, active, onClose, onOpenNote,
             onActiveLayerChange={setChosenLayer}
             layerRef={drawingRef}
             onClose={() => setDrawingMode(false)}
-            onOpenSettings={() => onOpenSettings('general', 'drawing')}
+            onOpenSettings={() => onOpenSettings('drawing')}
           />
         )}
         <main className={`editor-canvas ${geometry ? 'is-paginated' : ''}`} ref={canvasRef} onMouseDown={continueBelow}>
