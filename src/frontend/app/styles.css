@@ -817,7 +817,7 @@ p {
   content: attr(data-tooltip) " (" attr(data-shortcut) ")";
 }
 
-/* With helpful tips off, hints (such as the tip on Starjot Home) and shortcut badges are */
+/* With helpful tips off, hints (such as the one in an empty Starred list) and shortcut badges are */
 /* hidden, and so is a sidebar list with nothing in it. */
 [data-tips="off"] .hint,
 [data-tips="off"] .sidebar-search-key,

@@ -288,7 +288,7 @@ function SettingsSectionContent({ section }: { section: SettingsSection }) {
           </Row>
         </Group>
         <Group title="Help">
-          <Row title="Show helpful tips" description="Keyboard shortcuts in button tooltips, a tip on Starjot Home, and hints in empty lists.">
+          <Row title="Show helpful tips" description="Keyboard shortcuts in button tooltips, the shortcut badge in the search box, and hints in empty lists.">
             <Switch label="Show helpful tips" on={tips} onChange={on => set({ tips: on })} />
           </Row>
         </Group>

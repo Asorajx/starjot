@@ -82,7 +82,7 @@ export type Preferences = {
   /* Fade the page bar above a note while typing, until the mouse moves. */
   hideHeaderWhileTyping: boolean;
 
-  /* Helpful tips: shortcuts in tooltips, the tip on Starjot Home and hints in empty lists. */
+  /* Helpful tips: shortcuts in tooltips and the search box, and hints in empty lists. */
   tips: boolean;
 
   /* The browser's spelling check in notes, and Markdown shortcuts and "--" while typing. */
