@@ -188,3 +188,27 @@ describe('pasting Markdown tables', () => {
     expect(body.lastElementChild?.tagName).toBe('P');
   });
 });
+
+
+/* =========================
+   Pasting Tab-Separated Tables
+   ========================= */
+
+describe('pasting tab-separated tables', () => {
+  it('turns lines with tabs between words into a table, its first row the header row', () => {
+    const copied = 'Permission Code\tApplicable Use Case(s)\tAccess\ncategory.view\tUC-6.4\tPublic\narea.manage\tUC-6.5, UC-6.6\tPlatform Management\n';
+    expect(markdown(copied)).toBe(
+      '<table class="fit-content"><tbody><tr><th>Permission Code</th><th>Applicable Use Case(s)</th><th>Access</th></tr>'
+      + '<tr><td>category.view</td><td>UC-6.4</td><td>Public</td></tr><tr><td>area.manage</td><td>UC-6.5, UC-6.6</td><td>Platform Management</td></tr></tbody></table>'
+    );
+  });
+
+  it('keeps empty cells and fills short rows, as spreadsheets copy them', () => {
+    expect(markdown('a\t\tc\nd\te')).toContain('<tr><td>d</td><td>e</td><td><br></td></tr>');
+  });
+
+  it('leaves a single line with tabs, and lines indented with tabs, as they are', () => {
+    expect(markdown('one\ttwo')).toBeNull();
+    expect(markdown('- item\n\t- nested\n\t- nested')).toContain('<ul><li>item<ul><li>nested</li><li>nested</li></ul></li></ul>');
+  });
+});

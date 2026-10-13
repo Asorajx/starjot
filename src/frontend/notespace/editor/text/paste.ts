@@ -39,6 +39,10 @@ const QUOTE = /^ {0,3}>\s?(.*)$/;
 const TABLE_ROW = /^\s*\|.*\|\s*$/;
 const TABLE_RULE = /^\s*\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)*\|?\s*$/;
 
+/* A row of tab-separated text, as spreadsheets and documents copy tables: a tab between words. */
+/* Tabs only at the start of a line are indenting (as in a nested list), not cells. */
+const TAB_ROW = /\S.*\t/;
+
 /* The caret's line: a paragraph, heading, list item or plain line, but not a wrapper such as a */
 /* sticky group or toggle list. */
 const LINE = 'p, h1, h2, h3, h4, h5, h6, li, div:not(.sticky-group):not(.toggle-block):not(.toggle-body)';
@@ -144,7 +148,8 @@ function indentOf(space: string) {
 
 /* Turn Markdown text into note lines: paragraphs, headings, lists (nested by indenting), quotes, */
 /* code blocks, tables and dividers. Every line of text becomes its own line, as with plain pasting, but */
-/* blank lines are left out because in Markdown they only separate paragraphs. */
+/* blank lines are left out because in Markdown they only separate paragraphs. Two or more */
+/* tab-separated lines in a row (copied from a spreadsheet or a document's table) become a table too. */
 export function markdownLines(plain: string) {
   const blocks: HTMLElement[] = [];
   let lists: { indent: number; list: HTMLElement }[] = [];
@@ -172,6 +177,10 @@ export function markdownLines(plain: string) {
       const rows = [tableCells(text)];
       index += 1;
       while (index + 1 < lines.length && TABLE_ROW.test(lines[index + 1])) rows.push(tableCells(lines[++index]));
+      blocks.push(markdownTable(rows));
+    } else if (TAB_ROW.test(text) && TAB_ROW.test(lines[index + 1] ?? '')) {
+      const rows = [text.split('\t').map(cell => cell.trim())];
+      while (index + 1 < lines.length && TAB_ROW.test(lines[index + 1])) rows.push(lines[++index].split('\t').map(cell => cell.trim()));
       blocks.push(markdownTable(rows));
     } else if (fence) {
       /* Code keeps every line exactly as written, until the closing fence or the end of the text. */
@@ -249,7 +258,7 @@ function inlineLines(blocks: HTMLElement[]) {
     } else if (block.tagName === 'TABLE') {
       /* A table pasted where only words can go keeps one line per row, its cells apart by tabs. */
       block.querySelectorAll('tr').forEach(row => {
-        lines.push(Array.from(row.children).flatMap((cell, index) => [...(index ? [document.createTextNode('	')] : []), ...Array.from(cell.childNodes)]));
+        lines.push(Array.from(row.children).flatMap((cell, index) => [...(index ? [document.createTextNode('\t')] : []), ...Array.from(cell.childNodes)]));
       });
     } else if (['UL', 'OL', 'BLOCKQUOTE'].includes(block.tagName)) {
       block.querySelectorAll('li, p').forEach(item => {
