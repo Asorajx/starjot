@@ -8,7 +8,7 @@ import { highlight, highlightAll, insertNewline, preAtCaret } from '../code/code
 import { caretAtEdge, closestAtCaret, emptyParagraph, placeCaret, selectContents, wrapLooseLines } from './dom';
 import { imageFiles, insertImageFiles } from '../images/images';
 import { linkTypedAddress } from '../links/links';
-import { applyMarkdownShortcut } from './markdown';
+import { applyMarkdownShortcut, joinTypedDashes } from './markdown';
 import { deleteSelection, insertPasted, pastedMarkdown } from './paste';
 import { pastedSource, withCopiedTables, writeSelection } from './clipboard';
 import { clearSelectedCells, pasteIntoTable } from '../tables/tableClipboard';
@@ -229,6 +229,7 @@ export const ContinuousEditor = memo(function ContinuousEditor({ session, conten
     const pre = preAtCaret(body);
     if (pre) highlight(pre);
     commit();
+    if (joinTypedDashes(event.nativeEvent as InputEvent, body, () => session.checkpoint())) commit();
   }
 
   /* Paste plain text only, so external HTML cannot bring in styles or scripts. Markdown in the */

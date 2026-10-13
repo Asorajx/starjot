@@ -17,7 +17,8 @@ function markerType(text: string): Marker | null {
   if (text === '1.') return { kind: 'numbered' };
   if (text === '>') return { kind: 'quote' };
   if (text === '```') return { kind: 'code' };
-  if (text === '---') return { kind: 'divider' };
+  /* "---" typed in a row reads "—-", because the first two hyphens join into an em dash. */
+  if (text === '---' || text === '—-') return { kind: 'divider' };
   return null;
 }
 
@@ -116,5 +117,33 @@ export function applyMarkdownShortcut(event: KeyboardEvent, editable: HTMLElemen
     element.after(paragraph);
     placeCaret(paragraph);
   }
+  return true;
+}
+
+
+/* =========================
+   Typed Dashes
+   ========================= */
+
+/* Two hyphens typed in a row become an em dash (—). Call after the browser has added the second */
+/* hyphen and that text is saved, then save again, so one Undo brings back the two hyphens. */
+/* beforeJoin starts that new undo step: it runs while the caret is still after the hyphens, which */
+/* is where Undo puts it back. Code keeps its hyphens. Returns true when it changed the text. */
+export function joinTypedDashes(event: InputEvent, editable: HTMLElement, beforeJoin: () => void = () => {}) {
+  if (event.inputType !== 'insertText' || event.data !== '-') return false;
+  const selection = window.getSelection();
+  const node = selection?.anchorNode;
+  if (!selection?.isCollapsed || !(node instanceof Text) || !editable.contains(node)) return false;
+  const offset = selection.anchorOffset;
+  if (offset < 2 || node.data.slice(offset - 2, offset) !== '--') return false;
+
+  if (!currentLine(editable, selection)) return false;
+
+  beforeJoin();
+  node.replaceData(offset - 2, 2, '—');
+  const caret = document.createRange();
+  caret.setStart(node, offset - 1);
+  selection.removeAllRanges();
+  selection.addRange(caret);
   return true;
 }

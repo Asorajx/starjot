@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { getOffset, setOffset } from '../../../../../src/frontend/notespace/editor/text/caret';
-import { applyMarkdownShortcut } from '../../../../../src/frontend/notespace/editor/text/markdown';
+import { applyMarkdownShortcut, joinTypedDashes } from '../../../../../src/frontend/notespace/editor/text/markdown';
 import { stickyStateForRange, toggleStickyRange } from '../../../../../src/frontend/notespace/editor/text/stickyDom';
 
 /* An editable note body, like the continuous editor, added to the test page. */
@@ -74,6 +74,50 @@ describe('Markdown shortcuts', () => {
     placeCaret(body.querySelector('p')?.firstChild as Node, 5);
     expect(applyMarkdownShortcut(press(' '), body)).toBe(false);
     expect(body.innerHTML).toBe('<p>hello</p>');
+  });
+});
+
+
+/* =========================
+   Typed Dashes
+   ========================= */
+
+describe('typed dashes', () => {
+  const typed = (data: string) => new InputEvent('input', { inputType: 'insertText', data });
+
+  it('joins two hyphens typed in a row into an em dash, with the caret after it', () => {
+    const body = editor('<p>word--</p>');
+    const text = body.querySelector('p')?.firstChild as Text;
+    placeCaret(text, 6);
+    let before = '';
+    expect(joinTypedDashes(typed('-'), body, () => { before = `${text.data}|${window.getSelection()?.anchorOffset}`; })).toBe(true);
+    expect(body.innerHTML).toBe('<p>word—</p>');
+    expect(window.getSelection()?.anchorOffset).toBe(5);
+
+    /* The new undo step starts while the caret is still after both hyphens, where Undo puts it back. */
+    expect(before).toBe('word--|6');
+  });
+
+  it('joins "--" starting a line too, and "---" then Enter still makes a divider', () => {
+    const body = editor('<p>--</p>');
+    placeCaret(body.querySelector('p')?.firstChild as Node, 2);
+    expect(joinTypedDashes(typed('-'), body)).toBe(true);
+    expect(body.innerHTML).toBe('<p>—</p>');
+
+    const divider = editor('<p>—-</p>');
+    placeCaret(divider.querySelector('p')?.firstChild as Node, 2);
+    expect(applyMarkdownShortcut(press('Enter'), divider)).toBe(true);
+    expect(divider.querySelector('hr')).not.toBeNull();
+  });
+
+  it('leaves code, and other typing, alone', () => {
+    const code = editor('<pre><code>a--</code></pre>');
+    placeCaret(code.querySelector('code')?.firstChild as Node, 3);
+    expect(joinTypedDashes(typed('-'), code)).toBe(false);
+
+    const body = editor('<p>a-b</p>');
+    placeCaret(body.querySelector('p')?.firstChild as Node, 3);
+    expect(joinTypedDashes(typed('b'), body)).toBe(false);
   });
 });
 

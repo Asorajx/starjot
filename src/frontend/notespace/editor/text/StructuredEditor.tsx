@@ -18,7 +18,7 @@ import { highlight, insertNewline, preAtCaret } from '../code/code';
 import { caretAtEdge, closestAtCaret, emptyParagraph, isEmptyContent, placeCaret, selectContents, selectionInside, wrapLooseLines } from './dom';
 import { imageFiles, insertImageFiles } from '../images/images';
 import { linkTypedAddress } from '../links/links';
-import { applyMarkdownShortcut } from './markdown';
+import { applyMarkdownShortcut, joinTypedDashes } from './markdown';
 import { deleteSelection, insertPasted, pastedMarkdown } from './paste';
 import { pastedSource, withCopiedTables, writeSelection } from './clipboard';
 import { clearSelectedCells, pasteIntoTable } from '../tables/tableClipboard';
@@ -730,6 +730,7 @@ export const StructuredEditor = memo(function StructuredEditor({ session, conten
     if (pre) highlight(pre);
     else if (editable) wrapLooseLines(editable);
     commitTyping();
+    if (editable && joinTypedDashes(event.nativeEvent as InputEvent, editable, () => session.checkpoint())) commitTyping();
   }
 
   /* Paste plain text only, so external HTML cannot bring in styles or scripts. Markdown in the */
