@@ -2,7 +2,7 @@ import type { BoardTab, StatusTab } from '../../shared/types/task';
 
 
 /* =========================
-   Workboard Views
+   Boardspace Views
    ========================= */
 
 export const BOARD_TABS: { id: BoardTab; label: string }[] = [

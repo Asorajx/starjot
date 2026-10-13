@@ -4,7 +4,7 @@ import { Icon, type IconName } from '../components/Icon';
 import { updatePreferences, usePreferences, type Preferences } from '../app/preferences';
 import { Switch } from '../components/Switch';
 
-export type SettingsSection = 'general' | 'appearance' | 'workspace' | 'storage' | 'about';
+export type SettingsSection = 'general' | 'appearance' | 'spaces' | 'storage' | 'about';
 
 type SettingsProps = {
   section: SettingsSection;
@@ -20,7 +20,7 @@ type SettingsProps = {
 export const SETTING_TABS: { id: SettingsSection; label: string; icon: IconName }[] = [
   { id: 'general', label: 'General', icon: 'sliders-horizontal' },
   { id: 'appearance', label: 'Appearance', icon: 'palette' },
-  { id: 'workspace', label: 'Spaces', icon: 'panels-top-left' },
+  { id: 'spaces', label: 'Spaces', icon: 'panels-top-left' },
   { id: 'storage', label: 'Storage', icon: 'hard-drive' },
   { id: 'about', label: 'About', icon: 'info' }
 ];
@@ -130,7 +130,7 @@ function SettingsPanel({ section }: { section: SettingsSection }) {
     return (
       <>
         <h2>Appearance</h2>
-        <p className="settings-panel-subtitle">The little details that make a workspace feel like yours.</p>
+        <p className="settings-panel-subtitle">The little details that make Starjot feel like yours.</p>
         <Group title="Interface">
           <Row title="Theme" description="Choose a light or dark interface.">
             <Segmented
@@ -155,19 +155,19 @@ function SettingsPanel({ section }: { section: SettingsSection }) {
             </div>
           </Row>
         </Group>
-        <div className="info-banner"><Icon name="info" size={17} /> Dark mode covers Notespace, Workboard and Settings. The embedded Gantt timeline stays light for now.</div>
+        <div className="info-banner"><Icon name="info" size={17} /> Dark mode covers Notespace, Boardspace and Settings. The embedded Gantt timeline stays light for now.</div>
       </>
     );
   }
 
-  if (section === 'workspace') {
+  if (section === 'spaces') {
     return (
       <>
         <h2>Spaces</h2>
         <p className="settings-panel-subtitle">Choose which spaces appear in Starjot.</p>
         <Group title="Available spaces">
           <Row title={<><span className="setting-icon"><Icon name="book-open" size={19} /></span> Notespace</>} description="A dedicated home for documents, notes, and knowledge."><Toggle /></Row>
-          <Row title={<><span className="setting-icon"><Icon name="layout-dashboard" size={19} /></span> Workboard</>} description="A separate place for tasks, statuses, and linked note references."><Toggle /></Row>
+          <Row title={<><span className="setting-icon"><Icon name="layout-dashboard" size={19} /></span> Boardspace</>} description="A separate place for tasks, statuses, and linked note references."><Toggle /></Row>
         </Group>
         <div className="info-banner"><Icon name="info" size={17} /> These switches are only visual previews. Turning a space off is not built yet.</div>
       </>

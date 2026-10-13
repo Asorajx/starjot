@@ -5,7 +5,7 @@ import { TASKS } from '../../backend/data/sampleTasks';
 import type { BoardTab, StatusTab, Task } from '../../shared/types/task';
 import { BOARD_TABS, TAB_DESCRIPTIONS } from './data';
 
-type WorkboardProps = {
+type BoardspaceProps = {
   tab: BoardTab;
   onTabChange: (tab: BoardTab) => void;
 };
@@ -45,11 +45,11 @@ export function TaskCard({ task }: { task: Task }) {
 
 
 /* =========================
-   Workboard Tabs
+   Boardspace Tabs
    ========================= */
 
 /* Shared tabs for the status cards and the Gantt timeline. */
-function WorkboardTabs({ tab, onTabChange }: WorkboardProps) {
+function BoardspaceTabs({ tab, onTabChange }: BoardspaceProps) {
   const tabBar = useRef<HTMLDivElement>(null);
 
   /* Keep the active tab visible on smaller screens, where the tab bar scrolls sideways. */
@@ -64,7 +64,7 @@ function WorkboardTabs({ tab, onTabChange }: WorkboardProps) {
   }, [tab]);
 
   return (
-    <div className="board-tabs" role="tablist" aria-label="Workboard views" ref={tabBar}>
+    <div className="board-tabs" role="tablist" aria-label="Boardspace views" ref={tabBar}>
       {BOARD_TABS.map(item => {
         const isTimeline = item.id === 'timeline';
         return (
@@ -87,22 +87,22 @@ function WorkboardTabs({ tab, onTabChange }: WorkboardProps) {
 
 
 /* =========================
-   Workboard Views
+   Boardspace Views
    ========================= */
 
 /* The Gantt chart is a separate page in public/gantt, embedded so its scripts and styles stay isolated. */
-function TimelineView(props: WorkboardProps) {
+function TimelineView(props: BoardspaceProps) {
   return (
     <div className="content-pad board-page board-page--timeline">
       <div className="page-intro board-intro">
         <div>
-          <h1>Workboard</h1>
+          <h1>Boardspace</h1>
           <p>View the schedule across sprints, epics, features, and tasks.</p>
         </div>
       </div>
 
       <div className="board-panel">
-        <WorkboardTabs {...props} />
+        <BoardspaceTabs {...props} />
         <section className="timeline-integration" aria-label="Project Gantt timeline">
           <iframe
             className="timeline-integration-frame"
@@ -111,7 +111,7 @@ function TimelineView(props: WorkboardProps) {
             loading="eager"
           />
           <p className="timeline-integration-note">
-            <Icon name="info" size={15} /> The timeline saves changes in this browser. Workboard's other tabs
+            <Icon name="info" size={15} /> The timeline saves changes in this browser. Boardspace's other tabs
             currently show sample cards and are not connected to these tasks yet.
           </p>
         </section>
@@ -124,7 +124,7 @@ function Metric({ label, value, detail }: { label: string; value: number; detail
   return <div className="metric"><span>{label}</span><strong>{String(value).padStart(2, '0')}</strong><small>{detail}</small></div>;
 }
 
-export function Workboard(props: WorkboardProps) {
+export function Boardspace(props: BoardspaceProps) {
   if (props.tab === 'timeline') return <TimelineView {...props} />;
 
   const tab = props.tab;
@@ -135,7 +135,7 @@ export function Workboard(props: WorkboardProps) {
     <div className="content-pad board-page">
       <div className="page-intro board-intro">
         <div>
-          <h1>Workboard</h1>
+          <h1>Boardspace</h1>
           <p>A clear view of the work ahead, the work moving, and the work done.</p>
         </div>
       </div>
@@ -148,7 +148,7 @@ export function Workboard(props: WorkboardProps) {
       </div>
 
       <div className="board-panel">
-        <WorkboardTabs {...props} />
+        <BoardspaceTabs {...props} />
         <div className="board-panel-content">
           <div className="board-section-head">
             <div>

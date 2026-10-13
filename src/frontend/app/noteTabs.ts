@@ -2,7 +2,7 @@
    Notespace Tabs
    ========================= */
 
-/* A place a tab can show: the notes home, one category's page, or one note. */
+/* A place a tab can show: Starjot Home, the notes home, one category's page, or one note. */
 /* 'start' is Starjot Home, the app's own home; 'home' is the Notespace home. */
 export type Place = { kind: 'start' } | { kind: 'home' } | { kind: 'category'; id: string } | { kind: 'note'; id: string };
 
@@ -147,7 +147,7 @@ export function addTab(workspace: Workspace, groupId: string, tab: NoteTab, afte
 }
 
 /* Close a tab. The tab beside it becomes active if the closed one was. A group left without tabs */
-/* closes too, unless it is the only one, which then shows the notes home. A stack with one tab */
+/* closes too, unless it is the only one, which then shows Starjot Home. A stack with one tab */
 /* left becomes a normal group. */
 export function closeTab(workspace: Workspace, groupId: string, tabId: string): Workspace {
   const group = workspace.groups.find(item => item.id === groupId);

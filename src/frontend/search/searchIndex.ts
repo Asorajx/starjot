@@ -2,7 +2,7 @@
    Search Entries
    ========================= */
 
-/* Something search can find: a note, a category or a Workboard item. Everything searched is */
+/* Something search can find: a note, a category or a Boardspace item. Everything searched is */
 /* already on this device; nothing is sent anywhere. */
 export type SearchEntry = {
   kind: 'note' | 'category' | 'task';
@@ -19,7 +19,7 @@ export type SearchEntry = {
   /* ID, tags and description. */
   text: string;
 
-  /* For "Title only" and the In filter: a note's category id, or "workboard". */
+  /* For "Title only" and the In filter: a note's category id, or "boardspace". */
   scope: string;
 
   /* Newest first among equally good matches. */
@@ -40,7 +40,7 @@ export type SearchResult = {
 export type SearchOptions = {
   titleOnly: boolean;
 
-  /* 'all', 'notes' (every note), a category id, or 'workboard'. */
+  /* 'all', 'notes' (every note), a category id, or 'boardspace'. */
   scope: string;
 };
 
@@ -114,7 +114,7 @@ function titleRank(folded: string, query: string, words: string[]) {
 function inScope(entry: SearchEntry, scope: string) {
   if (scope === 'all') return true;
   if (scope === 'notes') return entry.kind !== 'task';
-  if (scope === 'workboard') return entry.kind === 'task';
+  if (scope === 'boardspace') return entry.kind === 'task';
   return entry.kind === 'note' && entry.scope === scope;
 }
 

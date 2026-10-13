@@ -324,10 +324,10 @@ h1{font-size:27px;line-height:1.2;letter-spacing:-.038em;font-weight:720;margin:
 
 
 /* =========================
-   Embedded Workboard Layout
+   Embedded Boardspace Layout
    ========================= */
 
-/* Only remove the duplicate navigation when this page is inside Workboard. */
+/* Only remove the duplicate navigation when this page is inside Boardspace. */
 .embedded .rail,
 .embedded .topbar {
   display: none;

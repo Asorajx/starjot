@@ -48,7 +48,7 @@
   outline-offset: 1px;
 }
 
-/* Token colours used by the syntax highlighter in code.js. */
+/* Token colours used by the syntax highlighter in code.ts. */
 .tok-comment {
   color: #657790;
   font-style: italic;

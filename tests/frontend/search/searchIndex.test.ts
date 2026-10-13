@@ -59,15 +59,15 @@ describe('search', () => {
     expect(ids(search(entries, 'garden', { titleOnly: true, scope: 'all' }))).toEqual(['b']);
   });
 
-  it('limits results to a category, all notes, or Workboard', () => {
+  it('limits results to a category, all notes, or Boardspace', () => {
     const entries = [
       entry({ id: 'work', title: 'Plan', scope: 'cat-work' }),
       entry({ id: 'home', title: 'Plan', scope: 'cat-home' }),
-      entry({ id: 'task', kind: 'task', title: 'Plan', scope: 'workboard' })
+      entry({ id: 'task', kind: 'task', title: 'Plan', scope: 'boardspace' })
     ];
     expect(ids(search(entries, 'plan', { titleOnly: false, scope: 'cat-work' }))).toEqual(['work']);
     expect(ids(search(entries, 'plan', { titleOnly: false, scope: 'notes' })).sort()).toEqual(['home', 'work']);
-    expect(ids(search(entries, 'plan', { titleOnly: false, scope: 'workboard' }))).toEqual(['task']);
+    expect(ids(search(entries, 'plan', { titleOnly: false, scope: 'boardspace' }))).toEqual(['task']);
   });
 });
 

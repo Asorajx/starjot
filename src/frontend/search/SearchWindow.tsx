@@ -4,7 +4,7 @@ import { Icon, type IconName } from '../components/Icon';
 import { useEscape } from '../lib/useDismiss';
 import { cleanHtml, htmlToText } from '../notespace/sanitize';
 import { ancestorsOf, categoryName, getNote, useCategories, useNotes } from '../notespace/store';
-import { BOARD_TABS } from '../workboard/data';
+import { BOARD_TABS } from '../boardspace/data';
 import { TASKS } from '../../backend/data/sampleTasks';
 import type { Note } from '../../shared/types/note';
 import type { StatusTab, Task } from '../../shared/types/task';
@@ -39,7 +39,7 @@ const PREVIEW_DELAY = 120;
 
 const KIND_ICONS: Record<SearchEntry['kind'], IconName> = { note: 'file-text', category: 'folder', task: 'check-square' };
 
-/* Which column each Workboard item is in. */
+/* Which column each Boardspace item is in. */
 const TASK_COLUMNS = new Map<string, { task: Task; column: StatusTab }>(
   (Object.keys(TASKS) as StatusTab[]).flatMap(column => TASKS[column].map(task => [task.id, { task, column }] as const))
 );
@@ -78,9 +78,9 @@ function useEntries() {
       kind: 'task',
       id: task.id,
       title: task.title,
-      path: ['Workboard', columnLabel(column)],
+      path: ['Boardspace', columnLabel(column)],
       text: [task.id, ...task.tags, task.description, task.person].join('\n'),
-      scope: 'workboard',
+      scope: 'boardspace',
       updatedAt: ''
     }))
   ], [notes, categories]);
@@ -89,7 +89,7 @@ function useEntries() {
 type Group = { label: string; results: SearchResult[] };
 
 /* Before anything is typed: recently opened notes by day. After: notes, categories, then */
-/* Workboard items, each best first. */
+/* Boardspace items, each best first. */
 function useGroups(entries: SearchEntry[], query: string, titleOnly: boolean, scope: string): Group[] {
   const notes = useNotes();
   return useMemo(() => {
@@ -113,7 +113,7 @@ function useGroups(entries: SearchEntry[], query: string, titleOnly: boolean, sc
     return [
       { label: 'Notes', results: results.filter(result => result.entry.kind === 'note').slice(0, RESULT_COUNT) },
       { label: 'Categories', results: results.filter(result => result.entry.kind === 'category') },
-      { label: 'Workboard', results: results.filter(result => result.entry.kind === 'task') }
+      { label: 'Boardspace', results: results.filter(result => result.entry.kind === 'task') }
     ].filter(group => group.results.length);
   }, [entries, notes, query, titleOnly, scope]);
 }
@@ -139,7 +139,7 @@ function PreviewSkeleton() {
 }
 
 /* The selected result as a read-only page: a note with its text, a category with its notes, or */
-/* a Workboard item's details. Note text is sanitized again before it is shown. */
+/* a Boardspace item's details. Note text is sanitized again before it is shown. */
 function Preview({ entry }: { entry: SearchEntry }) {
   const notes = useNotes();
   if (entry.kind === 'note') {
@@ -219,7 +219,7 @@ function PreviewPane({ entry }: { entry: SearchEntry | null }) {
    Search Window
    ========================= */
 
-/* Search across notes, categories and Workboard items, below the note bar and over the page. */
+/* Search across notes, categories and Boardspace items, below the note bar and over the page. */
 /* Results are on the left and a preview of the selected one on the right; the last row creates a */
 /* new note titled with what was typed. ↑ and ↓ move through the rows, Enter opens one (Ctrl + */
 /* Enter in a new tab), and Escape closes. Opened from a tab group's +, everything opens in a new */
@@ -250,7 +250,7 @@ export function SearchWindow({ initialQuery, inNewTab, onClose, onOpenNote, onOp
     { value: 'all', label: 'Everything', icon: 'search' },
     { value: 'notes', label: 'All notes', icon: 'book-open' },
     ...categories.map((category, at) => ({ value: category.id, label: category.name, icon: 'folder' as const, heading: at === 0 ? 'Categories' : undefined })),
-    { value: 'workboard', label: 'Workboard', icon: 'layout-dashboard', divider: true }
+    { value: 'boardspace', label: 'Boardspace', icon: 'layout-dashboard', divider: true }
   ];
 
   useEscape(true, onClose);
@@ -313,7 +313,7 @@ export function SearchWindow({ initialQuery, inNewTab, onClose, onOpenNote, onOp
             className="search-input"
             type="search"
             role="combobox"
-            aria-label="Search notes, categories and Workboard"
+            aria-label="Search notes, categories and Boardspace"
             aria-expanded="true"
             aria-controls="search-results"
             aria-activedescendant={`search-option-${index}`}

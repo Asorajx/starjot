@@ -1,8 +1,8 @@
 /* =========================
-   Workboard Timeline Integration
+   Boardspace Timeline Integration
    ========================= */
 
-/* Give the wide timeline more room without changing the other Workboard views. */
+/* Give the wide timeline more room without changing the other Boardspace views. */
 .board-page--timeline {
   width: 100%;
   max-width: none;

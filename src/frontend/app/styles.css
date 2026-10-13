@@ -804,15 +804,6 @@ p {
   letter-spacing: -1.15px;
 }
 
-.wave {
-  color: #a16b15;
-  font-size: 24px;
-  vertical-align: middle;
-  display: inline-block;
-  margin-left: 8px;
-  font-weight: 400;
-}
-
 .page-intro p {
   font-size: 12px;
   line-height: 1.65;

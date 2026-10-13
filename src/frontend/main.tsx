@@ -23,10 +23,10 @@ import './notespace/editor/tables/tables.css';
 import './notespace/editor/drawing/drawing.css';
 import './notespace/export/export.css';
 import './notespace/print.css';
-import './workboard/workboard.css';
+import './boardspace/boardspace.css';
 import './settings/settings.css';
 import './app/responsive.css';
-import './workboard/timeline.css';
+import './boardspace/timeline.css';
 import './app/dark-theme.css';
 import './app/dark-overrides.css';
 

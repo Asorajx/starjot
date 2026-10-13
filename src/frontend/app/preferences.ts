@@ -36,6 +36,9 @@ export type Preferences = {
 
   /* Note zoom as a multiplier: 1 is 100%. */
   zoom: number;
+
+  /* True while the sidebar is not docked (it then opens as a popup). The name is from when an */
+  /* undocked sidebar was called collapsed; it is kept so the saved choice still loads. */
   sidebarCollapsed: boolean;
   contentsScroll: ContentsScroll;
   notesSort: NotesSort;

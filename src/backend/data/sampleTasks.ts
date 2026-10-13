@@ -5,7 +5,7 @@ import type { StatusTab, Task } from '../../shared/types/task';
    Sample Work Items
    ========================= */
 
-/* Placeholder work items shown on Workboard until it has real storage. */
+/* Placeholder work items shown on Boardspace until it has real storage. */
 export const TASKS: Record<StatusTab, Task[]> = {
   todo: [
     { id: 'WRK-104', title: 'Design the onboarding experience', description: 'Map the first-run journey and identify the essential setup steps.', priority: 'High', tags: ['Design', 'UX'], assignee: 'AM', person: 'Alex Morgan', date: 'Oct 14', linked: ['Design principles', 'Project Atlas — Research brief'] },
@@ -18,7 +18,7 @@ export const TASKS: Record<StatusTab, Task[]> = {
   progress: [
     { id: 'WRK-090', title: 'Build a reusable page header', description: 'Standardize breadcrumbs, actions and shared layout spacing.', priority: 'High', tags: ['Frontend'], assignee: 'JL', person: 'Jordan Lee', date: 'Oct 12', linked: ['Design principles'] },
     { id: 'WRK-095', title: 'Prototype a document editor', description: 'Explore long-form reading and editing surfaces without visible blocks.', priority: 'Medium', tags: ['Notespace'], assignee: 'SK', person: 'Sam Kim', date: 'Oct 15', linked: ['Project Atlas — Research brief'] },
-    { id: 'WRK-099', title: 'Define project card anatomy', description: 'Find a clear balance of metadata, descriptive content and linked notes.', priority: 'Medium', tags: ['Workboard'], assignee: 'AM', person: 'Alex Morgan', date: 'Oct 18', linked: [] }
+    { id: 'WRK-099', title: 'Define project card anatomy', description: 'Find a clear balance of metadata, descriptive content and linked notes.', priority: 'Medium', tags: ['Boardspace'], assignee: 'AM', person: 'Alex Morgan', date: 'Oct 18', linked: [] }
   ],
   review: [
     { id: 'WRK-079', title: 'Review dashboard typography', description: 'Validate heading scale, density, text contrast and accessibility.', priority: 'Medium', tags: ['Design'], assignee: 'AM', person: 'Alex Morgan', date: 'Oct 11', linked: ['Design principles'] },

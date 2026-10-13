@@ -1,21 +1,21 @@
 import type { MouseEvent, ReactNode } from 'react';
 import { BrandMark } from '../components/BrandMark';
 import { Icon, type IconName } from '../components/Icon';
-import { WORKSPACES, workspaceLabel, type WorkspaceId } from './workspaces';
+import { SCREENS, screenLabel, type ScreenId } from './screens';
 import { useNotes } from '../notespace/store';
 import { newestFirst } from '../notespace/NoteList';
-import { BOARD_TABS } from '../workboard/data';
+import { BOARD_TABS } from '../boardspace/data';
 import { updatePreferences, usePreferences } from './preferences';
 import type { Note } from '../../shared/types/note';
 import type { BoardTab } from '../../shared/types/task';
 
 type NavigationProps = {
-  workspace: WorkspaceId;
-  onNavigate: (workspace: WorkspaceId) => void;
+  screen: ScreenId;
+  onNavigate: (screen: ScreenId) => void;
 };
 
 /* The spaces the sidebar can show lists for (Settings is not one). */
-export type SpaceId = Exclude<WorkspaceId, 'settings'>;
+export type SpaceId = Exclude<ScreenId, 'settings'>;
 
 type SidebarProps = NavigationProps & {
 
@@ -162,8 +162,8 @@ function NotespaceLists({ openNoteId, onOpenNote }: Pick<SidebarProps, 'openNote
   );
 }
 
-/* Workboard has one board for now, so its list is the board's views. */
-function WorkboardLists({ boardView, onOpenBoardView }: Pick<SidebarProps, 'boardView' | 'onOpenBoardView'>) {
+/* Boardspace has one board for now, so its list is the board's views. */
+function BoardspaceLists({ boardView, onOpenBoardView }: Pick<SidebarProps, 'boardView' | 'onOpenBoardView'>) {
   return (
     <SidebarList id="sidebar-board" title="Board" empty="">
       {BOARD_TABS.map(view => (
@@ -189,10 +189,10 @@ function WorkboardLists({ boardView, onOpenBoardView }: Pick<SidebarProps, 'boar
 /* heading. Docked, it sits beside the page at full height, with the window controls across its */
 /* top. Otherwise it floats over the page as a popup below the note bar, opened by hovering the */
 /* sidebar button or the left edge of the window, or by the keyboard moving into it. */
-export function Sidebar({ workspace, space, openNoteId, boardView, docked, controls, onNavigate, onOpenNote, onOpenBoardView, onSearch, onMouseEnter, onMouseLeave }: SidebarProps) {
+export function Sidebar({ screen, space, openNoteId, boardView, docked, controls, onNavigate, onOpenNote, onOpenBoardView, onSearch, onMouseEnter, onMouseLeave }: SidebarProps) {
   const { theme } = usePreferences();
   const dark = theme === 'dark';
-  const spaces = WORKSPACES.filter(item => item.id !== 'settings');
+  const spaces = SCREENS.filter(item => item.id !== 'settings');
 
   return (
     <aside className="sidebar" aria-label="Sidebar" onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave}>
@@ -225,7 +225,7 @@ export function Sidebar({ workspace, space, openNoteId, boardView, docked, contr
             type="button"
             className={`sidebar-icon ${space === item.id ? 'is-active' : ''}`}
             aria-label={item.label}
-            aria-current={workspace === item.id ? 'page' : undefined}
+            aria-current={screen === item.id ? 'page' : undefined}
             data-tooltip={space === item.id ? undefined : item.label}
             onClick={() => onNavigate(item.id)}
           >
@@ -235,18 +235,18 @@ export function Sidebar({ workspace, space, openNoteId, boardView, docked, contr
         ))}
       </nav>
 
-      <nav className="sidebar-lists" aria-label={`${workspaceLabel(space)} shortcuts`}>
+      <nav className="sidebar-lists" aria-label={`${screenLabel(space)} shortcuts`}>
         {space === 'notes'
           ? <NotespaceLists openNoteId={openNoteId} onOpenNote={onOpenNote} />
-          : <WorkboardLists boardView={boardView} onOpenBoardView={onOpenBoardView} />}
+          : <BoardspaceLists boardView={boardView} onOpenBoardView={onOpenBoardView} />}
       </nav>
 
       <div className="sidebar-bottom">
         <button
           type="button"
-          className={`sidebar-icon ${workspace === 'settings' ? 'is-active' : ''}`}
+          className={`sidebar-icon ${screen === 'settings' ? 'is-active' : ''}`}
           aria-label="Settings"
-          aria-current={workspace === 'settings' ? 'page' : undefined}
+          aria-current={screen === 'settings' ? 'page' : undefined}
           data-tooltip="Settings"
           data-tooltip-side="above"
           data-tooltip-align="start"
@@ -287,14 +287,14 @@ type MobileNavProps = NavigationProps & {
 };
 
 /* Phones have no sidebar: Home and the spaces sit in a bar along the bottom. */
-export function MobileNav({ workspace, homeShown, onNavigate, onHome, onSearch }: MobileNavProps) {
-  const current = (id: WorkspaceId) => workspace === id && !homeShown;
+export function MobileNav({ screen, homeShown, onNavigate, onHome, onSearch }: MobileNavProps) {
+  const current = (id: ScreenId) => screen === id && !homeShown;
   return (
     <nav className="mobile-nav" aria-label="Spaces">
       <button type="button" className={`mobile-link ${homeShown ? 'active' : ''}`} aria-current={homeShown ? 'page' : undefined} onClick={onHome}>
         <Icon name="home" size={20} /><span>Home</span>
       </button>
-      {WORKSPACES.filter(item => item.id !== 'settings').map(item => (
+      {SCREENS.filter(item => item.id !== 'settings').map(item => (
         <button
           key={item.id}
           type="button"
@@ -322,12 +322,12 @@ export function MobileNav({ workspace, homeShown, onNavigate, onHome, onSearch }
 
 /* Notespace keeps its breadcrumb in the document toolbar, so it has no separate header. Screens */
 /* without a tab bar show Home and the sidebar button here (controls) instead. */
-export function Topbar({ workspace, controls }: { workspace: WorkspaceId; controls: ReactNode }) {
-  if (workspace === 'notes') return null;
+export function Topbar({ screen, controls }: { screen: ScreenId; controls: ReactNode }) {
+  if (screen === 'notes') return null;
   return (
     <header className="topbar">
       {controls}
-      <div className="breadcrumbs"><span className="crumb-root">{workspaceLabel(workspace)}</span></div>
+      <div className="breadcrumbs"><span className="crumb-root">{screenLabel(screen)}</span></div>
     </header>
   );
 }

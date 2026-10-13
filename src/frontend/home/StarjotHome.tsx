@@ -2,7 +2,7 @@ import { useEffect, useState, type FormEvent } from 'react';
 import { Icon } from '../components/Icon';
 import { editedText, newestFirst } from '../notespace/NoteList';
 import { createNote, updateNote, useNotes } from '../notespace/store';
-import { BOARD_TABS } from '../workboard/data';
+import { BOARD_TABS } from '../boardspace/data';
 import { TASKS } from '../../backend/data/sampleTasks';
 import { readQuickNoteDraft, writeQuickNoteDraft } from '../../backend/storage/draftStorage';
 import type { BoardTab, StatusTab } from '../../shared/types/task';
@@ -11,7 +11,7 @@ import { quickNoteParts } from './quickNote';
 type StarjotHomeProps = {
   onOpenNote: (id: string) => void;
   onOpenNotespace: () => void;
-  onOpenWorkboard: () => void;
+  onOpenBoardspace: () => void;
   onOpenBoardView: (view: BoardTab) => void;
 };
 
@@ -93,8 +93,8 @@ function QuickNote({ onOpenNote }: { onOpenNote: (id: string) => void }) {
    ========================= */
 
 /* The app's own home: a greeting, then one section per space so notes and boards are never mixed. */
-/* Notespace has a quick note and "Where you left off"; Workboard has how many items each column holds. */
-export function StarjotHome({ onOpenNote, onOpenNotespace, onOpenWorkboard, onOpenBoardView }: StarjotHomeProps) {
+/* Notespace has a quick note and "Where you left off"; Boardspace has how many items each column holds. */
+export function StarjotHome({ onOpenNote, onOpenNotespace, onOpenBoardspace, onOpenBoardView }: StarjotHomeProps) {
   const now = useNow();
   const lastEdited = newestFirst(useNotes())[0];
   const columns = BOARD_TABS.filter((view): view is { id: StatusTab; label: string } => view.id !== 'timeline');
@@ -133,10 +133,10 @@ export function StarjotHome({ onOpenNote, onOpenNotespace, onOpenWorkboard, onOp
         </div>
       </section>
 
-      <section className="home-section" aria-labelledby="home-workboard">
+      <section className="home-section" aria-labelledby="home-boardspace">
         <div className="home-section-heading">
-          <h2 id="home-workboard"><Icon name="layout-dashboard" size={16} /> Workboard</h2>
-          <button type="button" className="btn btn-sm btn-tertiary" onClick={onOpenWorkboard}>Open Workboard <Icon name="arrow-right" size={14} /></button>
+          <h2 id="home-boardspace"><Icon name="layout-dashboard" size={16} /> Boardspace</h2>
+          <button type="button" className="btn btn-sm btn-tertiary" onClick={onOpenBoardspace}>Open Boardspace <Icon name="arrow-right" size={14} /></button>
         </div>
         <div className="board-summary">
           {columns.map(column => (

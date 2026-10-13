@@ -13,7 +13,7 @@ import { NoteEditor } from '../notespace/editor/NoteEditor';
 import { PageBar, placeExists, placeLabel, type PageHistory } from '../notespace/PageBar';
 import { createNote, flushSave, getNote, updateNote } from '../notespace/store';
 import { Settings, type SettingsSection } from '../settings/Settings';
-import { Workboard } from '../workboard/Workboard';
+import { Boardspace } from '../boardspace/Boardspace';
 import type { BoardTab } from '../../shared/types/task';
 import {
   activeTab, addTab, canAddTab, canStack, closeTab, currentPlace, focusedGroup, focusGroup, goTo, isOpenInStack, isSplit, moveTab, newTab,
@@ -21,7 +21,7 @@ import {
   type Workspace
 } from './noteTabs';
 import { DocumentTitle, StackSpine, TAB_DRAG_TYPE, WindowBar } from './WindowBar';
-import { workspaceLabel, type WorkspaceId } from './workspaces';
+import { screenLabel, type ScreenId } from './screens';
 
 
 /* =========================
@@ -103,7 +103,7 @@ function TabGroupFrame({ group, focused, onFocus, onDropTab, children }: TabGrou
 
 /* Only navigation lives here; note content belongs to the Notespace store. */
 export function App() {
-  const [workspace, setWorkspace] = useState<WorkspaceId>('notes');
+  const [screenId, setScreenId] = useState<ScreenId>('notes');
 
   /* The space whose lists the sidebar shows; it stays the same while Settings is open. */
   const [space, setSpace] = useState<SpaceId>('notes');
@@ -156,7 +156,7 @@ export function App() {
 
   /* Pages opened from outside a tab (the sidebar, Ctrl + N) open in the focused group's active tab. */
   function go(next: Place, groupId = group.id, tabId = activeTab(group).id) {
-    setWorkspace('notes');
+    setScreenId('notes');
     setSpace('notes');
     changeTab(groupId, tabId, tab => goTo(tab, next));
   }
@@ -166,12 +166,12 @@ export function App() {
     flushSave();
     setSettingsSection(section);
     setSettingsFocus(focus);
-    setWorkspace('settings');
+    setScreenId('settings');
   }
 
-  function navigate(next: WorkspaceId) {
+  function navigate(next: ScreenId) {
     flushSave();
-    setWorkspace(next);
+    setScreenId(next);
     if (next !== 'settings') setSpace(next);
     if (next === 'notes') go({ kind: 'home' });
   }
@@ -179,8 +179,8 @@ export function App() {
   /* A view of the board picked in the sidebar, such as its Timeline. */
   function openBoardView(view: BoardTab) {
     flushSave();
-    setWorkspace('workboard');
-    setSpace('workboard');
+    setScreenId('boardspace');
+    setSpace('boardspace');
     setWorkTab(view);
   }
 
@@ -238,8 +238,8 @@ export function App() {
 
   /* In Notespace, DocumentTitle names the browser tab after the focused page instead. */
   useEffect(() => {
-    if (workspace !== 'notes') document.title = `${workspaceLabel(workspace)} — Starjot`;
-  }, [workspace]);
+    if (screenId !== 'notes') document.title = `${screenLabel(screenId)} — Starjot`;
+  }, [screenId]);
 
   /* The short delays stop the sidebar from popping up when the pointer only passes by, and hover */
   /* is ignored while a mouse button is held (selecting text, drawing or dragging a tab). */
@@ -299,7 +299,7 @@ export function App() {
       go(place);
       return null;
     }
-    setWorkspace('notes');
+    setScreenId('notes');
     setSpace('notes');
     const tab = newTab(place);
     changeTabs(current => addTab(current, target.id, tab, true));
@@ -342,7 +342,7 @@ export function App() {
       if (event.key.toLowerCase() === 'k') {
         event.preventDefault();
         openSearch();
-      } else if (event.key.toLowerCase() === 'n' && workspace === 'notes') {
+      } else if (event.key.toLowerCase() === 'n' && screenId === 'notes') {
         event.preventDefault();
         newNote();
       } else if (event.key === '\\') {
@@ -436,7 +436,7 @@ export function App() {
           <PageBar history={history}>
             <nav className="editor-breadcrumb" aria-label="Breadcrumb"><span className="editor-crumb-current">Home</span></nav>
           </PageBar>
-          <StarjotHome onOpenNote={openHere} onOpenNotespace={openHome} onOpenWorkboard={() => navigate('workboard')} onOpenBoardView={openBoardView} />
+          <StarjotHome onOpenNote={openHere} onOpenNotespace={openHome} onOpenBoardspace={() => navigate('boardspace')} onOpenBoardView={openBoardView} />
         </>
       );
     } else {
@@ -459,7 +459,7 @@ export function App() {
   /* Window buttons (close, minimise), once the app has them, belong only in the tab strip at the */
   /* top-right of the window, not in every group's strip. */
   let screen;
-  if (workspace === 'notes') {
+  if (screenId === 'notes') {
     screen = (
       <div className={`tab-layout is-split-${tabs.direction}`}>
         {tabs.groups.map(tabGroup => (
@@ -509,22 +509,22 @@ export function App() {
         ))}
       </div>
     );
-  } else if (workspace === 'workboard') {
-    screen = <div className="main-scroll"><Workboard tab={workTab} onTabChange={setWorkTab} /></div>;
+  } else if (screenId === 'boardspace') {
+    screen = <div className="main-scroll"><Boardspace tab={workTab} onTabChange={setWorkTab} /></div>;
   } else {
     screen = <div className="main-scroll"><Settings section={settingsSection} onSectionChange={setSettingsSection} focus={settingsFocus} onFocused={clearSettingsFocus} /></div>;
   }
 
   return (
-    <div className={`app-shell ${workspace === 'notes' ? 'app-shell--notespace' : ''} ${docked ? '' : 'sidebar-floating'} ${popup ? 'sidebar-open' : ''}`}>
+    <div className={`app-shell ${screenId === 'notes' ? 'app-shell--notespace' : ''} ${docked ? '' : 'sidebar-floating'} ${popup ? 'sidebar-open' : ''}`}>
       {!docked && <div className="sidebar-hover-zone" aria-hidden="true" onMouseEnter={startPopup} onMouseLeave={cancelPopupTimer} />}
       {/* The first thing the keyboard reaches: it skips the sidebar and goes to the page. */}
       <button type="button" className="skip-link" onClick={() => document.getElementById('main-content')?.focus()}>Skip to content</button>
       <Sidebar
-        workspace={workspace}
+        screen={screenId}
         space={space}
-        openNoteId={workspace === 'notes' && place.kind === 'note' ? place.id : null}
-        boardView={workspace === 'workboard' ? workTab : null}
+        openNoteId={screenId === 'notes' && place.kind === 'note' ? place.id : null}
+        boardView={screenId === 'boardspace' ? workTab : null}
         docked={docked}
         onNavigate={fromSidebar(navigate)}
         onOpenNote={fromSidebar(openNote)}
@@ -537,11 +537,11 @@ export function App() {
         }}
       />
       <div className="main-column" id="main-content" tabIndex={-1}>
-        <Topbar workspace={workspace} controls={docked ? null : windowControls} />
-        {workspace === 'notes' && <DocumentTitle place={place} />}
+        <Topbar screen={screenId} controls={docked ? null : windowControls} />
+        {screenId === 'notes' && <DocumentTitle place={place} />}
         {screen}
       </div>
-      <MobileNav workspace={workspace} homeShown={workspace === 'notes' && place.kind === 'start'} onNavigate={navigate} onHome={goHome} onSearch={() => openSearch()} />
+      <MobileNav screen={screenId} homeShown={screenId === 'notes' && place.kind === 'start'} onNavigate={navigate} onHome={goHome} onSearch={() => openSearch()} />
       {searchState && (
         <SearchWindow
           initialQuery={searchState.query}
