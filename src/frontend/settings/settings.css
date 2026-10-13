@@ -436,3 +436,97 @@
   line-height: 22px;
   text-align: center;
 }
+
+/* A changeable shortcut's keys are a button; recording shows the accent outline. */
+.shortcut-edit {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 32px;
+  padding: 0 4px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: none;
+  cursor: pointer;
+}
+
+.shortcut-edit:hover {
+  border-color: var(--accent-line);
+}
+
+.shortcut-edit.is-recording {
+  min-width: 96px;
+  justify-content: center;
+  border-color: var(--accent);
+  background: var(--accent-faint);
+}
+
+.shortcut-edit kbd {
+  min-width: 24px;
+  padding: 0 4px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--paper);
+  color: #34435d;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 22px;
+  text-align: center;
+}
+
+.shortcut-edit.is-changed kbd {
+  border-color: var(--accent-line);
+  color: var(--accent-text);
+}
+
+.shortcut-recording {
+  color: var(--accent-text);
+  font-size: 12px;
+  font-weight: 650;
+}
+
+/* A changeable shortcut and its notice (a refused key, or keys another shortcut has) form one */
+/* block, so the dividing line runs under both. */
+.shortcut-editor {
+  border-bottom: 1px solid #eef1f5;
+}
+
+.shortcut-editor .shortcut-row {
+  border-bottom: 0;
+}
+
+.shortcut-notice {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 12px;
+  padding: 8px 12px;
+  border: 1px solid var(--accent-tint);
+  border-radius: 4px;
+  background: var(--accent-faint);
+  color: #34435d;
+  font-size: 12px;
+}
+
+.shortcut-notice > .icon {
+  flex-shrink: 0;
+  color: var(--accent-text);
+}
+
+.shortcut-notice-text {
+  flex: 1;
+  min-width: 160px;
+}
+
+.shortcut-notice-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.shortcut-reset-all {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 8px;
+}

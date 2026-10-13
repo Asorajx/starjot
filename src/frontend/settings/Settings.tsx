@@ -1,10 +1,14 @@
-import { useEffect, useRef, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { version } from '../../../package.json';
 import { BrandMark } from '../components/BrandMark';
 import { Dropdown } from '../components/Dropdown';
 import { Icon, type IconName } from '../components/Icon';
 import { ACCENTS, updatePreferences, usePreferences, type Accent, type Preferences, type StartScreen } from '../app/preferences';
 import { enabledScreens, SCREENS } from '../app/screens';
+import {
+  checkCombo, comboOf, FIXED_SHORTCUTS, isChanged, keyLabel, keyParts, keysOf, resetAllShortcuts, resetShortcut, setShortcut, SHORTCUTS, swapShortcuts,
+  type ShortcutGroup, type ShortcutId
+} from '../app/shortcuts';
 import { useCategories } from '../notespace/store';
 import { Switch } from '../components/Switch';
 import { useEscape } from '../lib/useDismiss';
@@ -24,43 +28,9 @@ type SettingsProps = {
 
 type SettingsTab = { id: SettingsSection; label: string; icon: IconName };
 
-/* The keyboard shortcuts, as Keyboard shortcuts lists them: what each does and its keys (one */
-/* list of keys per way of doing it). */
+/* A typing shortcut, as Notespace → Typing lists it: what it does and what to type (one list */
+/* of keys per way of doing it). */
 type Shortcut = { action: string; keys: string[][] };
-
-const SHORTCUT_GROUPS: { title: string; note?: string; shortcuts: Shortcut[] }[] = [
-  {
-    title: 'Everywhere',
-    shortcuts: [
-      { action: 'Search', keys: [['Ctrl', 'K']] },
-      { action: 'New note', keys: [['Ctrl', 'N']] },
-      { action: 'Dock or undock the sidebar', keys: [['Ctrl', '\\']] },
-      { action: 'Switch tabs (hold Ctrl, tap Q, let go to switch)', keys: [['Ctrl', 'Q']] },
-      { action: 'Open a note in a new tab', keys: [['Ctrl', 'Click']] },
-      { action: 'Close a window or menu, or go back', keys: [['Esc']] }
-    ]
-  },
-  {
-    title: 'Tabs',
-    note: 'In a browser tab, the browser keeps these for its own tabs; they work in the desktop app.',
-    shortcuts: [
-      { action: 'New tab', keys: [['Ctrl', 'T']] },
-      { action: 'Close tab', keys: [['Ctrl', 'W']] },
-      { action: 'Reopen the last closed tab', keys: [['Ctrl', 'Shift', 'T']] },
-      { action: 'Next or previous tab', keys: [['Ctrl', 'Tab'], ['Ctrl', 'Shift', 'Tab']] }
-    ]
-  },
-  {
-    title: 'In a note',
-    shortcuts: [
-      { action: 'Find, and find and replace', keys: [['Ctrl', 'F'], ['Ctrl', 'H']] },
-      { action: 'Undo and redo', keys: [['Ctrl', 'Z'], ['Ctrl', 'Y']] },
-      { action: 'Bold, italic and underline', keys: [['Ctrl', 'B'], ['Ctrl', 'I'], ['Ctrl', 'U']] },
-      { action: 'Zoom in, out and back to 100%', keys: [['Ctrl', '='], ['Ctrl', '−'], ['Ctrl', '0']] },
-      { action: 'Open or close a toggle', keys: [['Ctrl', 'Enter']] }
-    ]
-  }
-];
 
 /* What can be typed into a note's text to format it, listed in Notespace → Typing. */
 const LINE_SHORTCUTS: Shortcut[] = [
@@ -73,6 +43,105 @@ const LINE_SHORTCUTS: Shortcut[] = [
 const ANYWHERE_SHORTCUTS: Shortcut[] = [
   { action: 'Em dash (Undo straight after keeps the hyphens)', keys: [['-', '-']] }
 ];
+
+/* One changeable shortcut. Clicking its keys records new ones; Escape or clicking elsewhere */
+/* cancels. While recording, a changed shortcut offers Reset to default. Keys already used by */
+/* another shortcut can be swapped, and keys a browser tab keeps are allowed with a note. */
+function ShortcutEditor({ id, action }: { id: ShortcutId; action: string }) {
+  usePreferences();
+  const [recording, setRecording] = useState(false);
+  const [message, setMessage] = useState<{ text: string; swap?: { with: ShortcutId; combo: string } } | null>(null);
+  useEscape(recording, () => setRecording(false));
+
+  useEffect(() => {
+    if (!recording) return;
+
+    /* Caught before the app's own shortcuts, so the keys pressed only set this shortcut. */
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      const combo = comboOf(event);
+      if (!combo) return;
+      const check = checkCombo(combo, id);
+      if (check.kind === 'refused') {
+        setMessage({ text: check.reason });
+        return;
+      }
+      setRecording(false);
+      if (check.kind === 'taken') {
+        const other = SHORTCUTS.find(item => item.id === check.by)?.action ?? '';
+        const current = keyLabel(keysOf(id)[0]);
+        setMessage({ text: `${keyLabel(combo)} is used for ${other}. Swap them, so ${other} gets ${current}?`, swap: { with: check.by, combo } });
+        return;
+      }
+      setShortcut(id, combo);
+      setMessage(check.browserOnly ? { text: `In a browser tab, the browser keeps ${keyLabel(combo)} for itself; it works in the desktop app.` } : null);
+    }
+    window.addEventListener('keydown', handleKeyDown, true);
+    return () => window.removeEventListener('keydown', handleKeyDown, true);
+  }, [recording, id]);
+
+  const keys = keysOf(id)[0];
+  return (
+    <div className="shortcut-editor">
+      <div className="shortcut-row">
+        <span>{action}</span>
+        <span className="shortcut-keys">
+          {recording && isChanged(id) && (
+            <button
+              type="button"
+              className="btn btn-sm btn-tertiary"
+              onMouseDown={event => event.preventDefault()}
+              onClick={() => {
+                resetShortcut(id);
+                setRecording(false);
+                setMessage(null);
+              }}
+            >
+              Reset to default
+            </button>
+          )}
+          <button
+            type="button"
+            className={`shortcut-edit ${recording ? 'is-recording' : ''} ${isChanged(id) ? 'is-changed' : ''}`}
+            aria-label={recording ? `Press the new keys for ${action}` : `Change ${action}, now ${keyLabel(keys)}`}
+            onClick={() => {
+              setMessage(null);
+              setRecording(!recording);
+            }}
+            onBlur={() => setRecording(false)}
+          >
+            {recording ? <span className="shortcut-recording">Press keys…</span> : keyParts(keys).map((key, at) => <kbd key={at}>{key}</kbd>)}
+          </button>
+        </span>
+      </div>
+      {message && (
+        <div className={`shortcut-notice ${message.swap ? 'is-clash' : ''}`} role="status">
+          <Icon name={message.swap ? 'alert-triangle' : 'info'} size={14} />
+          <span className="shortcut-notice-text">{message.text}</span>
+          {message.swap && (
+            <span className="shortcut-notice-actions">
+              <button
+                type="button"
+                className="btn btn-sm btn-secondary"
+                onClick={() => {
+                  if (message.swap) swapShortcuts(id, message.swap.with, message.swap.combo);
+                  setMessage(null);
+                }}
+              >
+                Swap
+              </button>
+              <button type="button" className="btn btn-sm btn-tertiary" onClick={() => setMessage(null)}>Keep {keyLabel(keys)}</button>
+            </span>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+const SHORTCUT_SECTIONS: ShortcutGroup[] = ['Everywhere', 'Tabs', 'In a note'];
 
 /* One row per shortcut: what it does, and its keys (with "or" between different ways). */
 function ShortcutRows({ shortcuts }: { shortcuts: Shortcut[] }) {
@@ -455,11 +524,17 @@ function SettingsSectionContent({ section }: { section: SettingsSection }) {
   if (section === 'shortcuts') {
     return (
       <>
-        <Heading title="Keyboard shortcuts" subtitle="On a Mac, Cmd works in place of Ctrl, except for Ctrl + Q. What can be typed into notes is in Notespace → Typing." />
-        {SHORTCUT_GROUPS.map(group => (
-          <Group key={group.title} title={group.title}>
-            {group.note && <p className="shortcut-note">{group.note}</p>}
-            <ShortcutRows shortcuts={group.shortcuts} />
+        <Heading title="Keyboard shortcuts" subtitle="Click a shortcut's keys to change them. On a Mac, Cmd works in place of Ctrl, except in the tab switcher. What can be typed into notes is in Notespace → Typing." />
+        {SHORTCUTS.some(item => isChanged(item.id)) && (
+          <div className="shortcut-reset-all">
+            <button type="button" className="btn btn-sm btn-secondary" onClick={resetAllShortcuts}>Reset all to default</button>
+          </div>
+        )}
+        {SHORTCUT_SECTIONS.map(group => (
+          <Group key={group} title={group}>
+            {group === 'Tabs' && <p className="shortcut-note">In a browser tab, the browser keeps the default keys for its own tabs; they work in the desktop app.</p>}
+            {SHORTCUTS.filter(item => item.group === group).map(item => <ShortcutEditor key={item.id} id={item.id} action={item.action} />)}
+            <ShortcutRows shortcuts={FIXED_SHORTCUTS.filter(item => item.group === group).map(item => ({ action: item.action, keys: item.keys.map(keyParts) }))} />
           </Group>
         ))}
       </>

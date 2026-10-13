@@ -1,6 +1,7 @@
 import type { MouseEvent, ReactNode } from 'react';
 import { BrandMark } from '../components/BrandMark';
 import { opensNewTab, type OpenById } from '../lib/clicks';
+import { keyParts, keysOf, shortcutLabel } from './shortcuts';
 import { Icon, type IconName } from '../components/Icon';
 import { enabledScreens, screenLabel, type ScreenId } from './screens';
 import { noteTitle, useCategories, useNotes } from '../notespace/store';
@@ -75,7 +76,7 @@ export function WindowControls({ sidebarOpen, onHome, onToggleSidebar, onSidebar
         aria-label="Sidebar"
         aria-expanded={sidebarOpen}
         data-tooltip="Sidebar"
-        data-shortcut="Ctrl + \"
+        data-shortcut={shortcutLabel('sidebar')}
         data-tooltip-align="start"
         onClick={onToggleSidebar}
         onMouseEnter={onSidebarHover}
@@ -94,7 +95,7 @@ export function WindowControls({ sidebarOpen, onHome, onToggleSidebar, onSidebar
         <Icon name="bell" size={17} /><span className="notification-dot" />
       </button>
       {onNewNote && (
-        <button type="button" className="window-control window-new-note" aria-label="New note" data-tooltip="New note" data-shortcut="Ctrl + N" data-tooltip-align="start" onClick={onNewNote}>
+        <button type="button" className="window-control window-new-note" aria-label="New note" data-tooltip="New note" data-shortcut={shortcutLabel('newNote')} data-tooltip-align="start" onClick={onNewNote}>
           <Icon name="square-pen" size={17} />
         </button>
       )}
@@ -231,7 +232,7 @@ export function Sidebar({ screen, space, openNoteId, openCategoryId, boardView, 
         <Icon name="search" size={16} />
         <input
           type="search"
-          aria-label="Search (Ctrl + K)"
+          aria-label={`Search (${shortcutLabel('search')})`}
           placeholder="Search…"
           readOnly
           onClick={() => onSearch('')}
@@ -242,7 +243,7 @@ export function Sidebar({ screen, space, openNoteId, openCategoryId, boardView, 
             onSearch(typed ? event.key : '');
           }}
         />
-        <kbd className="sidebar-search-key">Ctrl K</kbd>
+        <kbd className="sidebar-search-key">{keyParts(keysOf('search')[0]).join(' ')}</kbd>
       </div>
 
       <nav className="sidebar-icons" aria-label="Spaces">

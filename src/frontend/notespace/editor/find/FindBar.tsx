@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { Icon } from '../../../components/Icon';
 import { useEscape } from '../../../lib/useDismiss';
+import { shortcutLabel } from '../../../app/shortcuts';
 import { useSessionValue, type EditorSession } from '../session';
 import { clearMatches, findMatches, replaceAll, replaceMatch, showMatches } from './find';
 
@@ -122,7 +123,7 @@ export function FindBar({ session, locked, content, within, replacing, initialWo
           aria-expanded={showReplace}
           disabled={locked}
           data-tooltip={locked ? 'Unlock the note to replace words.' : showReplace ? 'Hide replace' : 'Replace'}
-          data-shortcut={locked || showReplace ? undefined : 'Ctrl + H'}
+          data-shortcut={locked || showReplace ? undefined : shortcutLabel('replace')}
           data-tooltip-align="start"
           onClick={() => setShowReplace(value => !value)}
         >

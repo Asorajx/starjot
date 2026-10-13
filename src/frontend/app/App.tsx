@@ -2,6 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState, type DragEve
 import { getPreferences, updatePreferences, usePreferences, type Spaces } from './preferences';
 import { MobileNav, Sidebar, Topbar, WindowControls } from './Shell';
 import { opensNewTab } from '../lib/clicks';
+import { isShortcut, switcherModifier } from './shortcuts';
 import { useDismiss, useEscape } from '../lib/useDismiss';
 import { useMediaQuery } from '../lib/useMediaQuery';
 import { CategoryPage } from '../notespace/CategoryPage';
@@ -462,14 +463,14 @@ export function App() {
     <WindowControls sidebarOpen={docked || popup !== null} onHome={goHome} onToggleSidebar={toggleSidebar} onSidebarHover={startPopup} onSidebarLeave={endPopup} onNewNote={spaces.notes ? fromSidebar(() => newNote()) : undefined} />
   );
 
+  /* The app-wide shortcuts (shortcuts.ts; their keys can be changed in Settings). By default: */
   /* Ctrl + K opens search, Ctrl + N creates a note while in Notespace, and Ctrl + \ docks or */
   /* undocks the sidebar. Tabs work like a browser's: Ctrl + T opens search for a new tab, Ctrl + W */
   /* closes the current tab (or the open search or settings), Ctrl + Shift + T brings back the */
   /* last closed tab, and Ctrl + Tab / Ctrl + Shift + Tab go to the next / previous tab. In a */
   /* browser tab the browser keeps these for itself; they reach the app in the desktop app. */
-  /* Ctrl + Q works in both: it opens the tab switcher (see moveSwitcher), and letting go of Ctrl */
-  /* switches. Alt is ignored because AltGr counts as Ctrl + Alt, and some keyboards type \ with */
-  /* AltGr. Pending edits are saved when the page is hidden. */
+  /* Ctrl + Q works in both: it opens the tab switcher (see moveSwitcher), and letting go of its */
+  /* held key switches. Pending edits are saved when the page is hidden. */
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
       if (switcher && (event.key === 'ArrowDown' || event.key === 'ArrowUp')) {
@@ -482,42 +483,34 @@ export function App() {
         switchTo(switcher.ids[switcher.selected]);
         return;
       }
-      if (!(event.ctrlKey || event.metaKey) || event.altKey) return;
-      const key = event.key.toLowerCase();
-      if (key === 'q' && event.ctrlKey && !event.metaKey && !event.shiftKey) {
-        event.preventDefault();
-        moveSwitcher(1);
-      } else if (key === 'tab') {
-        event.preventDefault();
-        if (screenId === 'notes' && !searchState && !settingsOpen) changeTabs(current => cycleTab(current, event.shiftKey ? -1 : 1));
-      } else if (key === 'k') {
-        event.preventDefault();
-        openSearch();
-      } else if (key === 'n' && screenId === 'notes' && spaces.notes) {
-        event.preventDefault();
-        newNote();
-      } else if (key === 't' && event.shiftKey) {
-        event.preventDefault();
-        reopenClosedTab();
-      } else if (key === 't') {
-        event.preventDefault();
-        setScreenId('notes');
-        openSearch('', group.id);
-      } else if (key === 'w' && !event.shiftKey) {
-        event.preventDefault();
-        if (searchState || settingsOpen) {
-          setSearchState(null);
-          setSettingsOpen(false);
-        } else if (screenId === 'notes') {
-          closeTabIn(group.id, activeTab(group).id);
-        }
-      } else if (event.key === '\\') {
-        event.preventDefault();
-        toggleSidebar();
-      }
+      const handled = [
+        ['switcher', () => moveSwitcher(1)],
+        ['nextTab', () => screenId === 'notes' && !searchState && !settingsOpen && changeTabs(current => cycleTab(current, 1))],
+        ['previousTab', () => screenId === 'notes' && !searchState && !settingsOpen && changeTabs(current => cycleTab(current, -1))],
+        ['search', () => openSearch()],
+        ['newNote', () => screenId === 'notes' && spaces.notes && newNote()],
+        ['reopenTab', reopenClosedTab],
+        ['newTab', () => {
+          setScreenId('notes');
+          openSearch('', group.id);
+        }],
+        ['closeTab', () => {
+          if (searchState || settingsOpen) {
+            setSearchState(null);
+            setSettingsOpen(false);
+          } else if (screenId === 'notes') {
+            closeTabIn(group.id, activeTab(group).id);
+          }
+        }],
+        ['sidebar', toggleSidebar]
+      ] as const;
+      const found = handled.find(([id]) => isShortcut(event, id));
+      if (!found) return;
+      event.preventDefault();
+      found[1]();
     }
     function handleKeyUp(event: KeyboardEvent) {
-      if (switcher && event.key === 'Control') switchTo(switcher.ids[switcher.selected]);
+      if (switcher && event.key === switcherModifier()) switchTo(switcher.ids[switcher.selected]);
     }
     function handleHidden() {
       if (document.visibilityState === 'hidden') flushSave();

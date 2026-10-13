@@ -88,6 +88,10 @@ export type Preferences = {
   /* The browser's spelling check in notes, and Markdown shortcuts and "--" while typing. */
   spellcheck: boolean;
   typingShortcuts: boolean;
+
+  /* Keyboard shortcuts given other keys in Settings, by shortcut (see shortcuts.ts); the rest */
+  /* keep their defaults. */
+  shortcuts: Record<string, string>;
   drawing: DrawingPreferences;
 
   /* The choices last made in the Export window. */
@@ -137,6 +141,13 @@ function loadSidebar(saved: unknown): SidebarLists {
   };
 }
 
+/* Saved shortcut keys, kept only when they look like keys ("Ctrl+K"); shortcuts.ts checks */
+/* which shortcuts exist. */
+function loadShortcuts(saved: unknown): Record<string, string> {
+  const record = (saved && typeof saved === 'object' ? saved : {}) as Record<string, unknown>;
+  return Object.fromEntries(Object.entries(record).filter((entry): entry is [string, string] => typeof entry[1] === 'string' && /^(Ctrl|Alt)\+[^\s]{1,30}$/.test(entry[1])).slice(0, 40));
+}
+
 function loadNewNotes(saved: unknown): NewNotes {
   const record = (saved && typeof saved === 'object' ? saved : {}) as Record<string, unknown>;
   return {
@@ -163,7 +174,7 @@ function loadDrawing(saved: unknown): DrawingPreferences {
 /* Light mode is the default; once a theme is chosen in Settings it is remembered between visits. */
 function load(): Preferences {
   const defaults: Preferences = {
-    theme: 'light', accent: 'blue', density: 'comfortable', startScreen: 'start', spaces: loadSpaces(null), sidebar: loadSidebar(null), newNotes: loadNewNotes(null), zoom: 1, sidebarCollapsed: false, contentsScroll: 'smooth', notesSort: 'edited', hideHeaderWhileTyping: true, tips: true, spellcheck: true, typingShortcuts: true, drawing: loadDrawing(null),
+    theme: 'light', accent: 'blue', density: 'comfortable', startScreen: 'start', spaces: loadSpaces(null), sidebar: loadSidebar(null), newNotes: loadNewNotes(null), zoom: 1, sidebarCollapsed: false, contentsScroll: 'smooth', notesSort: 'edited', hideHeaderWhileTyping: true, tips: true, spellcheck: true, typingShortcuts: true, shortcuts: {}, drawing: loadDrawing(null),
     exportSettings: normalizeExportSettings(null),
     recentColors: []
   };
@@ -184,6 +195,7 @@ function load(): Preferences {
     tips: saved.tips !== false,
     spellcheck: saved.spellcheck !== false,
     typingShortcuts: saved.typingShortcuts !== false,
+    shortcuts: loadShortcuts(saved.shortcuts),
     drawing: loadDrawing(saved.drawing),
     exportSettings: normalizeExportSettings(saved.exportSettings),
     recentColors: Array.isArray(saved.recentColors) ? saved.recentColors.filter((name): name is ColorClass => isColorClass(String(name))).slice(0, RECENT_COLORS) : []

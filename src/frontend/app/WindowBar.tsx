@@ -3,6 +3,7 @@ import { Icon, type IconName } from '../components/Icon';
 import { placeLabel } from '../notespace/PageBar';
 import { useCategories, useNotes } from '../notespace/store';
 import { useDismiss } from '../lib/useDismiss';
+import { shortcutLabel } from './shortcuts';
 import { useMediaQuery } from '../lib/useMediaQuery';
 import { canAddTab, currentPlace, STACK_LIMIT, type NoteTab, type Place, type TabGroup } from './noteTabs';
 
@@ -97,7 +98,7 @@ export function WindowBar({ group, onSelect, onClose, onNew, leading }: WindowBa
         type="button"
         className="window-new-tab"
         data-tooltip={full ? `A stack holds up to ${STACK_LIMIT} tabs` : 'New tab'}
-        data-shortcut={full ? undefined : 'Ctrl + T'}
+        data-shortcut={full ? undefined : shortcutLabel('newTab')}
         data-tooltip-align={group.stacked ? 'start' : undefined}
         aria-label="New note in a new tab"
         disabled={full}

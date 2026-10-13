@@ -1,5 +1,6 @@
 import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type MouseEvent as ReactMouseEvent } from 'react';
 import { changeZoom, usePreferences } from '../../app/preferences';
+import { isShortcut } from '../../app/shortcuts';
 import type { OpenById } from '../../lib/clicks';
 import { DeleteNoteDialog } from '../DeleteNoteDialog';
 import { FindBar } from './find/FindBar';
@@ -213,21 +214,24 @@ export function NoteEditor({ noteId, history, view, active, onClose, onOpenNote,
         return;
       }
 
-      /* Ctrl+F finds words in the note, and Ctrl+H replaces them, instead of the browser's own */
-      /* find. Text selected in the note limits the search to it. */
-      if (command && (key === 'f' || key === 'h')) {
+      /* Find (Ctrl + F) finds words in the note, and Find and replace (Ctrl + H) replaces them, */
+      /* instead of the browser's own find. Text selected in the note limits the search to it. */
+      /* Their keys, and the zoom keys below, can be changed in Settings (see shortcuts.ts). */
+      const replacing = isShortcut(event, 'replace');
+      if (replacing || isShortcut(event, 'find')) {
         event.preventDefault();
         const selection = window.getSelection();
         const range = selection?.rangeCount ? selection.getRangeAt(0) : null;
         const selected = range && !range.collapsed && session.body()?.contains(range.commonAncestorContainer) ? range.cloneRange() : null;
-        setFinding(current => ({ within: selected ?? (inEditor || !current ? null : current.within), replacing: key === 'h' }));
+        setFinding(current => ({ within: selected ?? (inEditor || !current ? null : current.within), replacing }));
         return;
       }
 
       /* Ctrl + = / Ctrl + − / Ctrl + 0 zoom the note instead of the whole window. */
-      if (command && (key === '=' || key === '+' || key === '-' || key === '0')) {
+      const zoomStep = isShortcut(event, 'zoomIn') ? 1 : isShortcut(event, 'zoomOut') ? -1 : isShortcut(event, 'zoomReset') ? 0 : null;
+      if (zoomStep !== null) {
         event.preventDefault();
-        changeZoom(key === '0' ? 0 : key === '-' ? -1 : 1);
+        changeZoom(zoomStep);
         return;
       }
 

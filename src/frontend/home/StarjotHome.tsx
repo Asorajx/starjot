@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from 'react';
 import { Icon } from '../components/Icon';
 import { opensNewTab, type OpenById } from '../lib/clicks';
 import { usePreferences } from '../app/preferences';
+import { keyParts, keysOf, shortcutLabel } from '../app/shortcuts';
 import { editedText, newestFirst } from '../notespace/NoteList';
 import { createNote, noteTitle, updateNote, useNotes } from '../notespace/store';
 import { BOARD_TABS } from '../boardspace/data';
@@ -94,21 +95,25 @@ function QuickNote({ onOpenNote }: { onOpenNote: OpenById }) {
    Starjot Home
    ========================= */
 
-/* One tip a day on Starjot Home, while helpful tips are on. */
+/* One tip a day on Starjot Home, while helpful tips are on. Tips name the keys chosen in */
+/* Settings → Keyboard shortcuts. */
 const TIPS = [
-  'Ctrl + K searches every note, category and board item.',
-  'Ctrl + click a note, anywhere, to open it in a new tab.',
-  'Hold Ctrl and tap Q to switch between your tabs.',
-  'Type / in a note for headings, tables, toggles, sub-notes and more.',
-  'Two hyphens (--) become an em dash; Undo straight after keeps the hyphens.',
-  'Star a note to keep it at the top of Notespace and in the sidebar.',
-  'Ctrl + F finds words in a note, and Ctrl + H replaces them.',
-  'Choose an accent colour in Settings → Appearance.'
+  () => `${shortcutLabel('search')} searches every note, category and board item.`,
+  () => 'Ctrl + click a note, anywhere, to open it in a new tab.',
+  () => {
+    const [held, tapped] = keyParts(keysOf('switcher')[0]);
+    return `Hold ${held} and tap ${tapped} to switch between your tabs.`;
+  },
+  () => 'Type / in a note for headings, tables, toggles, sub-notes and more.',
+  () => 'Two hyphens (--) become an em dash; Undo straight after keeps the hyphens.',
+  () => 'Star a note to keep it at the top of Notespace and in the sidebar.',
+  () => `${shortcutLabel('find')} finds words in a note, and ${shortcutLabel('replace')} replaces them.`,
+  () => 'Choose an accent colour in Settings → Appearance.'
 ];
 
 function tipOfTheDay(now: Date) {
   const day = Math.floor((now.getTime() - now.getTimezoneOffset() * 60000) / 86400000);
-  return TIPS[day % TIPS.length];
+  return TIPS[day % TIPS.length]();
 }
 
 /* The app's own home: a greeting, then one section per space turned on, so notes and boards are */
