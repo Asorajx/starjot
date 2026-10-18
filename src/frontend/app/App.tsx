@@ -630,6 +630,7 @@ export function App() {
           onClose={closePage}
           onOpenNote={openHere}
           onOpenNoteInNewTab={openNoteInNewTab}
+          onGoToNote={id => goHere({ kind: 'note', id })}
           onOpenCategory={openCategory}
           onOpenNewPage={openNewPage}
           onOpenSettings={openSettings}

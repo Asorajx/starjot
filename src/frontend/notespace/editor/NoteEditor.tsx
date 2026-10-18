@@ -69,6 +69,10 @@ type NoteEditorProps = {
 
   /* Opens a page in a new tab (Ctrl + click or double-click on a page link). */
   onOpenNoteInNewTab: (id: string) => void;
+
+  /* Shows a note in this tab whatever Settings → Notes → Open notes in says: the breadcrumb */
+  /* moves through the note's own path, so it always stays in the tab. */
+  onGoToNote: (id: string) => void;
   onOpenCategory: OpenById;
 
   /* Opens a sub-page just added with the slash menu, ready to be named. */
@@ -94,7 +98,7 @@ function pageFrameStyle(geometry: ReturnType<typeof pageGeometry>, pages: number
   };
 }
 
-export function NoteEditor({ noteId, history, view, active, onClose, onOpenNote, onOpenNoteInNewTab, onOpenCategory, onOpenNewPage, onOpenSettings }: NoteEditorProps) {
+export function NoteEditor({ noteId, history, view, active, onClose, onOpenNote, onOpenNoteInNewTab, onGoToNote, onOpenCategory, onOpenNewPage, onOpenSettings }: NoteEditorProps) {
   const note = useNote(noteId);
 
   /* Re-render when categories are renamed, so the breadcrumb stays current. */
@@ -374,7 +378,7 @@ export function NoteEditor({ noteId, history, view, active, onClose, onOpenNote,
       {/* The note's colour, as a strip under the tab bar that stays while scrolling and typing. */}
       <NoteColorStrip color={note.color} />
       <PageBar history={history} className={`editor-page-bar ${typing && !panel ? 'is-hidden' : ''}`}>
-        <NoteBreadcrumb note={note} onOpenNote={onOpenNote} onOpenCategory={onOpenCategory} />
+        <NoteBreadcrumb note={note} onOpenNote={(id, inNewTab) => (inNewTab ? onOpenNoteInNewTab(id) : onGoToNote(id))} onOpenCategory={onOpenCategory} />
         <span className="page-bar-fill" />
         <SaveStatus />
 
