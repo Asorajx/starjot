@@ -1,0 +1,65 @@
+/* =========================
+   Gliding Hover Highlight
+   ========================= */
+
+/* The lists the highlight glides in (see fluidHover.ts) hold it behind their items: their own */
+/* stacking layer keeps it above the list's background and below the words. */
+.sidebar-lists,
+.sidebar-icons,
+.settings-nav {
+  position: relative;
+}
+
+.sidebar-lists,
+.sidebar-icons,
+.settings-nav,
+.page-menu {
+  isolation: isolate;
+}
+
+.fluid-highlight {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: -1;
+  border-radius: 4px;
+  background: #f3f6fc;
+  opacity: 0;
+  pointer-events: none;
+  transition: transform 140ms cubic-bezier(.2, .8, .2, 1), width 140ms cubic-bezier(.2, .8, .2, 1), height 140ms cubic-bezier(.2, .8, .2, 1), opacity 90ms ease-out;
+}
+
+.fluid-highlight.is-shown {
+  opacity: 1;
+}
+
+/* Appearing, it is put in place at once and only fades in. */
+.fluid-highlight.is-placing {
+  transition: none;
+}
+
+.settings-nav > .fluid-highlight {
+  background: #f3f7fd;
+}
+
+/* Menus light their items with the accent, as before. The extra attribute keeps this above the */
+/* dark theme's copy of the plain highlight colour. */
+html[data-fluid-hover] .page-menu > .fluid-highlight {
+  background: var(--accent-soft);
+}
+
+/* With the gliding highlight running, the items' own hover backgrounds step aside for it (their */
+/* hover text colours stay). The chosen item keeps its own background. */
+html[data-fluid-hover] .sidebar-lists .sidebar-link:hover:not(.is-current),
+html[data-fluid-hover] .sidebar-icons .sidebar-icon:hover:not(.is-active),
+html[data-fluid-hover] .settings-nav .settings-nav-item:hover:not(.active),
+html[data-fluid-hover] .page-menu:not(.dropdown-menu) .page-menu-item:hover:not(:disabled) {
+  background: transparent;
+}
+
+/* With reduced motion the highlight moves at once and only fades. */
+@media (prefers-reduced-motion: reduce) {
+  .fluid-highlight {
+    transition: opacity 90ms ease-out;
+  }
+}

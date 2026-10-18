@@ -1,6 +1,7 @@
 import { createRoot } from 'react-dom/client';
 import { App } from './app/App';
 import { applyTheme } from './app/preferences';
+import { startFluidHover } from './app/fluidHover';
 import { removeUnusedImages } from './notespace/imageStore';
 import { imageIdsIn } from './notespace/editor/images/images';
 import { getNotes, isStorageAvailable } from './notespace/store';
@@ -8,6 +9,7 @@ import { getNotes, isStorageAvailable } from './notespace/store';
 /* Styles load in their original cascade order to preserve the design. */
 import './app/styles.css';
 import './app/accents.css';
+import './app/fluidHover.css';
 import './notespace/home.css';
 import './home/starjotHome.css';
 import './search/search.css';
@@ -36,6 +38,9 @@ import './app/dark-overrides.css';
 
 /* Apply the saved light or dark theme before the first render, so the page never flashes. */
 applyTheme();
+
+/* Hover highlights in the sidebar, Settings and menus glide from item to item. */
+startFluidHover();
 
 /* New lines typed in a note become paragraphs, so each line maps cleanly to one block. */
 document.execCommand('defaultParagraphSeparator', false, 'p');
