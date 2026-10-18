@@ -558,7 +558,9 @@
   text-decoration-style: dashed;
 }
 
-/* The preview shown while hovering over a page block. */
+/* The preview of a page, shown while hovering over (or tabbing to) a page block, page link or */
+/* note in a list. It fades in with a small rise (on its own translate, so the transform that */
+/* lifts it above its page is kept). */
 .page-preview {
   position: fixed;
   z-index: 72;
@@ -571,6 +573,20 @@
   border-radius: 4px;
   background: #ffffff;
   box-shadow: 0 10px 30px rgba(28, 54, 96, .18);
+  animation: preview-in 150ms cubic-bezier(.23, 1, .32, 1) both;
+}
+
+@keyframes preview-in {
+  from {
+    opacity: 0;
+    translate: 0 4px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-preview {
+    animation: none;
+  }
 }
 
 .page-preview-title {

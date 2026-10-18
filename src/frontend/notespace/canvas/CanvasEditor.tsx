@@ -731,7 +731,7 @@ export function CanvasEditor({ noteId, history, active, onClose, onOpenNote, onO
       {/* The text tools of the box being written in, as in a document. */}
       <SelectionToolbar session={session} locked={locked} />
       <SlashMenu session={session} noteId={note.id} locked={locked} onOpenNewPage={onOpenNewPage} />
-      <BlockWidgets session={session} locked={locked} onOpenNote={onOpenNote} onOpenNoteInNewTab={onOpenNoteInNewTab} />
+      <BlockWidgets session={session} locked={locked} onOpenNote={onOpenNote} onOpenNoteInNewTab={onOpenNoteInNewTab} area={() => viewRef.current?.querySelector('.canvas-boxes') ?? null} />
       <LinkTools session={session} locked={locked} onOpenNote={onOpenNote} onOpenNoteInNewTab={onOpenNoteInNewTab} />
       <ImageTools session={session} locked={locked} />
       <TableTools session={session} locked={locked} />

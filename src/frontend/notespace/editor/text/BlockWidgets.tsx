@@ -25,7 +25,15 @@ type BlockWidgetsProps = {
   locked: boolean;
   onOpenNote: OpenById;
   onOpenNoteInNewTab: (id: string) => void;
+
+  /* Where else this note shows its own words, outside the editor: a canvas's text boxes, whose */
+  /* page links and cards get previews too. */
+  area?: () => Element | null;
 };
+
+/* How long the pointer rests on a page link before its preview opens (keyboard focus is sooner). */
+const PREVIEW_DELAY = 250;
+const FOCUS_PREVIEW_DELAY = 150;
 
 /* A preview of a page, shown for a page block or a page listed in the note's details. */
 type Preview = { id: string; top: number; left: number; above: boolean };
@@ -41,7 +49,7 @@ type PageMenu = { id: string; top: number; left: number };
 /* The parts of page blocks, page links, toggle lists and tables that need more than typing: */
 /* opening pages, block sizes, page previews, the toggle arrow and the line under a table. */
 /* Table grips and menus are in TableTools; links (page links included) are in LinkTools. */
-export function BlockWidgets({ session, locked, onOpenNote, onOpenNoteInNewTab }: BlockWidgetsProps) {
+export function BlockWidgets({ session, locked, onOpenNote, onOpenNoteInNewTab, area }: BlockWidgetsProps) {
   const notes = useNotes();
   const [preview, setPreview] = useState<Preview | null>(null);
   const [pageMenu, setPageMenu] = useState<PageMenu | null>(null);
@@ -79,8 +87,8 @@ export function BlockWidgets({ session, locked, onOpenNote, onOpenNoteInNewTab }
 
   /* The page block whose width is being dragged. */
   const resizing = useRef<HTMLElement | null>(null);
-  const latest = useRef({ locked, onOpenNote, previewId: preview?.id ?? null });
-  latest.current = { locked, onOpenNote, previewId: preview?.id ?? null };
+  const latest = useRef({ locked, onOpenNote, previewId: preview?.id ?? null, area });
+  latest.current = { locked, onOpenNote, previewId: preview?.id ?? null, area };
 
   /* Page blocks show the current title and description of the page they point to. */
   useEffect(() => {
@@ -229,8 +237,30 @@ export function BlockWidgets({ session, locked, onOpenNote, onOpenNoteInNewTab }
       session.linesChanged(line, false);
     }
 
-    /* Hovering a page block shows a preview of its page, but only when part of its title or */
-    /* description is hidden by its size or width. */
+    /* After a short pause, so moving the pointer across the page does not flash previews, the */
+    /* preview opens under the page, or above it near the bottom of the window. */
+    function showPreviewOf(anchor: HTMLElement, delay: number) {
+      window.clearTimeout(hideTimer.current);
+
+      /* Already showing this page: the pointer only moved within it. */
+      const id = anchor.dataset.page ?? anchor.dataset.previewPage ?? '';
+      if (latest.current.previewId === id) return;
+      window.clearTimeout(showTimer.current);
+      showTimer.current = window.setTimeout(() => {
+        if (!anchor.isConnected) return;
+        const bounds = anchor.getBoundingClientRect();
+        const above = bounds.bottom + 200 > window.innerHeight && bounds.top > 200;
+        setPreview({
+          id,
+          top: above ? bounds.top - 6 : bounds.bottom + 6,
+          left: Math.min(bounds.left, window.innerWidth - 320),
+          above
+        });
+      }, delay);
+    }
+
+    /* Hovering a page block or a page link in the note (or in a canvas's text boxes) shows a */
+    /* preview of its page. */
     function handleMouseOver(event: MouseEvent) {
       const target = event.target as Element;
       if (target.closest?.('.page-preview')) {
@@ -243,28 +273,22 @@ export function BlockWidgets({ session, locked, onOpenNote, onOpenNoteInNewTab }
       /* handle are left alone, so they are easy to use. */
       const listed = target.closest?.<HTMLElement>('[data-preview-page]');
       const inNote = block && !resizing.current && !target.closest('.page-block-sizes, .page-block-resize') ? block : null;
-      const anchor = listed ?? (inNote && body()?.contains(inNote) ? inNote : null);
-      if (!anchor) return;
-      window.clearTimeout(hideTimer.current);
+      const shown = inNote && (body()?.contains(inNote) || latest.current.area?.()?.contains(inNote));
+      const anchor = listed ?? (shown ? inNote : null);
+      if (anchor) showPreviewOf(anchor, PREVIEW_DELAY);
+    }
 
-      /* Already showing this page: the pointer only moved within it. */
-      const id = anchor.dataset.page ?? anchor.dataset.previewPage ?? '';
-      if (latest.current.previewId === id) return;
+    /* Reaching a page listed in the note's details with Tab shows its preview as well; moving on */
+    /* hides it. A click focuses it too, but opens the page anyway, so only keyboard focus counts. */
+    function handleFocusIn(event: FocusEvent) {
+      const listed = (event.target as Element).closest?.<HTMLElement>('[data-preview-page]');
+      if (listed?.matches(':focus-visible') && body()?.closest('.editor-wrap')?.contains(listed)) showPreviewOf(listed, FOCUS_PREVIEW_DELAY);
+    }
+
+    function handleFocusOut(event: FocusEvent) {
+      if (!(event.target as Element).closest?.('[data-preview-page]')) return;
       window.clearTimeout(showTimer.current);
-
-      /* After a short pause, so moving the pointer across the page does not flash previews, the */
-      /* preview opens under the page, or above it near the bottom of the window. */
-      showTimer.current = window.setTimeout(() => {
-        if (!anchor.isConnected) return;
-        const bounds = anchor.getBoundingClientRect();
-        const above = bounds.bottom + 200 > window.innerHeight && bounds.top > 200;
-        setPreview({
-          id,
-          top: above ? bounds.top - 6 : bounds.bottom + 6,
-          left: Math.min(bounds.left, window.innerWidth - 320),
-          above
-        });
-      }, 250);
+      if (!(event.relatedTarget as Element | null)?.closest?.('[data-preview-page]')) setPreview(null);
     }
 
     function handleMouseOut(event: MouseEvent) {
@@ -410,7 +434,11 @@ export function BlockWidgets({ session, locked, onOpenNote, onOpenNoteInNewTab }
     document.addEventListener('mousedown', handleMouseDown);
     document.addEventListener('mouseover', handleMouseOver);
     document.addEventListener('mouseout', handleMouseOut);
+    document.addEventListener('focusin', handleFocusIn);
+    document.addEventListener('focusout', handleFocusOut);
     return () => {
+      document.removeEventListener('focusin', handleFocusIn);
+      document.removeEventListener('focusout', handleFocusOut);
       window.removeEventListener(RENAME_SUB_NOTE, handleRename);
       document.removeEventListener('dblclick', handleDoubleClick);
       window.removeEventListener('keydown', handleKeyDown, true);

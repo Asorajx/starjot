@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type MouseEvent } from 'react';
+import { useEffect, useRef, useState, type FocusEvent, type MouseEvent } from 'react';
 import { Icon } from '../components/Icon';
 import { opensNewTab, startNoteDrag, type OpenById } from '../lib/clicks';
 import { useMediaQuery } from '../lib/useMediaQuery';
@@ -181,8 +181,12 @@ export function NotesViewSwitch() {
 /* not flash previews. */
 const PREVIEW_DELAY = 500;
 
+/* Reaching a row with the keyboard (Tab) shows its preview sooner: there is no passing over. */
+const FOCUS_PREVIEW_DELAY = 300;
+
 /* A table of notes with Name, Category and Last edited (or Last opened) columns, or a gallery of */
-/* cards. Resting the mouse on a row shows a preview of the note (cards already show it). */
+/* cards. Resting the mouse on a row, or reaching it with Tab, shows a preview of the note (cards */
+/* already show it). */
 export function NoteTable({ notes, onOpen, onMenu, showOpened = false, view = 'list' }: NoteTableProps) {
   const [preview, setPreview] = useState<{ id: string; top: number; left: number; above: boolean } | null>(null);
   const timer = useRef<number | undefined>(undefined);
@@ -193,22 +197,36 @@ export function NoteTable({ notes, onOpen, onMenu, showOpened = false, view = 'l
 
   useEffect(() => () => window.clearTimeout(timer.current), []);
 
-  function handleOver(event: MouseEvent) {
-    const row = (event.target as Element).closest<HTMLElement>('[data-note-row]');
+  /* The preview opens under the row's title, or above it near the bottom of the window. */
+  function showFor(row: HTMLElement | null, delay: number) {
     const id = row?.dataset.noteRow ?? null;
     if (id === hovered.current) return;
     hovered.current = id;
     window.clearTimeout(timer.current);
     setPreview(null);
-    if (!row || !id || !canHover || event.buttons) return;
-
-    /* The preview opens under the row's title, or above it near the bottom of the window. */
+    if (!row || !id) return;
     timer.current = window.setTimeout(() => {
       if (!row.isConnected) return;
       const title = row.querySelector('.recent-name')?.getBoundingClientRect() ?? row.getBoundingClientRect();
       const above = title.bottom + 220 > window.innerHeight && title.top > 220;
       setPreview({ id, top: above ? title.top - 4 : title.bottom + 4, left: Math.min(title.left, window.innerWidth - 316), above });
-    }, PREVIEW_DELAY);
+    }, delay);
+  }
+
+  function handleOver(event: MouseEvent) {
+    const row = (event.target as Element).closest<HTMLElement>('[data-note-row]');
+    showFor(canHover && !event.buttons ? row : null, PREVIEW_DELAY);
+  }
+
+  /* Only focus from the keyboard counts; a click focuses the row too, and opens the note anyway. */
+  function handleFocus(event: FocusEvent) {
+    const target = event.target as Element;
+    if (target.matches(':focus-visible')) showFor(target.closest<HTMLElement>('[data-note-row]'), FOCUS_PREVIEW_DELAY);
+  }
+
+  function handleBlur(event: FocusEvent) {
+    const next = event.relatedTarget as Element | null;
+    if (!next?.closest('[data-note-row]')) hidePreview();
   }
 
   function hidePreview() {
@@ -224,7 +242,7 @@ export function NoteTable({ notes, onOpen, onMenu, showOpened = false, view = 'l
   }
 
   return (
-    <div className="recent-table" onMouseOver={handleOver} onMouseLeave={hidePreview} onMouseDown={hidePreview} onContextMenu={hidePreview}>
+    <div className="recent-table" onMouseOver={handleOver} onMouseLeave={hidePreview} onMouseDown={hidePreview} onContextMenu={hidePreview} onFocus={handleFocus} onBlur={handleBlur}>
       <div className="recent-columns note-row-columns">
         <span>NAME</span><span>CATEGORY</span><span>{showOpened ? 'LAST OPENED' : 'LAST EDITED'}</span><span />
       </div>
