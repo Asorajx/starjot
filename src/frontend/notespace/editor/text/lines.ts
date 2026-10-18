@@ -1,5 +1,6 @@
 import { highlight } from '../code/code';
 import { closestAtCaret, emptyParagraph, isEmptyContent } from './dom';
+import { createChecklist } from './checklist';
 import type { CommandId } from './slashCommands';
 
 
@@ -30,6 +31,12 @@ function buildLine(kind: CommandId): { element: HTMLElement; text: HTMLElement }
   if (kind === 'bullet' || kind === 'numbered') {
     const list = document.createElement(kind === 'bullet' ? 'ul' : 'ol');
     return { element: list, text: list.appendChild(document.createElement('li')) };
+  }
+  if (kind === 'checklist') {
+    const list = createChecklist();
+    const item = list.firstElementChild as HTMLElement;
+    item.replaceChildren();
+    return { element: list, text: item };
   }
   if (kind === 'quote') {
     const quote = document.createElement('blockquote');

@@ -98,7 +98,8 @@ function inline(node: Node, context: Context): string {
 function list(element: Element, context: Context, indent = ''): string {
   const numbered = element.tagName === 'OL';
   return Array.from(element.children).filter(child => child.tagName === 'LI').map((item, index) => {
-    const marker = numbered ? `${index + 1}. ` : '- ';
+    const box = element.classList.contains('checklist') ? (item.classList.contains('is-checked') ? '[x] ' : '[ ] ') : '';
+    const marker = numbered ? `${index + 1}. ` : `- ${box}`;
     const nested = Array.from(item.children).filter(child => child.tagName === 'UL' || child.tagName === 'OL');
     const text = Array.from(item.childNodes).filter(child => !nested.includes(child as Element)).map(child => inline(child, context)).join('').trim();
     const lines = [`${indent}${marker}${escapeLineStart(text).replace(/\n/g, `\n${indent}${' '.repeat(marker.length)}`)}`];

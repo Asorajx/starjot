@@ -761,3 +761,58 @@
 .toggle-block:not(.is-open) > .toggle-body {
   display: none;
 }
+
+
+/* =========================
+   Checklists
+   ========================= */
+
+/* Each item's box is drawn in its left padding, in line with the middle of its first line; */
+/* clicking it ticks the item (see checklist.ts). */
+ul.checklist {
+  padding-left: 0;
+  list-style: none;
+}
+
+ul.checklist > li {
+  position: relative;
+  padding-left: 28px;
+}
+
+ul.checklist > li::before {
+  content: "";
+  position: absolute;
+  top: calc(.5lh - 8px);
+  left: 2px;
+  box-sizing: border-box;
+  width: 16px;
+  height: 16px;
+  border: 1.5px solid #8794a8;
+  border-radius: 4px;
+  background: var(--paper);
+  cursor: pointer;
+}
+
+ul.checklist > li.is-checked::before {
+  border-color: var(--accent);
+  background: var(--accent);
+}
+
+/* The tick: two sides of a rotated box. */
+ul.checklist > li.is-checked::after {
+  content: "";
+  position: absolute;
+  top: calc(.5lh - 5px);
+  left: 7.5px;
+  width: 4px;
+  height: 8px;
+  border: solid #fff;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+  pointer-events: none;
+}
+
+ul.checklist > li.is-checked {
+  color: #69778d;
+  text-decoration: line-through;
+}

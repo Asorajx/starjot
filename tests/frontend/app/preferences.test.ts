@@ -106,7 +106,21 @@ describe('start screen, spaces and sidebar', () => {
     const { startScreen, spaces, sidebar } = (await openApp()).getPreferences();
     expect(startScreen).toBe('start');
     expect(spaces).toEqual({ notes: true, boardspace: true });
-    expect(sidebar).toEqual({ starred: true, recent: true, categories: false, hiddenCategories: [] });
+    expect(sidebar).toEqual({ starred: true, recent: true, categories: false, hiddenCategories: [], folded: [] });
+  });
+
+  it('opens notes in the current tab by default, with Ctrl + click and the setting choosing a new tab', async () => {
+    const app = await openApp();
+    expect(app.getPreferences().openNewSubNotes).toBe(true);
+    expect(app.opensInNewTab(false)).toBe(false);
+    expect(app.opensInNewTab(true)).toBe(true);
+    app.updatePreferences({ openNotesIn: 'new-notes' });
+    expect(app.opensInNewTab(false)).toBe(false);
+    expect(app.opensInNewTab(false, true)).toBe(true);
+    expect(app.opensInNewTab(true, true)).toBe(false);
+    app.updatePreferences({ openNotesIn: 'always' });
+    expect(app.opensInNewTab(false)).toBe(true);
+    expect(app.opensInNewTab(true)).toBe(false);
   });
 
   it('starts new notes continuous and pageless on A4, with drawing turned on', async () => {
@@ -121,11 +135,11 @@ describe('start screen, spaces and sidebar', () => {
   });
 
   it('remembers the choices, and never loads with every space off', async () => {
-    save({ startScreen: 'boardspace', spaces: { notes: false, boardspace: true }, sidebar: { recent: false, categories: true, hiddenCategories: ['work', 7] } });
+    save({ startScreen: 'boardspace', spaces: { notes: false, boardspace: true }, sidebar: { recent: false, categories: true, hiddenCategories: ['work', 7], folded: ['sidebar-recent', 3] } });
     const loaded = (await openApp()).getPreferences();
     expect(loaded.startScreen).toBe('boardspace');
     expect(loaded.spaces).toEqual({ notes: false, boardspace: true });
-    expect(loaded.sidebar).toEqual({ starred: true, recent: false, categories: true, hiddenCategories: ['work'] });
+    expect(loaded.sidebar).toEqual({ starred: true, recent: false, categories: true, hiddenCategories: ['work'], folded: ['sidebar-recent'] });
 
     vi.resetModules();
     save({ startScreen: 'garden', spaces: { notes: false, boardspace: false } });

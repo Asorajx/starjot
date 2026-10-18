@@ -31,7 +31,8 @@ function indent(text: string, by: string) {
 function list(element: Element, depth = 0): string {
   const numbered = element.tagName === 'OL';
   return Array.from(element.children).filter(child => child.tagName === 'LI').map((item, index) => {
-    const marker = numbered ? `${index + 1}. ` : '• ';
+    const box = element.classList.contains('checklist') ? (item.classList.contains('is-checked') ? '☑ ' : '☐ ') : '• ';
+    const marker = numbered ? `${index + 1}. ` : box;
     const nested = Array.from(item.children).filter(child => child.tagName === 'UL' || child.tagName === 'OL');
     const text = Array.from(item.childNodes).filter(child => !nested.includes(child as Element)).map(inline).join('').trim();
     const lines = [`${'  '.repeat(depth)}${marker}${text.replace(/\n/g, `\n${'  '.repeat(depth)}${' '.repeat(marker.length)}`)}`];

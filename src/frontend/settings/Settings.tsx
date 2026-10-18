@@ -36,6 +36,7 @@ type Shortcut = { action: string; keys: string[][] };
 const LINE_SHORTCUTS: Shortcut[] = [
   { action: 'Heading 1 to 5', keys: [['#', 'Space'], ['#####', 'Space']] },
   { action: 'Bulleted and numbered list', keys: [['-', 'Space'], ['1.', 'Space']] },
+  { action: 'Checklist, empty or ticked', keys: [['[]', 'Space'], ['[x]', 'Space']] },
   { action: 'Quote', keys: [['>', 'Space']] },
   { action: 'Code block and divider', keys: [['```', 'Enter'], ['---', 'Enter']] }
 ];
@@ -263,7 +264,7 @@ function Heading({ title, subtitle }: { title: string; subtitle: string }) {
    ========================= */
 
 function SettingsSectionContent({ section }: { section: SettingsSection }) {
-  const { theme, accent, density, startScreen, spaces, sidebar, newNotes, contentsScroll, hideHeaderWhileTyping, tips, spellcheck, typingShortcuts, drawing } = usePreferences();
+  const { theme, accent, density, startScreen, spaces, sidebar, newNotes, openNotesIn, openNewSubNotes, contentsScroll, hideHeaderWhileTyping, tips, spellcheck, typingShortcuts, drawing } = usePreferences();
   const categories = useCategories();
   const set = (changes: Partial<Preferences>) => updatePreferences(changes);
 
@@ -451,6 +452,20 @@ function SettingsSectionContent({ section }: { section: SettingsSection }) {
               />
             </Row>
           )}
+        </Group>
+        <Group title="Opening notes">
+          <Row title="Open notes in" description="Where a note opens when you click it, find it in Search or make it. Ctrl + click does the opposite.">
+            <Dropdown
+              label="Open notes in"
+              value={openNotesIn}
+              options={[{ value: 'current', label: 'This tab' }, { value: 'new-notes', label: 'A new tab for new notes' }, { value: 'always', label: 'A new tab' }]}
+              alignEnd
+              onChange={value => set({ openNotesIn: value })}
+            />
+          </Row>
+          <Row title="Open new sub-notes" description="Open a sub-note as soon as you add it. When off, you name it on its card and keep writing.">
+            <Switch label="Open new sub-notes" on={openNewSubNotes} onChange={on => set({ openNewSubNotes: on })} />
+          </Row>
         </Group>
         <Group title="Reading and writing">
           <Row title="Contents scrolling" description="How the note scrolls when you choose a heading in Contents.">

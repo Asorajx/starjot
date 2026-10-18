@@ -228,3 +228,16 @@ describe('pasting tab-separated tables', () => {
     expect(markdown('- item\n\t- nested\n\t- nested')).toContain('<ul><li>item<ul><li>nested</li><li>nested</li></ul></li></ul>');
   });
 });
+
+
+/* =========================
+   Pasting Checklists
+   ========================= */
+
+describe('pasting checklists', () => {
+  it('turns "- [ ]" and "- [x]" lines into a checklist, separate from a bulleted list beside it', () => {
+    expect(markdown('- [ ] Pack\n- [x] Book flights\n- Notes')).toBe(
+      '<ul class="checklist"><li>Pack</li><li class="is-checked">Book flights</li></ul><ul><li>Notes</li></ul>'
+    );
+  });
+});

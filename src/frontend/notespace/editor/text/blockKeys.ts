@@ -384,12 +384,16 @@ export function typeOutsideComment(event: InputEvent) {
 /* as in most editors; the browser would otherwise do nothing for a list at the top of a note. */
 /* Items after it move into a new list below the line, and lists inside the item follow the line. */
 function listKeys(event: KeyboardEvent, root: HTMLElement): KeyResult | null {
-  if (event.key !== 'Backspace' || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return null;
+  if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return null;
   if (!window.getSelection()?.isCollapsed) return null;
+  const checklistItem = event.key === 'Enter' ? closestAtCaret<HTMLLIElement>('ul.checklist > li') : null;
+  if (checklistItem && root.contains(checklistItem) && !isEmptyContent(checklistItem)) return splitChecklistItem(event, checklistItem);
+  const leavesEmpty = checklistItem && root.contains(checklistItem);
+  if (event.key !== 'Backspace' && !leavesEmpty) return null;
   const item = closestAtCaret<HTMLLIElement>('li');
   const list = item?.parentElement;
   if (!item || !list || !root.contains(item) || !list.matches('ul, ol') || list.parentElement?.closest('li')) return null;
-  if (!caretAtEdge(item, 'start')) return null;
+  if (!leavesEmpty && !caretAtEdge(item, 'start')) return null;
   event.preventDefault();
 
   const nested = Array.from(item.children).filter(child => child.matches('ul, ol'));
@@ -397,12 +401,28 @@ function listKeys(event: KeyboardEvent, root: HTMLElement): KeyResult | null {
   paragraph.append(...Array.from(item.childNodes).filter(node => !nested.includes(node as Element)));
   withBreak(paragraph);
 
-  const rest = document.createElement(list.tagName.toLowerCase());
+  const rest = list.cloneNode(false) as HTMLElement;
   while (item.nextElementSibling) rest.append(item.nextElementSibling);
   item.remove();
   list.after(paragraph, ...nested, ...(rest.childElementCount ? [rest] : []));
   if (!list.childElementCount) list.remove();
   return { kind: 'lines', focus: paragraph, atEnd: false };
+}
+
+/* Enter in a checklist item moves the text after the caret into a new, unticked item below (the */
+/* browser would copy the tick). Enter in an empty item leaves the list, like other lists. */
+function splitChecklistItem(event: KeyboardEvent, item: HTMLLIElement): KeyResult {
+  event.preventDefault();
+  const caret = window.getSelection()?.getRangeAt(0);
+  const after = document.createRange();
+  if (caret) after.setStart(caret.startContainer, caret.startOffset);
+  after.setEndAfter(item.lastChild ?? item);
+  const next = document.createElement('li');
+  next.append(after.extractContents());
+  if (isEmptyContent(next)) next.replaceChildren(document.createElement('br'));
+  withBreak(item);
+  item.after(next);
+  return { kind: 'lines', focus: next, atEnd: false };
 }
 
 /* Keys with special meaning in table cells, toggle lists and lists. Returns null for every other key. */

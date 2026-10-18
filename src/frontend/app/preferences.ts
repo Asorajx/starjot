@@ -36,8 +36,13 @@ export type StartScreen = 'start' | ScreenId;
 export type Spaces = Record<ScreenId, boolean>;
 
 /* What Notespace's sidebar lists: starred notes, recently opened notes, and categories (all of */
-/* them except the ones hidden, so a new category shows up by itself). */
-export type SidebarLists = { starred: boolean; recent: boolean; categories: boolean; hiddenCategories: string[] };
+/* them except the ones hidden, so a new category shows up by itself). folded: the lists folded */
+/* away under their headings. */
+export type SidebarLists = { starred: boolean; recent: boolean; categories: boolean; hiddenCategories: string[]; folded: string[] };
+
+/* Where a note opens when clicked, searched or created: in the tab already open, in a new tab */
+/* only for new notes, or always in a new tab. Ctrl + click does the opposite. */
+export type OpenNotesIn = 'current' | 'new-notes' | 'always';
 
 /* What drawing mode draws with: the chosen tool, and the pen's and highlighter's own colour and */
 /* size. The eraser removes whole strokes; Select draws a box around strokes to anchor them into the */
@@ -69,6 +74,11 @@ export type Preferences = {
   spaces: Spaces;
   sidebar: SidebarLists;
   newNotes: NewNotes;
+  openNotesIn: OpenNotesIn;
+
+  /* Open a sub-note as soon as it is made; when off, it stays in the parent with its name */
+  /* ready to type. */
+  openNewSubNotes: boolean;
 
   /* Note zoom as a multiplier: 1 is 100%. */
   zoom: number;
@@ -100,6 +110,14 @@ export type Preferences = {
   /* Text and background colours used most recently, newest first (up to five). */
   recentColors: ColorClass[];
 };
+
+/* Whether a note opens in a new tab, from Settings → Notes → Open notes in. reversed is true for */
+/* Ctrl + click, which does the opposite; created is true for a note just made. */
+export function opensInNewTab(reversed: boolean, created = false) {
+  const { openNotesIn } = getPreferences();
+  const newTab = openNotesIn === 'always' || (openNotesIn === 'new-notes' && created);
+  return newTab !== reversed;
+}
 
 export const RECENT_COLORS = 5;
 
@@ -137,7 +155,8 @@ function loadSidebar(saved: unknown): SidebarLists {
     starred: record.starred !== false,
     recent: record.recent !== false,
     categories: record.categories === true,
-    hiddenCategories: Array.isArray(record.hiddenCategories) ? record.hiddenCategories.filter((id): id is string => typeof id === 'string').slice(0, 200) : []
+    hiddenCategories: Array.isArray(record.hiddenCategories) ? record.hiddenCategories.filter((id): id is string => typeof id === 'string').slice(0, 200) : [],
+    folded: Array.isArray(record.folded) ? record.folded.filter((id): id is string => typeof id === 'string').slice(0, 20) : []
   };
 }
 
@@ -174,7 +193,7 @@ function loadDrawing(saved: unknown): DrawingPreferences {
 /* Light mode is the default; once a theme is chosen in Settings it is remembered between visits. */
 function load(): Preferences {
   const defaults: Preferences = {
-    theme: 'light', accent: 'blue', density: 'comfortable', startScreen: 'start', spaces: loadSpaces(null), sidebar: loadSidebar(null), newNotes: loadNewNotes(null), zoom: 1, sidebarCollapsed: false, contentsScroll: 'smooth', notesSort: 'edited', hideHeaderWhileTyping: true, tips: true, spellcheck: true, typingShortcuts: true, shortcuts: {}, drawing: loadDrawing(null),
+    theme: 'light', accent: 'blue', density: 'comfortable', startScreen: 'start', spaces: loadSpaces(null), sidebar: loadSidebar(null), newNotes: loadNewNotes(null), openNotesIn: 'current', openNewSubNotes: true, zoom: 1, sidebarCollapsed: false, contentsScroll: 'smooth', notesSort: 'edited', hideHeaderWhileTyping: true, tips: true, spellcheck: true, typingShortcuts: true, shortcuts: {}, drawing: loadDrawing(null),
     exportSettings: normalizeExportSettings(null),
     recentColors: []
   };
@@ -187,6 +206,8 @@ function load(): Preferences {
     spaces: loadSpaces(saved.spaces),
     sidebar: loadSidebar(saved.sidebar),
     newNotes: loadNewNotes(saved.newNotes),
+    openNotesIn: saved.openNotesIn === 'new-notes' || saved.openNotesIn === 'always' ? saved.openNotesIn : defaults.openNotesIn,
+    openNewSubNotes: saved.openNewSubNotes !== false,
     zoom: typeof saved.zoom === 'number' ? clampZoom(saved.zoom) : defaults.zoom,
     sidebarCollapsed: saved.sidebarCollapsed === true,
     contentsScroll: saved.contentsScroll === 'instant' ? 'instant' : 'smooth',

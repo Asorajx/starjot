@@ -1,5 +1,5 @@
 import { Icon } from '../components/Icon';
-import { opensNewTab, type OpenById } from '../lib/clicks';
+import { opensNewTab, startNoteDrag, type OpenById } from '../lib/clicks';
 import type { NotesSort } from '../app/preferences';
 import { categoryName, getNote, noteTitle, setPinned, updatedLabel } from './store';
 import type { NoteMenu } from './NoteMenu';
@@ -67,7 +67,7 @@ function LockedMark({ note }: { note: Note }) {
 export function NoteTile({ note, onOpen, onMenu }: { note: Note; onOpen: OpenNote; onMenu?: OpenMenu }) {
   const category = categoryName(note.category);
   return (
-    <button type="button" className="note-tile" onClick={event => onOpen(note.id, opensNewTab(event))} onContextMenu={onMenu && (event => onMenu(event, note.id))}>
+    <button type="button" className="note-tile" draggable onDragStart={event => startNoteDrag(event, note.id)} onClick={event => onOpen(note.id, opensNewTab(event))} onContextMenu={onMenu && (event => onMenu(event, note.id))}>
       <span className="note-tile-title">
         {note.icon ? <span className="note-tile-icon" aria-hidden="true">{note.icon}</span> : <Icon name="file-text" size={16} />}
         <strong>{noteTitle(note)}</strong>
@@ -81,9 +81,10 @@ export function NoteTile({ note, onOpen, onMenu }: { note: Note; onOpen: OpenNot
 }
 
 /* One row of a note list. The star adds or removes the note from Starred without opening it. */
+/* Rows and cards can be dragged onto the tab bar to open the note in a new tab. */
 function NoteRow({ note, onOpen, onMenu, time }: { note: Note; onOpen: OpenNote; onMenu?: OpenMenu; time: string }) {
   return (
-    <div className="recent-row note-row" onContextMenu={onMenu && (event => onMenu(event, note.id))}>
+    <div className="recent-row note-row" draggable onDragStart={event => startNoteDrag(event, note.id)} onContextMenu={onMenu && (event => onMenu(event, note.id))}>
       <button type="button" className="note-row-open" onClick={event => onOpen(note.id, opensNewTab(event))}>
         <span className="recent-name">
           {note.icon && <span className="note-row-icon" aria-hidden="true">{note.icon}</span>}

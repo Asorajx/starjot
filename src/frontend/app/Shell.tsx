@@ -1,6 +1,6 @@
 import type { MouseEvent, ReactNode } from 'react';
 import { BrandMark } from '../components/BrandMark';
-import { opensNewTab, type OpenById } from '../lib/clicks';
+import { opensNewTab, startNoteDrag, type OpenById } from '../lib/clicks';
 import { keyParts, keysOf, shortcutLabel } from './shortcuts';
 import { Icon, type IconName } from '../components/Icon';
 import { enabledScreens, screenLabel, type ScreenId } from './screens';
@@ -114,13 +114,23 @@ type SidebarLinkProps = {
   label: string;
   current: boolean;
   onClick: (event: MouseEvent) => void;
+
+  /* A note's line can be dragged onto the tab bar to open it in a new tab. */
+  noteId?: string;
 };
 
 /* One line in a sidebar list: a note, a category, or a view of the board. */
-function SidebarLink({ icon, emoji, label, current, onClick }: SidebarLinkProps) {
+function SidebarLink({ icon, emoji, label, current, onClick, noteId }: SidebarLinkProps) {
   return (
     <li>
-      <button type="button" className={`sidebar-link ${current ? 'is-current' : ''}`} aria-current={current ? 'page' : undefined} onClick={onClick}>
+      <button
+        type="button"
+        className={`sidebar-link ${current ? 'is-current' : ''}`}
+        aria-current={current ? 'page' : undefined}
+        draggable={Boolean(noteId)}
+        onDragStart={noteId ? event => startNoteDrag(event, noteId) : undefined}
+        onClick={onClick}
+      >
         {emoji ? <span className="sidebar-link-emoji" aria-hidden="true">{emoji}</span> : icon && <Icon name={icon} size={14} />}
         <span className="sidebar-link-label">{label}</span>
       </button>
@@ -135,12 +145,21 @@ type SidebarListProps = {
   children: ReactNode[];
 };
 
-/* A titled list; with nothing in it, a short line says what will appear there. */
+/* A titled list; with nothing in it, a short line says what will appear there. Clicking the */
+/* title folds the list away, and the choice is remembered. */
 function SidebarList({ id, title, empty, children }: SidebarListProps) {
+  const { sidebar } = usePreferences();
+  const folded = sidebar.folded.includes(id);
+  const toggle = () => updatePreferences({ sidebar: { ...sidebar, folded: folded ? sidebar.folded.filter(item => item !== id) : [...sidebar.folded, id] } });
   return (
     <section className={`sidebar-list ${children.length ? '' : 'is-empty'}`} aria-labelledby={id}>
-      <h3 id={id} className="sidebar-section-label">{title}</h3>
-      {children.length ? <ul>{children}</ul> : <p className="sidebar-empty hint">{empty}</p>}
+      <h3 className="sidebar-section-label">
+        <button type="button" id={id} className="sidebar-fold" aria-expanded={!folded} onClick={toggle}>
+          <Icon name={folded ? 'chevron-right' : 'chevron-down'} size={12} />
+          {title}
+        </button>
+      </h3>
+      {!folded && (children.length ? <ul>{children}</ul> : <p className="sidebar-empty hint">{empty}</p>)}
     </section>
   );
 }
@@ -160,6 +179,7 @@ function NotespaceLists({ openNoteId, openCategoryId, onOpenNote, onOpenCategory
       icon="file-text"
       emoji={note.icon}
       label={noteTitle(note)}
+      noteId={note.id}
       current={openNoteId === note.id}
       onClick={event => onOpenNote(note.id, opensNewTab(event))}
     />

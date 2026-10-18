@@ -2,10 +2,12 @@ import { useEffect, useRef, useState } from 'react';
 import { DeleteNoteDialog } from '../../DeleteNoteDialog';
 import { Icon } from '../../../components/Icon';
 import { opensNewTab, type OpenById } from '../../../lib/clicks';
-import { deleteNote, getNote, separatePage, useNotes } from '../../store';
-import { deleteKeepingPages, hydratePages, pageBlocksIn, removePageBlocks, setPageWidth, stepOverPage, type PageSize } from './pageBlocks';
+import { deleteNote, getNote, separatePage, updateNote, useNotes } from '../../store';
+import { deleteKeepingPages, hydratePages, pageBlocksIn, removePageBlocks, RENAME_SUB_NOTE, setPageWidth, stepOverPage, type PageSize } from './pageBlocks';
 import { lineBelowTable, typeOutsideComment } from './blockKeys';
 import { placeCaret } from './dom';
+import { clickedCheckbox, toggleChecked } from './checklist';
+import { TitleEditor } from '../../../components/TitleEditor';
 import { LinkPreviewCard } from '../links/LinkPreview';
 import { copyPageLink } from '../links/links';
 import type { EditorSession } from '../session';
@@ -14,6 +16,7 @@ type BlockWidgetsProps = {
   session: EditorSession;
   locked: boolean;
   onOpenNote: OpenById;
+  onOpenNoteInNewTab: (id: string) => void;
 };
 
 /* A preview of a page, shown for a page block or a page listed in the note's details. */
@@ -30,10 +33,13 @@ type PageMenu = { id: string; top: number; left: number };
 /* The parts of page blocks, page links, toggle lists and tables that need more than typing: */
 /* opening pages, block sizes, page previews, the toggle arrow and the line under a table. */
 /* Table grips and menus are in TableTools; links (page links included) are in LinkTools. */
-export function BlockWidgets({ session, locked, onOpenNote }: BlockWidgetsProps) {
+export function BlockWidgets({ session, locked, onOpenNote, onOpenNoteInNewTab }: BlockWidgetsProps) {
   const notes = useNotes();
   const [preview, setPreview] = useState<Preview | null>(null);
   const [pageMenu, setPageMenu] = useState<PageMenu | null>(null);
+
+  /* The sub-note whose card title is being renamed in place, and that title. */
+  const [renaming, setRenaming] = useState<{ id: string; title: HTMLElement } | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
   const hideTimer = useRef<number | undefined>(undefined);
   const showTimer = useRef<number | undefined>(undefined);
@@ -78,6 +84,17 @@ export function BlockWidgets({ session, locked, onOpenNote }: BlockWidgetsProps)
       if (block) {
         event.preventDefault();
         if (getNote(block.dataset.page ?? '')) open(block.dataset.page as string, opensNewTab(event));
+        return;
+      }
+
+      /* A checklist item's box ticks or unticks it, as one undo step. */
+      const checked = clickedCheckbox(event);
+      if (checked) {
+        event.preventDefault();
+        if (isLocked) return;
+        session.checkpoint();
+        toggleChecked(checked);
+        session.commit();
         return;
       }
 
@@ -242,6 +259,16 @@ export function BlockWidgets({ session, locked, onOpenNote }: BlockWidgetsProps)
       if (!(event.target as Element).closest?.('.page-menu')) setPageMenu(null);
     }
 
+    /* A sub-note just made and left closed is named on its card, once the card is in view. */
+    function handleRename(event: Event) {
+      const id = (event as CustomEvent<string>).detail;
+      const block = blockOf(id);
+      if (!block) return;
+      block.scrollIntoView({ block: 'nearest' });
+      requestAnimationFrame(() => startRename(id));
+    }
+
+    window.addEventListener(RENAME_SUB_NOTE, handleRename);
     document.addEventListener('beforeinput', handleBeforeInput, true);
     document.addEventListener('contextmenu', handleContextMenu);
     document.addEventListener('mousedown', closeMenu);
@@ -254,6 +281,7 @@ export function BlockWidgets({ session, locked, onOpenNote }: BlockWidgetsProps)
     document.addEventListener('mouseover', handleMouseOver);
     document.addEventListener('mouseout', handleMouseOut);
     return () => {
+      window.removeEventListener(RENAME_SUB_NOTE, handleRename);
       document.removeEventListener('beforeinput', handleBeforeInput, true);
       document.removeEventListener('contextmenu', handleContextMenu);
       document.removeEventListener('mousedown', closeMenu);
@@ -292,6 +320,32 @@ export function BlockWidgets({ session, locked, onOpenNote }: BlockWidgetsProps)
     setDeleting(null);
   }
 
+  function blockOf(id: string) {
+    return Array.from(session.body()?.querySelectorAll<HTMLElement>('.page-block') ?? []).find(item => item.dataset.page === id) ?? null;
+  }
+
+  /* Rename edits the title on the sub-note's card itself. */
+  function startRename(id: string) {
+    const title = blockOf(id)?.querySelector<HTMLElement>('.page-block-text strong');
+    setPageMenu(null);
+    setPreview(null);
+    if (title) setRenaming({ id, title });
+  }
+
+  /* After naming a sub-note, writing carries on just after its block (past the space after it). */
+  function returnAfterBlock(id: string) {
+    const note = session.body();
+    const block = blockOf(id);
+    if (!note || !block) return;
+    note.focus({ preventScroll: true });
+    const caret = document.createRange();
+    const next = block.nextSibling;
+    if (next instanceof Text && next.data.startsWith(' ')) caret.setStart(next, 1);
+    else caret.setStartAfter(block);
+    window.getSelection()?.removeAllRanges();
+    window.getSelection()?.addRange(caret);
+  }
+
   const menuNote = pageMenu ? getNote(pageMenu.id) : undefined;
 
   return (
@@ -302,6 +356,7 @@ export function BlockWidgets({ session, locked, onOpenNote }: BlockWidgetsProps)
         </div>
       )}
 
+      {/* Open note, or open it in a new tab; Rename edits the title on its card (only for a card in the text). */}
       {/* Copy link copies the page's address. Separate page moves it out of this note (up one level); */}
       {/* Delete removes it for good, after asking. */}
       {pageMenu && (
@@ -309,7 +364,7 @@ export function BlockWidgets({ session, locked, onOpenNote }: BlockWidgetsProps)
           className="page-menu"
           role="menu"
           aria-label="Sub-note options"
-          style={{ top: Math.min(pageMenu.top, window.innerHeight - 140), left: Math.min(pageMenu.left, window.innerWidth - 220) }}
+          style={{ top: Math.min(pageMenu.top, window.innerHeight - 240), left: Math.min(pageMenu.left, window.innerWidth - 220) }}
           onKeyDown={event => {
             if (event.key === 'Escape') setPageMenu(null);
           }}
@@ -317,6 +372,14 @@ export function BlockWidgets({ session, locked, onOpenNote }: BlockWidgetsProps)
           <button type="button" role="menuitem" className="page-menu-item" disabled={!menuNote} onClick={() => { setPageMenu(null); onOpenNote(pageMenu.id); }}>
             <Icon name="arrow-right" size={14} /> Open note
           </button>
+          <button type="button" role="menuitem" className="page-menu-item" disabled={!menuNote} onClick={() => { setPageMenu(null); onOpenNoteInNewTab(pageMenu.id); }}>
+            <Icon name="external-link" size={14} /> Open in new tab
+          </button>
+          {!locked && blockOf(pageMenu.id) && (
+            <button type="button" role="menuitem" className="page-menu-item" disabled={!menuNote} onClick={() => startRename(pageMenu.id)}>
+              <Icon name="pencil" size={14} /> Rename
+            </button>
+          )}
           <button type="button" role="menuitem" className="page-menu-item" disabled={!menuNote} onClick={() => { setPageMenu(null); copyPageLink(pageMenu.id).catch(() => undefined); }}>
             <Icon name="copy" size={14} /> Copy link
           </button>
@@ -340,6 +403,18 @@ export function BlockWidgets({ session, locked, onOpenNote }: BlockWidgetsProps)
             </>
           )}
         </div>
+      )}
+
+      {renaming && (
+        <TitleEditor
+          anchor={renaming.title}
+          value={getNote(renaming.id)?.title ?? ''}
+          onSave={title => updateNote(renaming.id, { title })}
+          onClose={() => {
+            setRenaming(null);
+            returnAfterBlock(renaming.id);
+          }}
+        />
       )}
 
       {deleting && <DeleteNoteDialog noteId={deleting} sub onConfirm={confirmDelete} onCancel={() => setDeleting(null)} />}

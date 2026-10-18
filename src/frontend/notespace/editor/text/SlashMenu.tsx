@@ -3,7 +3,8 @@ import { Icon } from '../../../components/Icon';
 import { canAddSubpage, createSubpage, noteTitle, useNotes } from '../../store';
 import { caretIsInlineOnly, matchCommands, type SlashCommand } from './slashCommands';
 import { convertLine, createPageBlock, createPageMention, createTable, insertBlock, insertInline, lineAtCaret, type LineChange } from './lines';
-import { hydratePages } from './pageBlocks';
+import { hydratePages, renameSubNote } from './pageBlocks';
+import { getPreferences } from '../../../app/preferences';
 import { closestAtCaret } from './dom';
 import type { EditorSession } from '../session';
 
@@ -12,7 +13,8 @@ type SlashMenuProps = {
   noteId: string;
   locked: boolean;
 
-  /* Called after a new sub-page is added, so it can be opened and named straight away. */
+  /* Called after a new sub-page is added, so it can be opened and named straight away. With */
+  /* Settings → Notes → Open new sub-notes off, it is named in this note instead. */
   onOpenNewPage: (id: string) => void;
 };
 
@@ -60,6 +62,7 @@ export function SlashMenu({ session, noteId, locked, onOpenNewPage }: SlashMenuP
 
   const anchor = useRef<Anchor | null>(null);
   const lastQuery = useRef('');
+  const menu = useRef<HTMLDivElement>(null);
 
   /* The "/" and the text after it, kept while the page search box has focus. */
   const linkRange = useRef<Range | null>(null);
@@ -182,6 +185,11 @@ export function SlashMenu({ session, noteId, locked, onOpenNewPage }: SlashMenuP
     };
   }, []);
 
+  /* The arrow keys move the highlight past the menu's visible part, so the list follows it. */
+  useEffect(() => {
+    menu.current?.querySelector('.slash-menu-item.is-active')?.scrollIntoView({ block: 'nearest' });
+  }, [active, mode, position !== null]);
+
   /* Replace "/" and the filter text with the chosen block. */
   choose.current = (command: SlashCommand) => {
     const body = session.body();
@@ -207,7 +215,8 @@ export function SlashMenu({ session, noteId, locked, onOpenNewPage }: SlashMenuP
       insertInline(range, createPageBlock(page.id));
       hydratePages(body);
       session.commit();
-      onOpenNewPage(page.id);
+      if (getPreferences().openNewSubNotes) onOpenNewPage(page.id);
+      else renameSubNote(page.id);
       return;
     }
 
@@ -271,7 +280,7 @@ export function SlashMenu({ session, noteId, locked, onOpenNewPage }: SlashMenuP
   const keepFocus = (event: ReactMouseEvent) => event.preventDefault();
 
   return (
-    <div className="slash-menu" style={style} role="listbox" aria-label={mode === 'pages' ? 'Choose a note to link' : 'Add a block'}>
+    <div ref={menu} className="slash-menu" style={style} role="listbox" aria-label={mode === 'pages' ? 'Choose a note to link' : 'Add a block'}>
       {mode === 'commands' && (
         <>
           <p className="slash-menu-label">{inlineOnly.current ? 'Insert' : 'Add a block'}</p>

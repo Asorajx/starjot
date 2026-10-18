@@ -58,6 +58,12 @@ describe('notesMarkdown', () => {
       + '- one\n  - inner\n- two\n\n1. first\n\n> quoted\n\n```javascript\nlet a = 1;\n```\n\n---\n');
   });
 
+  it('writes checklists as "- [ ]" and "- [x]"', async () => {
+    const page = note('<ul class="checklist"><li>Pack</li><li class="is-checked">Book</li></ul>');
+    expect(await notesMarkdown([page], settings)).toBe('# Plan\n\n- [ ] Pack\n- [x] Book\n');
+    expect(notesText([page], settings)).toBe('Plan\n====\n\n☐ Pack\n☑ Book\n');
+  });
+
   it('writes tables, open toggles and escapes Markdown characters in the text', async () => {
     const page = note('<table><tbody><tr><th>Name</th><th>Note</th></tr><tr><td>a|b</td><td>*x*</td></tr></tbody></table>'
       + '<div class="toggle-block"><p class="toggle-summary">More</p><div class="toggle-body"><p># not a heading</p></div></div>');

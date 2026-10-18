@@ -255,12 +255,38 @@ p {
 
 .sidebar-section-label {
   margin: 0;
-  padding: 0 12px 8px;
+  padding: 0 8px 8px;
   color: #69778d;
   font-size: 11px;
   font-weight: 800;
   letter-spacing: 1.1px;
   text-transform: uppercase;
+}
+
+/* The list's title folds it away; the chevron shows which way. */
+.sidebar-fold {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  cursor: pointer;
+}
+
+.sidebar-fold:hover {
+  color: #34435d;
+}
+
+@media (pointer: coarse) {
+  .sidebar-fold {
+    min-height: 44px;
+  }
 }
 
 .sidebar-list ul {
@@ -461,6 +487,32 @@ p {
 
 .tab-group.is-drop-target > .window-bar {
   background: var(--accent-soft);
+}
+
+/* Renaming in place (TitleEditor): the field sits exactly over the title, in its font, so only a */
+/* thin accent underline shows it can be typed in. That underline is its focus mark, in place of */
+/* the usual outline, which boxed the title in. */
+.title-editor {
+  position: fixed;
+  z-index: 60;
+  box-sizing: border-box;
+  min-width: 96px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-bottom: 1px solid var(--accent);
+  border-radius: 0;
+  background: transparent;
+}
+
+.title-editor:focus-visible {
+  outline: none;
+}
+
+/* A note dragged over a tab opens before it; a line on the tab's left edge shows where. */
+.window-tab.is-drop-before,
+.stack-spine.is-drop-before {
+  box-shadow: inset 2px 0 0 var(--accent);
 }
 
 .tab-group-body {

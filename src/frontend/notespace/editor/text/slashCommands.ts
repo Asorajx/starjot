@@ -7,7 +7,7 @@ import { closestAtCaret } from './dom';
    ========================= */
 
 export type CommandId =
-  | 'text' | 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'bullet' | 'numbered' | 'quote' | 'code' | 'divider' | 'table' | 'page' | 'link'
+  | 'text' | 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'bullet' | 'numbered' | 'checklist' | 'quote' | 'code' | 'divider' | 'table' | 'page' | 'link'
   | 'toggle' | 'toggle-h1' | 'toggle-h2' | 'toggle-h3' | 'toggle-h4' | 'toggle-h5';
 
 export type SlashCommand = {
@@ -31,6 +31,7 @@ export const SLASH_COMMANDS: SlashCommand[] = [
   { id: 'h5', label: 'Heading 5', hint: '#####', icon: 'type', keywords: 'h5 smallest' },
   { id: 'bullet', label: 'Bulleted list', hint: '-', icon: 'list', keywords: 'ul unordered dots' },
   { id: 'numbered', label: 'Numbered list', hint: '1.', icon: 'list', keywords: 'ol ordered numbers' },
+  { id: 'checklist', label: 'Checklist', hint: '[]', icon: 'check-square', keywords: 'checkbox todo to-do tasks tick' },
   { id: 'toggle', label: 'Toggle list', hint: '', icon: 'chevron-right', keywords: 'collapse expand details fold' },
   { id: 'toggle-h1', label: 'Toggle heading 1', hint: '', icon: 'chevron-right', keywords: 'collapse fold h1 title' },
   { id: 'toggle-h2', label: 'Toggle heading 2', hint: '', icon: 'chevron-right', keywords: 'collapse fold h2' },

@@ -280,6 +280,35 @@ describe('Backspace at the start of a list item', () => {
 
 
 /* =========================
+   Checklists
+   ========================= */
+
+describe('checklists', () => {
+  it('splits an item at the caret on Enter, and the new item starts unticked', () => {
+    const body = editor('<ul class="checklist"><li class="is-checked">Buy milk</li></ul>');
+    placeCaret(body.querySelector('li')?.firstChild as Node, 4);
+    expect(handleBlockKeys(press('Enter'), body)?.kind).toBe('lines');
+    expect(body.innerHTML).toBe('<ul class="checklist"><li class="is-checked">Buy </li><li>milk</li></ul>');
+  });
+
+  it('leaves the list on Enter in an empty item, keeping the items after it as a checklist', () => {
+    const body = editor('<ul class="checklist"><li>a</li><li><br></li><li>b</li></ul>');
+    placeCaret(body.querySelectorAll('li')[1], 0);
+    handleBlockKeys(press('Enter'), body);
+    expect(body.innerHTML).toBe('<ul class="checklist"><li>a</li></ul><p><br></p><ul class="checklist"><li>b</li></ul>');
+  });
+
+  it('is made from the slash menu and kept when saved', () => {
+    const body = editor('<p>Pack</p>');
+    convertLine(body.querySelector('p') as HTMLElement, 'checklist');
+    expect(body.innerHTML).toBe('<ul class="checklist"><li>Pack</li></ul>');
+    expect(cleanHtml('<ul class="checklist other"><li class="is-checked">a</li></ul>')).toBe('<ul class="checklist"><li class="is-checked">a</li></ul>');
+    expect(matchCommands('todo', { inlineOnly: false, canAddPage: true })[0].id).toBe('checklist');
+  });
+});
+
+
+/* =========================
    Moving Around Tables
    ========================= */
 

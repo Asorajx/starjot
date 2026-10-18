@@ -63,6 +63,25 @@ describe('Markdown shortcuts', () => {
     expect(body.querySelector('ul li')).not.toBeNull();
   });
 
+  it('turns "[]", "[ ]" and "[x]" and Space into a checklist, ticked for "[x]"', () => {
+    const body = editor('<p>[]</p>');
+    placeCaret(body.querySelector('p')?.firstChild as Node, 2);
+    expect(applyMarkdownShortcut(press(' '), body)).toBe(true);
+    expect(body.innerHTML).toBe('<ul class="checklist"><li><br></li></ul>');
+
+    const ticked = editor('<p>[x]</p>');
+    placeCaret(ticked.querySelector('p')?.firstChild as Node, 3);
+    applyMarkdownShortcut(press(' '), ticked);
+    expect(ticked.innerHTML).toBe('<ul class="checklist"><li class="is-checked"><br></li></ul>');
+  });
+
+  it('turns "- [ ]" into a checklist, taking the item out of the bulleted list "- " made', () => {
+    const body = editor('<ul><li>[ ]</li></ul>');
+    placeCaret(body.querySelector('li')?.firstChild as Node, 3);
+    expect(applyMarkdownShortcut(press(' '), body)).toBe(true);
+    expect(body.innerHTML).toBe('<ul class="checklist"><li><br></li></ul>');
+  });
+
   it('turns "```" and Enter into a code block', () => {
     const body = editor('<p>```</p>');
     placeCaret(body.querySelector('p')?.firstChild as Node, 3);

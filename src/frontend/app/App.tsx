@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type DragEvent, type MouseEvent, type ReactNode } from 'react';
-import { getPreferences, updatePreferences, usePreferences, type Spaces } from './preferences';
+import { getPreferences, opensInNewTab, updatePreferences, usePreferences, type Spaces } from './preferences';
 import { MobileNav, Sidebar, Topbar, WindowControls } from './Shell';
-import { opensNewTab } from '../lib/clicks';
+import { NOTE_DRAG_TYPE, opensNewTab } from '../lib/clicks';
 import { isShortcut, switcherModifier } from './shortcuts';
 import { useDismiss, useEscape } from '../lib/useDismiss';
 import { useMediaQuery } from '../lib/useMediaQuery';
@@ -13,7 +13,7 @@ import { findWhenOpened } from '../notespace/editor/find/pendingFind';
 import type { ViewControls } from '../notespace/editor/EditorPanels';
 import { NoteEditor } from '../notespace/editor/NoteEditor';
 import { PageBar, placeExists, placeLabel, type PageHistory } from '../notespace/PageBar';
-import { createNote, flushSave, updateNote } from '../notespace/store';
+import { createNote, flushSave, getNote, updateNote } from '../notespace/store';
 import { Settings, type SettingsSection } from '../settings/Settings';
 import { Boardspace } from '../boardspace/Boardspace';
 import type { BoardTab } from '../../shared/types/task';
@@ -44,14 +44,28 @@ type TabGroupFrameProps = {
 
   /* A tab was dropped on this group: dropped on a tab (or its strip), it goes before that tab. */
   onDropTab: (fromGroupId: string, tabId: string, beforeTabId: string | null) => void;
+
+  /* A note was dropped on this group's tab bar: it opens in a new tab, before the tab it was */
+  /* dropped on, or at the end. */
+  onDropNote: (noteId: string, beforeTabId: string | null) => void;
   children: ReactNode;
 };
+
+/* The tab a drop lands before, marked while a note is dragged over the tab bar. */
+function dropBefore(event: DragEvent) {
+  return (event.target as Element).closest?.<HTMLElement>('[data-tab-id]') ?? null;
+}
+
+function markDropBefore(tab: HTMLElement | null) {
+  document.querySelectorAll('.is-drop-before').forEach(item => item !== tab && item.classList.remove('is-drop-before'));
+  tab?.classList.add('is-drop-before');
+}
 
 /* The element around one tab group. It measures its own width (CSS cannot do this here: a CSS */
 /* container would also move the note's floating toolbars), and marks itself narrow when needed. */
 /* It also takes tabs dragged from either group. Drops are caught before they reach the note, so */
 /* the editor never treats a dragged tab as text. */
-function TabGroupFrame({ group, focused, onFocus, onDropTab, children }: TabGroupFrameProps) {
+function TabGroupFrame({ group, focused, onFocus, onDropTab, onDropNote, children }: TabGroupFrameProps) {
   const ref = useRef<HTMLElement>(null);
   const [narrow, setNarrow] = useState(false);
   const [dropping, setDropping] = useState(false);
@@ -65,19 +79,35 @@ function TabGroupFrame({ group, focused, onFocus, onDropTab, children }: TabGrou
 
   const isTabDrag = (event: DragEvent) => event.dataTransfer.types.includes(TAB_DRAG_TYPE);
 
+  /* Notes are only taken on the tab bar (or a stack's strips), so dropping one on a page does nothing. */
+  const isNoteDrop = (event: DragEvent) => event.dataTransfer.types.includes(NOTE_DRAG_TYPE)
+    && Boolean((event.target as Element).closest?.('.window-bar, .stack-spine'));
+
   function handleDragOver(event: DragEvent) {
-    if (!isTabDrag(event)) return;
+    const note = isNoteDrop(event);
+    if (!isTabDrag(event) && !note) return;
     event.preventDefault();
     event.stopPropagation();
-    event.dataTransfer.dropEffect = 'move';
+    event.dataTransfer.dropEffect = note ? 'copy' : 'move';
+    if (note) markDropBefore(dropBefore(event));
     setDropping(true);
   }
 
   function handleDragLeave(event: DragEvent) {
-    if (!ref.current?.contains(event.relatedTarget as Node | null)) setDropping(false);
+    if (ref.current?.contains(event.relatedTarget as Node | null)) return;
+    setDropping(false);
+    markDropBefore(null);
   }
 
   function handleDrop(event: DragEvent) {
+    if (isNoteDrop(event)) {
+      event.preventDefault();
+      event.stopPropagation();
+      setDropping(false);
+      markDropBefore(null);
+      onDropNote(event.dataTransfer.getData(NOTE_DRAG_TYPE), dropBefore(event)?.dataset.tabId ?? null);
+      return;
+    }
     if (!isTabDrag(event)) return;
     event.preventDefault();
     event.stopPropagation();
@@ -209,13 +239,16 @@ export function App() {
   function openInNewTab(next: Place) {
     if (!canAddTab(group)) {
       go(next);
-      return;
+      return activeTab(group).id;
     }
     setScreenId('notes');
-    changeTabs(current => addTab(current, group.id, newTab(next), true));
+    const tab = newTab(next);
+    changeTabs(current => addTab(current, group.id, tab, true));
+    return tab.id;
   }
 
-  const openNote = (id: string, inNewTab = false) => (inNewTab ? openInNewTab({ kind: 'note', id }) : go({ kind: 'note', id }));
+  /* reversed: Ctrl + click, which does the opposite of Settings → Notes → Open notes in. */
+  const openNote = (id: string, reversed = false) => (opensInNewTab(reversed) ? openInNewTab({ kind: 'note', id }) : go({ kind: 'note', id }));
 
   /* Select the placeholder title so typing replaces it straight away. */
   function focusTitle(tabId = activeTab(group).id) {
@@ -226,13 +259,19 @@ export function App() {
     });
   }
 
-  /* A new note starts in the category being viewed or filtered, if there is one. */
+  /* A new note starts in the category being viewed or filtered, if there is one. It opens in a */
+  /* new tab when Settings → Notes → Open notes in asks for that. */
   function newNote(category?: string, groupId = group.id, tab = activeTab(group)) {
     flushSave();
     const filtered = noteFilter === 'all' ? '' : noteFilter;
     const shown = currentPlace(tab);
     const viewed = shown.kind === 'category' ? shown.id : '';
-    go({ kind: 'note', id: createNote(category ?? (viewed || filtered)).id }, groupId, tab.id);
+    const note = createNote(category ?? (viewed || filtered));
+    if (opensInNewTab(false, true)) {
+      focusTitle(openInNewTab({ kind: 'note', id: note.id }));
+      return;
+    }
+    go({ kind: 'note', id: note.id }, groupId, tab.id);
     focusTitle(tab.id);
   }
 
@@ -440,7 +479,7 @@ export function App() {
   /* open there, nothing new opens, so the words are dropped rather than kept for later. */
   function openFoundNote(id: string, inNewTab: boolean, findTerm: string) {
     findWhenOpened(id, findTerm);
-    openFromSearch({ kind: 'note', id }, inNewTab);
+    openFromSearch({ kind: 'note', id }, opensInNewTab(inNewTab));
     window.setTimeout(() => findWhenOpened('', ''));
   }
 
@@ -450,7 +489,7 @@ export function App() {
     flushSave();
     const note = createNote(category);
     if (title) updateNote(note.id, { title });
-    const tab = openFromSearch({ kind: 'note', id: note.id }, inNewTab);
+    const tab = openFromSearch({ kind: 'note', id: note.id }, opensInNewTab(inNewTab, true));
     if (!title) focusTitle(tab?.id ?? activeTab(group).id);
   }
 
@@ -560,16 +599,22 @@ export function App() {
     };
     /* Each opens here, or in a new tab when asked (Ctrl + click). */
     const openPlace = (next: Place, inNewTab = false) => (inNewTab ? openInNewTab(next) : goHere(next));
-    const openHere = (id: string, inNewTab = false) => openPlace({ kind: 'note', id }, inNewTab);
+    const openHere = (id: string, reversed = false) => openPlace({ kind: 'note', id }, opensInNewTab(reversed));
     const openCategory = (id: string, inNewTab = false) => openPlace({ kind: 'category', id }, inNewTab);
     const openHome = (inNewTab = false) => openPlace({ kind: 'home' }, inNewTab);
 
     /* Leaving a page (Escape, or deleting the note) goes back, or to the notes home when there is no back. */
     const closePage = () => (history.back ? goBack() : openHome());
 
-    /* A sub-page added from the slash menu opens straight away with its title selected. */
+    /* A sub-page added from the slash menu opens straight away with its title selected (in a new */
+    /* tab when new notes open in one). With Settings → Notes → Open new sub-notes off, NoteEditor */
+    /* names it in the parent note instead. */
     const openNewPage = (id: string) => {
-      openHere(id);
+      if (opensInNewTab(false, true)) {
+        focusTitle(openInNewTab({ kind: 'note', id }));
+        return;
+      }
+      goHere({ kind: 'note', id });
       focusTitle(tab.id);
     };
 
@@ -642,6 +687,15 @@ export function App() {
             focused={tabGroup.id === tabs.focus}
             onFocus={() => focusOn(tabGroup.id)}
             onDropTab={(fromId, tabId, beforeId) => changeTabs(current => moveTab(current, fromId, tabId, tabGroup.id, beforeId))}
+            onDropNote={(noteId, beforeId) => {
+              if (!getNote(noteId) || !canAddTab(tabGroup)) return;
+              const added = newTab({ kind: 'note', id: noteId });
+              setScreenId('notes');
+              changeTabs(current => {
+                const opened = addTab(current, tabGroup.id, added);
+                return beforeId ? moveTab(opened, tabGroup.id, added.id, tabGroup.id, beforeId) : opened;
+              });
+            }}
           >
             <WindowBar
               group={tabGroup}

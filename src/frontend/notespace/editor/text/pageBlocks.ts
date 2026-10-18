@@ -35,6 +35,14 @@ export function setPageWidth(block: HTMLElement, percent: number | null) {
 /* The markup last drawn into each page block, so unchanged blocks are not redrawn. */
 const drawn = new WeakMap<Element, string>();
 
+/* Ask the note's block widgets to open a sub-note's menu as a name box beside its block, as */
+/* Rename does, for a sub-note just made and left closed. */
+export const RENAME_SUB_NOTE = 'starjot-rename-sub-note';
+
+export function renameSubNote(id: string) {
+  window.dispatchEvent(new CustomEvent(RENAME_SUB_NOTE, { detail: id }));
+}
+
 /* Page blocks are stored empty; their title, description and size buttons are drawn when shown, */
 /* so they always match the page they point to. Images are stored empty too and drawn here as well. */
 export function hydratePages(root: Element | null) {

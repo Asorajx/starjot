@@ -14,8 +14,8 @@ const ALLOWED_TAGS = new Set([
 const DROPPED_TAGS = new Set(['SCRIPT', 'STYLE', 'IFRAME', 'SVG', 'FORM', 'OBJECT']);
 const MAX_CONTENT = 250000;
 
-/* Sticky groups, toggle lists, page blocks, page links, code languages, code token colours, */
-/* comment marks and text colours are stored as classes. */
+/* Sticky groups, toggle lists, checklists and their ticked items, page blocks, page links, code */
+/* languages, code token colours, comment marks and text colours are stored as classes. */
 function keepsClass(tag: string, name: string) {
   if (name === 'document-tagline' || name === 'overline') return true;
   if (tag === 'DIV' && ['sticky-group', 'toggle-block', 'is-open', 'toggle-body'].includes(name)) return true;
@@ -23,6 +23,7 @@ function keepsClass(tag: string, name: string) {
   if (/^(P|H[1-5])$/.test(tag) && name === 'toggle-summary') return true;
   if (tag === 'A' && name === 'page-link') return true;
   if (tag === 'TABLE' && name === 'fit-content') return true;
+  if ((tag === 'UL' && name === 'checklist') || (tag === 'LI' && name === 'is-checked')) return true;
   if (tag === 'CODE' && /^language-[a-z]+$/.test(name)) return true;
   return tag === 'SPAN' && (/^tok-[a-z]+$/.test(name) || name === 'comment-mark' || isColorClass(name));
 }

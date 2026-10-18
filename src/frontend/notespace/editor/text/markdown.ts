@@ -1,5 +1,7 @@
 import { emptyParagraph, placeCaret } from './dom';
 import { getPreferences } from '../../../app/preferences';
+import { createChecklist } from './checklist';
+import { convertLine } from './lines';
 
 
 /* =========================
@@ -10,10 +12,13 @@ import { getPreferences } from '../../../app/preferences';
 /* Raw Markdown is never stored. */
 type Marker =
   | { kind: 'heading'; level: number }
+  | { kind: 'checklist'; checked: boolean }
   | { kind: 'bullet' | 'numbered' | 'quote' | 'code' | 'divider' };
 
 function markerType(text: string): Marker | null {
   if (/^#{1,5}$/.test(text)) return { kind: 'heading', level: text.length };
+  if (/^(- )?\[ ?\]$/.test(text)) return { kind: 'checklist', checked: false };
+  if (/^(- )?\[[xX]\]$/.test(text)) return { kind: 'checklist', checked: true };
   if (['-', '*', '+'].includes(text)) return { kind: 'bullet' };
   if (text === '1.') return { kind: 'numbered' };
   if (text === '>') return { kind: 'quote' };
@@ -38,6 +43,12 @@ function replacementFor(marker: Marker): { element: HTMLElement; focus: HTMLElem
   if (marker.kind === 'bullet' || marker.kind === 'numbered') {
     const list = document.createElement(marker.kind === 'bullet' ? 'ul' : 'ol');
     const item = list.appendChild(emptyElement('li'));
+    return { element: list, focus: item };
+  }
+  if (marker.kind === 'checklist') {
+    const list = createChecklist();
+    const item = list.firstElementChild as HTMLElement;
+    item.classList.toggle('is-checked', marker.checked);
     return { element: list, focus: item };
   }
   if (marker.kind === 'quote') {
@@ -104,6 +115,16 @@ export function applyMarkdownShortcut(event: KeyboardEvent, editable: HTMLElemen
     heading.className = 'toggle-summary';
     line.replaceWith(heading);
     placeCaret(heading);
+    return true;
+  }
+
+  /* "- [ ]" is typed in a bulleted list item (made by "- "), so the item leaves its list. */
+  if (marker.kind === 'checklist' && line.tagName === 'LI') {
+    event.preventDefault();
+    line.replaceChildren(document.createElement('br'));
+    const { focus } = convertLine(line, 'checklist');
+    focus.classList.toggle('is-checked', marker.checked);
+    placeCaret(focus);
     return true;
   }
 

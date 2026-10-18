@@ -527,7 +527,7 @@ export function NoteEditor({ noteId, history, view, active, onClose, onOpenNote,
 
       <SelectionToolbar session={session} locked={locked} />
       <SlashMenu session={session} noteId={note.id} locked={locked} onOpenNewPage={onOpenNewPage} />
-      <BlockWidgets session={session} locked={locked} onOpenNote={onOpenNote} />
+      <BlockWidgets session={session} locked={locked} onOpenNote={onOpenNote} onOpenNoteInNewTab={onOpenNoteInNewTab} />
       <LinkTools session={session} locked={locked} onOpenNote={onOpenNote} onOpenNoteInNewTab={onOpenNoteInNewTab} />
       <ImageTools session={session} locked={locked} />
       <TableTools session={session} locked={locked} />

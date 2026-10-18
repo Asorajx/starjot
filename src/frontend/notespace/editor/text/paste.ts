@@ -35,6 +35,9 @@ const DIVIDER = /^ {0,3}([-*_])(?:\s*\1){2,}\s*$/;
 const LIST_ITEM = /^(\s*)([-*+]|\d{1,9}[.)])\s+(.*)$/;
 const QUOTE = /^ {0,3}>\s?(.*)$/;
 
+/* The box at the start of a checklist item's text: "[ ]", "[]" or "[x]". */
+const CHECKBOX = /^\[([ xX]?)\](?:\s+|$)/;
+
 /* A table row (| a | b |) and the line under a table's header row (| --- | :---: |). */
 const TABLE_ROW = /^\s*\|.*\|\s*$/;
 const TABLE_RULE = /^\s*\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)*\|?\s*$/;
@@ -203,13 +206,19 @@ export function markdownLines(plain: string) {
     } else if (item) {
       const indent = indentOf(item[1]);
       const kind = /\d/.test(item[2]) ? 'ol' : 'ul';
+
+      /* "- [ ]" and "- [x]" are checklist items. */
+      const box = kind === 'ul' ? item[3].match(CHECKBOX) : null;
+      const listKind = box ? 'checklist' : kind;
       while (lists.length > 1 && lists[lists.length - 1].indent > indent) lists.pop();
       const frame = lists[lists.length - 1];
+      const kindOf = (list: HTMLElement) => (list.classList.contains('checklist') ? 'checklist' : list.tagName.toLowerCase());
 
       /* A deeper item starts a list inside the previous item; a different kind of list at the same */
       /* depth starts a new list beside it. */
-      if (!frame || indent > frame.indent || frame.list.tagName.toLowerCase() !== kind) {
+      if (!frame || indent > frame.indent || kindOf(frame.list) !== listKind) {
         const list = document.createElement(kind);
+        if (box) list.className = 'checklist';
         const deeper = Boolean(frame && indent > frame.indent);
         const parent = deeper ? frame : lists[lists.length - 2];
         if (parent) (parent.list.lastElementChild ?? parent.list).append(list);
@@ -217,7 +226,9 @@ export function markdownLines(plain: string) {
         if (deeper || !frame) lists.push({ indent, list });
         else lists[lists.length - 1] = { indent, list };
       }
-      lists[lists.length - 1].list.append(line('li', item[3]));
+      const listItem = line('li', box ? item[3].slice(box[0].length) : item[3]);
+      if (box?.[1].trim()) listItem.className = 'is-checked';
+      lists[lists.length - 1].list.append(listItem);
     } else if (quoted) {
       if (!quote) {
         quote = document.createElement('blockquote');
