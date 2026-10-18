@@ -19,7 +19,11 @@ import { ColorMenu, SizeMenu } from './DrawingMenus';
 /* The eraser's reach around the pointer, in pixels at 100% zoom. */
 const ERASER_RADIUS = 8;
 
-type ToolButton = { name: DrawingToolName | 'hand'; label: string; icon: IconName };
+/* The canvas's own tools, kept by the canvas rather than in the drawing settings, since */
+/* documents have neither. */
+export type CanvasTool = 'hand' | 'text';
+
+type ToolButton = { name: DrawingToolName | CanvasTool; label: string; icon: IconName };
 
 const TOOLS: ToolButton[] = [
   { name: 'pen', label: 'Pen', icon: 'pencil' },
@@ -28,11 +32,13 @@ const TOOLS: ToolButton[] = [
   { name: 'select', label: 'Select: anchor strokes into the text', icon: 'box-select' }
 ];
 
-/* A canvas has no text to anchor into: Select moves strokes instead, and the Hand moves around. */
+/* A canvas has no text to anchor into: Select moves strokes and text boxes instead, the Hand */
+/* moves around, and Text adds text boxes. */
 const CANVAS_TOOLS: ToolButton[] = [
   { name: 'hand', label: 'Hand: drag to move around', icon: 'hand' },
   ...TOOLS.slice(0, 3),
-  { name: 'select', label: 'Select: move or delete strokes', icon: 'box-select' }
+  { name: 'select', label: 'Select: move or delete strokes and text', icon: 'box-select' },
+  { name: 'text', label: 'Text: click to add a text box', icon: 'type' }
 ];
 
 
@@ -49,9 +55,9 @@ type DrawingToolsProps = {
   /* Leaves drawing mode; a canvas, which is always drawn on, has none. */
   onClose?: () => void;
 
-  /* On a canvas: whether the Hand tool is chosen. It is kept by the canvas (which does the moving */
-  /* around), not in the drawing settings, since documents have no Hand. */
-  canvas?: { hand: boolean; onHandChange: (hand: boolean) => void };
+  /* On a canvas: its own tool when one is chosen (the canvas does what it does), or null for a */
+  /* drawing tool. */
+  canvas?: { tool: CanvasTool | null; onToolChange: (tool: CanvasTool | null) => void };
 
   /* Opens Settings at the drawing settings. */
   onOpenSettings: () => void;
@@ -192,9 +198,10 @@ export function DrawingTools({ session, strokes, layers, activeLayer, onActiveLa
     session.saveDrawing([...strokesRef.current, stroke], shown);
   }
 
-  const hand = Boolean(canvas?.hand);
+  const canvasTool = canvas?.tool ?? null;
   const toolButton = (item: ToolButton) => {
-    const chosen = item.name === 'hand' ? hand : !hand && tool === item.name;
+    const own = item.name === 'hand' || item.name === 'text';
+    const chosen = own ? canvasTool === item.name : !canvasTool && tool === item.name;
     return (
       <button
         key={item.name}
@@ -205,8 +212,12 @@ export function DrawingTools({ session, strokes, layers, activeLayer, onActiveLa
         aria-label={item.label}
         aria-pressed={chosen}
         onClick={() => {
-          canvas?.onHandChange(item.name === 'hand');
-          if (item.name !== 'hand') choose({ tool: item.name });
+          if (item.name === 'hand' || item.name === 'text') {
+            canvas?.onToolChange(item.name);
+            return;
+          }
+          canvas?.onToolChange(null);
+          choose({ tool: item.name });
         }}
       >
         <Icon name={item.icon} size={17} />
@@ -283,7 +294,7 @@ export function DrawingTools({ session, strokes, layers, activeLayer, onActiveLa
         </div>
       </div>
 
-      {hand ? null : tool === 'select' ? (
+      {canvasTool ? null : tool === 'select' ? (
         <DrawingSelection
           session={session}
           strokes={strokes}

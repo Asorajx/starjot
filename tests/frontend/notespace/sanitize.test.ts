@@ -85,6 +85,21 @@ describe('table options', () => {
   });
 });
 
+describe('canvas text boxes', () => {
+  it('keeps a box with its id, place and width, and repairs broken values', () => {
+    expect(cleanHtml('<div class="canvas-box" data-box="b1" data-x="12.34" data-y="-40" data-width="300"><p>Hi</p></div>'))
+      .toBe('<div class="canvas-box" data-box="b1" data-x="12.3" data-y="-40" data-width="300"><p>Hi</p></div>');
+    expect(cleanHtml('<div class="canvas-box" data-box="b2" data-x="x" data-y="1e99" data-width="5"></div>'))
+      .toBe('<div class="canvas-box" data-box="b2" data-x="0" data-y="1000000" data-width="80"><p><br></p></div>');
+  });
+
+  it('unwraps a box inside another box, or one without a valid id, keeping its lines', () => {
+    expect(cleanHtml('<div class="canvas-box" data-box="b1" data-x="0" data-y="0" data-width="320"><div class="canvas-box" data-box="b2"><p>Inner</p></div></div>'))
+      .toBe('<div class="canvas-box" data-box="b1" data-x="0" data-y="0" data-width="320"><p>Inner</p></div>');
+    expect(cleanHtml('<div class="canvas-box" data-box="bad id"><p>Kept</p></div>')).toBe('<p>Kept</p>');
+  });
+});
+
 describe('htmlToText', () => {
   it('puts a space between lines and table cells', () => {
     expect(htmlToText('<p>One</p><p>Two</p><table><tbody><tr><td>A</td><td>B</td></tr></tbody></table>').trim()).toBe('One Two A B');

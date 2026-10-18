@@ -1,5 +1,5 @@
 import { iconMarkup } from '../../../components/Icon';
-import { categoryName, getNote, noteTitle, updatedLabel } from '../../store';
+import { categoryName, getNote, noteIcon, noteTitle, updatedLabel } from '../../store';
 import { hydrateImages } from '../images/images';
 import { hydrateTabs } from './tabs';
 import { hydrateReminders } from '../../reminders';
@@ -56,7 +56,7 @@ export function hydratePages(root: Element | null) {
     const note = getNote(mention.dataset.page ?? '');
     mention.contentEditable = 'false';
     mention.classList.toggle('is-missing', !note);
-    const icon = note?.icon ? escapeHtml(note.icon) : iconMarkup(note ? 'file-text' : 'file', 14);
+    const icon = note?.icon ? escapeHtml(note.icon) : iconMarkup(note ? noteIcon(note) : 'file', 14);
     const html = `<span class="page-mention-icon">${icon}</span><span class="page-mention-title">${escapeHtml(note ? noteTitle(note) : 'Note not found')}</span>`;
     if (drawn.get(mention) === html && mention.firstChild) return;
     mention.innerHTML = html;
@@ -74,7 +74,7 @@ export function hydratePages(root: Element | null) {
     )).join('');
     const category = note ? categoryName(note.category) : '';
     const html = note
-      ? `<span class="page-block-icon">${note.icon ? escapeHtml(note.icon) : iconMarkup('file-text', 18)}</span>`
+      ? `<span class="page-block-icon">${note.icon ? escapeHtml(note.icon) : iconMarkup(noteIcon(note), 18)}</span>`
         + `<span class="page-block-text"><strong>${escapeHtml(noteTitle(note))}</strong>`
         + `<small>${escapeHtml(note.subtitle || note.preview || 'Empty note')}</small>`
         + `<span class="page-block-meta">${category ? `${escapeHtml(category)} · ` : ''}${escapeHtml(updatedLabel(note))}</span></span>`

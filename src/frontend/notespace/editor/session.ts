@@ -52,6 +52,10 @@ export class EditorSession {
   private typing = new TypingSteps();
   private adapter: EditorAdapter | null = null;
   private bodyElement: HTMLElement | null = null;
+
+  /* On a canvas, the editor shows one text box: this puts the box's lines back into the whole */
+  /* note's content before saving. Null in a document, whose editor shows all of it. */
+  private frame: ((inner: string) => string) | null = null;
   private listeners = new Set<() => void>();
   private snapshot: SessionSnapshot = { canUndo: false, canRedo: false, sticky: 'none', revision: 0, layout: 0 };
 
@@ -94,6 +98,10 @@ export class EditorSession {
 
   body() {
     return this.bodyElement;
+  }
+
+  setFrame(frame: ((inner: string) => string) | null) {
+    this.frame = frame;
   }
 
   /* The scrolling area of the pane that shows this note. */
@@ -156,11 +164,24 @@ export class EditorSession {
   /* note's drawing goes into the same step, so anchoring a drawing into the text (which changes */
   /* both) is undone in one go. */
   save(content: string, caret: number | null = getOffset(this.body())) {
-    const clean = cleanHtml(content);
+    const clean = cleanHtml(this.frame ? this.frame(content) : content);
     const note = updateNote(this.noteId, { content: clean }, false);
     scheduleSave();
     this.history.record(clean, caret, note?.comments ?? [], note?.drawing, note?.drawingLayers);
     this.typing.afterInput(caret);
+    this.update({ layout: this.snapshot.layout + 1 });
+  }
+
+  /* Replace the whole note's content as one undo step, from outside the editor (moving or */
+  /* removing a canvas's text box). */
+  replaceContent(content: string) {
+    const clean = cleanHtml(content);
+    const note = updateNote(this.noteId, { content: clean }, false);
+    if (!note) return;
+    scheduleSave();
+    this.history.checkpoint();
+    this.history.record(clean, null, note.comments, note.drawing, note.drawingLayers);
+    this.typing.reset();
     this.update({ layout: this.snapshot.layout + 1 });
   }
 

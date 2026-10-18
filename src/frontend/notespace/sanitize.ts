@@ -1,6 +1,7 @@
 import { isColorClass } from './editor/format/colors';
 import { safeImageAttributes } from './editor/images/images';
 import { TAB_TITLE_LENGTH } from './editor/text/tabs';
+import { BOX_ID, boxCoordinate, boxWidth } from './canvas/boxes';
 
 
 /* =========================
@@ -16,11 +17,11 @@ const DROPPED_TAGS = new Set(['SCRIPT', 'STYLE', 'IFRAME', 'SVG', 'FORM', 'OBJEC
 const MAX_CONTENT = 250000;
 
 /* Sticky groups, toggle lists, tab blocks and the tab shown, checklists and their ticked items, */
-/* reminders, page blocks, page links, code languages, code token colours, comment marks and */
+/* reminders, a canvas's text boxes, page blocks, page links, code languages, code token colours, comment marks and */
 /* text colours are stored as classes. */
 function keepsClass(tag: string, name: string) {
   if (name === 'document-tagline' || name === 'overline') return true;
-  if (tag === 'DIV' && ['sticky-group', 'toggle-block', 'is-open', 'toggle-body', 'tab-block', 'tab-panel', 'is-active'].includes(name)) return true;
+  if (tag === 'DIV' && ['sticky-group', 'toggle-block', 'is-open', 'toggle-body', 'tab-block', 'tab-panel', 'is-active', 'canvas-box'].includes(name)) return true;
   if (tag === 'SPAN' && ['page-block', 'page-mention', 'image-block', 'drawing-block', 'reminder-chip'].includes(name)) return true;
   if (/^(P|H[1-5])$/.test(tag) && name === 'toggle-summary') return true;
   if (tag === 'A' && name === 'page-link') return true;
@@ -76,6 +77,14 @@ function copyAttributes(node: Element, copy: Element) {
     const at = Date.parse(node.getAttribute('data-at') ?? '');
     if (/^r[a-z0-9]{1,30}$/.test(id)) copy.setAttribute('data-reminder', id);
     if (!Number.isNaN(at)) copy.setAttribute('data-at', new Date(at).toISOString());
+  }
+  /* A canvas's text box keeps its id, its place and its width. */
+  if (node.tagName === 'DIV' && node.classList.contains('canvas-box')) {
+    const box = node.getAttribute('data-box') ?? '';
+    if (BOX_ID.test(box)) copy.setAttribute('data-box', box);
+    copy.setAttribute('data-x', String(boxCoordinate(node.getAttribute('data-x'))));
+    copy.setAttribute('data-y', String(boxCoordinate(node.getAttribute('data-y'))));
+    copy.setAttribute('data-width', String(boxWidth(node.getAttribute('data-width'))));
   }
   const title = node.tagName === 'DIV' && node.classList.contains('tab-panel') ? node.getAttribute('data-title')?.trim().slice(0, TAB_TITLE_LENGTH) : '';
   if (title) copy.setAttribute('data-title', title);
@@ -171,6 +180,13 @@ export function cleanHtml(input: unknown) {
       if (child.nodeType === Node.TEXT_NODE && !child.textContent?.trim()) child.remove();
       else shown.append(child);
     });
+  });
+
+  /* A canvas's text boxes sit side by side at the top, each with its id and at least one line. */
+  /* One inside another (left by an edit or a paste) gives up its box and keeps its lines. */
+  Array.from(safe.querySelectorAll('div.canvas-box')).forEach(box => {
+    if (box.parentElement !== safe || !box.hasAttribute('data-box')) box.replaceWith(...Array.from(box.childNodes));
+    else if (!box.firstElementChild) box.replaceChildren(Object.assign(document.createElement('p'), { innerHTML: '<br>' }));
   });
 
   /* A sticky group with nothing left inside it is removed. */

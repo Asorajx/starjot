@@ -14,7 +14,10 @@
   position: relative;
   flex: 1;
   min-height: 320px;
-  overflow: hidden;
+
+  /* Clip rather than hide: a hidden overflow can still be scrolled by the browser, which would */
+  /* shift the whole canvas when the caret in a text box is brought into view. */
+  overflow: clip;
   background-color: #ffffff;
   background-image: radial-gradient(circle, #cdd7e5 1px, transparent 1.5px);
   touch-action: none;
@@ -40,6 +43,17 @@
   height: 1000px;
   transform-origin: 0 0;
   pointer-events: none;
+}
+
+/* With Select, Text or the Hand (or while writing in a box), the boxes come up over the drawing */
+/* tools' surface so they can be pressed; the space between them still reaches the surface. */
+.canvas-view.is-boxes .canvas-world {
+  z-index: 21;
+}
+
+.canvas-view.is-text,
+.canvas-view.is-text .canvas-box {
+  cursor: text;
 }
 
 /* The drawing toolbar stays at the right of the canvas instead of following a scrolling page. */
@@ -102,4 +116,89 @@
   .canvas-zoom .zoom-button {
     width: 44px;
   }
+}
+
+
+/* =========================
+   Text Boxes
+   ========================= */
+
+/* Boxes sit between the drawing's layers under the text and those over it. */
+.canvas-boxes {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* A box reads as plain words, with no border, until it is selected or written in. Elsewhere */
+/* (Search's preview, a link's preview) a canvas's boxes are simply shown one after another. */
+.canvas-boxes .canvas-box {
+  position: absolute;
+  min-height: 24px;
+  padding: 4px 8px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+}
+
+.canvas-view.is-boxes .canvas-box,
+.canvas-box.is-editing {
+  pointer-events: auto;
+}
+
+.canvas-view.is-selecting .canvas-box {
+  cursor: move;
+}
+
+/* Pointing at a box shows its edges with a dashed line, so it can be told apart from */
+/* handwriting before it is clicked. */
+.canvas-view.is-boxes:not(.is-panning) .canvas-box:hover:not(.is-selected, .is-editing) {
+  border-style: dashed;
+  border-color: var(--accent);
+}
+
+.canvas-box.is-selected {
+  border-color: var(--accent);
+}
+
+.canvas-box.is-editing {
+  border-color: var(--accent-line);
+  background: #ffffff;
+}
+
+/* The words fill the box; the note editor inside a box being written in looks the same. At 100% */
+/* they are as big as a document's at 100% (which shows its text at 120%). */
+.canvas-box .note-body {
+  zoom: 1.2;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  outline: none;
+}
+
+.canvas-box .note-body > :first-child {
+  margin-top: 0;
+}
+
+.canvas-box .note-body > :last-child {
+  margin-bottom: 0;
+}
+
+/* Links in a box that is not being written in can be followed. */
+.canvas-view.is-boxes .canvas-box:not(.is-editing) :is(.page-block, .page-mention, a) {
+  cursor: pointer;
+}
+
+/* The handle on a selected box's right edge widens it. */
+.canvas-box-resize {
+  position: absolute;
+  top: 50%;
+  right: -5px;
+  width: 8px;
+  height: 24px;
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  background: #ffffff;
+  cursor: ew-resize;
+  transform: translateY(-50%);
 }
