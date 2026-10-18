@@ -8,7 +8,7 @@ import { closestAtCaret } from './dom';
 
 export type CommandId =
   | 'text' | 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'bullet' | 'numbered' | 'checklist' | 'quote' | 'code' | 'divider' | 'table' | 'page' | 'link'
-  | 'toggle' | 'toggle-h1' | 'toggle-h2' | 'toggle-h3' | 'toggle-h4' | 'toggle-h5';
+  | 'tabs' | 'toggle' | 'toggle-h1' | 'toggle-h2' | 'toggle-h3' | 'toggle-h4' | 'toggle-h5';
 
 export type SlashCommand = {
   id: CommandId;
@@ -40,6 +40,7 @@ export const SLASH_COMMANDS: SlashCommand[] = [
   { id: 'toggle-h5', label: 'Toggle heading 5', hint: '', icon: 'chevron-right', keywords: 'collapse fold h5' },
   { id: 'quote', label: 'Quote', hint: '>', icon: 'quote', keywords: 'blockquote citation' },
   { id: 'code', label: 'Code block', hint: '```', icon: 'file-code', keywords: 'pre snippet programming' },
+  { id: 'tabs', label: 'Tab block', hint: '', icon: 'panels-top-left', keywords: 'tabs tabbed sections pages switch' },
   { id: 'table', label: 'Table', hint: '', icon: 'table', keywords: 'grid rows columns spreadsheet' },
   { id: 'divider', label: 'Divider', hint: '---', icon: 'minus', keywords: 'hr line rule separator' },
   { id: 'page', label: 'Add sub-note', hint: '', icon: 'file-text', keywords: 'new note page sub-note sub-page subpage child' },
@@ -50,6 +51,9 @@ type CommandContext = {
   /* Table cells and toggle titles cannot hold new lines, so only the link and sub-page (which sit in text) fit there. */
   inlineOnly: boolean;
   canAddPage: boolean;
+
+  /* A tab block cannot go inside a tab. */
+  inTab?: boolean;
 };
 
 /* How well one typed word matches a command: the start of a word in its name counts most (the */
@@ -68,7 +72,8 @@ function wordScore(word: string, command: SlashCommand) {
 export function matchCommands(query: string, context: CommandContext) {
   const words = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
   return SLASH_COMMANDS
-    .filter(command => (command.id !== 'page' || context.canAddPage) && (!context.inlineOnly || command.id === 'link' || command.id === 'page'))
+    .filter(command => (command.id !== 'page' || context.canAddPage) && (command.id !== 'tabs' || !context.inTab)
+      && (!context.inlineOnly || command.id === 'link' || command.id === 'page'))
     .map(command => {
       const scores = words.map(word => wordScore(word, command));
       return { command, score: scores.includes(0) ? 0 : scores.reduce<number>((sum, score) => sum + score, 0) };

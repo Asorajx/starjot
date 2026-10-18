@@ -58,6 +58,12 @@ describe('notesMarkdown', () => {
       + '- one\n  - inner\n- two\n\n1. first\n\n> quoted\n\n```javascript\nlet a = 1;\n```\n\n---\n');
   });
 
+  it('writes every tab of a tab block, each under its name', async () => {
+    const page = note('<div class="tab-block"><div class="tab-panel is-active" data-title="Setup"><p>Run it.</p></div><div class="tab-panel" data-title="Usage"><p>Open it.</p></div></div>');
+    expect(await notesMarkdown([page], settings)).toBe('# Plan\n\n#### Setup\n\nRun it.\n\n#### Usage\n\nOpen it.\n');
+    expect(notesText([page], settings)).toBe('Plan\n====\n\nSetup\n    Run it.\n\nUsage\n    Open it.\n');
+  });
+
   it('writes checklists as "- [ ]" and "- [x]"', async () => {
     const page = note('<ul class="checklist"><li>Pack</li><li class="is-checked">Book</li></ul>');
     expect(await notesMarkdown([page], settings)).toBe('# Plan\n\n- [ ] Pack\n- [x] Book\n');

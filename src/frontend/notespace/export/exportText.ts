@@ -1,5 +1,6 @@
 import type { Note } from '../../../shared/types/note';
 import { childrenOf, noteTitle } from '../store';
+import { tabPanels, tabTitle } from '../editor/text/tabs';
 import { contentCopy, detailRows, exportFileName, hasRemarks, type ExportSettings } from './exportNotes';
 import { downloadFile } from '../../lib/files';
 
@@ -52,6 +53,10 @@ function block(element: Element): string {
     case 'PRE': return indent(element.textContent?.replace(/\n$/, '') ?? '', '    ');
     case 'BLOCKQUOTE': return indent(blocks(element), '> ');
     case 'DIV':
+      /* Every tab of a tab block: its name, then its contents indented under it. */
+      if (element.classList.contains('tab-block')) {
+        return tabPanels(element).map((panel, index) => [tabTitle(panel, index), indent(blocks(panel), '    ')].filter(Boolean).join('\n')).join('\n\n');
+      }
       if (element.classList.contains('toggle-block')) {
         const summary = element.querySelector(':scope > .toggle-summary');
         const body = element.querySelector(':scope > .toggle-body');

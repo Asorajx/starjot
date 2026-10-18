@@ -3,6 +3,7 @@ import { iconMarkup } from '../../components/Icon';
 import { loadImage } from '../imageStore';
 import { childrenOf, noteTitle } from '../store';
 import { hydratePages } from '../editor/text/pageBlocks';
+import { tabPanels, tabTitle } from '../editor/text/tabs';
 import { drawingBottom, inDrawingOrder, strokeLayer, strokeMarkup, visibleLayers } from '../editor/drawing/drawing';
 import { contentCopy, detailRows, exportFileName, hasRemarks, pageAnchor, pageHref, type ExportSettings } from './exportNotes';
 import { escapeHtml } from '../../lib/html';
@@ -36,6 +37,9 @@ html, body { margin: 0; background: #ffffff; }
 .export-root a.page-block, .export-root a.page-mention, .export-root a.note-page-link { color: inherit; text-decoration: none; }
 .export-root .page-block-sizes, .export-root .page-block-resize, .export-root .page-block-meta, .export-root .image-resize { display: none !important; }
 .export-root .toggle-block .toggle-body { display: block !important; }
+.export-root .tab-strip-remove, .export-root .tab-strip-add { display: none !important; }
+.export-root .tab-export-title { margin: 0 0 8px; font-weight: 700; }
+.export-root .tab-panel + .tab-panel { border-top: 1px solid #e2e8f1; }
 .export-root .image-block, .export-root .page-block, .export-root .page-mention { cursor: default; }
 .export-root .note-body pre { padding-top: 16px; background: #f6f8fd; }
 @media print {
@@ -68,6 +72,20 @@ async function pageContent(note: Note, settings: ExportSettings, included: Set<s
   hydratePages(root);
 
   root.querySelectorAll('.toggle-block').forEach(toggle => toggle.classList.add('is-open'));
+
+  /* A tab block shows its strip and the tab shown, or, with All tabs, every tab under its name. */
+  if (settings.allTabs) {
+    root.querySelectorAll('.tab-block').forEach(block => {
+      block.querySelector(':scope > .tab-strip')?.remove();
+      tabPanels(block).forEach((panel, index) => {
+        const title = document.createElement('p');
+        title.className = 'tab-export-title';
+        title.textContent = tabTitle(panel, index);
+        panel.classList.add('is-active');
+        panel.prepend(title);
+      });
+    });
+  }
   root.querySelectorAll('[contenteditable]').forEach(element => element.removeAttribute('contenteditable'));
   root.querySelectorAll('.image-resize').forEach(handle => handle.remove());
   root.querySelectorAll<HTMLElement>('.page-block, .page-mention').forEach(element => {

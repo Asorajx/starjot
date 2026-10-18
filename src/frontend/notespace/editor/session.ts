@@ -14,7 +14,10 @@ export type EditorAdapter = {
   /* Read the current document from the page and save it. */
   commit: () => void;
   toggleSticky: () => void;
-  selectAll: () => void;
+
+  /* wholeNote skips Block mode's first step of selecting the current block, for a block that */
+  /* already had its own first step (such as a tab). */
+  selectAll: (wholeNote?: boolean) => void;
 
   /* Lines were added or replaced (by a slash command, a toggle or a table); save them and */
   /* put the caret in focus. Structured mode also splits the new lines into their own blocks. */
@@ -202,8 +205,8 @@ export class EditorSession {
     this.adapter?.toggleSticky();
   }
 
-  selectAll() {
-    this.adapter?.selectAll();
+  selectAll(wholeNote = false) {
+    this.adapter?.selectAll(wholeNote);
   }
 
   /* Save after a change made outside the editor, such as choosing a code language. */

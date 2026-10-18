@@ -7,6 +7,9 @@ import { deleteKeepingPages, hydratePages, pageBlocksIn, removePageBlocks, RENAM
 import { lineBelowTable, typeOutsideComment } from './blockKeys';
 import { placeCaret } from './dom';
 import { clickedCheckbox, toggleChecked } from './checklist';
+import {
+  activateTab, addTab, breaksTabBlock, deleteTabBlock, emptyTabAtCaret, removeEmptyTab, removeTab, renameTab, selectTabText, showTabOf, tabPanels
+} from './tabs';
 import { TitleEditor } from '../../../components/TitleEditor';
 import { LinkPreviewCard } from '../links/LinkPreview';
 import { copyPageLink } from '../links/links';
@@ -40,6 +43,12 @@ export function BlockWidgets({ session, locked, onOpenNote, onOpenNoteInNewTab }
 
   /* The sub-note whose card title is being renamed in place, and that title. */
   const [renaming, setRenaming] = useState<{ id: string; title: HTMLElement } | null>(null);
+
+  /* The tab whose name is being renamed in place, and its name on the strip. */
+  const [renamingTab, setRenamingTab] = useState<{ block: HTMLElement; index: number; title: HTMLElement } | null>(null);
+
+  /* The menu opened by right-clicking a tab block's strip: on a tab (index), or beside the tabs (-1). */
+  const [tabMenu, setTabMenu] = useState<{ block: HTMLElement; index: number; top: number; left: number } | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
   const hideTimer = useRef<number | undefined>(undefined);
   const showTimer = useRef<number | undefined>(undefined);
@@ -84,6 +93,24 @@ export function BlockWidgets({ session, locked, onOpenNote, onOpenNoteInNewTab }
       if (block) {
         event.preventDefault();
         if (getNote(block.dataset.page ?? '')) open(block.dataset.page as string, opensNewTab(event));
+        return;
+      }
+
+      /* A tab block's strip: a tab's name shows that tab, + adds one and × removes one (each one */
+      /* undo step). A locked note can still switch tabs to read them, without saving. */
+      const tabBlock = target.closest<HTMLElement>('.tab-strip')?.parentElement;
+      if (tabBlock) {
+        event.preventDefault();
+        const index = Number(target.closest<HTMLElement>('[data-tab-index]')?.dataset.tabIndex ?? -1);
+        const adding = Boolean(target.closest('.tab-strip-add'));
+        const removing = Boolean(target.closest('.tab-strip-remove'));
+        if (isLocked && (adding || removing)) return;
+        if (!isLocked) session.checkpoint();
+        /* A new tab gets the caret before saving, so Undo later returns to it there. */
+        if (adding) placeCaret(addTab(tabBlock));
+        else if (removing) removeTab(tabBlock, index);
+        else if (index >= 0) activateTab(tabBlock, index);
+        if (!isLocked) session.commit();
         return;
       }
 
@@ -221,6 +248,12 @@ export function BlockWidgets({ session, locked, onOpenNote, onOpenNoteInNewTab }
       const selection = window.getSelection();
       const range = selection?.rangeCount ? selection.getRangeAt(0) : null;
       if (!note || !range || latest.current.locked || !note.contains(range.commonAncestorContainer)) return;
+
+      /* Nothing is typed over a selection that would break a tab block (see breaksTabBlock). */
+      if (breaksTabBlock(range, note)) {
+        event.preventDefault();
+        return;
+      }
       if (stepOverPage(event, note)) {
         event.preventDefault();
         return;
@@ -244,6 +277,16 @@ export function BlockWidgets({ session, locked, onOpenNote, onOpenNoteInNewTab }
     /* instead of the browser's. */
     function handleContextMenu(event: MouseEvent) {
       const target = event.target as Element;
+
+      /* Right-clicking a tab block's strip opens the tab menu (text inside a tab keeps the */
+      /* browser's own menu, with its spelling suggestions). */
+      const tabBlock = target.closest?.('.tab-strip')?.parentElement;
+      if (tabBlock && body()?.contains(tabBlock) && !latest.current.locked) {
+        event.preventDefault();
+        const index = Number(target.closest<HTMLElement>('[data-tab-index]')?.dataset.tabIndex ?? -1);
+        setTabMenu({ block: tabBlock as HTMLElement, index, top: event.clientY, left: event.clientX });
+        return;
+      }
       const block = target.closest?.<HTMLElement>('.page-block');
       const listed = target.closest?.<HTMLElement>('[data-preview-page]');
       const inThisNote = listed && body()?.closest('.editor-wrap')?.contains(listed);
@@ -256,7 +299,50 @@ export function BlockWidgets({ session, locked, onOpenNote, onOpenNoteInNewTab }
     }
 
     function closeMenu(event: Event) {
-      if (!(event.target as Element).closest?.('.page-menu')) setPageMenu(null);
+      if ((event.target as Element).closest?.('.page-menu')) return;
+      setPageMenu(null);
+      setTabMenu(null);
+    }
+
+    /* A caret that ends up in a hidden tab (put there by code, not by clicking) shows that tab, */
+    /* so nothing is ever typed out of sight. */
+    function handleSelectionChange() {
+      const node = window.getSelection()?.focusNode ?? null;
+      const element = node instanceof Element ? node : node?.parentElement;
+      if (element?.closest('.tab-panel:not(.is-active)') && body()?.contains(element)) showTabOf(element);
+    }
+
+    /* Backspace in an empty tab removes it (the block, with its last tab), as one undo step taken */
+    /* before the change, so Undo puts the caret back in that tab. Ctrl + A in a tab selects that */
+    /* tab's contents; pressed again, the whole note (skipping Block mode's step of selecting the */
+    /* block the tab is in). */
+    function handleKeyDown(event: KeyboardEvent) {
+      const empty = latest.current.locked ? null : emptyTabAtCaret(event);
+      if (empty && body()?.contains(empty)) {
+        event.preventDefault();
+        event.stopPropagation();
+        session.checkpoint();
+        const caretLine = removeEmptyTab(empty);
+        session.commit();
+        placeCaret(caretLine, true);
+        return;
+      }
+      if (!(event.ctrlKey || event.metaKey) || event.altKey || event.key.toLowerCase() !== 'a') return;
+      const step = selectTabText(body());
+      if (!step) return;
+      event.preventDefault();
+      event.stopPropagation();
+      if (step === 'note') session.selectAll(true);
+    }
+
+    /* Double-clicking a tab's name renames it in place. */
+    function handleDoubleClick(event: MouseEvent) {
+      const name = (event.target as Element).closest?.<HTMLElement>('.tab-strip-name');
+      const block = name?.closest('.tab-strip')?.parentElement;
+      if (!name || !block || latest.current.locked || !body()?.contains(block)) return;
+      event.preventDefault();
+      const index = Number(name.closest<HTMLElement>('[data-tab-index]')?.dataset.tabIndex ?? -1);
+      setRenamingTab({ block, index, title: name });
     }
 
     /* A sub-note just made and left closed is named on its card, once the card is in view. */
@@ -269,6 +355,9 @@ export function BlockWidgets({ session, locked, onOpenNote, onOpenNoteInNewTab }
     }
 
     window.addEventListener(RENAME_SUB_NOTE, handleRename);
+    document.addEventListener('dblclick', handleDoubleClick);
+    window.addEventListener('keydown', handleKeyDown, true);
+    document.addEventListener('selectionchange', handleSelectionChange);
     document.addEventListener('beforeinput', handleBeforeInput, true);
     document.addEventListener('contextmenu', handleContextMenu);
     document.addEventListener('mousedown', closeMenu);
@@ -282,6 +371,9 @@ export function BlockWidgets({ session, locked, onOpenNote, onOpenNoteInNewTab }
     document.addEventListener('mouseout', handleMouseOut);
     return () => {
       window.removeEventListener(RENAME_SUB_NOTE, handleRename);
+      document.removeEventListener('dblclick', handleDoubleClick);
+      window.removeEventListener('keydown', handleKeyDown, true);
+      document.removeEventListener('selectionchange', handleSelectionChange);
       document.removeEventListener('beforeinput', handleBeforeInput, true);
       document.removeEventListener('contextmenu', handleContextMenu);
       document.removeEventListener('mousedown', closeMenu);
@@ -332,6 +424,16 @@ export function BlockWidgets({ session, locked, onOpenNote, onOpenNoteInNewTab }
     if (title) setRenaming({ id, title });
   }
 
+  /* A change from the tab menu, as one undo step. */
+  function changeTabs(change: (block: HTMLElement) => void) {
+    const block = tabMenu?.block;
+    setTabMenu(null);
+    if (!block?.isConnected) return;
+    session.checkpoint();
+    change(block);
+    session.commit();
+  }
+
   /* After naming a sub-note, writing carries on just after its block (past the space after it). */
   function returnAfterBlock(id: string) {
     const note = session.body();
@@ -366,7 +468,9 @@ export function BlockWidgets({ session, locked, onOpenNote, onOpenNoteInNewTab }
           aria-label="Sub-note options"
           style={{ top: Math.min(pageMenu.top, window.innerHeight - 240), left: Math.min(pageMenu.left, window.innerWidth - 220) }}
           onKeyDown={event => {
-            if (event.key === 'Escape') setPageMenu(null);
+            if (event.key !== 'Escape') return;
+            event.preventDefault();
+            setPageMenu(null);
           }}
         >
           <button type="button" role="menuitem" className="page-menu-item" disabled={!menuNote} onClick={() => { setPageMenu(null); onOpenNote(pageMenu.id); }}>
@@ -414,6 +518,65 @@ export function BlockWidgets({ session, locked, onOpenNote, onOpenNoteInNewTab }
             setRenaming(null);
             returnAfterBlock(renaming.id);
           }}
+        />
+      )}
+
+      {/* Right-clicking a tab: rename it (in place), delete it, or delete the whole block. Beside */}
+      {/* the tabs: add a tab, or delete the block. Each change is one undo step. */}
+      {tabMenu && (
+        <div
+          className="page-menu"
+          role="menu"
+          aria-label="Tab options"
+          style={{ top: Math.min(tabMenu.top, window.innerHeight - 140), left: Math.min(tabMenu.left, window.innerWidth - 220) }}
+          onKeyDown={event => {
+            if (event.key !== 'Escape') return;
+            event.preventDefault();
+            setTabMenu(null);
+          }}
+        >
+          {tabMenu.index >= 0 ? (
+            <>
+              <button
+                type="button"
+                role="menuitem"
+                className="page-menu-item"
+                autoFocus
+                onClick={() => {
+                  const title = tabMenu.block.querySelector<HTMLElement>(`[data-tab-index="${tabMenu.index}"] .tab-strip-name`);
+                  setTabMenu(null);
+                  if (title) setRenamingTab({ block: tabMenu.block, index: tabMenu.index, title });
+                }}
+              >
+                <Icon name="pencil" size={14} /> Rename tab
+              </button>
+              {tabPanels(tabMenu.block).length > 1 && (
+                <button type="button" role="menuitem" className="page-menu-item" onClick={() => changeTabs(block => removeTab(block, tabMenu.index))}>
+                  <Icon name="x" size={14} /> Delete tab
+                </button>
+              )}
+            </>
+          ) : (
+            <button type="button" role="menuitem" className="page-menu-item" autoFocus onClick={() => changeTabs(block => placeCaret(addTab(block)))}>
+              <Icon name="plus" size={14} /> Add tab
+            </button>
+          )}
+          <button type="button" role="menuitem" className="page-menu-item is-danger" onClick={() => changeTabs(block => placeCaret(deleteTabBlock(block)))}>
+            <Icon name="trash" size={14} /> Delete tab block
+          </button>
+        </div>
+      )}
+
+      {renamingTab && (
+        <TitleEditor
+          anchor={renamingTab.title}
+          value={renamingTab.title.textContent ?? ''}
+          onSave={title => {
+            session.checkpoint();
+            renameTab(renamingTab.block, renamingTab.index, title);
+            session.commit();
+          }}
+          onClose={() => setRenamingTab(null)}
         />
       )}
 

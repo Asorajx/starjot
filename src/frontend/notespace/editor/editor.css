@@ -581,6 +581,12 @@
   padding-left: 32px;
 }
 
+/* A heading inside a tab block: the tab's name comes first, quieter than the heading. */
+.outline-tab {
+  color: #69778d;
+  font-weight: 500;
+}
+
 .toc-empty {
   margin: 8px 4px;
   color: #647891;

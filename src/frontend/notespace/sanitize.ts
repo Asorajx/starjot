@@ -1,5 +1,6 @@
 import { isColorClass } from './editor/format/colors';
 import { safeImageAttributes } from './editor/images/images';
+import { TAB_TITLE_LENGTH } from './editor/text/tabs';
 
 
 /* =========================
@@ -14,11 +15,11 @@ const ALLOWED_TAGS = new Set([
 const DROPPED_TAGS = new Set(['SCRIPT', 'STYLE', 'IFRAME', 'SVG', 'FORM', 'OBJECT']);
 const MAX_CONTENT = 250000;
 
-/* Sticky groups, toggle lists, checklists and their ticked items, page blocks, page links, code */
+/* Sticky groups, toggle lists, tab blocks and the tab shown, checklists and their ticked items, page blocks, page links, code */
 /* languages, code token colours, comment marks and text colours are stored as classes. */
 function keepsClass(tag: string, name: string) {
   if (name === 'document-tagline' || name === 'overline') return true;
-  if (tag === 'DIV' && ['sticky-group', 'toggle-block', 'is-open', 'toggle-body'].includes(name)) return true;
+  if (tag === 'DIV' && ['sticky-group', 'toggle-block', 'is-open', 'toggle-body', 'tab-block', 'tab-panel', 'is-active'].includes(name)) return true;
   if (tag === 'SPAN' && ['page-block', 'page-mention', 'image-block', 'drawing-block'].includes(name)) return true;
   if (/^(P|H[1-5])$/.test(tag) && name === 'toggle-summary') return true;
   if (tag === 'A' && name === 'page-link') return true;
@@ -35,7 +36,8 @@ export function safeHref(href: string | null) {
 }
 
 /* Copy the few attributes Notespace uses: link addresses, linked page ids, page block sizes and widths, */
-/* table column widths and row heights, how many rows and columns a merged table cell covers, and comment ids. */
+/* table column widths and row heights, how many rows and columns a merged table cell covers, comment */
+/* ids, and tab names. */
 function copyAttributes(node: Element, copy: Element) {
   /* An image keeps only its id, its width in pixels and where it sits on its line; a pinned */
   /* drawing keeps its strokes, its own size and how far it is moved instead of an id. */
@@ -67,6 +69,8 @@ function copyAttributes(node: Element, copy: Element) {
   });
   const comment = node.getAttribute('data-comment');
   if ((node.tagName === 'SPAN' || node.tagName === 'TABLE') && comment && /^c[a-z0-9]+$/.test(comment)) copy.setAttribute('data-comment', comment);
+  const title = node.tagName === 'DIV' && node.classList.contains('tab-panel') ? node.getAttribute('data-title')?.trim().slice(0, TAB_TITLE_LENGTH) : '';
+  if (title) copy.setAttribute('data-title', title);
 }
 
 /* Page blocks used to be lines of their own (<div>). They now sit inside text as a <span>, */
@@ -83,6 +87,9 @@ function upgradePageBlock(node: Element) {
 function cleanNode(node: Node): Node | null {
   if (node.nodeType === Node.TEXT_NODE) return document.createTextNode(node.textContent ?? '');
   if (!(node instanceof Element) || DROPPED_TAGS.has(node.tagName)) return null;
+
+  /* A tab block's strip of tab names is drawn when shown, so it is never stored. */
+  if (node.classList.contains('tab-strip')) return null;
   if (node.tagName === 'DIV' && node.classList.contains('page-block')) return upgradePageBlock(node);
 
   /* A page block's title and buttons, and an image's picture, are drawn when shown, so only the empty block is stored. */
@@ -136,6 +143,26 @@ export function cleanHtml(input: unknown) {
       body.className = 'toggle-body';
       toggle.appendChild(body);
     }
+  });
+
+  /* A tab block holds only tabs, each with at least one line, and shows exactly one of them. */
+  /* Anything else inside it (left by an edit) goes into the tab shown; a block with no tabs left */
+  /* is removed. */
+  Array.from(safe.querySelectorAll('div.tab-block')).forEach(block => {
+    const panels = Array.from(block.children).filter(child => child.matches('div.tab-panel'));
+    if (!panels.length) {
+      block.remove();
+      return;
+    }
+    const shown = panels.find(panel => panel.classList.contains('is-active')) ?? panels[0];
+    panels.forEach(panel => {
+      panel.classList.toggle('is-active', panel === shown);
+      if (!panel.firstElementChild) panel.replaceChildren(Object.assign(document.createElement('p'), { innerHTML: '<br>' }));
+    });
+    Array.from(block.childNodes).filter(child => !panels.includes(child as Element)).forEach(child => {
+      if (child.nodeType === Node.TEXT_NODE && !child.textContent?.trim()) child.remove();
+      else shown.append(child);
+    });
   });
 
   /* A sticky group with nothing left inside it is removed. */

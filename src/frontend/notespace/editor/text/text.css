@@ -816,3 +816,131 @@ ul.checklist > li.is-checked {
   color: #69778d;
   text-decoration: line-through;
 }
+
+
+/* =========================
+   Tab Blocks
+   ========================= */
+
+/* A frame with a strip of tab names along its top and the shown tab's lines below. Only the */
+/* shown tab is laid out, so the caret and selections never reach a hidden one. */
+.tab-block {
+  margin: 12px 0;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+}
+
+.tab-panel {
+  padding: 8px 16px;
+}
+
+.tab-panel:not(.is-active) {
+  display: none;
+}
+
+.tab-panel > :first-child {
+  margin-top: 0;
+}
+
+.tab-panel > :last-child {
+  margin-bottom: 0;
+}
+
+/* The strip scrolls sideways when its tabs do not fit. */
+.tab-strip {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  padding: 4px 8px 0;
+  overflow-x: auto;
+  border-bottom: 1px solid var(--line);
+  user-select: none;
+}
+
+.tab-strip-tab {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  border-bottom: 2px solid transparent;
+}
+
+.tab-strip-tab.is-active {
+  border-bottom-color: var(--accent);
+}
+
+.tab-strip-name,
+.tab-strip-remove,
+.tab-strip-add {
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+}
+
+.tab-strip-name {
+  max-width: 200px;
+  height: 32px;
+  padding: 0 8px;
+  overflow: hidden;
+  color: #56657b;
+  font-size: 12px;
+  font-weight: 650;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tab-strip-tab.is-active .tab-strip-name {
+  color: var(--accent-text);
+}
+
+.tab-strip-name:hover,
+.tab-strip-remove:hover,
+.tab-strip-add:hover {
+  background: var(--accent-faint);
+}
+
+/* × shows on the shown tab, and on any tab while it is hovered. */
+.tab-strip-remove {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  margin-right: 4px;
+  color: #66778f;
+  visibility: hidden;
+}
+
+.tab-strip-tab.is-active .tab-strip-remove,
+.tab-strip-tab:hover .tab-strip-remove,
+.tab-strip-remove:focus-visible {
+  visibility: visible;
+}
+
+.tab-strip-add {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  margin-bottom: 2px;
+  color: #66778f;
+}
+
+.is-locked .tab-strip-remove,
+.is-locked .tab-strip-add {
+  display: none;
+}
+
+@media (pointer: coarse) {
+  .tab-strip-name,
+  .tab-strip-add {
+    min-width: 44px;
+    height: 44px;
+  }
+
+  .tab-strip-remove {
+    width: 44px;
+    height: 44px;
+  }
+}

@@ -93,6 +93,9 @@ export function ExportDialog({ noteId, measure, onClose }: ExportDialogProps) {
   const [failed, setFailed] = useState(false);
   const exportRef = useRef<HTMLButtonElement>(null);
   const hasSubpages = childrenOf(noteId).length > 0;
+
+  /* The All tabs choice only shows for notes (or their sub-notes) with a tab block. */
+  const hasTabs = exportedNotes(noteId, true).some(note => note.content.includes('tab-block'));
   const pdf = settings.format === 'pdf';
   const text = settings.format === 'text';
 
@@ -163,6 +166,13 @@ export function ExportDialog({ noteId, measure, onClose }: ExportDialogProps) {
               <ScaleField value={settings.scale} onChange={scale => change({ scale })} />
             </Row>
           </>
+        )}
+        {(pdf || settings.format === 'html') && hasTabs && (
+          <Row label="All tabs">
+            <span data-tooltip="Every tab of each tab block, under its name. When off, only the tab shown is included." data-tooltip-align="end" data-tooltip-wrap="">
+              <Switch label="All tabs" on={settings.allTabs} onChange={allTabs => change({ allTabs })} />
+            </span>
+          </Row>
         )}
         <Row label="Include sub-notes">
           <span data-tooltip={hasSubpages ? undefined : 'This note has no sub-notes'} data-tooltip-align="end">

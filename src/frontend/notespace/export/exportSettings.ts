@@ -39,6 +39,10 @@ export type ExportSettings = {
 
   /* Add the note's sub-pages after it, in the same file. */
   subpages: boolean;
+
+  /* PDF and HTML: every tab of a tab block, each under its name, instead of the tab shown. */
+  /* (Markdown and plain text always write every tab.) */
+  allTabs: boolean;
 };
 
 export const EXPORT_FORMATS: { value: ExportFormat; label: string; extension: string }[] = [
@@ -66,7 +70,8 @@ export const DEFAULT_EXPORT: ExportSettings = {
   detailParts: { category: true, description: true, created: true, remarks: true, pages: true },
   pageFormat: 'note',
   scale: 100,
-  subpages: false
+  subpages: false,
+  allTabs: false
 };
 
 
@@ -92,6 +97,7 @@ export function normalizeExportSettings(raw: unknown): ExportSettings {
     },
     pageFormat: PAGE_FORMATS.some(format => format.value === record.pageFormat) ? record.pageFormat as ExportPageFormat : 'note',
     scale: Number.isFinite(scale) ? Math.round(Math.min(SCALE_MAX, Math.max(SCALE_MIN, scale))) : DEFAULT_EXPORT.scale,
-    subpages: record.subpages === true
+    subpages: record.subpages === true,
+    allTabs: record.allTabs === true
   };
 }

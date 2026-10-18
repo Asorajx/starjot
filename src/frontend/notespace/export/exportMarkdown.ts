@@ -3,6 +3,7 @@ import { loadImage } from '../imageStore';
 import { childrenOf, getNote, noteTitle } from '../store';
 import { drawingFile } from '../editor/images/images';
 import { pageAddress } from '../editor/links/links';
+import { tabPanels, tabTitle } from '../editor/text/tabs';
 import { contentCopy, detailRows, exportFileName, hasRemarks, type ExportSettings } from './exportNotes';
 import { dataUrl, downloadFile } from '../../lib/files';
 
@@ -140,6 +141,12 @@ function block(element: Element, context: Context): string {
     }
     case 'BLOCKQUOTE': return blocks(element, context).split('\n').map(line => (line ? `> ${line}` : '>')).join('\n');
     default:
+      /* Every tab of a tab block is written, each under its name as a heading, so nothing in a */
+      /* hidden tab is lost. */
+      if (element.classList.contains('tab-block')) {
+        return tabPanels(element).map((panel, index) => `#### ${escapeLineStart(tabTitle(panel, index))}\n\n${blocks(panel, context)}`.trim()).join('\n\n');
+      }
+
       /* A toggle becomes a collapsible section; other groups (sticky groups) just hold blocks. */
       if (element.classList.contains('toggle-block')) {
         const summary = element.querySelector(':scope > .toggle-summary');

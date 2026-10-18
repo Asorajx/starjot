@@ -1,6 +1,7 @@
 import { addRow, cellsInRow, tableGrid } from '../tables/tables';
 import { caretAtEdge, caretElement, closestAtCaret, emptyParagraph, isEmptyContent, placeCaret } from './dom';
 import { joinLineOfToggle, toggleBody, withBreak, type LineChange } from './lines';
+import { tabKeys } from './tabs';
 
 
 /* =========================
@@ -425,11 +426,12 @@ function splitChecklistItem(event: KeyboardEvent, item: HTMLLIElement): KeyResul
   return { kind: 'lines', focus: next, atEnd: false };
 }
 
-/* Keys with special meaning in table cells, toggle lists and lists. Returns null for every other key. */
+/* Keys with special meaning in table cells, tab blocks, toggle lists and lists. Returns null for */
+/* every other key. */
 export function handleBlockKeys(event: KeyboardEvent, root: HTMLElement): KeyResult | null {
   leavePageLink(event);
   leaveCommentMark(event);
   const cell = closestAtCaret<HTMLTableCellElement>('td, th');
   if (cell && root.contains(cell)) return cellKeys(event, cell);
-  return enterTableKeys(event) ?? toggleKeys(event) ?? listKeys(event, root);
+  return enterTableKeys(event) ?? tabKeys(event) ?? toggleKeys(event) ?? listKeys(event, root);
 }

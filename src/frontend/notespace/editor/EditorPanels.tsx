@@ -4,6 +4,7 @@ import { STACK_LIMIT } from '../../app/noteTabs';
 import { Switch } from '../../components/Switch';
 import { Icon, type IconName } from '../../components/Icon';
 import { NoteColorPicker } from '../NoteColors';
+import { showTabOf, tabPathOf } from './text/tabs';
 import type { EditorSession } from './session';
 import type { Note, NoteMode, PageLayout, PageSize } from '../../../shared/types/note';
 
@@ -30,17 +31,22 @@ function jumpTo(session: EditorSession, target: 'top' | 'bottom' | number) {
   } else if (target === 'bottom') {
     body?.closest('.editor-width')?.querySelector('.document-end')?.scrollIntoView({ behavior, block: 'end' });
   } else {
-    body?.querySelectorAll('h1, h2, h3, h4, h5, h6')[target]?.scrollIntoView({ behavior, block: 'start' });
+    /* A heading inside a tab block shows its tab first, so there is something to scroll to. */
+    const heading = body?.querySelectorAll('h1, h2, h3, h4, h5, h6')[target];
+    showTabOf(heading ?? null);
+    heading?.scrollIntoView({ behavior, block: 'start' });
   }
 }
 
-/* The outline is generated from the headings in the note's saved content. */
+/* The outline is generated from the headings in the note's saved content. A heading inside a */
+/* tab block is indented and named with its tab, such as "Setup › Install". */
 export function TableOfContents({ id, session, content, open, onClose }: TableOfContentsProps) {
   const headings = useMemo(() => {
     const template = document.createElement('template');
     template.innerHTML = content;
     return Array.from(template.content.querySelectorAll('h1, h2, h3, h4, h5, h6')).map(heading => ({
       text: heading.textContent?.trim() ?? '',
+      tabs: tabPathOf(heading),
       nested: ['H3', 'H4', 'H5', 'H6'].includes(heading.tagName)
     }));
   }, [content]);
@@ -59,7 +65,13 @@ export function TableOfContents({ id, session, content, open, onClose }: TableOf
       <nav className="note-toc-links" aria-label="Headings in this note">
         <button type="button" className="outline-item outline-item--active" onClick={() => go('top')}>Top of note</button>
         {headings.length ? headings.map((heading, index) => (
-          <button key={index} type="button" className={`outline-item ${heading.nested ? 'outline-item--nested' : ''}`} onClick={() => go(index)}>
+          <button
+            key={index}
+            type="button"
+            className={`outline-item ${heading.nested || heading.tabs.length ? 'outline-item--nested' : ''} ${heading.tabs.length ? 'outline-item--in-tab' : ''}`}
+            onClick={() => go(index)}
+          >
+            {heading.tabs.length > 0 && <span className="outline-tab">{heading.tabs.join(' › ')} › </span>}
             {heading.text || `Heading ${index + 1}`}
           </button>
         )) : (

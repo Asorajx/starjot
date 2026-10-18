@@ -69,9 +69,12 @@ export function mergeContents(upper: HTMLElement, lower: HTMLElement) {
   let sourceLine: Element = source.firstElementChild ?? source;
   while (containers.includes(sourceLine.tagName) && sourceLine.firstElementChild) sourceLine = sourceLine.firstElementChild;
 
-  /* Divider lines cannot hold text, and a toggle below is kept whole, so blocks next to them are */
-  /* placed one after the other instead. */
-  const canJoin = targetLine.tagName !== 'HR' && sourceLine.tagName !== 'HR' && !sourceLine.classList.contains('toggle-block');
+  /* Divider lines cannot hold text, a toggle below is kept whole, and a tab block on either side */
+  /* would take the text into a tab that may be hidden, so blocks next to them are placed one */
+  /* after the other instead. */
+  const isTabs = (line: Element) => line.classList.contains('tab-block');
+  const canJoin = targetLine.tagName !== 'HR' && sourceLine.tagName !== 'HR' && !sourceLine.classList.contains('toggle-block')
+    && !isTabs(targetLine) && !isTabs(sourceLine);
   if (canJoin && !targetLine.textContent) targetLine.replaceChildren();
   const offset = getLength(target);
 

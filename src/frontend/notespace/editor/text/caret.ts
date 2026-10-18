@@ -1,6 +1,10 @@
 /* Only text typed by the user is counted, never editor labels or controls. */
 const EDITABLE = '[data-note-editable]';
 
+/* Text that cannot hold the caret: a tab block's strip of names, and its hidden tabs. Counting it */
+/* would let a position (such as one restored after Undo) land in a tab that is not shown. */
+const HIDDEN = '.tab-strip, .tab-panel:not(.is-active)';
+
 export type TextRange = { start: number; end: number };
 
 
@@ -15,7 +19,7 @@ function textUnits(root: Element) {
     acceptNode(node) {
       if (node instanceof Element && node.tagName !== 'BR') return NodeFilter.FILTER_SKIP;
       const parent = node instanceof Element ? node : node.parentElement;
-      return parent?.closest(EDITABLE) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_SKIP;
+      return parent?.closest(EDITABLE) && !parent.closest(HIDDEN) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_SKIP;
     }
   });
   const units: Node[] = [];
@@ -25,6 +29,11 @@ function textUnits(root: Element) {
 
 function unitLength(node: Node) {
   return node.nodeType === Node.TEXT_NODE ? (node as Text).length : 1;
+}
+
+/* The line (paragraph, heading, list item, cell…) a text unit sits in. */
+function lineOf(node: Node) {
+  return node.parentElement?.closest('p, h1, h2, h3, h4, h5, h6, li, td, th, pre, blockquote') ?? null;
 }
 
 function childIndex(node: Node) {
@@ -55,9 +64,14 @@ function pointAt(root: Element, offset: number): { node: Node; offset: number } 
   let remaining = Math.max(0, offset);
   const units = textUnits(root);
 
-  for (const node of units) {
+  for (const [index, node] of units.entries()) {
     const length = unitLength(node);
-    if (node.nodeType === Node.TEXT_NODE && remaining <= length) return { node, offset: remaining };
+
+    /* The end of a line's text and the start of an empty line after it are the same count; the */
+    /* empty line is chosen, since a caret saved there (after Enter, or in a new tab) is common. */
+    const next = units[index + 1];
+    const emptyLineNext = remaining === length && next?.nodeName === 'BR' && !lineOf(next)?.textContent && lineOf(next) !== lineOf(node);
+    if (node.nodeType === Node.TEXT_NODE && remaining <= length && !emptyLineNext) return { node, offset: remaining };
     if (node.nodeType !== Node.TEXT_NODE && remaining === 0) return { node: node.parentNode as Node, offset: childIndex(node) };
     remaining -= length;
   }

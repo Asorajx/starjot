@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { Icon } from '../../../components/Icon';
 import { useEscape } from '../../../lib/useDismiss';
 import { shortcutLabel } from '../../../app/shortcuts';
+import { showTabOf } from '../text/tabs';
 import { useSessionValue, type EditorSession } from '../session';
 import { clearMatches, findMatches, replaceAll, replaceMatch, showMatches } from './find';
 
@@ -66,10 +67,12 @@ export function FindBar({ session, locked, content, within, replacing, initialWo
     if (replacing && !locked) setShowReplace(true);
   }, [replacing, locked]);
 
-  /* Show the matches, and scroll the current one into view (a third of the way down). */
+  /* Show the matches, and scroll the current one into view (a third of the way down), showing */
+  /* the tab it is in first when it sits in a hidden tab of a tab block. */
   useEffect(() => {
     showMatches(matches, index, scope);
     const range = matches[index];
+    showTabOf(range?.startContainer ?? null);
     const scroller = session.scroller();
     if (range && scroller) {
       const box = range.getBoundingClientRect();

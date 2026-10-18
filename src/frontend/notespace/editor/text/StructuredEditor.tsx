@@ -13,6 +13,7 @@ import { isRuleOnly, mergeContents, splitAtCaret } from './blockEditing';
 import { deleteKeepingPages, hydratePages, pageBlocksIn } from './pageBlocks';
 import { handleBlockKeys } from './blockKeys';
 import { joinLineOfToggle } from './lines';
+import { breaksTabBlock } from './tabs';
 import { getLength, getOffset, setOffset } from './caret';
 import { highlight, insertNewline, preAtCaret } from '../code/code';
 import { caretAtEdge, closestAtCaret, emptyParagraph, isEmptyContent, placeCaret, selectContents, selectionInside, wrapLooseLines } from './dom';
@@ -435,7 +436,7 @@ export const StructuredEditor = memo(function StructuredEditor({ session, conten
   }
 
   /* The first Ctrl + A selects the current block; pressing it again selects the whole note. */
-  function selectAll() {
+  function selectAll(wholeNote = false) {
     const body = bodyRef.current;
     const current = window.getSelection();
     if (!body || !current) return;
@@ -444,7 +445,7 @@ export const StructuredEditor = memo(function StructuredEditor({ session, conten
     const wholeBlock = Boolean(editable && range && !range.collapsed && range.toString() === editable.textContent);
 
     body.focus({ preventScroll: true });
-    if (editable && body.contains(editable) && !wholeBlock && editable.textContent) {
+    if (!wholeNote && editable && body.contains(editable) && !wholeBlock && editable.textContent) {
       selectContents(editable);
       return;
     }
@@ -649,8 +650,16 @@ export const StructuredEditor = memo(function StructuredEditor({ session, conten
       return;
     }
 
+    /* A selection that would break a tab block is left alone (see breaksTabBlock). */
+    const selected = window.getSelection()?.rangeCount ? window.getSelection()?.getRangeAt(0) : null;
+    const deleting = event.key === 'Backspace' || event.key === 'Delete' || event.key === 'Enter';
+    if (deleting && selected && bodyRef.current && breaksTabBlock(selected, bodyRef.current)) {
+      event.preventDefault();
+      return;
+    }
+
     /* A selection across blocks is deleted as one edit (typing is handled in beforeinput). */
-    if ((event.key === 'Backspace' || event.key === 'Delete' || event.key === 'Enter') && deleteAcross()) {
+    if (deleting && deleteAcross()) {
       event.preventDefault();
       return;
     }
@@ -705,8 +714,8 @@ export const StructuredEditor = memo(function StructuredEditor({ session, conten
       return;
     }
 
-    /* Lines inside a toggle list stay in the toggle's block. */
-    if (closestAtCaret('.toggle-body')) return;
+    /* Lines inside a toggle list or a tab stay in the toggle's or tab block's block. */
+    if (closestAtCaret('.toggle-body, .tab-panel')) return;
 
     /* Lists keep the browser's normal Enter, so new items stay in the same list block. */
     const item = closestAtCaret('li');

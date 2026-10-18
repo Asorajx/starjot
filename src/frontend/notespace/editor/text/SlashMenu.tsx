@@ -4,6 +4,7 @@ import { canAddSubpage, createSubpage, noteTitle, useNotes } from '../../store';
 import { caretIsInlineOnly, matchCommands, type SlashCommand } from './slashCommands';
 import { convertLine, createPageBlock, createPageMention, createTable, insertBlock, insertInline, lineAtCaret, type LineChange } from './lines';
 import { hydratePages, renameSubNote } from './pageBlocks';
+import { createTabBlock } from './tabs';
 import { getPreferences } from '../../../app/preferences';
 import { closestAtCaret } from './dom';
 import type { EditorSession } from '../session';
@@ -68,7 +69,8 @@ export function SlashMenu({ session, noteId, locked, onOpenNewPage }: SlashMenuP
   const linkRange = useRef<Range | null>(null);
 
   const inlineOnly = useRef(false);
-  const commands = matchCommands(query, { inlineOnly: inlineOnly.current, canAddPage: canAddSubpage(noteId) });
+  const inTab = useRef(false);
+  const commands = matchCommands(query, { inlineOnly: inlineOnly.current, canAddPage: canAddSubpage(noteId), inTab: inTab.current });
   const pages = notes
     .filter(note => note.id !== noteId && `${note.title} ${note.subtitle}`.toLowerCase().includes(search.trim().toLowerCase()))
     .slice(0, PAGE_RESULTS);
@@ -140,6 +142,7 @@ export function SlashMenu({ session, noteId, locked, onOpenNewPage }: SlashMenuP
         if (text[offset - 1] === '/' && (offset === 1 || /\s/.test(text[offset - 2]))) {
           anchor.current = { node: caret.node, offset: offset - 1 };
           inlineOnly.current = caretIsInlineOnly();
+          inTab.current = Boolean(closestAtCaret('.tab-panel'));
           setActive(0);
           setMode('commands');
         }
@@ -232,6 +235,13 @@ export function SlashMenu({ session, noteId, locked, onOpenNewPage }: SlashMenuP
     let change: LineChange;
     if (command.id === 'divider') change = insertBlock(line, document.createElement('hr'));
     else if (command.id === 'table') change = insertBlock(line, createTable());
+    else if (command.id === 'tabs') {
+      const block = createTabBlock();
+      insertBlock(line, block);
+
+      /* Writing starts in the first tab. */
+      change = { focus: block.querySelector('.tab-panel > p') as HTMLElement, atEnd: false };
+    }
     else change = convertLine(line, command.id);
     session.linesChanged(change.focus, change.atEnd);
   };
