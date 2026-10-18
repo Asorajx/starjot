@@ -52,16 +52,21 @@ export function Dropdown<T extends string>({ value, options, onChange, label, pr
   const [open, setOpen] = useState(false);
 
   /* A menu that would run past the right edge of the screen (on a phone, say) lines up with the */
-  /* button's right edge instead. Checked each time it opens, before it is shown. */
+  /* button's right edge instead, and one that would run past the bottom opens upwards when there */
+  /* is more room above. Checked each time it opens, before it is shown. */
   const [flipped, setFlipped] = useState(false);
+  const [upward, setUpward] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   useLayoutEffect(() => {
     if (!open) {
       setFlipped(false);
+      setUpward(false);
       return;
     }
     const menu = menuRef.current?.getBoundingClientRect();
+    const button = wrapRef.current?.getBoundingClientRect();
     if (menu && !alignEnd && menu.right > window.innerWidth - 8) setFlipped(true);
+    if (menu && button && menu.bottom > window.innerHeight - 8 && button.top > window.innerHeight - button.bottom) setUpward(true);
   }, [open, alignEnd]);
   const chosen = Math.max(0, options.findIndex(option => option.value === value));
   const [active, setActive] = useState(chosen);
@@ -136,7 +141,7 @@ export function Dropdown<T extends string>({ value, options, onChange, label, pr
       </button>
 
       {open && (
-        <div ref={menuRef} className={`page-menu dropdown-menu ${alignEnd || flipped ? 'is-end' : ''}`} id={listId} role="listbox" aria-label={label}>
+        <div ref={menuRef} className={`page-menu dropdown-menu ${alignEnd || flipped ? 'is-end' : ''} ${upward ? 'is-up' : ''}`} id={listId} role="listbox" aria-label={label}>
           {options.map((option, index) => (
             <div key={option.value} role="presentation">
               {option.divider && <div className="dropdown-divider" role="presentation" />}

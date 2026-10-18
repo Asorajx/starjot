@@ -1,6 +1,9 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useState, type FormEvent } from 'react';
 import { Icon } from '../components/Icon';
 import { opensNewTab, type OpenById } from '../lib/clicks';
+import { useNow } from '../lib/useNow';
+import { ReminderList } from '../app/Reminders';
+import { reminderGroups } from '../notespace/reminders';
 import { usePreferences } from '../app/preferences';
 import { editedText, newestFirst } from '../notespace/NoteList';
 import { createNote, noteTitle, updateNote, useNotes } from '../notespace/store';
@@ -23,16 +26,6 @@ function greeting(now: Date) {
   if (hour >= 5 && hour < 12) return 'Good morning';
   if (hour >= 12 && hour < 18) return 'Good afternoon';
   return 'Good evening';
-}
-
-/* The current time, updated every 30 seconds so the clock and greeting stay correct. */
-function useNow() {
-  const [now, setNow] = useState(() => new Date());
-  useEffect(() => {
-    const timer = window.setInterval(() => setNow(new Date()), 30000);
-    return () => window.clearInterval(timer);
-  }, []);
-  return now;
 }
 
 
@@ -95,12 +88,14 @@ function QuickNote({ onOpenNote }: { onOpenNote: OpenById }) {
    ========================= */
 
 /* The app's own home: a greeting, then one section per space turned on, so notes and boards are */
-/* never mixed. Notespace has a quick note and "Where you left off"; Boardspace has how many items */
-/* each column holds. */
+/* never mixed. Notespace has a quick note, "Where you left off" and reminders still to come today; */
+/* Boardspace has how many items each column holds. */
 export function StarjotHome({ onOpenNote, onOpenNotespace, onOpenBoardspace, onOpenBoardView }: StarjotHomeProps) {
-  const now = useNow();
+  const now = useNow(30000);
   const { spaces } = usePreferences();
-  const lastEdited = newestFirst(useNotes())[0];
+  const notes = useNotes();
+  const lastEdited = newestFirst(notes)[0];
+  const reminders = reminderGroups(notes, now);
   const columns = BOARD_TABS.filter((view): view is { id: StatusTab; label: string } => view.id !== 'timeline');
 
   return (
@@ -135,6 +130,14 @@ export function StarjotHome({ onOpenNote, onOpenNotespace, onOpenBoardspace, onO
             </div>
           )}
         </div>
+
+        {/* Reminders still to come today, when there are any (ones that came due are in the inbox). */}
+        {reminders.today.length > 0 && (
+          <div className="home-reminders">
+            <span className="home-card-label">Reminders</span>
+            <ReminderList groups={['today']} now={now} onOpenNote={onOpenNote} empty="" />
+          </div>
+        )}
       </section>}
 
       {spaces.boardspace && <section className="home-section" aria-labelledby="home-boardspace">

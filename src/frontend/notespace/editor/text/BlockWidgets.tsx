@@ -1,8 +1,11 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { DeleteNoteDialog } from '../../DeleteNoteDialog';
 import { Icon } from '../../../components/Icon';
 import { opensNewTab, type OpenById } from '../../../lib/clicks';
-import { deleteNote, getNote, separatePage, updateNote, useNotes } from '../../store';
+import { deleteNote, getNote, noteTitle, separatePage, updateNote, useNotes } from '../../store';
+import { showToast } from '../../../lib/toasts';
+import { fullReminderLabel, hydrateReminders } from '../../reminders';
+import { DateTimePicker } from '../../../components/DateTimePicker';
 import { deleteKeepingPages, hydratePages, pageBlocksIn, removePageBlocks, RENAME_SUB_NOTE, setPageWidth, stepOverPage, type PageSize } from './pageBlocks';
 import { lineBelowTable, typeOutsideComment } from './blockKeys';
 import { placeCaret } from './dom';
@@ -11,6 +14,7 @@ import {
   activateTab, addTab, breaksTabBlock, deleteTabBlock, emptyTabAtCaret, removeEmptyTab, removeTab, renameTab, showTabOf, tabPanels
 } from './tabs';
 import { TitleEditor } from '../../../components/TitleEditor';
+import { useEscape } from '../../../lib/useDismiss';
 import { selectBlockText } from './selectBlock';
 import { LinkPreviewCard } from '../links/LinkPreview';
 import { copyPageLink } from '../links/links';
@@ -47,6 +51,25 @@ export function BlockWidgets({ session, locked, onOpenNote, onOpenNoteInNewTab }
 
   /* The tab whose name is being renamed in place, and its name on the strip. */
   const [renamingTab, setRenamingTab] = useState<{ block: HTMLElement; index: number; title: HTMLElement } | null>(null);
+
+  /* The panel opened by clicking a reminder in the text, under it. */
+  const [reminderMenu, setReminderMenu] = useState<{ chip: HTMLElement; top: number; left: number } | null>(null);
+  const reminderPanel = useRef<HTMLDivElement>(null);
+
+  /* The panel opens under its reminder, or above it when there is no room below (and always */
+  /* inside the window). */
+  useLayoutEffect(() => {
+    const panel = reminderPanel.current;
+    if (!reminderMenu || !panel) return;
+    const chip = reminderMenu.chip.getBoundingClientRect();
+    const height = panel.offsetHeight;
+    const below = chip.bottom + 6;
+    const top = below + height <= window.innerHeight - 8 ? below : Math.max(8, chip.top - 6 - height);
+    if (top !== reminderMenu.top) setReminderMenu({ ...reminderMenu, top });
+  }, [reminderMenu]);
+
+  /* Escape closes it wherever the focus is (clicking a reminder leaves the focus in the note). */
+  useEscape(Boolean(reminderMenu), () => setReminderMenu(null));
 
   /* The menu opened by right-clicking a tab block's strip: on a tab (index), or beside the tabs (-1). */
   const [tabMenu, setTabMenu] = useState<{ block: HTMLElement; index: number; top: number; left: number } | null>(null);
@@ -87,6 +110,15 @@ export function BlockWidgets({ session, locked, onOpenNote, onOpenNoteInNewTab }
         block.dataset.size = sizeButton.dataset.sizeOption as PageSize;
         hydratePages(block.parentElement);
         session.commit();
+        return;
+      }
+
+      /* A reminder opens its panel: change its time, or remove it. */
+      const reminder = target.closest<HTMLElement>('.reminder-chip');
+      if (reminder) {
+        event.preventDefault();
+        const box = reminder.getBoundingClientRect();
+        setReminderMenu({ chip: reminder, top: box.bottom + 6, left: box.left });
         return;
       }
 
@@ -173,6 +205,13 @@ export function BlockWidgets({ session, locked, onOpenNote, onOpenNoteInNewTab }
     function handleMouseDown(event: MouseEvent) {
       const note = body();
       const target = event.target as Element;
+
+      /* Pressing a reminder opens its panel (on click) without selecting it, which would bring up */
+      /* the formatting toolbar. */
+      if (target.closest?.('.reminder-chip') && note?.contains(target)) {
+        event.preventDefault();
+        return;
+      }
       if (!note?.contains(target) || latest.current.locked || event.button !== 0 || target.closest('table')) return;
       const table = Array.from(note.querySelectorAll('table')).find(item => {
         const bounds = item.getBoundingClientRect();
@@ -303,6 +342,7 @@ export function BlockWidgets({ session, locked, onOpenNote, onOpenNoteInNewTab }
       if ((event.target as Element).closest?.('.page-menu')) return;
       setPageMenu(null);
       setTabMenu(null);
+      setReminderMenu(null);
     }
 
     /* A caret that ends up in a hidden tab (put there by code, not by clicking) shows that tab, */
@@ -425,6 +465,26 @@ export function BlockWidgets({ session, locked, onOpenNote, onOpenNoteInNewTab }
     if (title) setRenaming({ id, title });
   }
 
+  /* The menu closes as it copies, so a toast says whether the link was copied. */
+  function copyWithToast(id: string) {
+    copyPageLink(id)
+      .then(() => showToast({ kind: 'success', title: 'Link copied', description: noteTitle(getNote(id)) }))
+      .catch(() => showToast({ kind: 'error', title: 'The link could not be copied', description: 'The browser did not allow copying. Try Note settings → Copy link.' }));
+  }
+
+  /* A change to the reminder whose panel is open, as one undo step. */
+  function changeChip(change: (chip: HTMLElement) => void) {
+    const chip = reminderMenu?.chip;
+    if (!chip?.isConnected || locked) return;
+    session.checkpoint();
+    change(chip);
+    hydrateReminders(chip.parentElement);
+    session.commit();
+
+    /* Draw the panel again, so its date follows the change. */
+    setReminderMenu(menu => (menu ? { ...menu } : null));
+  }
+
   /* A change from the tab menu, as one undo step. */
   function changeTabs(change: (block: HTMLElement) => void) {
     const block = tabMenu?.block;
@@ -485,7 +545,7 @@ export function BlockWidgets({ session, locked, onOpenNote, onOpenNoteInNewTab }
               <Icon name="pencil" size={14} /> Rename
             </button>
           )}
-          <button type="button" role="menuitem" className="page-menu-item" disabled={!menuNote} onClick={() => { setPageMenu(null); copyPageLink(pageMenu.id).catch(() => undefined); }}>
+          <button type="button" role="menuitem" className="page-menu-item" disabled={!menuNote} onClick={() => { setPageMenu(null); copyWithToast(pageMenu.id); }}>
             <Icon name="copy" size={14} /> Copy link
           </button>
           {!locked && (
@@ -520,6 +580,42 @@ export function BlockWidgets({ session, locked, onOpenNote, onOpenNoteInNewTab }
             returnAfterBlock(renaming.id);
           }}
         />
+      )}
+
+      {/* A reminder's panel: its full date, a calendar and time to change it, and Remove. A locked */}
+      {/* note shows only the date. */}
+      {reminderMenu && (
+        <div
+          ref={reminderPanel}
+          className="page-menu reminder-panel"
+          role="dialog"
+          aria-label="Reminder"
+          style={{ top: reminderMenu.top, left: Math.max(8, Math.min(reminderMenu.left, window.innerWidth - 280)) }}
+        >
+          <p className="reminder-panel-date"><Icon name="alarm-clock" size={14} /> {fullReminderLabel(reminderMenu.chip.dataset.at ?? '')}</p>
+          {!locked && (
+            <>
+              <DateTimePicker
+                value={new Date(reminderMenu.chip.dataset.at ?? Date.now())}
+                onChange={at => changeChip(chip => {
+                  chip.dataset.at = at.toISOString();
+                })}
+              />
+              <span className="reminder-panel-actions">
+                <button
+                  type="button"
+                  className="btn btn-sm btn-tertiary is-danger"
+                  onClick={() => {
+                    changeChip(chip => chip.remove());
+                    setReminderMenu(null);
+                  }}
+                >
+                  Remove
+                </button>
+              </span>
+            </>
+          )}
+        </div>
       )}
 
       {/* Right-clicking a tab: rename it (in place), delete it, or delete the whole block. Beside */}

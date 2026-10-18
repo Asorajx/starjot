@@ -2,6 +2,7 @@ import { iconMarkup } from '../../../components/Icon';
 import { categoryName, getNote, noteTitle, updatedLabel } from '../../store';
 import { hydrateImages } from '../images/images';
 import { hydrateTabs } from './tabs';
+import { hydrateReminders } from '../../reminders';
 import { escapeHtml } from '../../../lib/html';
 
 
@@ -46,10 +47,11 @@ export function renameSubNote(id: string) {
 
 /* Page blocks are stored empty; their title, description and size buttons are drawn when shown, */
 /* so they always match the page they point to. Images are stored empty too and drawn here as well, */
-/* and so are the strips of tab names above tab blocks. */
+/* and so are the strips of tab names above tab blocks, and reminders' times. */
 export function hydratePages(root: Element | null) {
   hydrateImages(root);
   hydrateTabs(root);
+  hydrateReminders(root);
   root?.querySelectorAll<HTMLElement>('.page-mention').forEach(mention => {
     const note = getNote(mention.dataset.page ?? '');
     mention.contentEditable = 'false';

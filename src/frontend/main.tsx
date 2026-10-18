@@ -19,6 +19,7 @@ import './notespace/editor/format/format.css';
 import './notespace/editor/find/find.css';
 import './components/emoji-picker.css';
 import './components/dropdown.css';
+import './components/dateTimePicker.css';
 import './notespace/editor/images/images.css';
 import './notespace/editor/tables/tables.css';
 import './notespace/editor/drawing/drawing.css';

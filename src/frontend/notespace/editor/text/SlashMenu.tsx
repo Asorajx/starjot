@@ -1,10 +1,12 @@
-import { useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent as ReactMouseEvent } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent as ReactMouseEvent } from 'react';
 import { Icon } from '../../../components/Icon';
 import { canAddSubpage, createSubpage, noteTitle, useNotes } from '../../store';
 import { caretIsInlineOnly, matchCommands, type SlashCommand } from './slashCommands';
 import { convertLine, createPageBlock, createPageMention, createTable, insertBlock, insertInline, lineAtCaret, type LineChange } from './lines';
 import { hydratePages, renameSubNote } from './pageBlocks';
 import { createTabBlock } from './tabs';
+import { createReminderChip, reminderChoices, reminderLabel } from '../../reminders';
+import { DateTimePicker } from '../../../components/DateTimePicker';
 import { getPreferences } from '../../../app/preferences';
 import { closestAtCaret } from './dom';
 import type { EditorSession } from '../session';
@@ -23,7 +25,7 @@ type SlashMenuProps = {
 type Anchor = { node: Text; offset: number };
 
 /* commands: choosing a block type. pages: choosing the page to link to. */
-type Mode = 'commands' | 'pages';
+type Mode = 'commands' | 'pages' | 'reminder';
 
 type MenuPosition = { top: number; left: number; above: boolean };
 
@@ -61,11 +63,14 @@ export function SlashMenu({ session, noteId, locked, onOpenNewPage }: SlashMenuP
   const [active, setActive] = useState(0);
   const [search, setSearch] = useState('');
 
+  /* The date and time chosen in the reminder chooser's calendar. */
+  const [reminderAt, setReminderAt] = useState(() => new Date());
+
   const anchor = useRef<Anchor | null>(null);
   const lastQuery = useRef('');
   const menu = useRef<HTMLDivElement>(null);
 
-  /* The "/" and the text after it, kept while the page search box has focus. */
+  /* The "/" and the text after it, kept while the page search or the reminder chooser has focus. */
   const linkRange = useRef<Range | null>(null);
 
   const inlineOnly = useRef(false);
@@ -107,7 +112,7 @@ export function SlashMenu({ session, noteId, locked, onOpenNewPage }: SlashMenuP
     /* Keep the menu in step with the caret: close it when the "/" is deleted or the caret leaves it. */
     function update() {
       const start = anchor.current;
-      if (!start || latest.current.mode === 'pages') return;
+      if (!start || latest.current.mode !== 'commands') return;
       const caret = caretInText();
       const text = start.node.textContent ?? '';
       const valid = start.node.isConnected && caret?.node === start.node && caret.offset > start.offset && text[start.offset] === '/';
@@ -188,6 +193,19 @@ export function SlashMenu({ session, noteId, locked, onOpenNewPage }: SlashMenuP
     };
   }, []);
 
+  /* The reminder chooser is taller than the menu; it is moved up when it would run past the */
+  /* bottom of the window, or down when it would run past the top (never past either edge). */
+  const [lift, setLift] = useState(0);
+  useLayoutEffect(() => {
+    const box = mode === 'reminder' ? menu.current?.getBoundingClientRect() : null;
+    if (!box) {
+      setLift(0);
+      return;
+    }
+    const up = box.bottom > window.innerHeight - 8 ? Math.min(box.top - 8, box.bottom - window.innerHeight + 8) : 0;
+    setLift(up || Math.min(0, box.top - 8));
+  }, [mode, position]);
+
   /* The arrow keys move the highlight past the menu's visible part, so the list follows it. */
   useEffect(() => {
     menu.current?.querySelector('.slash-menu-item.is-active')?.scrollIntoView({ block: 'nearest' });
@@ -205,6 +223,14 @@ export function SlashMenu({ session, noteId, locked, onOpenNewPage }: SlashMenuP
       setMode('pages');
       setSearch('');
       setActive(0);
+      return;
+    }
+
+    /* A reminder asks when first, the same way. */
+    if (command.id === 'reminder') {
+      linkRange.current = range;
+      setMode('reminder');
+      setReminderAt(reminderChoices(new Date())[1].at);
       return;
     }
 
@@ -258,6 +284,34 @@ export function SlashMenu({ session, noteId, locked, onOpenNewPage }: SlashMenuP
     session.commit();
   }
 
+  /* Put a reminder for a time where "/" was typed. */
+  function remindAt(at: Date | null) {
+    const range = linkRange.current;
+    const body = session.body();
+    if (!at) return;
+    close();
+    if (!range || !body) return;
+    body.focus({ preventScroll: true });
+    session.checkpoint();
+    insertInline(range, createReminderChip(at));
+    hydratePages(body);
+    session.commit();
+  }
+
+  /* In the reminder chooser, the arrow keys move between its choices and Escape leaves it. */
+  function handleReminderKeyDown(event: ReactKeyboardEvent<HTMLDivElement>) {
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      cancelLink();
+      return;
+    }
+    if ((event.key !== 'ArrowDown' && event.key !== 'ArrowUp') || !(event.target as Element).matches('.slash-menu-item')) return;
+    event.preventDefault();
+    const items = Array.from(menu.current?.querySelectorAll<HTMLElement>('.slash-menu-item') ?? []);
+    const at = items.indexOf(document.activeElement as HTMLElement);
+    items[(at + (event.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length]?.focus();
+  }
+
   /* Escape in the page search returns to the note, leaving the "/" text as it was. */
   function cancelLink() {
     const range = linkRange.current;
@@ -283,14 +337,14 @@ export function SlashMenu({ session, noteId, locked, onOpenNewPage }: SlashMenuP
   }
 
   if (!position) return null;
-  const style = { top: position.top, left: position.left, transform: position.above ? 'translateY(-100%)' : undefined };
+  const style = { top: position.top - lift, left: position.left, transform: position.above ? 'translateY(-100%)' : undefined };
 
   /* Keep the caret in the note while the mouse is pressed on the menu. */
   /* Items follow the mouse only when it moves, because the menu can open under a still pointer. */
   const keepFocus = (event: ReactMouseEvent) => event.preventDefault();
 
   return (
-    <div ref={menu} className="slash-menu" style={style} role="listbox" aria-label={mode === 'pages' ? 'Choose a note to link' : 'Add a block'}>
+    <div ref={menu} className={`slash-menu ${mode === 'reminder' ? 'is-reminder' : ''}`} style={style} role="listbox" aria-label={mode === 'pages' ? 'Choose a note to link' : mode === 'reminder' ? 'Choose when to be reminded' : 'Add a block'}>
       {mode === 'commands' && (
         <>
           <p className="slash-menu-label">{inlineOnly.current ? 'Insert' : 'Add a block'}</p>
@@ -311,6 +365,33 @@ export function SlashMenu({ session, noteId, locked, onOpenNewPage }: SlashMenuP
             </button>
           )) : <p className="slash-menu-empty">No matching blocks</p>}
         </>
+      )}
+
+      {/* When to be reminded: the quick choices (with their times), or a date and time. */}
+      {mode === 'reminder' && (
+        <div
+          className="slash-reminder"
+          onKeyDown={handleReminderKeyDown}
+          onBlur={event => {
+            if (!event.relatedTarget?.closest('.slash-menu')) cancelLink();
+          }}
+        >
+          <p className="slash-menu-label">Remind me</p>
+          {reminderChoices(new Date()).map((choice, index) => (
+            <button key={choice.label} type="button" className="slash-menu-item" autoFocus={index === 0} onClick={() => remindAt(choice.at)}>
+              <span className="slash-menu-icon"><Icon name="alarm-clock" size={15} /></span>
+              <span className="slash-menu-name">{choice.label}</span>
+              <kbd>{reminderLabel(choice.at.toISOString(), new Date()).replace(/^(Today|Tomorrow) /, '')}</kbd>
+            </button>
+          ))}
+          <div className="slash-reminder-custom">
+            <p className="slash-menu-label">Or pick a date and time</p>
+            <DateTimePicker value={reminderAt} onChange={setReminderAt} />
+            <button type="button" className="btn btn-sm btn-primary" onClick={() => remindAt(reminderAt)}>
+              Add for {reminderLabel(reminderAt.toISOString(), new Date())}
+            </button>
+          </div>
+        </div>
       )}
 
       {mode === 'pages' && (

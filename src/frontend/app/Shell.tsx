@@ -2,6 +2,7 @@ import type { MouseEvent, ReactNode } from 'react';
 import { BrandMark } from '../components/BrandMark';
 import { opensNewTab, startNoteDrag, type OpenById } from '../lib/clicks';
 import { keyParts, keysOf, shortcutLabel } from './shortcuts';
+import { InboxBell } from './Reminders';
 import { Icon, type IconName } from '../components/Icon';
 import { enabledScreens, screenLabel, type ScreenId } from './screens';
 import { noteTitle, useCategories, useNotes } from '../notespace/store';
@@ -58,13 +59,16 @@ type WindowControlsProps = {
 
   /* Left out while Notespace is turned off, which hides the New note button. */
   onNewNote?: () => void;
+
+  /* Opens a note from the inbox; left out (hiding the bell) while Notespace is off. */
+  onOpenNote?: OpenById;
 };
 
-/* Home, the sidebar button, Notifications and New note, always at the top left of the window: at */
+/* Home, the sidebar button, the inbox bell and New note, always at the top left of the window: at */
 /* the start of the tab bar (or of the top bar on screens without tabs), or across the top of the */
-/* docked sidebar, where Notifications and New note move to its right end. Hovering the sidebar */
+/* docked sidebar, where the bell and New note move to its right end. Hovering the sidebar */
 /* button opens the sidebar as a popup; clicking it docks or undocks the sidebar. */
-export function WindowControls({ sidebarOpen, onHome, onToggleSidebar, onSidebarHover, onSidebarLeave, onNewNote }: WindowControlsProps) {
+export function WindowControls({ sidebarOpen, onHome, onToggleSidebar, onSidebarHover, onSidebarLeave, onNewNote, onOpenNote }: WindowControlsProps) {
   return (
     <div className="window-controls">
       <button type="button" className="window-home" aria-label="Home" data-tooltip="Home" data-tooltip-align="start" onClick={onHome}>
@@ -84,16 +88,7 @@ export function WindowControls({ sidebarOpen, onHome, onToggleSidebar, onSidebar
       >
         <Icon name="sidebar" size={17} />
       </button>
-      <button
-        type="button"
-        className="window-control window-notifications"
-        aria-label="Notifications (coming soon)"
-        aria-disabled="true"
-        data-tooltip="Notifications (coming soon)"
-        data-tooltip-align="start"
-      >
-        <Icon name="bell" size={17} /><span className="notification-dot" />
-      </button>
+      {onOpenNote && <InboxBell onOpenNote={onOpenNote} />}
       {onNewNote && (
         <button type="button" className="window-control window-new-note" aria-label="New note" data-tooltip="New note" data-shortcut={shortcutLabel('newNote')} data-tooltip-align="start" onClick={onNewNote}>
           <Icon name="square-pen" size={17} />

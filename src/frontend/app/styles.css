@@ -430,16 +430,6 @@ p {
   white-space: nowrap;
 }
 
-.notification-dot {
-  height: 5px;
-  width: 5px;
-  position: absolute;
-  right: 5px;
-  top: 4px;
-  border-radius: 50%;
-  background: var(--accent);
-}
-
 .main-scroll {
   flex: 1;
   min-height: 0;
@@ -1119,11 +1109,6 @@ p {
   position: relative;
 }
 
-.window-notifications .notification-dot {
-  top: 5px;
-  right: 5px;
-}
-
 .window-control[aria-disabled="true"] {
   cursor: default;
 }
@@ -1235,3 +1220,482 @@ p {
   margin-top: 24px;
 }
 
+
+
+/* =========================
+   Toasts and Reminders
+   ========================= */
+
+/* Toasts stack in the bottom-right corner, above everything but dialogs, newest nearest the */
+/* corner. They slide and fade in, and fade out when closed; with reduced motion they just appear. */
+/* On a phone they sit above the bottom bar, the width of the screen. */
+.toaster {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 80;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: min(360px, calc(100vw - 32px));
+  pointer-events: none;
+}
+
+.toast {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 8px 12px;
+  padding: 12px 16px;
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--accent);
+  border-radius: 4px;
+  background: var(--paper);
+  box-shadow: 0 10px 30px rgba(28, 54, 96, .18);
+  pointer-events: auto;
+  animation: toast-in .2s cubic-bezier(.23, 1, .32, 1);
+}
+
+.toast.is-leaving {
+  animation: toast-out .15s ease-in forwards;
+}
+
+.toast.is-success {
+  border-left-color: #15803d;
+}
+
+.toast.is-error {
+  border-left-color: #c2410c;
+}
+
+.toast.is-loading {
+  border-left-color: var(--line);
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(.97);
+  }
+}
+
+@keyframes toast-out {
+  to {
+    opacity: 0;
+    transform: translateY(8px) scale(.97);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .toast,
+  .toast.is-leaving {
+    animation: none;
+  }
+}
+
+.toast-icon {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  color: var(--accent-text);
+}
+
+.toast.is-success .toast-icon {
+  background: #e7f6ec;
+  color: #15803d;
+}
+
+.toast.is-error .toast-icon {
+  background: #fdeee8;
+  color: #c2410c;
+}
+
+.toast.is-loading .toast-icon svg {
+  animation: toast-spin 1s linear infinite;
+}
+
+@keyframes toast-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.toast-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.toast-text strong {
+  overflow: hidden;
+  color: #2c3d58;
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.toast-text small {
+  overflow: hidden;
+  color: #66778f;
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* × sits in the toast's top-right corner. */
+.toast-close {
+  align-self: start;
+  margin: -4px -8px 0 0;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: #66778f;
+  cursor: pointer;
+}
+
+.toast-close:hover {
+  background: var(--accent-faint);
+  color: var(--accent-text);
+}
+
+.reminder-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.reminder-list-title {
+  margin: 4px 8px;
+  color: #66778f;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .6px;
+  text-transform: uppercase;
+}
+
+.reminder-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 32px;
+  padding: 4px 8px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: #2c3d58;
+  font: inherit;
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.reminder-row:hover {
+  background: var(--accent-faint);
+}
+
+.reminder-row > svg {
+  color: #66778f;
+}
+
+.reminder-row.is-due > svg,
+.reminder-row.is-due .reminder-row-time {
+  color: var(--accent-text);
+}
+
+/* What a reminder is about, with its note's name under it. */
+.reminder-row-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.reminder-row-text small {
+  overflow: hidden;
+  color: #66778f;
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.reminder-row-title {
+  overflow: hidden;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.reminder-row-time {
+  color: #66778f;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.reminder-empty {
+  margin: 8px;
+  color: #66778e;
+  font-size: 12px;
+}
+
+@media (pointer: coarse) {
+  .reminder-row {
+    min-height: 44px;
+  }
+
+  .toast-close {
+    width: 44px;
+    height: 44px;
+  }
+
+  .inbox-action {
+    width: 44px;
+    height: 44px;
+  }
+}
+
+@media (max-width: 700px) {
+  .toaster {
+    bottom: 80px;
+  }
+}
+
+
+/* =========================
+   Inbox
+   ========================= */
+
+/* The number of unread notifications, on the bell's corner. */
+.window-notifications {
+  position: relative;
+}
+
+.inbox-badge {
+  position: absolute;
+  top: 0;
+  right: 0;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 8px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 16px;
+  text-align: center;
+}
+
+/* The inbox under the bell: a heading with Mark all as read and the filter, then notifications. */
+/* Only the list scrolls, so the filter's menu can reach past a short inbox without being cut off. */
+.inbox-panel {
+  width: 360px;
+  max-width: calc(100vw - 16px);
+  padding: 0;
+  overflow: visible;
+}
+
+.inbox-heading {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 12px 12px 8px 16px;
+  background: inherit;
+}
+
+.inbox-heading strong {
+  flex: 1;
+  color: #2c3d58;
+  font-size: 14px;
+}
+
+.inbox-action {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: #66778f;
+  cursor: pointer;
+}
+
+.inbox-action:hover:not(:disabled),
+.inbox-action.is-active {
+  background: var(--accent-faint);
+  color: var(--accent-text);
+}
+
+.inbox-action:disabled {
+  cursor: default;
+  opacity: .5;
+}
+
+/* The filter's menu: one status at a time, shown with a round mark. */
+.inbox-filter {
+  position: relative;
+}
+
+.inbox-filter > .inbox-filter-menu {
+  position: absolute;
+  z-index: 2;
+  top: calc(100% + 4px);
+  right: 0;
+  left: auto;
+  min-width: 200px;
+}
+
+.inbox-filter-title {
+  padding: 4px 8px;
+  color: #66778f;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.inbox-radio {
+  width: 14px;
+  height: 14px;
+  border: 1.5px solid #8794a8;
+  border-radius: 50%;
+}
+
+.inbox-radio.is-on {
+  border: 4px solid var(--accent);
+}
+
+.inbox-list {
+  max-height: min(460px, calc(100vh - 180px));
+  margin: 0;
+  padding: 0 0 8px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  list-style: none;
+}
+
+/* A notification: unread ones are marked with a dot; their actions show on hover or focus. */
+.inbox-row {
+  position: relative;
+  border-top: 1px solid var(--line);
+}
+
+.inbox-row-open {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 16px 12px 20px;
+  border: 0;
+  background: transparent;
+  color: #2c3d58;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.inbox-row-open:hover:not(:disabled) {
+  background: var(--accent-faint);
+}
+
+.inbox-row-open > svg {
+  color: #66778f;
+}
+
+.inbox-row-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.inbox-row-title {
+  color: #56657b;
+  font-size: 12px;
+}
+
+.inbox-row-title strong {
+  color: #2c3d58;
+  font-weight: 700;
+}
+
+.inbox-row-title svg {
+  vertical-align: -2px;
+}
+
+.inbox-row:not(.is-unread) .inbox-row-title,
+.inbox-row:not(.is-unread) .inbox-row-title strong {
+  font-weight: 500;
+}
+
+.inbox-row-context {
+  overflow: hidden;
+  color: #66778f;
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.inbox-row-date {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--accent-text);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.inbox-row-date.is-past {
+  color: #c2410c;
+}
+
+.inbox-row-time {
+  color: #66778f;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.inbox-row-dot {
+  position: absolute;
+  top: 18px;
+  left: 8px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+/* The actions sit in the bottom-right corner, clear of the time it arrived at the top. */
+.inbox-row-actions {
+  position: absolute;
+  right: 12px;
+  bottom: 8px;
+  display: none;
+  gap: 4px;
+  padding: 2px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--paper);
+}
+
+.inbox-row:hover .inbox-row-actions,
+.inbox-row:focus-within .inbox-row-actions {
+  display: flex;
+}
+
+@media (hover: none) {
+  .inbox-row-actions {
+    position: static;
+    display: flex;
+    justify-content: flex-end;
+    margin: 0 16px 8px;
+    border: 0;
+  }
+}

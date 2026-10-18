@@ -1,0 +1,121 @@
+/* =========================
+   Date and Time Picker
+   ========================= */
+
+/* A month calendar and a time, in the app's own style (see DateTimePicker.tsx). */
+.date-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 240px;
+}
+
+.date-picker-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.date-picker-heading strong {
+  color: #2c3d58;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.date-picker-step {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: #66778f;
+  cursor: pointer;
+}
+
+.date-picker-step:hover {
+  background: var(--accent-faint);
+  color: var(--accent-text);
+}
+
+/* Seven columns: the weekday letters, then the days. Days from the months either side are quieter. */
+.date-picker-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px 0;
+}
+
+.date-picker-weekday {
+  color: #66778f;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 20px;
+  text-align: center;
+}
+
+.date-picker-day {
+  justify-self: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: #2c3d58;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.date-picker-day:hover {
+  background: var(--accent-faint);
+}
+
+.date-picker-day.is-outside {
+  color: #8894a7;
+}
+
+.date-picker-day.is-today {
+  box-shadow: inset 0 0 0 1px var(--accent-line);
+  color: var(--accent-text);
+  font-weight: 700;
+}
+
+.date-picker-day.is-chosen {
+  background: var(--accent);
+  color: #fff;
+  font-weight: 700;
+}
+
+/* The time, under the calendar; its list is shorter than other dropdowns', since it opens in a */
+/* small panel. */
+.date-picker-time {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+  color: #66778f;
+}
+
+.date-picker-time .dropdown {
+  flex: 1;
+}
+
+.date-picker-time .dropdown > .dropdown-menu {
+  max-height: 200px;
+}
+
+@media (pointer: coarse) {
+  .date-picker {
+    width: 308px;
+  }
+
+  .date-picker-day,
+  .date-picker-step {
+    width: 44px;
+    height: 44px;
+  }
+}

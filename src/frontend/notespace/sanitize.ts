@@ -15,12 +15,13 @@ const ALLOWED_TAGS = new Set([
 const DROPPED_TAGS = new Set(['SCRIPT', 'STYLE', 'IFRAME', 'SVG', 'FORM', 'OBJECT']);
 const MAX_CONTENT = 250000;
 
-/* Sticky groups, toggle lists, tab blocks and the tab shown, checklists and their ticked items, page blocks, page links, code */
-/* languages, code token colours, comment marks and text colours are stored as classes. */
+/* Sticky groups, toggle lists, tab blocks and the tab shown, checklists and their ticked items, */
+/* reminders, page blocks, page links, code languages, code token colours, comment marks and */
+/* text colours are stored as classes. */
 function keepsClass(tag: string, name: string) {
   if (name === 'document-tagline' || name === 'overline') return true;
   if (tag === 'DIV' && ['sticky-group', 'toggle-block', 'is-open', 'toggle-body', 'tab-block', 'tab-panel', 'is-active'].includes(name)) return true;
-  if (tag === 'SPAN' && ['page-block', 'page-mention', 'image-block', 'drawing-block'].includes(name)) return true;
+  if (tag === 'SPAN' && ['page-block', 'page-mention', 'image-block', 'drawing-block', 'reminder-chip'].includes(name)) return true;
   if (/^(P|H[1-5])$/.test(tag) && name === 'toggle-summary') return true;
   if (tag === 'A' && name === 'page-link') return true;
   if (tag === 'TABLE' && name === 'fit-content') return true;
@@ -69,6 +70,13 @@ function copyAttributes(node: Element, copy: Element) {
   });
   const comment = node.getAttribute('data-comment');
   if ((node.tagName === 'SPAN' || node.tagName === 'TABLE') && comment && /^c[a-z0-9]+$/.test(comment)) copy.setAttribute('data-comment', comment);
+  /* A reminder keeps its id and its time (when it is a real date). */
+  if (node.tagName === 'SPAN' && node.classList.contains('reminder-chip')) {
+    const id = node.getAttribute('data-reminder') ?? '';
+    const at = Date.parse(node.getAttribute('data-at') ?? '');
+    if (/^r[a-z0-9]{1,30}$/.test(id)) copy.setAttribute('data-reminder', id);
+    if (!Number.isNaN(at)) copy.setAttribute('data-at', new Date(at).toISOString());
+  }
   const title = node.tagName === 'DIV' && node.classList.contains('tab-panel') ? node.getAttribute('data-title')?.trim().slice(0, TAB_TITLE_LENGTH) : '';
   if (title) copy.setAttribute('data-title', title);
 }
@@ -92,9 +100,9 @@ function cleanNode(node: Node): Node | null {
   if (node.classList.contains('tab-strip')) return null;
   if (node.tagName === 'DIV' && node.classList.contains('page-block')) return upgradePageBlock(node);
 
-  /* A page block's title and buttons, and an image's picture, are drawn when shown, so only the empty block is stored. */
+  /* A page block's title and buttons, an image's picture and a reminder's time are drawn when shown, so only the empty block is stored. */
   const children = document.createDocumentFragment();
-  const keepsChildren = !['page-block', 'page-mention', 'image-block'].some(name => node.classList.contains(name));
+  const keepsChildren = !['page-block', 'page-mention', 'image-block', 'reminder-chip'].some(name => node.classList.contains(name));
   if (keepsChildren) {
     node.childNodes.forEach(child => {
       const cleaned = cleanNode(child);

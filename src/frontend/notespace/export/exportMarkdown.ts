@@ -4,6 +4,7 @@ import { childrenOf, getNote, noteTitle } from '../store';
 import { drawingFile } from '../editor/images/images';
 import { pageAddress } from '../editor/links/links';
 import { tabPanels, tabTitle } from '../editor/text/tabs';
+import { reminderText } from '../reminders';
 import { contentCopy, detailRows, exportFileName, hasRemarks, type ExportSettings } from './exportNotes';
 import { dataUrl, downloadFile } from '../../lib/files';
 
@@ -65,6 +66,7 @@ function inline(node: Node, context: Context): string {
     const page = getNote((node as HTMLElement).dataset.page ?? '');
     return page ? `[${escapeMarkdown(pageHeading(page))}](${pageLink(page.id, context)})` : '';
   }
+  if (node.classList.contains('reminder-chip')) return escapeMarkdown(reminderText(node as HTMLElement));
   if (node.classList.contains('image-block')) {
     const picture = context.pictures.get(node);
     return picture ? `![${node.classList.contains('drawing-block') ? 'Drawing' : 'Image'}](${picture})` : '';

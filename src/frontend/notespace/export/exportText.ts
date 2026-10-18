@@ -1,6 +1,7 @@
 import type { Note } from '../../../shared/types/note';
 import { childrenOf, noteTitle } from '../store';
 import { tabPanels, tabTitle } from '../editor/text/tabs';
+import { reminderText } from '../reminders';
 import { contentCopy, detailRows, exportFileName, hasRemarks, type ExportSettings } from './exportNotes';
 import { downloadFile } from '../../lib/files';
 
@@ -15,10 +16,11 @@ const PAGE_DIVIDER = '='.repeat(40);
    ========================= */
 
 /* A run of text as plain text. Pictures, drawings, page cards, page links and mentions are left */
-/* out; other links keep their words. */
+/* out; other links keep their words, and reminders are written with their full date. */
 function inline(node: Node): string {
   if (node.nodeType === Node.TEXT_NODE) return (node.textContent ?? '').replace(/ /g, ' ');
   if (!(node instanceof Element)) return '';
+  if (node.matches('.reminder-chip')) return reminderText(node as HTMLElement);
   if (node.matches('.image-block, .page-block, .page-mention, a.page-link')) return '';
   if (node.tagName === 'BR') return '\n';
   return Array.from(node.childNodes).map(inline).join('');

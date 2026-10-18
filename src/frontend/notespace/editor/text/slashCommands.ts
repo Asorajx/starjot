@@ -7,7 +7,7 @@ import { closestAtCaret } from './dom';
    ========================= */
 
 export type CommandId =
-  | 'text' | 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'bullet' | 'numbered' | 'checklist' | 'quote' | 'code' | 'divider' | 'table' | 'page' | 'link'
+  | 'text' | 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'bullet' | 'numbered' | 'checklist' | 'quote' | 'code' | 'divider' | 'table' | 'page' | 'link' | 'reminder'
   | 'tabs' | 'toggle' | 'toggle-h1' | 'toggle-h2' | 'toggle-h3' | 'toggle-h4' | 'toggle-h5';
 
 export type SlashCommand = {
@@ -44,11 +44,12 @@ export const SLASH_COMMANDS: SlashCommand[] = [
   { id: 'table', label: 'Table', hint: '', icon: 'table', keywords: 'grid rows columns spreadsheet' },
   { id: 'divider', label: 'Divider', hint: '---', icon: 'minus', keywords: 'hr line rule separator' },
   { id: 'page', label: 'Add sub-note', hint: '', icon: 'file-text', keywords: 'new note page sub-note sub-page subpage child' },
-  { id: 'link', label: 'Link to note', hint: '', icon: 'link', keywords: 'mention reference note page' }
+  { id: 'link', label: 'Link to note', hint: '', icon: 'link', keywords: 'mention reference note page' },
+  { id: 'reminder', label: 'Reminder', hint: '', icon: 'alarm-clock', keywords: 'remind date time due alarm alert' }
 ];
 
 type CommandContext = {
-  /* Table cells and toggle titles cannot hold new lines, so only the link and sub-page (which sit in text) fit there. */
+  /* Table cells and toggle titles cannot hold new lines, so only the link, sub-page and reminder (which sit in text) fit there. */
   inlineOnly: boolean;
   canAddPage: boolean;
 
@@ -73,7 +74,7 @@ export function matchCommands(query: string, context: CommandContext) {
   const words = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
   return SLASH_COMMANDS
     .filter(command => (command.id !== 'page' || context.canAddPage) && (command.id !== 'tabs' || !context.inTab)
-      && (!context.inlineOnly || command.id === 'link' || command.id === 'page'))
+      && (!context.inlineOnly || ['link', 'page', 'reminder'].includes(command.id)))
     .map(command => {
       const scores = words.map(word => wordScore(word, command));
       return { command, score: scores.includes(0) ? 0 : scores.reduce<number>((sum, score) => sum + score, 0) };

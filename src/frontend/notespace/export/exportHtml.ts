@@ -4,6 +4,7 @@ import { loadImage } from '../imageStore';
 import { childrenOf, noteTitle } from '../store';
 import { hydratePages } from '../editor/text/pageBlocks';
 import { tabPanels, tabTitle } from '../editor/text/tabs';
+import { reminderText } from '../reminders';
 import { drawingBottom, inDrawingOrder, strokeLayer, strokeMarkup, visibleLayers } from '../editor/drawing/drawing';
 import { contentCopy, detailRows, exportFileName, hasRemarks, pageAnchor, pageHref, type ExportSettings } from './exportNotes';
 import { escapeHtml } from '../../lib/html';
@@ -86,6 +87,11 @@ async function pageContent(note: Note, settings: ExportSettings, included: Set<s
       });
     });
   }
+  /* A reminder is written with its full date, since "Tomorrow" would not stay true in a file. */
+  root.querySelectorAll<HTMLElement>('.reminder-chip').forEach(chip => {
+    chip.textContent = reminderText(chip);
+    chip.classList.remove('is-due');
+  });
   root.querySelectorAll('[contenteditable]').forEach(element => element.removeAttribute('contenteditable'));
   root.querySelectorAll('.image-resize').forEach(handle => handle.remove());
   root.querySelectorAll<HTMLElement>('.page-block, .page-mention').forEach(element => {

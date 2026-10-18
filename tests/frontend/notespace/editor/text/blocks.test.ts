@@ -56,9 +56,9 @@ describe('slash command list', () => {
     expect(ids('zzz')).toEqual([]);
   });
 
-  it('hides Sub-page at the deepest level, and offers only links and sub-pages inside table cells', () => {
+  it('hides Sub-page at the deepest level, and offers only links, sub-pages and reminders inside table cells', () => {
     expect(matchCommands('', { inlineOnly: false, canAddPage: false }).some(command => command.id === 'page')).toBe(false);
-    expect(matchCommands('', { inlineOnly: true, canAddPage: true }).map(command => command.id)).toEqual(['page', 'link']);
+    expect(matchCommands('', { inlineOnly: true, canAddPage: true }).map(command => command.id)).toEqual(['page', 'link', 'reminder']);
   });
 });
 

@@ -9,6 +9,8 @@ import { CategoryPage } from '../notespace/CategoryPage';
 import { NotesHome, type NoteFilter } from '../notespace/NotesHome';
 import { StarjotHome } from '../home/StarjotHome';
 import { SearchWindow } from '../search/SearchWindow';
+import { ReminderWatcher } from './Reminders';
+import { Toaster } from '../components/Toaster';
 import { findWhenOpened } from '../notespace/editor/find/pendingFind';
 import type { ViewControls } from '../notespace/editor/EditorPanels';
 import { NoteEditor } from '../notespace/editor/NoteEditor';
@@ -499,7 +501,7 @@ export function App() {
   /* Shown in the tab bar (or top bar) while floating, and at the top of the sidebar while docked, */
   /* in the same corner either way. */
   const windowControls = (
-    <WindowControls sidebarOpen={docked || popup !== null} onHome={goHome} onToggleSidebar={toggleSidebar} onSidebarHover={startPopup} onSidebarLeave={endPopup} onNewNote={spaces.notes ? fromSidebar(() => newNote()) : undefined} />
+    <WindowControls sidebarOpen={docked || popup !== null} onHome={goHome} onToggleSidebar={toggleSidebar} onSidebarHover={startPopup} onSidebarLeave={endPopup} onNewNote={spaces.notes ? fromSidebar(() => newNote()) : undefined} onOpenNote={spaces.notes ? fromSidebar(openNote) : undefined} />
   );
 
   /* The app-wide shortcuts (shortcuts.ts; their keys can be changed in Settings). By default: */
@@ -799,6 +801,8 @@ export function App() {
           onOpenBoardView={openBoardView}
         />
       )}
+      <Toaster />
+      {spaces.notes && <ReminderWatcher onOpenNote={openNote} />}
     </div>
   );
 }

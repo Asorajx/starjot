@@ -819,6 +819,86 @@ ul.checklist > li.is-checked {
 
 
 /* =========================
+   Reminders
+   ========================= */
+
+/* A reminder in the text: "@" and its time in the accent colour, with an alarm clock after it */
+/* until it is done. A due one is marked; a done one is quieter. Clicking it opens its panel. */
+.reminder-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 4px;
+  border-radius: 4px;
+  color: var(--accent-text);
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: all;
+}
+
+.reminder-chip:hover {
+  background: var(--accent-faint);
+}
+
+.reminder-chip.is-due {
+  background: var(--accent-soft);
+}
+
+.reminder-chip[data-done="true"] {
+  color: #66778f;
+  font-weight: 500;
+}
+
+/* The chooser in the "/" menu: quick times, then a calendar and time with Add. The menu grows to */
+/* fit it, rather than scrolling, so the time's list is not cut off. */
+.slash-menu.is-reminder {
+  width: auto;
+  max-height: none;
+  overflow: visible;
+}
+
+.slash-reminder-custom {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 4px;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+}
+
+.slash-reminder-custom .slash-menu-label {
+  margin: 0;
+}
+
+/* A reminder's panel: its full date, a field to change it, then Done and Remove. */
+.reminder-panel {
+  gap: 8px;
+  width: auto;
+  padding: 12px;
+}
+
+.reminder-panel-date {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  color: #2c3d58;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.reminder-panel-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.reminder-panel .is-danger {
+  color: #c2410c;
+}
+
+
+/* =========================
    Tab Blocks
    ========================= */
 

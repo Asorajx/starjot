@@ -150,3 +150,14 @@
   font-weight: 750;
   line-height: 1.2;
 }
+
+/* Reminders due now or later today, under the quick note. */
+.home-reminders {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 16px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+}

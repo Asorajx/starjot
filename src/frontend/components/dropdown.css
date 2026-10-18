@@ -49,6 +49,11 @@
   left: auto;
 }
 
+.dropdown > .dropdown-menu.is-up {
+  top: auto;
+  bottom: calc(100% + 4px);
+}
+
 .dropdown-divider {
   height: 1px;
   margin: 4px 0;
