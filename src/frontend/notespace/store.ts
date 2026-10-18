@@ -7,7 +7,7 @@ import { readCategories, writeCategories } from '../../backend/storage/categorie
 import { readNotes, writeNotes } from '../../backend/storage/notesStorage';
 import { isEmoji } from '../../shared/emoji';
 import { getPreferences } from '../app/preferences';
-import { NOTE_COLORS, type Category, type Note, type NoteChanges, type NoteColor, type NoteComment, type SaveStatus } from '../../shared/types/note';
+import { NOTE_COLORS, type Category, type Note, type NoteChanges, type NoteColor, type NoteComment, type NoteKind, type SaveStatus } from '../../shared/types/note';
 
 /* The frontend's note store: it checks and tidies notes, and tells React when they change. */
 /* Saving and loading are done by the backend (backend/storage/notesStorage.ts). */
@@ -74,6 +74,7 @@ function normalizeNote(raw: unknown): Note | null {
 
   return {
     id,
+    kind: record.kind === 'canvas' ? 'canvas' : 'document',
     title: text('title', UNTITLED_NOTE, 160),
     subtitle: text('subtitle', '', 250),
     preview: text('preview', '', 220),
@@ -220,12 +221,12 @@ export function getNote(id: string) {
 /* A new note can start in a category, for example the one being filtered on the home page. */
 /* A sub-page is created inside a parent note and starts in the parent's category. Its view and */
 /* layout come from Settings → Notes → New notes. */
-export function createNote(category = '', parentId = '') {
+export function createNote(category = '', parentId = '', kind: NoteKind = 'document') {
   const now = new Date().toISOString();
   const { mode, layout, pageSize } = getPreferences().newNotes;
   const note = normalizeNote({
     id: `note_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`,
-    title: UNTITLED_NOTE, subtitle: '', preview: '', category, parentId,
+    kind, title: UNTITLED_NOTE, subtitle: '', preview: '', category, parentId,
     updatedAt: now, createdAt: now, openedAt: now, pinned: false, icon: '',
     color: '', mode, layout, pageSize, content: ''
   }) as Note;
@@ -458,6 +459,11 @@ export function categoryNamed(name: string) {
 /* A note's title as shown, with a stand-in when it has none (or the note is missing). */
 export function noteTitle(note: { title?: string } | null | undefined) {
   return note?.title || UNTITLED_NOTE;
+}
+
+/* The icon for a note without an emoji of its own: a page for a document, a pen for a canvas. */
+export function noteIcon(note: { kind?: NoteKind } | null | undefined) {
+  return note?.kind === 'canvas' ? 'pen-tool' as const : 'file-text' as const;
 }
 
 export function updatedLabel(note: Note) {

@@ -5,7 +5,7 @@ import { useMediaQuery } from '../lib/useMediaQuery';
 import { updatePreferences, usePreferences, type NotesSort } from '../app/preferences';
 import { LinkPreviewCard } from './editor/links/LinkPreview';
 import { NoteColorStrip } from './NoteColors';
-import { categoryName, getNote, noteTitle, setPinned, updatedLabel } from './store';
+import { categoryName, getNote, noteIcon, noteTitle, setPinned, updatedLabel } from './store';
 import type { NoteMenu } from './NoteMenu';
 import type { Note } from '../../shared/types/note';
 
@@ -102,7 +102,7 @@ export function NoteTile({ note, onOpen, onMenu, large = false }: NoteTileProps)
       <button type="button" className="note-tile" draggable onDragStart={event => startNoteDrag(event, note.id)} onClick={event => onOpen(note.id, opensNewTab(event))} onContextMenu={onMenu && (event => onMenu(event, note.id))}>
         {noteColorsInLists && <NoteColorStrip color={note.color} />}
         <span className="note-tile-title">
-          {note.icon ? <span className="note-tile-icon" aria-hidden="true">{note.icon}</span> : <Icon name="file-text" size={16} />}
+          {note.icon ? <span className="note-tile-icon" aria-hidden="true">{note.icon}</span> : <Icon name={noteIcon(note)} size={16} />}
           <strong>{noteTitle(note)}</strong>
           <LockedMark note={note} />
         </span>

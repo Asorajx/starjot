@@ -3,7 +3,7 @@ import { Dropdown } from '../../components/Dropdown';
 import { EmojiPicker } from '../../components/EmojiPicker';
 import { Icon } from '../../components/Icon';
 import { usePreferences } from '../../app/preferences';
-import { noteTitle, scheduleSave, UNTITLED_NOTE, updateNote, useCategories, useNotes } from '../store';
+import { noteIcon, noteTitle, scheduleSave, UNTITLED_NOTE, updateNote, useCategories, useNotes } from '../store';
 import { isEmptyContent, wrapLooseLines } from './text/dom';
 import { linkTypedAddress } from './links/links';
 import { applyMarkdownShortcut } from './text/markdown';
@@ -110,7 +110,7 @@ function PageList({ notes, parentId, onOpenNote }: PageListProps) {
       {pages.map(page => (
         <li key={page.id}>
           <button type="button" className="note-page-link" data-preview-page={page.id} onClick={event => onOpenNote(page.id, opensNewTab(event))}>
-            {page.icon ? <span className="note-page-icon" aria-hidden="true">{page.icon}</span> : <Icon name="file-text" size={13} />}
+            {page.icon ? <span className="note-page-icon" aria-hidden="true">{page.icon}</span> : <Icon name={noteIcon(page)} size={13} />}
             <span className="note-page-title">{noteTitle(page)}</span>
           </button>
           <PageList notes={notes} parentId={page.id} onOpenNote={onOpenNote} />

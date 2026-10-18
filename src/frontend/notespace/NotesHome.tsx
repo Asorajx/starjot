@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { Dropdown } from '../components/Dropdown';
 import { Icon } from '../components/Icon';
+import { NewNoteMenu } from '../components/NewNoteMenu';
 import { opensNewTab, type OpenById } from '../lib/clicks';
 import { updatePreferences, usePreferences, type NotesSort } from '../app/preferences';
 import { NoteTable, NoteTile, NotesViewSwitch, sortNotes, starredNotes } from './NoteList';
@@ -10,7 +11,7 @@ import { useImport } from './import/useImport';
 import {
   addCategory, canAddCategory, categoryName, removeCategory, renameCategory, useCategories, useNotes
 } from './store';
-import type { Category, Note } from '../../shared/types/note';
+import type { Category, Note, NoteKind } from '../../shared/types/note';
 
 /* The filter can be "all notes" or one category id. */
 export type NoteFilter = 'all' | string;
@@ -21,7 +22,7 @@ type NotesHomeProps = {
   onOpen: OpenById;
   onOpenInNewTab: (id: string) => void;
   onOpenCategory: OpenById;
-  onCreate: () => void;
+  onCreate: (kind: NoteKind) => void;
 };
 
 /* How many starred notes show before "Show all". */
@@ -188,7 +189,7 @@ export function NotesHome({ filter, onFilterChange, onOpen, onOpenInNewTab, onOp
           >
             <Icon name="upload" size={16} /><span>{importer.busy ? 'Importing…' : 'Import'}</span>
           </button>
-          <button className="btn btn-primary" type="button" onClick={onCreate}><Icon name="plus" size={16} /><span>New note</span></button>
+          <NewNoteMenu onCreate={onCreate} />
         </div>
       </header>
 

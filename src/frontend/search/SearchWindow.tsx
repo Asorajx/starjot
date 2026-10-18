@@ -6,10 +6,10 @@ import { usePreferences, type Spaces } from '../app/preferences';
 import { useEscape } from '../lib/useDismiss';
 import { cleanHtml, htmlToText } from '../notespace/sanitize';
 import { starredNotes } from '../notespace/NoteList';
-import { ancestorsOf, categoryName, getNote, noteTitle, useCategories, useNotes } from '../notespace/store';
+import { ancestorsOf, categoryName, getNote, noteIcon, noteTitle, useCategories, useNotes } from '../notespace/store';
 import { BOARD_TABS } from '../boardspace/data';
 import { TASKS } from '../../backend/data/sampleTasks';
-import type { Note } from '../../shared/types/note';
+import type { Note, NoteKind } from '../../shared/types/note';
 import type { StatusTab, Task } from '../../shared/types/task';
 import { dayGroup, search, type SearchEntry, type SearchResult, type Snippet } from './searchIndex';
 
@@ -28,8 +28,9 @@ type SearchWindowProps = {
   onOpenCategory: (id: string, inNewTab: boolean) => void;
   onOpenBoardView: (view: StatusTab) => void;
 
-  /* "Create new note": the title (empty for an untitled note) and the category to start in. */
-  onCreateNote: (title: string, category: string, inNewTab: boolean) => void;
+  /* "Create new note" or "Create new canvas": the title (empty for an untitled note), the category */
+  /* to start in, and which kind of note. */
+  onCreateNote: (title: string, category: string, inNewTab: boolean, kind: NoteKind) => void;
 };
 
 /* Before anything is typed: how many starred and recent notes show. And how many notes match at */
@@ -43,6 +44,9 @@ const RESULT_COUNT = 50;
 const PREVIEW_DELAY = 120;
 
 const KIND_ICONS: Record<SearchEntry['kind'], IconName> = { note: 'file-text', category: 'folder', task: 'check-square' };
+
+/* The last rows of the results make a new note: a document first, then a canvas. */
+const CREATE_KINDS: NoteKind[] = ['document', 'canvas'];
 
 /* Which column each Boardspace item is in. */
 const TASK_COLUMNS = new Map<string, { task: Task; column: StatusTab }>(
@@ -158,7 +162,7 @@ function Preview({ entry }: { entry: SearchEntry }) {
     if (!note) return null;
     return (
       <article className="search-preview-page">
-        <span className="search-preview-icon" aria-hidden="true">{note.icon || <Icon name="file-text" size={28} />}</span>
+        <span className="search-preview-icon" aria-hidden="true">{note.icon || <Icon name={noteIcon(note)} size={28} />}</span>
         <h2>{noteTitle(note)}</h2>
         {note.subtitle && <p className="search-preview-subtitle">{note.subtitle}</p>}
         {note.content
@@ -196,13 +200,13 @@ function Preview({ entry }: { entry: SearchEntry }) {
   );
 }
 
-/* The note "Create new note" would make, before it exists. */
-function CreatePreview({ title, inNewTab }: { title: string; inNewTab: boolean }) {
+/* The note "Create new note" (or canvas) would make, before it exists. */
+function CreatePreview({ title, kind, inNewTab }: { title: string; kind: NoteKind; inNewTab: boolean }) {
   return (
     <article className="search-preview-page">
-      <span className="search-preview-icon" aria-hidden="true"><Icon name="plus" size={28} /></span>
+      <span className="search-preview-icon" aria-hidden="true"><Icon name={noteIcon({ kind })} size={28} /></span>
       <h2>{noteTitle({ title })}</h2>
-      <p className="search-preview-empty">Press Enter to create this note{inNewTab ? ' in a new tab' : ''}.</p>
+      <p className="search-preview-empty">Press Enter to create this {kind === 'canvas' ? 'canvas' : 'note'}{inNewTab ? ' in a new tab' : ''}.</p>
     </article>
   );
 }
@@ -232,7 +236,7 @@ function PreviewPane({ entry }: { entry: SearchEntry | null }) {
 
 /* Search across notes, categories and Boardspace items, below the note bar and over the page. */
 /* Results are on the left and a preview of the selected one on the right; the last row creates a */
-/* new note titled with what was typed. ↑ and ↓ move through the rows, Enter opens one (Ctrl + */
+/* new note (or canvas) titled with what was typed. ↑ and ↓ move through the rows, Enter opens one (Ctrl + */
 /* Enter in a new tab), and Escape closes. Opened from a tab group's +, everything opens in a new */
 /* tab. */
 export function SearchWindow({ initialQuery, inNewTab, onClose, onOpenNote, onOpenCategory, onOpenBoardView, onCreateNote }: SearchWindowProps) {
@@ -250,13 +254,13 @@ export function SearchWindow({ initialQuery, inNewTab, onClose, onOpenNote, onOp
   const groups = useGroups(entries, query, titleOnly, scope, spaces.notes);
   const flat = groups.flatMap(group => group.results);
 
-  /* The rows are the results, then "Create new note" (its index is flat.length), which needs */
-  /* Notespace to be turned on. */
+  /* The rows are the results, then "Create new note" and "Create new canvas" (their indexes are */
+  /* flat.length and the one after), which need Notespace to be turned on. */
   const canCreate = spaces.notes;
-  const rowCount = flat.length + (canCreate ? 1 : 0);
+  const rowCount = flat.length + (canCreate ? CREATE_KINDS.length : 0);
   const index = Math.max(0, Math.min(selected, rowCount - 1));
   const current = flat[index] ?? null;
-  const creating = canCreate && index === flat.length;
+  const creating = canCreate && index >= flat.length ? CREATE_KINDS[index - flat.length] : null;
   const newTitle = query.trim().slice(0, 160);
 
   /* A note created while searching in one category starts in it. */
@@ -298,9 +302,9 @@ export function SearchWindow({ initialQuery, inNewTab, onClose, onOpenNote, onOp
     }
   }
 
-  function create(newTab: boolean) {
+  function create(kind: NoteKind, newTab: boolean) {
     onClose();
-    onCreateNote(newTitle, newCategory, newTab);
+    onCreateNote(newTitle, newCategory, newTab, kind);
   }
 
   function handleKeyDown(event: KeyboardEvent) {
@@ -312,7 +316,7 @@ export function SearchWindow({ initialQuery, inNewTab, onClose, onOpenNote, onOp
       event.preventDefault();
       const newTab = opensNewTab(event);
       if (current) open(current, newTab);
-      else if (canCreate) create(newTab);
+      else if (creating) create(creating, newTab);
     }
   }
 
@@ -390,7 +394,7 @@ export function SearchWindow({ initialQuery, inNewTab, onClose, onOpenNote, onOp
                       onMouseMove={() => at !== index && setSelected(at)}
                       onClick={(event: MouseEvent) => open(result, opensNewTab(event))}
                     >
-                      <span className="search-result-icon" aria-hidden="true">{entry.icon || <Icon name={KIND_ICONS[entry.kind]} size={16} />}</span>
+                      <span className="search-result-icon" aria-hidden="true">{entry.icon || <Icon name={entry.kind === 'note' ? noteIcon(getNote(entry.id)) : KIND_ICONS[entry.kind]} size={16} />}</span>
                       <span className="search-result-text">
                         <span className="search-result-line">
                           <strong>{entry.title}</strong>
@@ -405,25 +409,32 @@ export function SearchWindow({ initialQuery, inNewTab, onClose, onOpenNote, onOp
             ))}
 
             {canCreate && <div role="group" aria-label="New note" className="search-create-group">
-              <div
-                id={`search-option-${flat.length}`}
-                role="option"
-                aria-selected={creating}
-                className={`search-result search-create ${creating ? 'is-selected' : ''}`}
-                onMouseMove={() => !creating && setSelected(flat.length)}
-                onClick={(event: MouseEvent) => create(opensNewTab(event))}
-              >
-                <span className="search-result-icon" aria-hidden="true"><Icon name="plus" size={16} /></span>
-                <span className="search-result-text">
-                  <span className="search-result-line">
-                    <strong>{newTitle ? `Create note “${newTitle}”` : 'Create new note'}</strong>
-                    {newCategory && <span className="search-result-path"> — in {categories.find(category => category.id === newCategory)?.name}</span>}
-                  </span>
-                </span>
-              </div>
+              {CREATE_KINDS.map((kind, offset) => {
+                const at = flat.length + offset;
+                const word = kind === 'canvas' ? 'canvas' : 'note';
+                return (
+                  <div
+                    key={kind}
+                    id={`search-option-${at}`}
+                    role="option"
+                    aria-selected={at === index}
+                    className={`search-result search-create ${at === index ? 'is-selected' : ''}`}
+                    onMouseMove={() => at !== index && setSelected(at)}
+                    onClick={(event: MouseEvent) => create(kind, opensNewTab(event))}
+                  >
+                    <span className="search-result-icon" aria-hidden="true"><Icon name={offset ? noteIcon({ kind }) : 'plus'} size={16} /></span>
+                    <span className="search-result-text">
+                      <span className="search-result-line">
+                        <strong>{newTitle ? `Create ${word} “${newTitle}”` : `Create new ${word}`}</strong>
+                        {newCategory && <span className="search-result-path"> — in {categories.find(category => category.id === newCategory)?.name}</span>}
+                      </span>
+                    </span>
+                  </div>
+                );
+              })}
             </div>}
           </div>
-          {showPreview && (creating ? <aside className="search-preview" aria-label="Preview"><CreatePreview title={newTitle} inNewTab={inNewTab} /></aside> : <PreviewPane entry={current?.entry ?? null} />)}
+          {showPreview && (creating ? <aside className="search-preview" aria-label="Preview"><CreatePreview title={newTitle} kind={creating} inNewTab={inNewTab} /></aside> : <PreviewPane entry={current?.entry ?? null} />)}
         </div>
       </div>
     </div>

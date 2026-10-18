@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type DragEvent, type ReactNode } from 'react';
 import { Icon, type IconName } from '../components/Icon';
 import { placeLabel } from '../notespace/PageBar';
-import { useCategories, useNotes } from '../notespace/store';
+import { getNote, noteIcon, useCategories, useNotes } from '../notespace/store';
 import { useDismiss } from '../lib/useDismiss';
 import { shortcutLabel } from './shortcuts';
 import { useMediaQuery } from '../lib/useMediaQuery';
@@ -17,7 +17,11 @@ type WindowBarProps = {
   leading?: ReactNode;
 };
 
-const PLACE_ICONS: Record<Place['kind'], IconName> = { start: 'home', home: 'book-open', category: 'folder', note: 'file-text' };
+const PLACE_ICONS: Record<Exclude<Place['kind'], 'note'>, IconName> = { start: 'home', home: 'book-open', category: 'folder' };
+
+function placeIcon(place: Place) {
+  return place.kind === 'note' ? noteIcon(getNote(place.id)) : PLACE_ICONS[place.kind];
+}
 
 /* Dragged tabs carry their group and tab ids under this type, so other drags (text, blocks) are ignored. */
 export const TAB_DRAG_TYPE = 'application/x-starjot-tab';
@@ -71,7 +75,7 @@ export function WindowBar({ group, onSelect, onClose, onNew, leading }: WindowBa
         onDragStart={event => startTabDrag(event, group.id, tab.id)}
       >
         <button type="button" role="tab" className="window-tab-main" aria-selected={selected} onClick={() => onSelect(tab.id)}>
-          <Icon name={PLACE_ICONS[place.kind]} size={14} />
+          <Icon name={placeIcon(place)} size={14} />
           <span>{label}</span>
         </button>
         <button type="button" className="window-tab-close" aria-label={`Close ${label}`} onClick={() => onClose(tab.id)}>
@@ -154,7 +158,7 @@ function OtherTabs({ tabs, onSelect, onClose }: OtherTabsProps) {
                     onSelect(tab.id);
                   }}
                 >
-                  <Icon name={PLACE_ICONS[place.kind]} size={14} />
+                  <Icon name={placeIcon(place)} size={14} />
                   <span>{label}</span>
                 </button>
                 <button type="button" className="window-tab-close" aria-label={`Close ${label}`} onClick={() => onClose(tab.id)}>
@@ -192,7 +196,7 @@ export function StackSpine({ groupId, tabId, place, active, onSelect, onClose }:
         <Icon name="x" size={13} />
       </button>
       <button type="button" className="stack-spine-main" aria-label={label} aria-current={active ? 'page' : undefined} onClick={onSelect}>
-        <Icon name={PLACE_ICONS[place.kind]} size={14} />
+        <Icon name={placeIcon(place)} size={14} />
         <span>{label}</span>
       </button>
     </div>
@@ -231,7 +235,7 @@ export function TabSwitcher({ tabs, selected, onPick }: TabSwitcherProps) {
             onMouseDown={event => event.preventDefault()}
             onClick={() => onPick(tab.id)}
           >
-            <Icon name={PLACE_ICONS[place.kind]} size={14} />
+            <Icon name={placeIcon(place)} size={14} />
             <span>{placeLabel(place)}</span>
           </button>
         );

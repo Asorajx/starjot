@@ -1,17 +1,19 @@
 import { useEffect } from 'react';
 import { Icon } from '../components/Icon';
+import { NewNoteMenu } from '../components/NewNoteMenu';
 import type { OpenById } from '../lib/clicks';
 import { usePreferences } from '../app/preferences';
 import { newestFirst, NoteTable, NotesViewSwitch } from './NoteList';
 import { useNoteMenu } from './NoteMenu';
 import { categoryName, useCategories, useNotes } from './store';
+import type { NoteKind } from '../../shared/types/note';
 
 type CategoryPageProps = {
   categoryId: string;
   onBack: () => void;
   onOpen: OpenById;
   onOpenInNewTab: (id: string) => void;
-  onCreate: (categoryId: string) => void;
+  onCreate: (categoryId: string, kind: NoteKind) => void;
 };
 
 
@@ -54,9 +56,7 @@ export function CategoryPage({ categoryId, onBack, onOpen, onOpenInNewTab, onCre
         </div>
         <div className="notes-home-actions">
           <NotesViewSwitch />
-          <button className="btn btn-primary" type="button" onClick={() => onCreate(categoryId)}>
-            <Icon name="plus" size={16} /><span>New note</span>
-          </button>
+          <NewNoteMenu onCreate={kind => onCreate(categoryId, kind)} />
         </div>
       </div>
 

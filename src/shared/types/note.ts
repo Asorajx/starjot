@@ -9,6 +9,10 @@ export type NoteMode = 'continuous' | 'blocks';
 export type PageLayout = 'pageless' | 'paginated';
 export type PageSize = 'a4' | 'letter';
 
+/* A document is text on a page; a canvas is an endless space to draw on, with no page. A note */
+/* keeps its kind for good. */
+export type NoteKind = 'document' | 'canvas';
+
 /* A colour chosen for a note, shown on it in lists and previews (the same names as the text */
 /* colours, so dark mode has them too), or an empty string for none (the default). */
 export const NOTE_COLORS = ['red', 'orange', 'yellow', 'green', 'blue', 'purple', 'pink', 'brown'] as const;
@@ -17,6 +21,7 @@ export type NoteColor = (typeof NOTE_COLORS)[number] | '';
 /* Content is stored as sanitized HTML; sticky groups are <div class="sticky-group"> wrappers. */
 export type Note = {
   id: string;
+  kind: NoteKind;
   title: string;
 
   /* The description shown in the note's details. */

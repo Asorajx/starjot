@@ -55,6 +55,21 @@ describe('note store', () => {
     expect(store.getNote(note.id)?.title).toBe('Shopping');
   });
 
+  it('makes documents by default and canvases when asked, and keeps the kind after reopening', async () => {
+    let store = await openApp();
+    const document = store.createNote();
+    const canvas = store.createNote('work', '', 'canvas');
+    expect(document.kind).toBe('document');
+    expect(canvas).toMatchObject({ kind: 'canvas', category: 'work' });
+    expect(store.noteIcon(canvas)).toBe('pen-tool');
+    expect(store.noteIcon(document)).toBe('file-text');
+
+    vi.resetModules();
+    store = await openApp();
+    expect(store.getNote(canvas.id)?.kind).toBe('canvas');
+    expect(store.getNotes().find(note => note.id === 'atlas')?.kind).toBe('document');
+  });
+
   it('keeps a deleted sample note deleted after reopening', async () => {
     let store = await openApp();
     store.deleteNote('atlas');

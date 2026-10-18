@@ -1,0 +1,105 @@
+/* =========================
+   Canvas
+   ========================= */
+
+/* A canvas fills the pane below the page bar and never scrolls the pane: moving around happens */
+/* inside it (see CanvasEditor). */
+.editor-wrap.canvas-wrap {
+  height: 100%;
+  min-height: 0;
+}
+
+/* The dots move and grow with the drawing (their size and place are set as it moves). */
+.canvas-view {
+  position: relative;
+  flex: 1;
+  min-height: 320px;
+  overflow: hidden;
+  background-color: #ffffff;
+  background-image: radial-gradient(circle, #cdd7e5 1px, transparent 1.5px);
+  touch-action: none;
+}
+
+.canvas-view.is-grabbing,
+.canvas-view.is-grabbing .drawing-surface {
+  cursor: grab;
+}
+
+.canvas-view.is-panning,
+.canvas-view.is-panning .drawing-surface {
+  cursor: grabbing;
+}
+
+/* The drawing's starting corner. Its size only gives the drawing tools a scale to measure; */
+/* strokes reach past it in every direction. */
+.canvas-world {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 1000px;
+  height: 1000px;
+  transform-origin: 0 0;
+  pointer-events: none;
+}
+
+/* The drawing toolbar stays at the right of the canvas instead of following a scrolling page. */
+.canvas-view .drawing-dock {
+  position: absolute;
+  top: 16px;
+  width: 100%;
+}
+
+/* The title floats at the top left, as plain words until it is clicked. */
+.canvas-view .canvas-title {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  z-index: 22;
+  width: min(480px, calc(100% - 96px));
+  margin: 0;
+  padding: 4px 8px;
+  font-size: 20px;
+  letter-spacing: -0.5px;
+}
+
+.canvas-view .canvas-title:hover:not(:focus):not([readonly]) {
+  background: var(--accent-faint);
+}
+
+.canvas-view .canvas-title:focus {
+  background: #ffffff;
+}
+
+/* Zoom out, the zoom (which resets it to 100%), zoom in and Fit, at the bottom left. */
+.canvas-zoom {
+  position: absolute;
+  bottom: 16px;
+  left: 16px;
+  z-index: 22;
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid #e0e8f4;
+  border-radius: 4px;
+  background: #ffffff;
+}
+
+.canvas-zoom .zoom-button:last-child {
+  border-left: 1px solid #e0e8f4;
+}
+
+.canvas-zoom button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+/* Bigger buttons for fingers. */
+@media (pointer: coarse) {
+  .canvas-zoom .zoom-button,
+  .canvas-zoom .zoom-value {
+    height: 44px;
+  }
+
+  .canvas-zoom .zoom-button {
+    width: 44px;
+  }
+}

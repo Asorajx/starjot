@@ -19,6 +19,7 @@ import { createNote, flushSave, getNote, updateNote } from '../notespace/store';
 import { Settings, type SettingsSection } from '../settings/Settings';
 import { Boardspace } from '../boardspace/Boardspace';
 import type { BoardTab } from '../../shared/types/task';
+import type { NoteKind } from '../../shared/types/note';
 import {
   activeTab, addTab, canAddTab, canStack, closeTab, currentPlace, cycleTab, focusedGroup, focusGroup, goTo, isOpenInStack, isSplit, moveTab, newTab,
   newWorkspace, reopenTab, samePlace, selectTab, splitWorkspace, stackGroup, step, stepPlace, unsplit, updateTab, type ClosedTab, type NoteTab,
@@ -263,12 +264,12 @@ export function App() {
 
   /* A new note starts in the category being viewed or filtered, if there is one. It opens in a */
   /* new tab when Settings → Notes → Open notes in asks for that. */
-  function newNote(category?: string, groupId = group.id, tab = activeTab(group)) {
+  function newNote(category?: string, groupId = group.id, tab = activeTab(group), kind: NoteKind = 'document') {
     flushSave();
     const filtered = noteFilter === 'all' ? '' : noteFilter;
     const shown = currentPlace(tab);
     const viewed = shown.kind === 'category' ? shown.id : '';
-    const note = createNote(category ?? (viewed || filtered));
+    const note = createNote(category ?? (viewed || filtered), '', kind);
     if (opensInNewTab(false, true)) {
       focusTitle(openInNewTab({ kind: 'note', id: note.id }));
       return;
@@ -485,11 +486,11 @@ export function App() {
     window.setTimeout(() => findWhenOpened('', ''));
   }
 
-  /* "Create new note" in search: what was typed becomes the title; with nothing typed, the title */
-  /* is selected, ready to type. */
-  function createFromSearch(title: string, category: string, inNewTab: boolean) {
+  /* "Create new note" (or canvas) in search: what was typed becomes the title; with nothing typed, */
+  /* the title is selected, ready to type. */
+  function createFromSearch(title: string, category: string, inNewTab: boolean, kind: NoteKind) {
     flushSave();
-    const note = createNote(category);
+    const note = createNote(category, '', kind);
     if (title) updateNote(note.id, { title });
     const tab = openFromSearch({ kind: 'note', id: note.id }, opensInNewTab(inNewTab, true));
     if (!title) focusTitle(tab?.id ?? activeTab(group).id);
@@ -648,7 +649,7 @@ export function App() {
               <span className="editor-crumb-current">{placeLabel(shown)}</span>
             </nav>
           </PageBar>
-          <CategoryPage key={shown.id} categoryId={shown.id} onBack={closePage} onOpen={openHere} onOpenInNewTab={openNoteInNewTab} onCreate={category => newNote(category, tabGroup.id, tab)} />
+          <CategoryPage key={shown.id} categoryId={shown.id} onBack={closePage} onOpen={openHere} onOpenInNewTab={openNoteInNewTab} onCreate={(category, kind) => newNote(category, tabGroup.id, tab, kind)} />
         </>
       );
     } else if (shown.kind === 'start') {
@@ -666,7 +667,7 @@ export function App() {
           <PageBar history={history}>
             <nav className="editor-breadcrumb" aria-label="Breadcrumb"><span className="editor-crumb-current">Notespace</span></nav>
           </PageBar>
-          <NotesHome filter={noteFilter} onFilterChange={setNoteFilter} onOpen={openHere} onOpenInNewTab={openNoteInNewTab} onOpenCategory={openCategory} onCreate={() => newNote(undefined, tabGroup.id, tab)} />
+          <NotesHome filter={noteFilter} onFilterChange={setNoteFilter} onOpen={openHere} onOpenInNewTab={openNoteInNewTab} onOpenCategory={openCategory} onCreate={kind => newNote(undefined, tabGroup.id, tab, kind)} />
         </>
       );
     }

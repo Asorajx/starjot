@@ -36,6 +36,9 @@ type Drag = {
   startX: number;
   startY: number;
   startBox: Box;
+
+  /* On a canvas, the strokes being moved with the box. */
+  chosen?: number[];
 };
 
 type DrawingSelectionProps = {
@@ -52,6 +55,10 @@ type DrawingSelectionProps = {
   /* The layer being worked on: only its strokes can be selected, and detached strokes go onto it. */
   layer: string;
   allowed: StrokeFilter;
+
+  /* On a canvas there is no text: dragging the box moves the strokes in it, and there is */
+  /* nothing to anchor or wrap. */
+  canvas?: boolean;
 };
 
 
@@ -97,8 +104,9 @@ function shifted(box: Box, dx: number, dy: number) {
 /* drawing selects it: drag it to move it, drag a corner to resize it, or Detach it into loose */
 /* strokes (which stay selected, so more strokes can be taken in before anchoring again). The */
 /* arrow keys move what is selected by a pixel (ten with Shift). Escape or a click outside closes */
-/* the box. */
-export function DrawingSelection({ session, strokes, layerRef, edge, snap, wrap, onWrapChange, layer, allowed }: DrawingSelectionProps) {
+/* the box. On a canvas, dragging the box moves the strokes it takes instead, and the box fits */
+/* around them. */
+export function DrawingSelection({ session, strokes, layerRef, edge, snap, wrap, onWrapChange, layer, allowed, canvas = false }: DrawingSelectionProps) {
   const [selection, setSelection] = useState<Selection | null>(null);
   const [, setTick] = useState(0);
   const surfaceRef = useRef<HTMLDivElement>(null);
@@ -198,7 +206,7 @@ export function DrawingSelection({ session, strokes, layerRef, edge, snap, wrap,
       const step = event.shiftKey ? 10 : 1;
       const action = arrow ? () => actions.current.nudge(arrow[0] * step, arrow[1] * step)
         : event.key === 'Escape' ? () => setSelection(null)
-          : event.key === 'Enter' ? actions.current.anchor
+          : event.key === 'Enter' && !canvas ? actions.current.anchor
             : event.key === 'Delete' || event.key === 'Backspace' ? actions.current.remove : null;
       if (!action) return;
       event.preventDefault();
@@ -207,7 +215,7 @@ export function DrawingSelection({ session, strokes, layerRef, edge, snap, wrap,
     }
     document.addEventListener('keydown', handleKeyDown, true);
     return () => document.removeEventListener('keydown', handleKeyDown, true);
-  }, [selection]);
+  }, [selection, canvas]);
 
   /* The loose strokes the selection takes glow. */
   useLayoutEffect(() => {
@@ -233,6 +241,7 @@ export function DrawingSelection({ session, strokes, layerRef, edge, snap, wrap,
   /* An anchored drawing in this note's text under the pointer, if any. A drawing in front of the */
   /* text takes no room, so the box its strokes fill is what counts. */
   function anchoredAt(x: number, y: number) {
+    if (canvas) return null;
     const body = session.body();
     const blocks = Array.from(body?.querySelectorAll<HTMLElement>('.drawing-block') ?? []).reverse();
     return blocks.find(block => {
@@ -256,6 +265,17 @@ export function DrawingSelection({ session, strokes, layerRef, edge, snap, wrap,
     event.preventDefault();
     const current = latest.current;
     const handle = target.closest('[data-handle]')?.getAttribute('data-handle') as Handle | null;
+
+    /* On a canvas, the strokes in the box are picked up and follow the pointer. */
+    if (canvas && current && target.closest('.drawing-selection-box')) {
+      const chosen = chosenStrokes(current);
+      const box = strokesBounds(chosen.map(place => strokes[place]));
+      if (!box) return;
+      setSelection({ box, anchored: null, picked: chosen });
+      drag.current = { kind: 'move', startX: at.x, startY: at.y, startBox: box, chosen };
+      event.currentTarget.setPointerCapture(event.pointerId);
+      return;
+    }
 
     /* Picked strokes keep their exact box; they are moved with the arrow keys. */
     if (current?.picked && target.closest('.drawing-selection-box')) return;
@@ -317,6 +337,12 @@ export function DrawingSelection({ session, strokes, layerRef, edge, snap, wrap,
       box = { ...box, y: top };
     }
     if (anchored) preview(anchored, startBox, box);
+
+    /* Strokes moved on a canvas follow the box until they are saved where they are dropped. */
+    const shownLayer = layerRef.current;
+    if (current.chosen && shownLayer) {
+      current.chosen.forEach(index => strokeElements(shownLayer, `[data-stroke="${index}"]`)[0]?.setAttribute('transform', `translate(${dx} ${dy})`));
+    }
     setSelection(selected => (selected ? { ...selected, box } : selected));
   }
 
@@ -325,6 +351,16 @@ export function DrawingSelection({ session, strokes, layerRef, edge, snap, wrap,
     drag.current = null;
     const selected = latest.current;
     if (current?.kind === 'new' && selected && selected.box.width < MIN_BOX && selected.box.height < MIN_BOX) setSelection(null);
+
+    /* Strokes moved on a canvas are saved in their new place, as one undo step. */
+    const shownLayer = layerRef.current;
+    if (current?.chosen && selected) {
+      if (shownLayer) strokeElements(shownLayer, '[transform]').forEach(path => path.removeAttribute('transform'));
+      const dx = selected.box.x - current.startBox.x;
+      const dy = selected.box.y - current.startBox.y;
+      const moved = new Set(current.chosen);
+      if (dx || dy) session.saveDrawing(strokes.map((stroke, index) => (moved.has(index) ? moveStrokes([stroke], dx, dy)[0] : stroke)));
+    }
 
     /* A moved or resized anchored drawing is anchored again where it was dropped. */
     const block = selected?.anchored;
@@ -353,7 +389,7 @@ export function DrawingSelection({ session, strokes, layerRef, edge, snap, wrap,
   const barAtEnd = Boolean(shown && surface && shown.left + shown.width / 2 > surface.width / 2);
   const hasStrokes = selection ? Boolean(selection.anchored) || chosenStrokes(selection).length > 0 : false;
   const dragging = drag.current !== null;
-  const handles = selection?.picked ? [] : selection?.anchored ? CORNERS : HANDLES;
+  const handles = canvas || selection?.picked ? [] : selection?.anchored ? CORNERS : HANDLES;
   const shownWrap = selection?.anchored ? drawingWrap(selection.anchored) : wrap;
 
   return (
@@ -371,7 +407,7 @@ export function DrawingSelection({ session, strokes, layerRef, edge, snap, wrap,
           {handles.map(handle => <span key={handle} className={`drawing-selection-handle is-${handle}`} data-handle={handle} />)}
           {!dragging && (selection.box.width >= MIN_BOX || selection.box.height >= MIN_BOX) && (
             <div className={`drawing-selection-bar ${barAtEnd ? 'is-end' : ''}`} role="toolbar" aria-label="Selection">
-              <span className="drawing-wrap-choice" role="radiogroup" aria-label="With the text">
+              {!canvas && <span className="drawing-wrap-choice" role="radiogroup" aria-label="With the text">
                 {DRAWING_WRAPS.map((option, index) => (
                   <button
                     key={option.value}
@@ -388,8 +424,8 @@ export function DrawingSelection({ session, strokes, layerRef, edge, snap, wrap,
                     <Icon name={option.icon} size={16} />
                   </button>
                 ))}
-              </span>
-              {selection.anchored ? (
+              </span>}
+              {canvas ? null : selection.anchored ? (
                 <button type="button" className="btn btn-sm btn-secondary" onClick={detach}>
                   <Icon name="box-select" size={14} /> Detach
                 </button>

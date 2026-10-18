@@ -23,6 +23,7 @@ import './components/dateTimePicker.css';
 import './notespace/editor/images/images.css';
 import './notespace/editor/tables/tables.css';
 import './notespace/editor/drawing/drawing.css';
+import './notespace/canvas/canvas.css';
 import './notespace/export/export.css';
 import './notespace/print.css';
 import './boardspace/boardspace.css';

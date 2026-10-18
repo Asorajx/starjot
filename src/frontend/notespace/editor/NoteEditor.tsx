@@ -38,6 +38,7 @@ import { EditorSession, useSessionValue } from './session';
 import { StructuredEditor } from './text/StructuredEditor';
 import { zoomed } from '../../lib/geometry';
 import { useMediaQuery } from '../../lib/useMediaQuery';
+import { CanvasEditor } from '../canvas/CanvasEditor';
 
 type Panel = 'toc' | 'settings' | null;
 
@@ -98,7 +99,13 @@ function pageFrameStyle(geometry: ReturnType<typeof pageGeometry>, pages: number
   };
 }
 
-export function NoteEditor({ noteId, history, view, active, onClose, onOpenNote, onOpenNoteInNewTab, onGoToNote, onOpenCategory, onOpenNewPage, onOpenSettings }: NoteEditorProps) {
+/* A note opens in the editor for its kind: a canvas is drawn on, a document is written in. */
+export function NoteEditor(props: NoteEditorProps) {
+  const kind = useNote(props.noteId)?.kind;
+  return kind === 'canvas' ? <CanvasEditor {...props} /> : <DocumentEditor {...props} />;
+}
+
+function DocumentEditor({ noteId, history, view, active, onClose, onOpenNote, onOpenNoteInNewTab, onGoToNote, onOpenCategory, onOpenNewPage, onOpenSettings }: NoteEditorProps) {
   const note = useNote(noteId);
 
   /* Re-render when categories are renamed, so the breadcrumb stays current. */

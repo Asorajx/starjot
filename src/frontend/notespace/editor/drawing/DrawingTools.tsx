@@ -19,11 +19,20 @@ import { ColorMenu, SizeMenu } from './DrawingMenus';
 /* The eraser's reach around the pointer, in pixels at 100% zoom. */
 const ERASER_RADIUS = 8;
 
-const TOOLS: { name: DrawingToolName; label: string; icon: IconName }[] = [
+type ToolButton = { name: DrawingToolName | 'hand'; label: string; icon: IconName };
+
+const TOOLS: ToolButton[] = [
   { name: 'pen', label: 'Pen', icon: 'pencil' },
   { name: 'highlighter', label: 'Highlighter', icon: 'highlighter' },
   { name: 'eraser', label: 'Eraser: removes whole strokes', icon: 'eraser' },
   { name: 'select', label: 'Select: anchor strokes into the text', icon: 'box-select' }
+];
+
+/* A canvas has no text to anchor into: Select moves strokes instead, and the Hand moves around. */
+const CANVAS_TOOLS: ToolButton[] = [
+  { name: 'hand', label: 'Hand: drag to move around', icon: 'hand' },
+  ...TOOLS.slice(0, 3),
+  { name: 'select', label: 'Select: move or delete strokes', icon: 'box-select' }
 ];
 
 
@@ -36,7 +45,13 @@ type DrawingToolsProps = {
   activeLayer: string;
   onActiveLayerChange: (id: string) => void;
   layerRef: RefObject<HTMLDivElement | null>;
-  onClose: () => void;
+
+  /* Leaves drawing mode; a canvas, which is always drawn on, has none. */
+  onClose?: () => void;
+
+  /* On a canvas: whether the Hand tool is chosen. It is kept by the canvas (which does the moving */
+  /* around), not in the drawing settings, since documents have no Hand. */
+  canvas?: { hand: boolean; onHandChange: (hand: boolean) => void };
 
   /* Opens Settings at the drawing settings. */
   onOpenSettings: () => void;
@@ -52,9 +67,10 @@ type Gesture = {
 
 /* Drawing mode: a surface over the note that takes the mouse, pen or finger, and a toolbar at the */
 /* side of the pane with the tools, size and colour. The Select tool has its own surface */
-/* (DrawingSelection), for anchoring strokes into the text. Each stroke (or each sweep of the eraser) is */
-/* one undo step. While drawing, the note's text cannot be selected or edited. */
-export function DrawingTools({ session, strokes, layers, activeLayer, onActiveLayerChange, layerRef, onClose, onOpenSettings }: DrawingToolsProps) {
+/* (DrawingSelection), for anchoring strokes into the text, or moving them on a canvas. Each */
+/* stroke (or each sweep of the eraser) is one undo step. While drawing, the note's text cannot be */
+/* selected or edited. */
+export function DrawingTools({ session, strokes, layers, activeLayer, onActiveLayerChange, layerRef, onClose, canvas, onOpenSettings }: DrawingToolsProps) {
   const { drawing } = usePreferences();
   const [menu, setMenu] = useState<'size' | 'color' | 'layers' | null>(null);
   const [eraserAt, setEraserAt] = useState<{ x: number; y: number; scale: number } | null>(null);
@@ -176,26 +192,33 @@ export function DrawingTools({ session, strokes, layers, activeLayer, onActiveLa
     session.saveDrawing([...strokesRef.current, stroke], shown);
   }
 
-  const toolButton = (item: (typeof TOOLS)[number]) => (
-    <button
-      key={item.name}
-      type="button"
-      className={`drawing-tool ${tool === item.name ? 'selected' : ''}`}
-      data-tooltip={item.label}
-      data-tooltip-side="left"
-      aria-label={item.label}
-      aria-pressed={tool === item.name}
-      onClick={() => choose({ tool: item.name })}
-    >
-      <Icon name={item.icon} size={17} />
-    </button>
-  );
+  const hand = Boolean(canvas?.hand);
+  const toolButton = (item: ToolButton) => {
+    const chosen = item.name === 'hand' ? hand : !hand && tool === item.name;
+    return (
+      <button
+        key={item.name}
+        type="button"
+        className={`drawing-tool ${chosen ? 'selected' : ''}`}
+        data-tooltip={item.label}
+        data-tooltip-side="left"
+        aria-label={item.label}
+        aria-pressed={chosen}
+        onClick={() => {
+          canvas?.onHandChange(item.name === 'hand');
+          if (item.name !== 'hand') choose({ tool: item.name });
+        }}
+      >
+        <Icon name={item.icon} size={17} />
+      </button>
+    );
+  };
 
   return (
     <>
       <div className="drawing-dock">
         <div className="drawing-toolbar" role="toolbar" aria-label="Drawing tools" aria-orientation="vertical">
-          {TOOLS.map(toolButton)}
+          {(canvas ? CANVAS_TOOLS : TOOLS).map(toolButton)}
           <span className="drawing-toolbar-rule" />
 
           <span className="drawing-menu-anchor">
@@ -252,13 +275,15 @@ export function DrawingTools({ session, strokes, layers, activeLayer, onActiveLa
           <button type="button" className="drawing-tool" data-tooltip="Drawing settings" data-tooltip-side="left" aria-label="Drawing settings" onClick={onOpenSettings}>
             <Icon name="settings" size={17} />
           </button>
-          <button type="button" className="drawing-tool" data-tooltip="Stop drawing" data-shortcut="Esc" data-tooltip-side="left" aria-label="Stop drawing" onClick={onClose}>
-            <Icon name="x" size={17} />
-          </button>
+          {onClose && (
+            <button type="button" className="drawing-tool" data-tooltip="Stop drawing" data-shortcut="Esc" data-tooltip-side="left" aria-label="Stop drawing" onClick={onClose}>
+              <Icon name="x" size={17} />
+            </button>
+          )}
         </div>
       </div>
 
-      {tool === 'select' ? (
+      {hand ? null : tool === 'select' ? (
         <DrawingSelection
           session={session}
           strokes={strokes}
@@ -269,6 +294,7 @@ export function DrawingTools({ session, strokes, layers, activeLayer, onActiveLa
           onWrapChange={anchorWrap => choose({ anchorWrap })}
           layer={activeLayer}
           allowed={onActiveLayer}
+          canvas={Boolean(canvas)}
         />
       ) : (
         <div

@@ -6,7 +6,7 @@ import { ReminderList } from '../app/Reminders';
 import { reminderGroups } from '../notespace/reminders';
 import { usePreferences } from '../app/preferences';
 import { editedText, newestFirst } from '../notespace/NoteList';
-import { createNote, noteTitle, updateNote, useNotes } from '../notespace/store';
+import { createNote, noteIcon, noteTitle, updateNote, useNotes } from '../notespace/store';
 import { BOARD_TABS } from '../boardspace/data';
 import { TASKS } from '../../backend/data/sampleTasks';
 import { readQuickNoteDraft, writeQuickNoteDraft } from '../../backend/storage/draftStorage';
@@ -119,7 +119,7 @@ export function StarjotHome({ onOpenNote, onOpenNotespace, onOpenBoardspace, onO
             <div className="home-resume">
               <span className="home-card-label">Where you left off</span>
               <span className="note-tile-title">
-                {lastEdited.icon ? <span className="note-tile-icon" aria-hidden="true">{lastEdited.icon}</span> : <Icon name="file-text" size={16} />}
+                {lastEdited.icon ? <span className="note-tile-icon" aria-hidden="true">{lastEdited.icon}</span> : <Icon name={noteIcon(lastEdited)} size={16} />}
                 <strong>{noteTitle(lastEdited)}</strong>
               </span>
               <span className="note-tile-text">{lastEdited.subtitle || lastEdited.preview || 'No content yet.'}</span>

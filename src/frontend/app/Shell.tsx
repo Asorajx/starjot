@@ -5,7 +5,7 @@ import { keyParts, keysOf, shortcutLabel } from './shortcuts';
 import { InboxBell } from './Reminders';
 import { Icon, type IconName } from '../components/Icon';
 import { enabledScreens, screenLabel, type ScreenId } from './screens';
-import { noteTitle, useCategories, useNotes } from '../notespace/store';
+import { noteIcon, noteTitle, useCategories, useNotes } from '../notespace/store';
 import { sortNotes, starredNotes } from '../notespace/NoteList';
 import { BOARD_TABS } from '../boardspace/data';
 import { shownTheme, updatePreferences, usePreferences } from './preferences';
@@ -171,7 +171,7 @@ function NotespaceLists({ openNoteId, openCategoryId, onOpenNote, onOpenCategory
   const link = (note: Note) => (
     <SidebarLink
       key={note.id}
-      icon="file-text"
+      icon={noteIcon(note)}
       emoji={note.icon}
       label={noteTitle(note)}
       noteId={note.id}

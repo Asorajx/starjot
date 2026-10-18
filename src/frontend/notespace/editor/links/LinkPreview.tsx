@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Icon } from '../../../components/Icon';
-import { categoryName, getNote, noteTitle, updatedLabel, useCategories, useNotes } from '../../store';
+import { categoryName, getNote, noteIcon, noteTitle, updatedLabel, useCategories, useNotes } from '../../store';
 import { NoteColorStrip } from '../../NoteColors';
 import type { LinkTarget } from './links';
 
@@ -60,7 +60,7 @@ export function LinkPreviewCard({ target }: { target: LinkTarget }) {
     <>
       <NoteColorStrip color={note.color} />
       <span className="page-preview-title">
-        {note.icon ? <span aria-hidden="true">{note.icon}</span> : <Icon name="file-text" size={16} />}
+        {note.icon ? <span aria-hidden="true">{note.icon}</span> : <Icon name={noteIcon(note)} size={16} />}
         <strong>{noteTitle(note)}</strong>
       </span>
       <span className="page-preview-meta">
