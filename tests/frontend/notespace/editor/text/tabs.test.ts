@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  activateTab, addTab, breaksTabBlock, createTabBlock, emptyTabAtCaret, hydrateTabs, removeEmptyTab, removeTab, renameTab, selectTabText, showTabOf, tabKeys, tabPathOf, tabPanels
+  activateTab, addTab, breaksTabBlock, createTabBlock, emptyTabAtCaret, hydrateTabs, removeEmptyTab, removeTab, renameTab, showTabOf, tabKeys, tabPathOf, tabPanels
 } from '../../../../../src/frontend/notespace/editor/text/tabs';
 import { matchCommands } from '../../../../../src/frontend/notespace/editor/text/slashCommands';
 import { blockType, parseBlocks } from '../../../../../src/frontend/notespace/editor/text/blockModel';
@@ -106,14 +106,6 @@ describe('tab blocks', () => {
     placeCaret(body.querySelector('.tab-panel p') as Node, 0);
     removeEmptyTab(emptyTabAtCaret(press('Backspace')) as HTMLElement);
     expect(body.innerHTML).toBe('<p><br></p>');
-  });
-
-  it('selects the tab on Ctrl + A, and leaves the next press to select the whole note', () => {
-    const body = editor(TABS);
-    placeCaret(body.querySelector('.tab-panel p')?.firstChild as Node, 2);
-    expect(selectTabText(body)).toBe('tab');
-    expect(window.getSelection()?.toString()).toBe('InstallRun it.');
-    expect(selectTabText(body)).toBe('note');
   });
 
   it('refuses selections that reach into a hidden tab or out of the block, unless they cover it', () => {

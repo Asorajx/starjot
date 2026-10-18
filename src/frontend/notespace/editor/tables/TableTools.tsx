@@ -119,21 +119,6 @@ function rangeBox(table: HTMLTableElement, range: CellRange): Box | null {
   return { top, left, width: Math.max(...boxes.map(box => box.right)) - left, height: Math.max(...boxes.map(box => box.bottom)) - top };
 }
 
-/* Select all the text of the cell holding the caret. False when the caret is not in a cell of */
-/* root, or that cell's text is already all selected. */
-function selectCellText(root: Element | null) {
-  const selection = window.getSelection();
-  const range = selection?.rangeCount ? selection.getRangeAt(0) : null;
-  const cell = cellAt(range?.startContainer);
-  if (!selection || !range || !cell || !root?.contains(cell) || cellAt(range.endContainer) !== cell) return false;
-  const whole = document.createRange();
-  whole.selectNodeContents(cell);
-  if (range.compareBoundaryPoints(Range.START_TO_START, whole) <= 0 && range.compareBoundaryPoints(Range.END_TO_END, whole) >= 0) return false;
-  selection.removeAllRanges();
-  selection.addRange(whole);
-  return true;
-}
-
 /* The cells of a table, row or column chosen with a grip, grown to include merged cells. */
 function pickedCells(pick: Pick) {
   const { grid, width } = tableGrid(pick.table);
@@ -234,13 +219,6 @@ export function TableTools({ session, locked }: TableToolsProps) {
     /* Del or Backspace deletes the selected table, row or column; Escape ends the selection. */
     /* Keys typed in the comment box are left alone. */
     function handleKeyDown(event: KeyboardEvent) {
-      /* Ctrl+A in a cell selects that cell's text; pressed again (with all of it selected), it */
-      /* selects the whole note as usual. */
-      if ((event.ctrlKey || event.metaKey) && !event.altKey && event.key.toLowerCase() === 'a' && selectCellText(body())) {
-        event.preventDefault();
-        event.stopPropagation();
-        return;
-      }
       const current = latest.current.pick;
       if (!current || (event.target as Element).closest?.('.table-menu-comment')) return;
       if (event.key !== 'Escape' && event.key !== 'Delete' && event.key !== 'Backspace') return;

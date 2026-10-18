@@ -8,9 +8,10 @@ import { lineBelowTable, typeOutsideComment } from './blockKeys';
 import { placeCaret } from './dom';
 import { clickedCheckbox, toggleChecked } from './checklist';
 import {
-  activateTab, addTab, breaksTabBlock, deleteTabBlock, emptyTabAtCaret, removeEmptyTab, removeTab, renameTab, selectTabText, showTabOf, tabPanels
+  activateTab, addTab, breaksTabBlock, deleteTabBlock, emptyTabAtCaret, removeEmptyTab, removeTab, renameTab, showTabOf, tabPanels
 } from './tabs';
 import { TitleEditor } from '../../../components/TitleEditor';
+import { selectBlockText } from './selectBlock';
 import { LinkPreviewCard } from '../links/LinkPreview';
 import { copyPageLink } from '../links/links';
 import type { EditorSession } from '../session';
@@ -313,9 +314,9 @@ export function BlockWidgets({ session, locked, onOpenNote, onOpenNoteInNewTab }
     }
 
     /* Backspace in an empty tab removes it (the block, with its last tab), as one undo step taken */
-    /* before the change, so Undo puts the caret back in that tab. Ctrl + A in a tab selects that */
-    /* tab's contents; pressed again, the whole note (skipping Block mode's step of selecting the */
-    /* block the tab is in). */
+    /* before the change, so Undo puts the caret back in that tab. Ctrl + A in a table cell, code */
+    /* block, toggle list, quote, list or tab selects just that block; pressed again, the whole */
+    /* note (skipping Block mode's own step of selecting the block). */
     function handleKeyDown(event: KeyboardEvent) {
       const empty = latest.current.locked ? null : emptyTabAtCaret(event);
       if (empty && body()?.contains(empty)) {
@@ -328,7 +329,7 @@ export function BlockWidgets({ session, locked, onOpenNote, onOpenNoteInNewTab }
         return;
       }
       if (!(event.ctrlKey || event.metaKey) || event.altKey || event.key.toLowerCase() !== 'a') return;
-      const step = selectTabText(body());
+      const step = selectBlockText(body());
       if (!step) return;
       event.preventDefault();
       event.stopPropagation();

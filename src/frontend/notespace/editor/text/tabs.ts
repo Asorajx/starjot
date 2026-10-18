@@ -153,35 +153,6 @@ export function showTabOf(node: Node | null) {
   return changed;
 }
 
-/* Whether a range covers all of an element's text. Browsers move a selection's ends into the text */
-/* nodes, so the text is compared rather than the boundaries. */
-function covers(range: Range, element: Element) {
-  const whole = document.createRange();
-  whole.selectNodeContents(element);
-  if (range.compareBoundaryPoints(Range.START_TO_START, whole) <= 0 && range.compareBoundaryPoints(Range.END_TO_END, whole) >= 0) return true;
-  return element.contains(range.commonAncestorContainer) && range.toString() === whole.toString();
-}
-
-/* Ctrl + A in a tab: 'tab' when it selected everything in the tab holding the selection, 'note' */
-/* when the whole tab was already selected (the whole note should be selected next), or null when */
-/* the selection is not in one tab of root, or is in a table cell not yet all selected (the table */
-/* selects the cell first). */
-export function selectTabText(root: Element | null): 'tab' | 'note' | null {
-  const selection = window.getSelection();
-  const range = selection?.rangeCount ? selection.getRangeAt(0) : null;
-  const panelOf = (node: Node) => (node instanceof Element ? node : node.parentElement)?.closest('.tab-panel') ?? null;
-  const panel = range ? panelOf(range.startContainer) : null;
-  if (!selection || !range || !panel || !root?.contains(panel) || panelOf(range.endContainer) !== panel) return null;
-  const cell = closestAtCaret('td, th');
-  if (cell && panel.contains(cell) && !covers(range, cell)) return null;
-  if (covers(range, panel)) return 'note';
-  const whole = document.createRange();
-  whole.selectNodeContents(panel);
-  selection.removeAllRanges();
-  selection.addRange(whole);
-  return 'tab';
-}
-
 /* Whether typing over or deleting a selection would break a tab block: the selection reaches */
 /* into a hidden tab, or runs from one tab into another or out of the block, without covering */
 /* the whole block (deleting a whole block is fine, and can be undone). */
