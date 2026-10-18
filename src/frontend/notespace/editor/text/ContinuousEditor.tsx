@@ -10,8 +10,8 @@ import { caretAtEdge, closestAtCaret, emptyParagraph, placeCaret, selectContents
 import { imageFiles, insertImageFiles } from '../images/images';
 import { linkTypedAddress } from '../links/links';
 import { applyMarkdownShortcut, joinTypedDashes } from './markdown';
-import { deleteSelection, insertPasted, pastedMarkdown } from './paste';
-import { pastedSource, withCopiedTables, writeSelection } from './clipboard';
+import { deleteSelection, insertPasted } from './paste';
+import { pastedLines, writeSelection } from './clipboard';
 import { clearSelectedCells, pasteIntoTable } from '../tables/tableClipboard';
 import { stickyStateForRange, toggleStickyRange } from './stickyDom';
 import type { EditorSession } from '../session';
@@ -250,7 +250,7 @@ export const ContinuousEditor = memo(function ContinuousEditor({ session, conten
     session.checkpoint();
     const text = event.clipboardData.getData('text/plain');
     const pre = preAtCaret(body);
-    const lines = pre ? null : pastedMarkdown(pastedSource(event.clipboardData), event.clipboardData.getData('text/html'));
+    const lines = pre ? null : pastedLines(event.clipboardData);
 
     /* In a table, copied cells go in cell by cell (see tableClipboard.ts). */
     if (!pre && pasteIntoTable(event.clipboardData, body, lines)) {
@@ -259,7 +259,7 @@ export const ContinuousEditor = memo(function ContinuousEditor({ session, conten
     }
     if (lines) {
       deleteSelection(body);
-      insertPasted(body, withCopiedTables(lines, event.clipboardData));
+      insertPasted(body, lines);
       commit();
       return;
     }

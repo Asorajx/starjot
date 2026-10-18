@@ -20,8 +20,8 @@ import { caretAtEdge, closestAtCaret, emptyParagraph, isEmptyContent, placeCaret
 import { imageFiles, insertImageFiles } from '../images/images';
 import { linkTypedAddress } from '../links/links';
 import { applyMarkdownShortcut, joinTypedDashes } from './markdown';
-import { deleteSelection, insertPasted, pastedMarkdown } from './paste';
-import { pastedSource, withCopiedTables, writeSelection } from './clipboard';
+import { deleteSelection, insertPasted } from './paste';
+import { pastedLines, writeSelection } from './clipboard';
 import { clearSelectedCells, pasteIntoTable } from '../tables/tableClipboard';
 import type { EditorSession } from '../session';
 
@@ -759,7 +759,7 @@ export const StructuredEditor = memo(function StructuredEditor({ session, conten
     const text = event.clipboardData.getData('text/plain');
     const start = closestAtCaret('.block-content');
     const inCode = Boolean(start && preAtCaret(start));
-    const lines = inCode ? null : pastedMarkdown(pastedSource(event.clipboardData), event.clipboardData.getData('text/html'));
+    const lines = inCode ? null : pastedLines(event.clipboardData);
 
     /* In a table, copied cells go in cell by cell (see tableClipboard.ts). */
     if (!inCode && bodyRef.current && pasteIntoTable(event.clipboardData, bodyRef.current, lines)) {
@@ -767,7 +767,7 @@ export const StructuredEditor = memo(function StructuredEditor({ session, conten
       return;
     }
     if (lines) {
-      pasteLines(withCopiedTables(lines, event.clipboardData));
+      pasteLines(lines);
       return;
     }
     if (deleteAcross(text)) return;

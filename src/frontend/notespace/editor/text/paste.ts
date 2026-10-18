@@ -249,15 +249,16 @@ function cleaned(blocks: HTMLElement[]) {
   return Array.from(holder.content.children) as HTMLElement[];
 }
 
-/* The note lines for pasted text, or null when it has no Markdown, so it is pasted as plain text. */
-/* A page link copied from a note (the clipboard's HTML) pastes as the same page link. */
-export function pastedMarkdown(plain: string, html = ''): HTMLElement[] | null {
+/* The note lines for pasted text, or null when it has no Markdown, so it is pasted as plain text */
+/* (unless always is true). A page link copied from a note (the clipboard's HTML) pastes as the */
+/* same page link. */
+export function pastedMarkdown(plain: string, html = '', always = false): HTMLElement[] | null {
   const page = copiedPageLink(html, plain);
   if (page) return cleaned([element('p', [createLink(plain, page)])]);
 
   const blocks = markdownLines(plain);
   const formatted = blocks.some(block => block.tagName !== 'P' || block.querySelector('*:not(br)'));
-  return formatted ? cleaned(blocks) : null;
+  return formatted || always ? cleaned(blocks) : null;
 }
 
 
