@@ -1,7 +1,8 @@
 import { useEffect } from 'react';
 import { Icon } from '../components/Icon';
 import type { OpenById } from '../lib/clicks';
-import { newestFirst, NoteTable } from './NoteList';
+import { usePreferences } from '../app/preferences';
+import { newestFirst, NoteTable, NotesViewSwitch } from './NoteList';
 import { useNoteMenu } from './NoteMenu';
 import { categoryName, useCategories, useNotes } from './store';
 
@@ -23,6 +24,7 @@ export function CategoryPage({ categoryId, onBack, onOpen, onOpenInNewTab, onCre
   const notes = useNotes();
   const noteMenu = useNoteMenu({ onOpen, onOpenInNewTab });
   const categories = useCategories();
+  const { notesView } = usePreferences();
   const exists = categories.some(category => category.id === categoryId);
   const name = categoryName(categoryId);
   const shown = newestFirst(notes.filter(note => note.category === categoryId));
@@ -50,12 +52,15 @@ export function CategoryPage({ categoryId, onBack, onOpen, onOpenInNewTab, onCre
           <h1><Icon name="folder" size={22} /> {name}</h1>
           <p>{shown.length} {shown.length === 1 ? 'note' : 'notes'}</p>
         </div>
-        <button className="btn btn-primary" type="button" onClick={() => onCreate(categoryId)}>
-          <Icon name="plus" size={16} /><span>New note</span>
-        </button>
+        <div className="notes-home-actions">
+          <NotesViewSwitch />
+          <button className="btn btn-primary" type="button" onClick={() => onCreate(categoryId)}>
+            <Icon name="plus" size={16} /><span>New note</span>
+          </button>
+        </div>
       </div>
 
-      <NoteTable notes={shown} onOpen={onOpen} onMenu={noteMenu.onContextMenu} />
+      <NoteTable notes={shown} onOpen={onOpen} onMenu={noteMenu.onContextMenu} view={notesView} />
 
       {noteMenu.menu}
     </div>

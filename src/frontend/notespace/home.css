@@ -534,13 +534,73 @@
 
 
 /* =========================
-   Note Colours
+   Views and Note Colours
    ========================= */
 
-/* A card holds its colour strip inside its rounded corners. */
-.note-tile {
+/* List or Gallery, beside Sort by (and New note on a category page). */
+.notes-view-switch {
+  display: inline-flex;
+  padding: 2px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--paper);
+}
+
+.notes-view-option {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 24px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: #66778f;
+  cursor: pointer;
+}
+
+.notes-view-option:hover {
+  color: var(--accent-text);
+}
+
+.notes-view-option.is-active {
+  background: var(--accent-soft);
+  color: var(--accent-text);
+}
+
+/* A gallery card holds more of the note's text; its star sits in the top-right corner. */
+.note-tile-wrap {
   position: relative;
+  display: flex;
+  min-width: 0;
+}
+
+.note-tile-wrap > .note-tile {
+  position: relative;
+  flex: 1;
+  min-width: 0;
   overflow: hidden;
+}
+
+.note-tiles.is-gallery {
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+}
+
+.note-tile-wrap.is-large .note-tile {
+  min-height: 176px;
+}
+
+.note-tile-wrap.is-large .note-tile-title {
+  padding-right: 32px;
+}
+
+.note-tile-wrap.is-large .note-tile-text {
+  -webkit-line-clamp: 5;
+}
+
+.note-tile-pin {
+  position: absolute;
+  top: 8px;
+  right: 8px;
 }
 
 /* A note's colour: a bar along the left of a row, or the top of a card or preview. It is drawn */
@@ -622,7 +682,8 @@
 }
 
 @media (pointer: coarse) {
-  .note-color-swatch {
+  .note-color-swatch,
+  .notes-view-option {
     width: 44px;
     height: 44px;
   }

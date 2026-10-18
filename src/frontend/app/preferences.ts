@@ -89,6 +89,9 @@ export type Preferences = {
   contentsScroll: ContentsScroll;
   notesSort: NotesSort;
 
+  /* Notespace Home's All notes as rows, or as larger cards in a grid. */
+  notesView: 'list' | 'gallery';
+
   /* Note colours on rows and cards; when off, a note's colour shows only in its hover preview. */
   noteColorsInLists: boolean;
 
@@ -196,7 +199,7 @@ function loadDrawing(saved: unknown): DrawingPreferences {
 /* Light mode is the default; once a theme is chosen in Settings it is remembered between visits. */
 function load(): Preferences {
   const defaults: Preferences = {
-    theme: 'light', accent: 'blue', density: 'comfortable', startScreen: 'start', spaces: loadSpaces(null), sidebar: loadSidebar(null), newNotes: loadNewNotes(null), openNotesIn: 'current', openNewSubNotes: true, zoom: 1, sidebarCollapsed: false, contentsScroll: 'smooth', notesSort: 'edited', noteColorsInLists: true, hideHeaderWhileTyping: true, tips: true, spellcheck: true, typingShortcuts: true, shortcuts: {}, drawing: loadDrawing(null),
+    theme: 'light', accent: 'blue', density: 'comfortable', startScreen: 'start', spaces: loadSpaces(null), sidebar: loadSidebar(null), newNotes: loadNewNotes(null), openNotesIn: 'current', openNewSubNotes: true, zoom: 1, sidebarCollapsed: false, contentsScroll: 'smooth', notesSort: 'edited', notesView: 'list', noteColorsInLists: true, hideHeaderWhileTyping: true, tips: true, spellcheck: true, typingShortcuts: true, shortcuts: {}, drawing: loadDrawing(null),
     exportSettings: normalizeExportSettings(null),
     recentColors: []
   };
@@ -215,6 +218,7 @@ function load(): Preferences {
     sidebarCollapsed: saved.sidebarCollapsed === true,
     contentsScroll: saved.contentsScroll === 'instant' ? 'instant' : 'smooth',
     notesSort: saved.notesSort === 'opened' || saved.notesSort === 'title' ? saved.notesSort : defaults.notesSort,
+    notesView: saved.notesView === 'gallery' ? 'gallery' : 'list',
     noteColorsInLists: saved.noteColorsInLists !== false,
     hideHeaderWhileTyping: saved.hideHeaderWhileTyping !== false,
     tips: saved.tips !== false,

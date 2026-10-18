@@ -29,12 +29,13 @@ function siteOf(href: string) {
 }
 
 /* What a link leads to. A page shows its colour (always, even with colours in lists turned off), */
-/* icon, title, category, when it was edited and the start of its text. A web address shows the site's icon, its name and the full address. (A */
-/* fuller website preview, with its title and picture, needs a server to fetch the site, because */
-/* browsers do not let one site read another; Starjot's own server could add that later.) */
+/* icon, title, category, when it was edited, how many sub-notes it has and the start of its text. */
+/* A web address shows the site's icon, its name and the full address. (A fuller website preview, */
+/* with its title and picture, needs a server to fetch the site, because browsers do not let one */
+/* site read another; Starjot's own server could add that later.) */
 export function LinkPreviewCard({ target }: { target: LinkTarget }) {
   /* Re-render when notes or categories change, so the preview stays current. */
-  useNotes();
+  const notes = useNotes();
   useCategories();
 
   if (target.kind === 'url') {
@@ -54,6 +55,7 @@ export function LinkPreviewCard({ target }: { target: LinkTarget }) {
   const note = getNote(target.id);
   if (!note) return <span className="page-preview-text">This note was deleted.</span>;
   const category = categoryName(note.category);
+  const subNotes = notes.filter(item => item.parentId === note.id).length;
   return (
     <>
       <NoteColorStrip color={note.color} />
@@ -61,7 +63,9 @@ export function LinkPreviewCard({ target }: { target: LinkTarget }) {
         {note.icon ? <span aria-hidden="true">{note.icon}</span> : <Icon name="file-text" size={16} />}
         <strong>{noteTitle(note)}</strong>
       </span>
-      <span className="page-preview-meta">{category && `${category} · `}{updatedLabel(note)}</span>
+      <span className="page-preview-meta">
+        {category && `${category} · `}{updatedLabel(note)}{subNotes > 0 && ` · ${subNotes} ${subNotes === 1 ? 'sub-note' : 'sub-notes'}`}
+      </span>
       <span className="page-preview-text">{note.preview || note.subtitle || 'This note is empty.'}</span>
     </>
   );

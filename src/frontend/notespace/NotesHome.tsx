@@ -4,7 +4,7 @@ import { Dropdown } from '../components/Dropdown';
 import { Icon } from '../components/Icon';
 import { opensNewTab, type OpenById } from '../lib/clicks';
 import { updatePreferences, usePreferences, type NotesSort } from '../app/preferences';
-import { NoteTable, NoteTile, sortNotes, starredNotes } from './NoteList';
+import { NoteTable, NoteTile, NotesViewSwitch, sortNotes, starredNotes } from './NoteList';
 import { useNoteMenu } from './NoteMenu';
 import { useImport } from './import/useImport';
 import {
@@ -158,7 +158,7 @@ export function NotesHome({ filter, onFilterChange, onOpen, onOpenInNewTab, onOp
   const notes = useNotes();
   const noteMenu = useNoteMenu({ onOpen, onOpenInNewTab });
   const importer = useImport(onOpen);
-  const { notesSort } = usePreferences();
+  const { notesSort, notesView } = usePreferences();
   const [showAllStarred, setShowAllStarred] = useState(false);
 
   /* Re-render when categories are renamed, so each row shows the current name. */
@@ -222,12 +222,13 @@ export function NotesHome({ filter, onFilterChange, onOpen, onOpenInNewTab, onOp
               ]}
               onChange={sort => updatePreferences({ notesSort: sort })}
             />
+            <NotesViewSwitch />
           </div>
         </div>
 
         <CategoryBar notes={notes} filter={filter} onFilterChange={onFilterChange} onOpenCategory={onOpenCategory} />
 
-        <NoteTable notes={shown} onOpen={onOpen} onMenu={noteMenu.onContextMenu} showOpened={notesSort === 'opened'} />
+        <NoteTable notes={shown} onOpen={onOpen} onMenu={noteMenu.onContextMenu} showOpened={notesSort === 'opened'} view={notesView} />
       </section>
 
       {noteMenu.menu}
