@@ -76,6 +76,21 @@ describe('note store', () => {
     expect(store.getNote(note.id)?.pinned).toBe(false);
   });
 
+  it('gives a note a colour without counting it as an edit, and drops unknown or old colours', async () => {
+    localStorage.setItem('starjot-notespace-v1', JSON.stringify({ notes: [{ id: 'old', title: 'Old', accent: 'mint', color: 'gold' }] }));
+    let store = await openApp();
+    expect(store.getNote('old')?.color).toBe('');
+    expect(store.getNote('atlas')?.color).toBe('');
+    const editedAt = store.getNote('atlas')?.updatedAt;
+    store.setNoteColor('atlas', 'green');
+    expect(store.getNote('atlas')).toMatchObject({ color: 'green', updatedAt: editedAt });
+    vi.resetModules();
+    store = await openApp();
+    expect(store.getNote('atlas')?.color).toBe('green');
+    store.setNoteColor('atlas', 'gold' as never);
+    expect(store.getNote('atlas')?.color).toBe('');
+  });
+
   it('remembers when a note was opened without changing when it was edited', async () => {
     const store = await openApp();
     const editedAt = store.getNote('atlas')?.updatedAt;

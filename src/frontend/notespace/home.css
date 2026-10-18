@@ -531,3 +531,99 @@
   color: #66778e;
   font-size: 12px;
 }
+
+
+/* =========================
+   Note Colours
+   ========================= */
+
+/* A card holds its colour strip inside its rounded corners. */
+.note-tile {
+  position: relative;
+  overflow: hidden;
+}
+
+/* A note's colour: a bar along the left of a row, or the top of a card or preview. It is drawn */
+/* in currentColor, which the text colour class (text-red and so on) sets. */
+.note-color-strip {
+  position: absolute;
+  background: currentColor;
+  pointer-events: none;
+}
+
+.note-row {
+  position: relative;
+}
+
+.note-row > .note-color-strip {
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 4px;
+}
+
+.note-tile > .note-color-strip,
+.page-preview > .note-color-strip {
+  top: 0;
+  right: 0;
+  left: 0;
+  height: 4px;
+}
+
+.page-preview > .note-color-strip {
+  border-radius: 4px 4px 0 0;
+}
+
+/* Swatches choosing a note's colour, in Note settings and the note menu: one row, spread across */
+/* the width, with the same space under its heading as the other Note settings. */
+.note-color-picker {
+  display: flex;
+  justify-content: space-between;
+  gap: 4px;
+}
+
+.side-setting > .note-color-picker {
+  margin-top: 12px;
+}
+
+.note-color-swatch {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: currentColor;
+  cursor: pointer;
+}
+
+.note-color-swatch.is-none {
+  border: 1px solid var(--line);
+  background: var(--paper);
+  color: #66778f;
+}
+
+.note-color-swatch[aria-checked="true"] {
+  box-shadow: 0 0 0 2px var(--paper), 0 0 0 4px var(--accent);
+}
+
+.note-menu-colors {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 4px;
+  padding: 8px;
+  border-top: 1px solid var(--line);
+  color: #66778f;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+@media (pointer: coarse) {
+  .note-color-swatch {
+    width: 44px;
+    height: 44px;
+  }
+}

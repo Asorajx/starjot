@@ -8,7 +8,11 @@ export type NoteMode = 'continuous' | 'blocks';
 /* Pageless shows the note as one long page; paginated shows it on page-sized sheets. */
 export type PageLayout = 'pageless' | 'paginated';
 export type PageSize = 'a4' | 'letter';
-export type NoteAccent = 'indigo' | 'mint' | 'amber' | 'rose';
+
+/* A colour chosen for a note, shown on it in lists and previews (the same names as the text */
+/* colours, so dark mode has them too), or an empty string for none (the default). */
+export const NOTE_COLORS = ['red', 'orange', 'yellow', 'green', 'blue', 'purple', 'pink', 'brown'] as const;
+export type NoteColor = (typeof NOTE_COLORS)[number] | '';
 
 /* Content is stored as sanitized HTML; sticky groups are <div class="sticky-group"> wrappers. */
 export type Note = {
@@ -32,7 +36,7 @@ export type Note = {
 
   /* An emoji chosen by the user, or an empty string for no icon (the default). */
   icon: string;
-  accent: NoteAccent;
+  color: NoteColor;
   read: string;
   mode: NoteMode;
   stickyIndicator: boolean;

@@ -89,6 +89,9 @@ export type Preferences = {
   contentsScroll: ContentsScroll;
   notesSort: NotesSort;
 
+  /* Note colours on rows and cards; when off, a note's colour shows only in its hover preview. */
+  noteColorsInLists: boolean;
+
   /* Fade the page bar above a note while typing, until the mouse moves. */
   hideHeaderWhileTyping: boolean;
 
@@ -193,7 +196,7 @@ function loadDrawing(saved: unknown): DrawingPreferences {
 /* Light mode is the default; once a theme is chosen in Settings it is remembered between visits. */
 function load(): Preferences {
   const defaults: Preferences = {
-    theme: 'light', accent: 'blue', density: 'comfortable', startScreen: 'start', spaces: loadSpaces(null), sidebar: loadSidebar(null), newNotes: loadNewNotes(null), openNotesIn: 'current', openNewSubNotes: true, zoom: 1, sidebarCollapsed: false, contentsScroll: 'smooth', notesSort: 'edited', hideHeaderWhileTyping: true, tips: true, spellcheck: true, typingShortcuts: true, shortcuts: {}, drawing: loadDrawing(null),
+    theme: 'light', accent: 'blue', density: 'comfortable', startScreen: 'start', spaces: loadSpaces(null), sidebar: loadSidebar(null), newNotes: loadNewNotes(null), openNotesIn: 'current', openNewSubNotes: true, zoom: 1, sidebarCollapsed: false, contentsScroll: 'smooth', notesSort: 'edited', noteColorsInLists: true, hideHeaderWhileTyping: true, tips: true, spellcheck: true, typingShortcuts: true, shortcuts: {}, drawing: loadDrawing(null),
     exportSettings: normalizeExportSettings(null),
     recentColors: []
   };
@@ -212,6 +215,7 @@ function load(): Preferences {
     sidebarCollapsed: saved.sidebarCollapsed === true,
     contentsScroll: saved.contentsScroll === 'instant' ? 'instant' : 'smooth',
     notesSort: saved.notesSort === 'opened' || saved.notesSort === 'title' ? saved.notesSort : defaults.notesSort,
+    noteColorsInLists: saved.noteColorsInLists !== false,
     hideHeaderWhileTyping: saved.hideHeaderWhileTyping !== false,
     tips: saved.tips !== false,
     spellcheck: saved.spellcheck !== false,

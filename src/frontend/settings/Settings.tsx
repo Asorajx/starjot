@@ -264,7 +264,7 @@ function Heading({ title, subtitle }: { title: string; subtitle: string }) {
    ========================= */
 
 function SettingsSectionContent({ section }: { section: SettingsSection }) {
-  const { theme, accent, density, startScreen, spaces, sidebar, newNotes, openNotesIn, openNewSubNotes, contentsScroll, hideHeaderWhileTyping, tips, spellcheck, typingShortcuts, drawing } = usePreferences();
+  const { theme, accent, density, startScreen, spaces, sidebar, newNotes, openNotesIn, openNewSubNotes, noteColorsInLists, contentsScroll, hideHeaderWhileTyping, tips, spellcheck, typingShortcuts, drawing } = usePreferences();
   const categories = useCategories();
   const set = (changes: Partial<Preferences>) => updatePreferences(changes);
 
@@ -465,6 +465,11 @@ function SettingsSectionContent({ section }: { section: SettingsSection }) {
           </Row>
           <Row title="Open new sub-notes" description="Open a sub-note as soon as you add it. When off, you name it on its card and keep writing.">
             <Switch label="Open new sub-notes" on={openNewSubNotes} onChange={on => set({ openNewSubNotes: on })} />
+          </Row>
+        </Group>
+        <Group title="Note lists">
+          <Row title="Show note colours in lists" description="A note's colour shows along its row or card in Notespace and category pages. When off, it only shows in the note's preview.">
+            <Switch label="Show note colours in lists" on={noteColorsInLists} onChange={on => set({ noteColorsInLists: on })} />
           </Row>
         </Group>
         <Group title="Reading and writing">

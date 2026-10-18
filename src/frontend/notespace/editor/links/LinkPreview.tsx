@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Icon } from '../../../components/Icon';
 import { categoryName, getNote, noteTitle, updatedLabel, useCategories, useNotes } from '../../store';
+import { NoteColorStrip } from '../../NoteColors';
 import type { LinkTarget } from './links';
 
 
@@ -27,8 +28,8 @@ function siteOf(href: string) {
   }
 }
 
-/* What a link leads to. A page shows its icon, title, category, when it was edited and the */
-/* start of its text. A web address shows the site's icon, its name and the full address. (A */
+/* What a link leads to. A page shows its colour (always, even with colours in lists turned off), */
+/* icon, title, category, when it was edited and the start of its text. A web address shows the site's icon, its name and the full address. (A */
 /* fuller website preview, with its title and picture, needs a server to fetch the site, because */
 /* browsers do not let one site read another; Starjot's own server could add that later.) */
 export function LinkPreviewCard({ target }: { target: LinkTarget }) {
@@ -55,6 +56,7 @@ export function LinkPreviewCard({ target }: { target: LinkTarget }) {
   const category = categoryName(note.category);
   return (
     <>
+      <NoteColorStrip color={note.color} />
       <span className="page-preview-title">
         {note.icon ? <span aria-hidden="true">{note.icon}</span> : <Icon name="file-text" size={16} />}
         <strong>{noteTitle(note)}</strong>

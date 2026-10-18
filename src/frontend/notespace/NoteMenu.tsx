@@ -3,6 +3,7 @@ import { DeleteNoteDialog } from './DeleteNoteDialog';
 import { Icon } from '../components/Icon';
 import { useDismiss } from '../lib/useDismiss';
 import { TitleEditor } from '../components/TitleEditor';
+import { NoteColorPicker } from './NoteColors';
 import { deleteNote, getNote, noteTitle, updateNote } from './store';
 
 
@@ -63,7 +64,7 @@ export function useNoteMenu({ onOpen, onOpenInNewTab }: NoteMenuActions): NoteMe
           className="page-menu note-menu"
           role="menu"
           aria-label={`${noteTitle(note)} options`}
-          style={{ top: Math.min(open.top, window.innerHeight - 160), left: Math.min(open.left, window.innerWidth - 200) }}
+          style={{ top: Math.min(open.top, window.innerHeight - 220), left: Math.min(open.left, window.innerWidth - 240) }}
         >
           <button type="button" role="menuitem" className="page-menu-item" autoFocus onClick={() => run(onOpen)}>
             <Icon name="arrow-right" size={14} /> Open
@@ -85,6 +86,10 @@ export function useNoteMenu({ onOpen, onOpenInNewTab }: NoteMenuActions): NoteMe
           >
             <Icon name="pencil" size={14} /> Rename
           </button>
+          <div className="note-menu-colors">
+            <span>Colour</span>
+            <NoteColorPicker noteId={note.id} color={note.color} />
+          </div>
           <button
             type="button"
             role="menuitem"

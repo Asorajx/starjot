@@ -109,6 +109,13 @@ describe('start screen, spaces and sidebar', () => {
     expect(sidebar).toEqual({ starred: true, recent: true, categories: false, hiddenCategories: [], folded: [] });
   });
 
+  it('shows note colours in lists by default, and remembers them turned off', async () => {
+    expect((await openApp()).getPreferences().noteColorsInLists).toBe(true);
+    vi.resetModules();
+    save({ noteColorsInLists: false });
+    expect((await openApp()).getPreferences().noteColorsInLists).toBe(false);
+  });
+
   it('opens notes in the current tab by default, with Ctrl + click and the setting choosing a new tab', async () => {
     const app = await openApp();
     expect(app.getPreferences().openNewSubNotes).toBe(true);

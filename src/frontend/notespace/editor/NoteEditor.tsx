@@ -31,6 +31,7 @@ import { LinkTools } from './links/LinkTools';
 import { copyPageLink } from './links/links';
 import { NoteBreadcrumb } from './NoteBreadcrumb';
 import { PageBar, SaveStatus, type PageHistory } from '../PageBar';
+import { NoteColorStrip } from '../NoteColors';
 import { NoteHeader } from './NoteHeader';
 import { pageGeometry, pageStep, usePages } from './layout/pagination';
 import { EditorSession, useSessionValue } from './session';
@@ -369,7 +370,9 @@ export function NoteEditor({ noteId, history, view, active, onClose, onOpenNote,
   const keepSelection = (event: ReactMouseEvent) => event.preventDefault();
 
   return (
-    <div ref={wrapRef} className={`editor-wrap ${locked ? 'is-locked' : ''} ${geometry ? 'is-paginated' : ''} ${drawing ? 'is-drawing' : ''} ${smallText ? 'is-small-text' : ''} ${fullWidth ? 'is-full-width' : ''}`}>
+    <div ref={wrapRef} className={`editor-wrap ${locked ? 'is-locked' : ''} ${geometry ? 'is-paginated' : ''} ${drawing ? 'is-drawing' : ''} ${smallText ? 'is-small-text' : ''} ${fullWidth ? 'is-full-width' : ''} ${note.color ? 'has-color' : ''}`}>
+      {/* The note's colour, as a strip under the tab bar that stays while scrolling and typing. */}
+      <NoteColorStrip color={note.color} />
       <PageBar history={history} className={`editor-page-bar ${typing && !panel ? 'is-hidden' : ''}`}>
         <NoteBreadcrumb note={note} onOpenNote={onOpenNote} onOpenCategory={onOpenCategory} />
         <span className="page-bar-fill" />

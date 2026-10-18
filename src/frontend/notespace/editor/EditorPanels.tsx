@@ -3,6 +3,7 @@ import { getPreferences } from '../../app/preferences';
 import { STACK_LIMIT } from '../../app/noteTabs';
 import { Switch } from '../../components/Switch';
 import { Icon, type IconName } from '../../components/Icon';
+import { NoteColorPicker } from '../NoteColors';
 import type { EditorSession } from './session';
 import type { Note, NoteMode, PageLayout, PageSize } from '../../../shared/types/note';
 
@@ -176,6 +177,12 @@ export function NoteSettings({
         >
           <Icon name={note.locked ? 'lock' : 'unlock'} size={16} /> {note.locked ? 'Locked' : 'Lock'}
         </button>
+      </div>
+
+      {/* The note's colour shows in lists and previews; choosing one is not an edit. */}
+      <div className="side-setting side-setting--border">
+        <strong>Colour</strong>
+        <NoteColorPicker noteId={note.id} color={note.color} />
       </div>
 
       <div className="side-setting side-setting--border">

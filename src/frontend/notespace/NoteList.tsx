@@ -1,6 +1,7 @@
 import { Icon } from '../components/Icon';
 import { opensNewTab, startNoteDrag, type OpenById } from '../lib/clicks';
-import type { NotesSort } from '../app/preferences';
+import { usePreferences, type NotesSort } from '../app/preferences';
+import { NoteColorStrip } from './NoteColors';
 import { categoryName, getNote, noteTitle, setPinned, updatedLabel } from './store';
 import type { NoteMenu } from './NoteMenu';
 import type { Note } from '../../shared/types/note';
@@ -63,11 +64,13 @@ function LockedMark({ note }: { note: Note }) {
   return <span className="note-locked-mark" role="img" aria-label="Locked" data-tooltip="Locked"><Icon name="lock" size={13} /></span>;
 }
 
-/* A note card: icon, title, description, category and edit time. */
+/* A note card: icon, title, description, category and edit time, with the note's colour along its top. */
 export function NoteTile({ note, onOpen, onMenu }: { note: Note; onOpen: OpenNote; onMenu?: OpenMenu }) {
+  const { noteColorsInLists } = usePreferences();
   const category = categoryName(note.category);
   return (
     <button type="button" className="note-tile" draggable onDragStart={event => startNoteDrag(event, note.id)} onClick={event => onOpen(note.id, opensNewTab(event))} onContextMenu={onMenu && (event => onMenu(event, note.id))}>
+      {noteColorsInLists && <NoteColorStrip color={note.color} />}
       <span className="note-tile-title">
         {note.icon ? <span className="note-tile-icon" aria-hidden="true">{note.icon}</span> : <Icon name="file-text" size={16} />}
         <strong>{noteTitle(note)}</strong>
@@ -80,11 +83,14 @@ export function NoteTile({ note, onOpen, onMenu }: { note: Note; onOpen: OpenNot
   );
 }
 
-/* One row of a note list. The star adds or removes the note from Starred without opening it. */
-/* Rows and cards can be dragged onto the tab bar to open the note in a new tab. */
+/* One row of a note list, with the note's colour along its left edge. The star adds or removes */
+/* the note from Starred without opening it. Rows and cards can be dragged onto the tab bar to */
+/* open the note in a new tab. */
 function NoteRow({ note, onOpen, onMenu, time }: { note: Note; onOpen: OpenNote; onMenu?: OpenMenu; time: string }) {
+  const { noteColorsInLists } = usePreferences();
   return (
     <div className="recent-row note-row" draggable onDragStart={event => startNoteDrag(event, note.id)} onContextMenu={onMenu && (event => onMenu(event, note.id))}>
+      {noteColorsInLists && <NoteColorStrip color={note.color} />}
       <button type="button" className="note-row-open" onClick={event => onOpen(note.id, opensNewTab(event))}>
         <span className="recent-name">
           {note.icon && <span className="note-row-icon" aria-hidden="true">{note.icon}</span>}

@@ -694,6 +694,22 @@
   width: var(--pane-width, 100%);
 }
 
+/* A coloured note's strip sits above the page bar, both kept in view while scrolling; the page */
+/* bar then sticks just below the strip. */
+.editor-wrap > .note-color-strip {
+  position: sticky;
+  top: 0;
+  left: 0;
+  z-index: 23;
+  display: block;
+  width: var(--pane-width, 100%);
+  height: 4px;
+}
+
+.editor-wrap.has-color > .page-bar {
+  top: 4px;
+}
+
 /* A CSS container hides its content's width from the page around it, so a paginated note's layout */
 /* is not one (its pages are never as narrow as the container rules are for). */
 .editor-wrap.is-paginated .editor-layout {

@@ -7,13 +7,12 @@ import { readCategories, writeCategories } from '../../backend/storage/categorie
 import { readNotes, writeNotes } from '../../backend/storage/notesStorage';
 import { isEmoji } from '../../shared/emoji';
 import { getPreferences } from '../app/preferences';
-import type { Category, Note, NoteAccent, NoteChanges, NoteComment, SaveStatus } from '../../shared/types/note';
+import { NOTE_COLORS, type Category, type Note, type NoteChanges, type NoteColor, type NoteComment, type SaveStatus } from '../../shared/types/note';
 
 /* The frontend's note store: it checks and tidies notes, and tells React when they change. */
 /* Saving and loading are done by the backend (backend/storage/notesStorage.ts). */
 const MAX_NOTES = 1000;
 const SAVE_DELAY = 350;
-const ACCENTS: NoteAccent[] = ['indigo', 'mint', 'amber', 'rose'];
 
 const CATEGORY_NAME_LENGTH = 24;
 
@@ -88,7 +87,9 @@ function normalizeNote(raw: unknown): Note | null {
 
     /* Older notes stored an icon name such as "layers"; only emoji icons are kept now. */
     icon: isEmoji(String(record.icon ?? '')) ? String(record.icon) : '',
-    accent: ACCENTS.includes(record.accent as NoteAccent) ? record.accent as NoteAccent : fallback.accent ?? 'indigo',
+
+    /* Notes once had an unused "accent", which is dropped; colours only come from the note's colour. */
+    color: NOTE_COLORS.includes(record.color as Exclude<NoteColor, ''>) ? record.color as NoteColor : '',
     read: text('read', '1 min read', 35),
     mode: record.mode === 'blocks' ? 'blocks' : 'continuous',
     stickyIndicator: record.stickyIndicator !== false,
@@ -226,7 +227,7 @@ export function createNote(category = '', parentId = '') {
     id: `note_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`,
     title: UNTITLED_NOTE, subtitle: '', preview: '', category, parentId,
     updatedAt: now, createdAt: now, openedAt: now, pinned: false, icon: '',
-    accent: 'indigo', mode, layout, pageSize, content: ''
+    color: '', mode, layout, pageSize, content: ''
   }) as Note;
   setState({ notes: [note, ...state.notes] });
   save();
@@ -279,6 +280,13 @@ export function updateNote(id: string, changes: NoteChanges, persist = true) {
 /* Pinning is not an edit, so it does not change the note's "last edited" time. */
 export function setPinned(id: string, pinned: boolean) {
   setState({ notes: state.notes.map(note => (note.id === id ? { ...note, pinned } : note)) });
+  save();
+}
+
+/* A note's colour is not an edit either; an unknown colour clears it. */
+export function setNoteColor(id: string, color: NoteColor) {
+  const chosen = NOTE_COLORS.includes(color as Exclude<NoteColor, ''>) ? color : '';
+  setState({ notes: state.notes.map(note => (note.id === id ? { ...note, color: chosen } : note)) });
   save();
 }
 
