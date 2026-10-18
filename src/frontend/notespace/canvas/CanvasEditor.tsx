@@ -49,6 +49,7 @@ type CanvasEditorProps = {
   onOpenNoteInNewTab: (id: string) => void;
   onGoToNote: (id: string) => void;
   onOpenCategory: OpenById;
+  onOpenHome: (inNewTab: boolean) => void;
 
   /* Opens a sub-note just added in a text box with the slash menu, ready to be named. */
   onOpenNewPage: (id: string) => void;
@@ -86,7 +87,7 @@ type Gesture =
 /* locked canvas, which can only be looked around (and its links followed). Strokes are kept in */
 /* the note's drawing and text boxes in its content (see boxes.ts), both measured from the */
 /* canvas's starting corner, so undo, search and links work as in documents. */
-export function CanvasEditor({ noteId, history, active, onClose, onOpenNote, onOpenNoteInNewTab, onGoToNote, onOpenCategory, onOpenNewPage, onOpenSettings }: CanvasEditorProps) {
+export function CanvasEditor({ noteId, history, active, onClose, onOpenNote, onOpenNoteInNewTab, onGoToNote, onOpenCategory, onOpenHome, onOpenNewPage, onOpenSettings }: CanvasEditorProps) {
   const note = useNote(noteId);
   useCategories();
   const { drawing: drawingSettings } = usePreferences();
@@ -604,7 +605,7 @@ export function CanvasEditor({ noteId, history, active, onClose, onOpenNote, onO
     <div className={`editor-wrap canvas-wrap ${locked ? 'is-locked' : ''} ${note.color ? 'has-color' : ''}`}>
       <NoteColorStrip color={note.color} />
       <PageBar history={history} className="editor-page-bar">
-        <NoteBreadcrumb note={note} onOpenNote={(id, inNewTab) => (inNewTab ? onOpenNoteInNewTab(id) : onGoToNote(id))} onOpenCategory={onOpenCategory} />
+        <NoteBreadcrumb note={note} onOpenHome={onOpenHome} onOpenNote={(id, inNewTab) => (inNewTab ? onOpenNoteInNewTab(id) : onGoToNote(id))} onOpenCategory={onOpenCategory} />
         <span className="page-bar-fill" />
         <SaveStatus />
 

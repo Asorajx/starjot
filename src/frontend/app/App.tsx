@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type DragEvent, type MouseEvent, type ReactNode } from 'react';
 import { getPreferences, opensInNewTab, updatePreferences, usePreferences, type Spaces } from './preferences';
 import { MobileNav, Sidebar, Topbar, WindowControls } from './Shell';
-import { NOTE_DRAG_TYPE, opensNewTab } from '../lib/clicks';
+import { NOTE_DRAG_TYPE } from '../lib/clicks';
 import { isShortcut, switcherModifier } from './shortcuts';
 import { useDismiss, useEscape } from '../lib/useDismiss';
 import { useMediaQuery } from '../lib/useMediaQuery';
@@ -10,6 +10,7 @@ import { NotesHome, type NoteFilter } from '../notespace/NotesHome';
 import { StarjotHome } from '../home/StarjotHome';
 import { SearchWindow } from '../search/SearchWindow';
 import { ReminderWatcher } from './Reminders';
+import { Breadcrumb } from '../components/Breadcrumb';
 import { Toaster } from '../components/Toaster';
 import { findWhenOpened } from '../notespace/editor/find/pendingFind';
 import type { ViewControls } from '../notespace/editor/EditorPanels';
@@ -635,6 +636,7 @@ export function App() {
           onOpenNoteInNewTab={openNoteInNewTab}
           onGoToNote={id => goHere({ kind: 'note', id })}
           onOpenCategory={openCategory}
+          onOpenHome={openHome}
           onOpenNewPage={openNewPage}
           onOpenSettings={openSettings}
         />
@@ -643,11 +645,7 @@ export function App() {
       screen = (
         <>
           <PageBar history={history}>
-            <nav className="editor-breadcrumb" aria-label="Breadcrumb">
-              <button type="button" className="editor-crumb-link" onClick={event => openHome(opensNewTab(event))}>Notespace</button>
-              <span className="editor-breadcrumb-separator">/</span>
-              <span className="editor-crumb-current">{placeLabel(shown)}</span>
-            </nav>
+            <Breadcrumb items={[{ key: 'home', label: 'Notespace', open: openHome }, { key: shown.id, label: placeLabel(shown) }]} />
           </PageBar>
           <CategoryPage key={shown.id} categoryId={shown.id} onBack={closePage} onOpen={openHere} onOpenInNewTab={openNoteInNewTab} onCreate={(category, kind) => newNote(category, tabGroup.id, tab, kind)} />
         </>
@@ -656,7 +654,7 @@ export function App() {
       screen = (
         <>
           <PageBar history={history}>
-            <nav className="editor-breadcrumb" aria-label="Breadcrumb"><span className="editor-crumb-current">Home</span></nav>
+            <Breadcrumb items={[{ key: 'start', label: 'Home' }]} />
           </PageBar>
           <StarjotHome onOpenNote={openHere} onOpenNotespace={openHome} onOpenBoardspace={() => navigate('boardspace')} onOpenBoardView={openBoardView} />
         </>
@@ -665,7 +663,7 @@ export function App() {
       screen = (
         <>
           <PageBar history={history}>
-            <nav className="editor-breadcrumb" aria-label="Breadcrumb"><span className="editor-crumb-current">Notespace</span></nav>
+            <Breadcrumb items={[{ key: 'home', label: 'Notespace' }]} />
           </PageBar>
           <NotesHome filter={noteFilter} onFilterChange={setNoteFilter} onOpen={openHere} onOpenInNewTab={openNoteInNewTab} onOpenCategory={openCategory} onCreate={kind => newNote(undefined, tabGroup.id, tab, kind)} />
         </>

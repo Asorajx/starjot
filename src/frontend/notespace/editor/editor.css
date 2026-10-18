@@ -800,15 +800,25 @@
   margin: 24px 0 24px;
 }
 
-/* The breadcrumb occupies the former category label area beside All notes. */
+/* The breadcrumb in the page bar (components/Breadcrumb.tsx): a list of steps with chevrons */
+/* between them. */
 .editor-breadcrumb {
   display: flex;
   align-items: center;
-  gap: 12px;
   min-width: 0;
   max-width: min(48vw, 510px);
   color: #66778f;
   font-size: 11px;
+}
+
+.editor-crumbs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
 /* The category and parent pages in the breadcrumb are links to those pages. */
@@ -829,13 +839,34 @@
   text-decoration: underline;
 }
 
-/* A shown parent step. A long parent title shrinks before the current page title does. */
+/* A shown step. A long parent title shrinks before the current page title does. Steps fade */
+/* and slide in one after another as a page opens. */
 .editor-crumb-step {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
   flex-shrink: 4;
   min-width: 40px;
+  animation: crumb-in 200ms cubic-bezier(.23, 1, .32, 1) both;
+  animation-delay: calc(var(--crumb, 0) * 40ms);
+}
+
+.editor-crumb-step.is-current {
+  flex-shrink: 1;
+  min-width: 0;
+}
+
+@keyframes crumb-in {
+  from {
+    opacity: 0;
+    transform: translateX(-4px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .editor-crumb-step {
+    animation: none;
+  }
 }
 
 .editor-crumb-parent {
@@ -910,6 +941,8 @@
 }
 
 .editor-breadcrumb-separator {
+  display: inline-flex;
+  flex-shrink: 0;
   color: #627798;
 }
 
@@ -1000,14 +1033,14 @@
     padding: 24px 16px 64px;
   }
 
+  /* Phones show at most two steps (see Breadcrumb.tsx), in less room. */
   .editor-breadcrumb {
-    gap: 8px;
-    max-width: 34vw;
+    max-width: 44vw;
   }
 
-  /* Phones only have room for the current page title. */
-  .editor-breadcrumb > :not(.editor-crumb-current) {
-    display: none;
+  .editor-crumbs,
+  .editor-crumb-step {
+    gap: 4px;
   }
 }
 

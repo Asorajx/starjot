@@ -76,6 +76,9 @@ type NoteEditorProps = {
   onGoToNote: (id: string) => void;
   onOpenCategory: OpenById;
 
+  /* Opens Notespace Home (the breadcrumb's first step), here or in a new tab. */
+  onOpenHome: (inNewTab: boolean) => void;
+
   /* Opens a sub-page just added with the slash menu, ready to be named. */
   onOpenNewPage: (id: string) => void;
 
@@ -105,7 +108,7 @@ export function NoteEditor(props: NoteEditorProps) {
   return kind === 'canvas' ? <CanvasEditor {...props} /> : <DocumentEditor {...props} />;
 }
 
-function DocumentEditor({ noteId, history, view, active, onClose, onOpenNote, onOpenNoteInNewTab, onGoToNote, onOpenCategory, onOpenNewPage, onOpenSettings }: NoteEditorProps) {
+function DocumentEditor({ noteId, history, view, active, onClose, onOpenNote, onOpenNoteInNewTab, onGoToNote, onOpenCategory, onOpenHome, onOpenNewPage, onOpenSettings }: NoteEditorProps) {
   const note = useNote(noteId);
 
   /* Re-render when categories are renamed, so the breadcrumb stays current. */
@@ -385,7 +388,7 @@ function DocumentEditor({ noteId, history, view, active, onClose, onOpenNote, on
       {/* The note's colour, as a strip under the tab bar that stays while scrolling and typing. */}
       <NoteColorStrip color={note.color} />
       <PageBar history={history} className={`editor-page-bar ${typing && !panel ? 'is-hidden' : ''}`}>
-        <NoteBreadcrumb note={note} onOpenNote={(id, inNewTab) => (inNewTab ? onOpenNoteInNewTab(id) : onGoToNote(id))} onOpenCategory={onOpenCategory} />
+        <NoteBreadcrumb note={note} onOpenHome={onOpenHome} onOpenNote={(id, inNewTab) => (inNewTab ? onOpenNoteInNewTab(id) : onGoToNote(id))} onOpenCategory={onOpenCategory} />
         <span className="page-bar-fill" />
         <SaveStatus />
 
