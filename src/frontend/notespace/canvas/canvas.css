@@ -23,6 +23,12 @@
   touch-action: none;
 }
 
+/* Show dots off (Canvas settings) leaves the background plain (in the dark theme too, whose */
+/* copy of the dots is more specific than .canvas-view.is-plain alone). */
+.canvas-wrap .canvas-view.is-plain {
+  background-image: none;
+}
+
 .canvas-view.is-grabbing,
 .canvas-view.is-grabbing .drawing-surface {
   cursor: grab;
@@ -56,10 +62,11 @@
   cursor: text;
 }
 
-/* The drawing toolbar stays at the right of the canvas instead of following a scrolling page. */
+/* The drawing toolbar stays at the right of the canvas instead of following a scrolling page, */
+/* below the find bar while it is open. */
 .canvas-view .drawing-dock {
   position: absolute;
-  top: 16px;
+  top: calc(16px + var(--find-reach, 0px));
   width: 100%;
 }
 

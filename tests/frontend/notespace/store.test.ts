@@ -70,6 +70,17 @@ describe('note store', () => {
     expect(store.getNotes().find(note => note.id === 'atlas')?.kind).toBe('document');
   });
 
+  it('shows the dots on a canvas unless they are turned off, and remembers the choice', async () => {
+    let store = await openApp();
+    const canvas = store.createNote('', '', 'canvas');
+    expect(canvas.dotsHidden).toBe(false);
+    store.updateNote(canvas.id, { dotsHidden: true });
+
+    vi.resetModules();
+    store = await openApp();
+    expect(store.getNote(canvas.id)?.dotsHidden).toBe(true);
+  });
+
   it('keeps a deleted sample note deleted after reopening', async () => {
     let store = await openApp();
     store.deleteNote('atlas');

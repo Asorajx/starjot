@@ -199,6 +199,18 @@ export function DrawingTools({ session, strokes, layers, activeLayer, onActiveLa
   }
 
   const canvasTool = canvas?.tool ?? null;
+  /* A cancelled stroke (the browser took the pointer, or a second finger began a pinch on a */
+  /* canvas) is dropped rather than saved, and the eraser leaves everything as it was. */
+  function handlePointerCancel(event: ReactPointerEvent<HTMLDivElement>) {
+    const current = gesture.current;
+    if (!current || event.pointerId !== current.id) return;
+    gesture.current = null;
+    const layer = layerRef.current;
+    if (!layer) return;
+    strokeElements(layer, '[data-erasing]').forEach(path => path.removeAttribute('data-erasing'));
+    strokeElements(layer, '.drawing-live').forEach(path => path.removeAttribute('d'));
+  }
+
   const toolButton = (item: ToolButton) => {
     const own = item.name === 'hand' || item.name === 'text';
     const chosen = own ? canvasTool === item.name : !canvasTool && tool === item.name;
@@ -314,7 +326,7 @@ export function DrawingTools({ session, strokes, layers, activeLayer, onActiveLa
           onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
-          onPointerCancel={handlePointerUp}
+          onPointerCancel={handlePointerCancel}
           onPointerLeave={() => setEraserAt(null)}
         >
           {tool === 'eraser' && eraserAt && (

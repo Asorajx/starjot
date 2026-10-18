@@ -56,6 +56,9 @@ export type Note = {
   smallText: boolean;
   fullWidth: boolean;
 
+  /* Canvases only: hides the dots in the background, leaving it plain. */
+  dotsHidden: boolean;
+
   /* A locked note can be read, selected and commented on, but not edited. */
   locked: boolean;
 
@@ -125,7 +128,7 @@ export type DrawingLayerInfo = {
 
 /* The fields an editor may change; everything else is managed by the store. */
 export type NoteChanges = Partial<Pick<Note,
-  'title' | 'subtitle' | 'category' | 'icon' | 'content' | 'mode' | 'stickyIndicator' | 'layout' | 'pageSize' | 'landscape' | 'smallText' | 'fullWidth' | 'locked'
+  'title' | 'subtitle' | 'category' | 'icon' | 'content' | 'mode' | 'stickyIndicator' | 'layout' | 'pageSize' | 'landscape' | 'smallText' | 'fullWidth' | 'dotsHidden' | 'locked'
   | 'detailsHidden'
   | 'pagesHidden' | 'comments' | 'remarks' | 'drawing' | 'drawingLayers'>>;
 

@@ -23,6 +23,10 @@ type FindBarProps = {
   initialWords?: string;
   onClearWithin: () => void;
   onClose: () => void;
+
+  /* A canvas searches its text boxes rather than one editor (root), brings a match into view by */
+  /* moving the canvas (reveal), and saves replaced words back into their boxes (save). */
+  canvas?: { root: () => Element | null; reveal: (range: Range) => void; save: () => void };
 };
 
 
@@ -33,13 +37,17 @@ type FindBarProps = {
 /* Find words in the note (Ctrl+F), going from match to match, and replace them. Enter goes to */
 /* the next match and Shift+Enter to the one before; in the replace box, Enter replaces the */
 /* current match. Escape closes the bar. A locked note can be searched but not changed. */
-export function FindBar({ session, locked, content, within, replacing, initialWords = '', onClearWithin, onClose }: FindBarProps) {
+export function FindBar({ session, locked, content, within, replacing, initialWords = '', onClearWithin, onClose, canvas }: FindBarProps) {
   const [query, setQuery] = useState(initialWords);
   const [replacement, setReplacement] = useState('');
   const [matchCase, setMatchCase] = useState(false);
   const [showReplace, setShowReplace] = useState(replacing && !locked);
   const [current, setCurrent] = useState(0);
   const queryRef = useRef<HTMLInputElement>(null);
+
+  /* The canvas's hooks are new functions on every render, so effects read the latest ones. */
+  const canvasHooks = useRef(canvas);
+  canvasHooks.current = canvas;
 
   /* Matches are found again whenever the note's text changes (typing, replacing), and when undo */
   /* draws the text again (a new revision). */
@@ -51,7 +59,7 @@ export function FindBar({ session, locked, content, within, replacing, initialWo
   /* Searched after the screen updates, so text drawn again by undo is already in place. Undo */
   /* also replaces the selected part searched, so then the whole note is searched instead. */
   useEffect(() => {
-    const body = session.body();
+    const body = canvasHooks.current ? canvasHooks.current.root() : session.body();
     const part = within?.startContainer.isConnected && body?.contains(within.startContainer) ? within : null;
     setScope(part);
     setMatches(body ? findMatches(body, query, matchCase, part) : []);
@@ -73,6 +81,10 @@ export function FindBar({ session, locked, content, within, replacing, initialWo
     showMatches(matches, index, scope);
     const range = matches[index];
     showTabOf(range?.startContainer ?? null);
+    if (canvasHooks.current) {
+      if (range) canvasHooks.current.reveal(range);
+      return;
+    }
     const scroller = session.scroller();
     if (range && scroller) {
       const box = range.getBoundingClientRect();
@@ -93,14 +105,16 @@ export function FindBar({ session, locked, content, within, replacing, initialWo
     if (!range || locked) return;
     session.checkpoint();
     replaceMatch(range, replacement);
-    session.commit();
+    if (canvas) canvas.save();
+    else session.commit();
   }
 
   function replaceEvery() {
     if (!matches.length || locked) return;
     session.checkpoint();
     replaceAll(matches, replacement);
-    session.commit();
+    if (canvas) canvas.save();
+    else session.commit();
   }
 
   function handleFindKey(event: KeyboardEvent<HTMLInputElement>) {
@@ -132,7 +146,7 @@ export function FindBar({ session, locked, content, within, replacing, initialWo
         >
           <Icon name="chevron-right" size={14} className={showReplace ? 'is-turned' : ''} />
         </button>
-        <input ref={queryRef} className="find-input" value={query} placeholder={scope ? 'Find in selection' : 'Find in note'} aria-label="Find" onChange={event => { setQuery(event.target.value); setCurrent(0); }} onKeyDown={handleFindKey} />
+        <input ref={queryRef} className="find-input" value={query} placeholder={scope ? 'Find in selection' : canvas ? 'Find in canvas' : 'Find in note'} aria-label="Find" onChange={event => { setQuery(event.target.value); setCurrent(0); }} onKeyDown={handleFindKey} />
         <span className="find-count" aria-live="polite">{count}</span>
         <button type="button" className={`find-button ${matchCase ? 'is-on' : ''}`} aria-pressed={matchCase} aria-label="Match case" data-tooltip="Match case" onClick={() => setMatchCase(value => !value)}>Aa</button>
         <button type="button" className="find-button" aria-label="Previous match" data-tooltip="Previous" data-shortcut="Shift + Enter" disabled={!matches.length} onClick={() => step(-1)}><Icon name="arrow-up" size={14} /></button>

@@ -160,7 +160,7 @@ async function pageMarkup(note: Note, settings: ExportSettings, included: Set<st
 }
 
 /* The app's own styles, so exported text looks as it does in the note. */
-function appStyles() {
+export function appStyles() {
   return Array.from(document.styleSheets).map(sheet => {
     try {
       return Array.from(sheet.cssRules).map(rule => rule.cssText).join('\n');
@@ -206,18 +206,8 @@ async function buildDocument(notes: Note[], settings: ExportSettings, layout: Ex
 /* exported title and details are not exactly as tall as the app's, so the drawing is moved by */
 /* the difference, measured on the first page. */
 async function laidOut(notes: Note[], settings: ExportSettings, layout: ExportLayout) {
-  const frame = document.createElement('iframe');
-  frame.setAttribute('aria-hidden', 'true');
-  frame.tabIndex = -1;
-  frame.style.cssText = `position: fixed; right: 0; bottom: 0; width: ${Math.ceil(layout.columnWidth) + 120}px; height: 800px; border: 0; opacity: 0; pointer-events: none;`;
-  const html = await buildDocument(notes, settings, layout);
-  await new Promise<void>(resolve => {
-    frame.onload = () => resolve();
-    frame.srcdoc = html;
-    document.body.appendChild(frame);
-  });
+  const frame = await openFrame(await buildDocument(notes, settings, layout), layout.columnWidth + 120);
   const doc = frame.contentDocument as Document;
-  await Promise.all(Array.from(doc.images).map(picture => picture.decode().catch(() => undefined)));
 
   const page = doc.querySelector('.export-page');
   const text = page?.querySelector('.note-content');
@@ -226,6 +216,36 @@ async function laidOut(notes: Note[], settings: ExportSettings, layout: ExportLa
     doc.querySelector<HTMLElement>('.export-root')?.style.setProperty('--drawing-shift', `${Math.round(textTop - layout.textTop)}px`);
   }
   return frame;
+}
+
+/* An exported page, loaded into a hidden frame of the given width with its pictures ready. */
+export async function openFrame(html: string, width: number) {
+  const frame = document.createElement('iframe');
+  frame.setAttribute('aria-hidden', 'true');
+  frame.tabIndex = -1;
+  frame.style.cssText = `position: fixed; right: 0; bottom: 0; width: ${Math.ceil(width)}px; height: 800px; border: 0; opacity: 0; pointer-events: none;`;
+  await new Promise<void>(resolve => {
+    frame.onload = () => resolve();
+    frame.srcdoc = html;
+    document.body.appendChild(frame);
+  });
+  const doc = frame.contentDocument as Document;
+  await Promise.all(Array.from(doc.images).map(picture => picture.decode().catch(() => undefined)));
+  return frame;
+}
+
+/* Open the browser's print window for a frame's page, where it can be saved as a PDF. The frame */
+/* is removed once printing ends, or after a minute in browsers that never say so. */
+export function printFrame(frame: HTMLIFrameElement) {
+  const view = frame.contentWindow;
+  if (!view) {
+    frame.remove();
+    return;
+  }
+  view.addEventListener('afterprint', () => window.setTimeout(() => frame.remove(), 500));
+  window.setTimeout(() => frame.remove(), 60000);
+  view.focus();
+  view.print();
 }
 
 /* Save the note as one HTML file, with its pictures and drawings inside it. */
@@ -239,15 +259,5 @@ export async function exportHtml(notes: Note[], settings: ExportSettings, layout
 /* Open the browser's print window for the note, where it can be saved as a PDF. The page size, */
 /* orientation and scale come from the export settings. */
 export async function exportPdf(notes: Note[], settings: ExportSettings, layout: ExportLayout) {
-  const frame = await laidOut(notes, settings, layout);
-  const view = frame.contentWindow;
-  if (!view) {
-    frame.remove();
-    return;
-  }
-  /* The frame is removed once printing ends, or after a minute in browsers that never say so. */
-  view.addEventListener('afterprint', () => window.setTimeout(() => frame.remove(), 500));
-  window.setTimeout(() => frame.remove(), 60000);
-  view.focus();
-  view.print();
+  printFrame(await laidOut(notes, settings, layout));
 }

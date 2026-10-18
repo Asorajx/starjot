@@ -113,3 +113,10 @@
   color: #d23f3f;
   font-size: 12px;
 }
+
+/* Why Export cannot be used yet (an empty canvas). */
+.export-note {
+  margin: 8px 0 0;
+  color: #5d6f88;
+  font-size: 12px;
+}

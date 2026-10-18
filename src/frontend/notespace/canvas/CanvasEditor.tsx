@@ -23,8 +23,12 @@ import { BlockWidgets } from '../editor/text/BlockWidgets';
 import { LinkTools } from '../editor/links/LinkTools';
 import { ImageTools } from '../editor/images/ImageTools';
 import { TableTools } from '../editor/tables/TableTools';
+import { FindBar } from '../editor/find/FindBar';
+import { takeFindForNote } from '../editor/find/pendingFind';
 import type { SettingsSection } from '../../settings/Settings';
 import { CanvasSettings } from './CanvasSettings';
+import { CanvasExportDialog } from './CanvasExportDialog';
+import type { PlacedBox } from './exportCanvas';
 import { CanvasBoxes, type BoxDrag, type EditingBox } from './CanvasBoxes';
 import { BOX_WIDTH, boxWidth, isEmptyBox, newBoxId, readBoxes, removeBox, writeBox, type CanvasBox } from './boxes';
 import { clampZoom, fitView, zoomAround, type CanvasView } from './view';
@@ -57,6 +61,9 @@ const ZOOM_STEP = 1.25;
 /* Where a canvas starts: its first stroke's corner a little in from the top left, at 100%. */
 const START_VIEW: CanvasView = { x: 48, y: 96, zoom: 1 };
 
+/* How far from the canvas's edges a match found with Find is kept, in screen pixels. */
+const FIND_MARGIN = 64;
+
 /* How far the pointer may move (in screen pixels) for a press to still count as a click. */
 const CLICK_SLOP = 3;
 
@@ -85,6 +92,7 @@ export function CanvasEditor({ noteId, history, active, onClose, onOpenNote, onO
   const { drawing: drawingSettings } = usePreferences();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const [view, setView] = useState<CanvasView>(() => lastViews.get(noteId) ?? START_VIEW);
   const [canvasTool, setCanvasTool] = useState<CanvasTool | null>(null);
   const [spaceHeld, setSpaceHeld] = useState(false);
@@ -92,9 +100,21 @@ export function CanvasEditor({ noteId, history, active, onClose, onOpenNote, onO
   const [editing, setEditing] = useState<EditingBox | null>(null);
   const [selectedBox, setSelectedBox] = useState<string | null>(null);
   const [boxDrag, setBoxDrag] = useState<BoxDrag | null>(null);
+
+  /* The find bar, while open: whether it opened with its replace row (Ctrl + H), and any words to */
+  /* find straight away (a canvas opened from Search shows the words that matched). */
+  const [finding, setFinding] = useState<{ replacing: boolean; words?: string } | null>(() => {
+    const words = takeFindForNote(noteId);
+    return words ? { replacing: false, words } : null;
+  });
   const viewRef = useRef<HTMLDivElement>(null);
   const drawingRef = useRef<HTMLDivElement>(null);
   const gesture = useRef<Gesture | null>(null);
+
+  /* Fingers on the canvas, and a pinch while two of them are down: where it started, and the */
+  /* view then. */
+  const touches = useRef(new Map<number, { x: number; y: number }>());
+  const pinch = useRef<{ ids: number[]; distance: number; midX: number; midY: number; view: CanvasView } | null>(null);
   const panelId = useId();
 
   /* Clicking outside the settings, or Escape, closes them. */
@@ -190,6 +210,45 @@ export function CanvasEditor({ noteId, history, active, onClose, onOpenNote, onO
   /* Leaving the canvas stops writing, so the frame never outlives it. */
   useEffect(() => () => session.setFrame(null), [session]);
 
+  /* Find searches the boxes as they read (writing stops when it opens). A match outside the view */
+  /* is brought to the middle of it; replaced words are saved back into their boxes, as one step. */
+  const findHooks = {
+    root: () => viewRef.current?.querySelector('.canvas-boxes') ?? null,
+    reveal(range: Range) {
+      const shown = viewRef.current?.getBoundingClientRect();
+      const match = range.getBoundingClientRect();
+      if (!shown || (!match.width && !match.height)) return;
+      const inside = match.left >= shown.left + FIND_MARGIN && match.right <= shown.right - FIND_MARGIN
+        && match.top >= shown.top + FIND_MARGIN && match.bottom <= shown.bottom - FIND_MARGIN;
+      if (inside) return;
+      const dx = shown.left + shown.width / 2 - (match.left + match.width / 2);
+      const dy = shown.top + shown.height / 2 - (match.top + match.height / 2);
+      setView(current => ({ ...current, x: current.x + dx, y: current.y + dy }));
+    },
+    save() {
+      let next = getNote(noteId)?.content ?? '';
+      viewRef.current?.querySelectorAll<HTMLElement>('.canvas-box[data-box]').forEach(element => {
+        /* The box being written in (if any) holds the editor rather than its words as read. */
+        const text = element.querySelector('.canvas-box-text, .note-editable');
+        const box = boxes.find(item => item.id === element.dataset.box);
+        if (text && box) next = writeBox(next, box, text.innerHTML);
+      });
+      session.replaceContent(next);
+    }
+  };
+
+  /* The text boxes as laid out (before the canvas's zoom), with their words as shown, for a */
+  /* picture or PDF of the canvas. */
+  function measureBoxes(): PlacedBox[] {
+    return Array.from(viewRef.current?.querySelectorAll<HTMLElement>('.canvas-box[data-box]') ?? []).map(element => ({
+      x: element.offsetLeft,
+      y: element.offsetTop,
+      width: element.offsetWidth,
+      height: element.offsetHeight,
+      html: element.querySelector('.canvas-box-text, .note-editable')?.innerHTML ?? ''
+    }));
+  }
+
   function removeSelectedBox() {
     if (!selectedBox) return;
     session.replaceContent(removeBox(getNote(noteId)?.content ?? '', selectedBox));
@@ -249,6 +308,8 @@ export function CanvasEditor({ noteId, history, active, onClose, onOpenNote, onO
   /* around while dragging. */
   const actions = useRef({ zoomBy, resetZoom, finishEditing, removeSelectedBox, startEditing });
   actions.current = { zoomBy, resetZoom, finishEditing, removeSelectedBox, startEditing };
+  const lockedRef = useRef(locked);
+  lockedRef.current = locked;
   const selectedRef = useRef<CanvasBox | null>(null);
   selectedRef.current = boxes.find(box => box.id === selectedBox) ?? null;
   useEffect(() => {
@@ -264,6 +325,15 @@ export function CanvasEditor({ noteId, history, active, onClose, onOpenNote, onO
         if (editingRef.current) actions.current.finishEditing(true);
         else if (selectedRef.current) setSelectedBox(null);
         else onClose();
+        return;
+      }
+      /* Find (Ctrl + F) and Find and replace (Ctrl + H) search the canvas's text boxes. */
+      const replacing = isShortcut(event, 'replace');
+      if (replacing || isShortcut(event, 'find')) {
+        event.preventDefault();
+        actions.current.finishEditing();
+        setSelectedBox(null);
+        setFinding({ replacing: replacing && !lockedRef.current });
         return;
       }
       const zoomStep = isShortcut(event, 'zoomIn') ? 1 : isShortcut(event, 'zoomOut') ? -1 : isShortcut(event, 'zoomReset') ? 0 : null;
@@ -343,6 +413,15 @@ export function CanvasEditor({ noteId, history, active, onClose, onOpenNote, onO
   function handlePointerDownCapture(event: ReactPointerEvent<HTMLDivElement>) {
     const target = event.target as Element;
     if (target.closest('.drawing-toolbar, .canvas-zoom, .canvas-title, .drawing-selection-bar')) return;
+    if (event.pointerType === 'touch') {
+      touches.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
+      if (pinch.current || touches.current.size === 2) {
+        event.preventDefault();
+        event.stopPropagation();
+        if (!pinch.current) startPinch(event);
+        return;
+      }
+    }
     if (target.closest('.canvas-box.is-editing')) return;
     const link = target.closest<HTMLElement>(LINKS);
 
@@ -378,6 +457,56 @@ export function CanvasEditor({ noteId, history, active, onClose, onOpenNote, onO
       return;
     }
     if (selectedBox) setSelectedBox(null);
+  }
+
+  /* A second finger starts a pinch: whatever the first finger began (a stroke, a box being */
+  /* moved) is called off, and from then on the two fingers move and zoom the canvas, keeping */
+  /* the point between them under them. */
+  function startPinch(event: ReactPointerEvent<HTMLDivElement>) {
+    const first = [...touches.current.keys()].find(id => id !== event.pointerId);
+    const a = first === undefined ? null : touches.current.get(first);
+    if (first === undefined || !a) return;
+    event.currentTarget.setPointerCapture(event.pointerId);
+    viewRef.current?.querySelector('.drawing-surface')?.dispatchEvent(new PointerEvent('pointercancel', { pointerId: first, bubbles: true }));
+    gesture.current = null;
+    setBoxDrag(null);
+    setPanning(false);
+    const box = viewRef.current?.getBoundingClientRect();
+    pinch.current = {
+      ids: [first, event.pointerId],
+      distance: Math.max(1, Math.hypot(event.clientX - a.x, event.clientY - a.y)),
+      midX: (event.clientX + a.x) / 2 - (box?.left ?? 0),
+      midY: (event.clientY + a.y) / 2 - (box?.top ?? 0),
+      view
+    };
+  }
+
+  function handlePointerMoveCapture(event: ReactPointerEvent<HTMLDivElement>) {
+    if (event.pointerType !== 'touch' || !touches.current.has(event.pointerId)) return;
+    touches.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
+    const current = pinch.current;
+    if (!current?.ids.includes(event.pointerId)) return;
+    event.stopPropagation();
+    const [a, b] = current.ids.map(id => touches.current.get(id));
+    const box = viewRef.current?.getBoundingClientRect();
+    if (!a || !b || !box) return;
+    const midX = (a.x + b.x) / 2 - box.left;
+    const midY = (a.y + b.y) / 2 - box.top;
+    const zoom = clampZoom(current.view.zoom * Math.hypot(a.x - b.x, a.y - b.y) / current.distance);
+    const atX = (current.midX - current.view.x) / current.view.zoom;
+    const atY = (current.midY - current.view.y) / current.view.zoom;
+    setView({ x: midX - atX * zoom, y: midY - atY * zoom, zoom });
+  }
+
+  /* A finger lifted ends a pinch; the other finger does nothing more until it is lifted too. */
+  function handlePointerEndCapture(event: ReactPointerEvent<HTMLDivElement>) {
+    if (event.pointerType !== 'touch') return;
+    touches.current.delete(event.pointerId);
+    if (pinch.current) {
+      event.stopPropagation();
+      if (pinch.current.ids.includes(event.pointerId)) pinch.current = { ...pinch.current, ids: [] };
+      if (!touches.current.size) pinch.current = null;
+    }
   }
 
   function handlePointerMove(event: ReactPointerEvent<HTMLDivElement>) {
@@ -427,6 +556,22 @@ export function CanvasEditor({ noteId, history, active, onClose, onOpenNote, onO
     if (box && selecting) startEditing(box, { x: event.clientX, y: event.clientY });
   }
 
+  /* The find bar hangs over the top of the canvas; the drawing toolbar moves down below it */
+  /* (--find-reach), following it as its replace row opens and closes. */
+  useLayoutEffect(() => {
+    const element = viewRef.current;
+    const bar = finding ? element?.closest('.canvas-wrap')?.querySelector<HTMLElement>('.find-bar') : null;
+    if (!element || !bar) return;
+    const measure = () => element.style.setProperty('--find-reach', `${Math.max(0, bar.getBoundingClientRect().bottom - element.getBoundingClientRect().top)}px`);
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(bar);
+    return () => {
+      observer.disconnect();
+      element.style.removeProperty('--find-reach');
+    };
+  }, [finding]);
+
   /* The dots behind the drawing move and grow with it, so moving around can be seen. */
   useLayoutEffect(() => {
     const element = viewRef.current;
@@ -451,7 +596,8 @@ export function CanvasEditor({ noteId, history, active, onClose, onOpenNote, onO
     panning ? 'is-panning' : '',
     boxesOnTop || editing ? 'is-boxes' : '',
     canvasTool === 'text' ? 'is-text' : '',
-    selecting ? 'is-selecting' : ''
+    selecting ? 'is-selecting' : '',
+    note.dotsHidden ? 'is-plain' : ''
   ].filter(Boolean).join(' ');
 
   return (
@@ -498,11 +644,31 @@ export function CanvasEditor({ noteId, history, active, onClose, onOpenNote, onO
           <Icon name="sliders-horizontal" size={17} />
         </button>
 
+        {finding && (
+          <FindBar
+            session={session}
+            locked={locked}
+            content={note.content}
+            within={null}
+            replacing={finding.replacing}
+            initialWords={finding.words}
+            onClearWithin={() => undefined}
+            onClose={() => setFinding(null)}
+            canvas={findHooks}
+          />
+        )}
+
         <CanvasSettings
           id={`${panelId}-settings`}
           note={note}
           open={settingsOpen}
           onClose={() => setSettingsOpen(false)}
+          onExport={() => {
+            setSettingsOpen(false);
+            finishEditing();
+            setSelectedBox(null);
+            setExporting(true);
+          }}
           onDelete={() => { setSettingsOpen(false); setConfirmDelete(true); }}
         />
       </PageBar>
@@ -511,6 +677,9 @@ export function CanvasEditor({ noteId, history, active, onClose, onOpenNote, onO
         ref={viewRef}
         className={viewClasses}
         onPointerDownCapture={handlePointerDownCapture}
+        onPointerMoveCapture={handlePointerMoveCapture}
+        onPointerUpCapture={handlePointerEndCapture}
+        onPointerCancelCapture={handlePointerEndCapture}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
         onPointerCancel={handlePointerUp}
@@ -566,6 +735,7 @@ export function CanvasEditor({ noteId, history, active, onClose, onOpenNote, onO
       <ImageTools session={session} locked={locked} />
       <TableTools session={session} locked={locked} />
 
+      {exporting && <CanvasExportDialog note={note} boxes={boxes} measure={measureBoxes} onClose={() => setExporting(false)} />}
       {confirmDelete && <DeleteNoteDialog noteId={note.id} onConfirm={removeNote} onCancel={() => setConfirmDelete(false)} />}
     </div>
   );

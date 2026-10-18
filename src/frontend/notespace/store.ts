@@ -99,6 +99,7 @@ function normalizeNote(raw: unknown): Note | null {
     landscape: record.landscape === true,
     smallText: record.smallText === true,
     fullWidth: record.fullWidth === true,
+    dotsHidden: record.dotsHidden === true,
     locked: record.locked === true,
     unlockedUntil: typeof record.unlockedUntil === 'string' && !Number.isNaN(Date.parse(record.unlockedUntil)) ? record.unlockedUntil : null,
     remarks: cleanHtml(String(record.remarks ?? '').slice(0, REMARKS_LENGTH)),
@@ -258,6 +259,7 @@ export function updateNote(id: string, changes: NoteChanges, persist = true) {
   if (typeof changes.landscape === 'boolean') next.landscape = changes.landscape;
   if (typeof changes.smallText === 'boolean') next.smallText = changes.smallText;
   if (typeof changes.fullWidth === 'boolean') next.fullWidth = changes.fullWidth;
+  if (typeof changes.dotsHidden === 'boolean') next.dotsHidden = changes.dotsHidden;
   if (changes.remarks !== undefined) next.remarks = cleanHtml(String(changes.remarks).slice(0, REMARKS_LENGTH));
   if (changes.comments) next.comments = normalizeComments(changes.comments);
   if (changes.drawing) next.drawing = normalizeDrawing(changes.drawing);

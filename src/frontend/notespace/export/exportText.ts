@@ -91,6 +91,12 @@ function blocks(parent: Element): string {
 }
 
 
+/* Some note HTML as plain text (a canvas's text box, when exporting a canvas). */
+export function textOf(root: Element) {
+  return blocks(root);
+}
+
+
 /* =========================
    Pages
    ========================= */

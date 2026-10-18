@@ -23,7 +23,7 @@ type ExportDialogProps = {
    Export Window Rows
    ========================= */
 
-function Row({ label, children }: { label: string; children: ReactNode }) {
+export function Row({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div className="export-row">
       <span className="export-label">{label}</span>
@@ -41,7 +41,7 @@ type ChoiceProps<T extends string> = {
 };
 
 /* A dropdown on the right of a row, showing its choice as plain text until pointed at. */
-function Choice<T extends string>({ label, value, options, disabled = false, onChange }: ChoiceProps<T>) {
+export function Choice<T extends string>({ label, value, options, disabled = false, onChange }: ChoiceProps<T>) {
   return <Dropdown label={label} className="export-select" alignEnd value={value} options={options} disabled={disabled} onChange={onChange} />;
 }
 
