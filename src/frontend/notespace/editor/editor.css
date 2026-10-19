@@ -1505,3 +1505,22 @@
 .note-detail-field::placeholder {
   color: #647794;
 }
+
+/* The View buttons' long tooltips hang under the whole row (the row is their anchor, not the */
+/* button), so they fit inside the panel whichever button is pointed at. */
+.option-grid.is-icons {
+  position: relative;
+}
+
+.option-grid.is-icons > [data-tooltip] {
+  position: static;
+}
+
+.option-grid.is-icons > [data-tooltip]:hover::after,
+.option-grid.is-icons > [data-tooltip]:focus-visible::after {
+  left: 0;
+  right: 0;
+  width: auto;
+  max-width: none;
+  transform: none;
+}
