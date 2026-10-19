@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Icon } from '../../components/Icon';
 import { Switch } from '../../components/Switch';
+import { Dropdown } from '../../components/Dropdown';
 import { NoteColorPicker } from '../NoteColors';
-import { updateNote } from '../store';
+import { updateNote, useCategories } from '../store';
 import { copyPageLink } from '../editor/links/links';
 import type { Note } from '../../../shared/types/note';
 
@@ -27,6 +28,7 @@ type CanvasSettingsProps = {
 export function CanvasSettings({ id, note, open, onClose, onExport, onDelete }: CanvasSettingsProps) {
   /* "Copied" shows until the panel is closed. */
   const [copied, setCopied] = useState(false);
+  const categories = useCategories();
   useEffect(() => {
     if (!open) setCopied(false);
   }, [open]);
@@ -69,6 +71,20 @@ export function CanvasSettings({ id, note, open, onClose, onExport, onDelete }: 
         >
           <Icon name={note.locked ? 'lock' : 'unlock'} size={16} /> {note.locked ? 'Locked' : 'Lock'}
         </button>
+      </div>
+
+      {/* A canvas sits in a category like a document (whose category is in its details): its */}
+      {/* name on the left and a small chooser at the side. */}
+      <div className="side-setting side-setting--border canvas-category-row">
+        <strong>Category</strong>
+        <Dropdown
+          label="Category"
+          alignEnd
+          disabled={note.locked}
+          value={note.category}
+          options={[{ value: '', label: 'None' }, ...categories.map(category => ({ value: category.id, label: category.name, icon: 'folder' as const }))]}
+          onChange={category => updateNote(note.id, { category })}
+        />
       </div>
 
       <div className="side-setting side-setting--border">

@@ -209,3 +209,11 @@
   cursor: ew-resize;
   transform: translateY(-50%);
 }
+
+/* Category in Canvas settings: its name on the left, the chooser at the side. */
+.canvas-category-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
