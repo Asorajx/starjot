@@ -41,7 +41,8 @@ export const FIXED_SHORTCUTS: { action: string; group: ShortcutGroup; keys: stri
   { action: 'Close a window or menu, or go back', group: 'Everywhere', keys: ['Esc'] },
   { action: 'Undo and redo', group: 'In a note', keys: ['Ctrl+Z', 'Ctrl+Y'] },
   { action: 'Bold, italic and underline', group: 'In a note', keys: ['Ctrl+B', 'Ctrl+I', 'Ctrl+U'] },
-  { action: 'Open or close a toggle', group: 'In a note', keys: ['Ctrl+Enter'] }
+  { action: 'Open or close a toggle', group: 'In a note', keys: ['Ctrl+Enter'] },
+  { action: 'Indent or outdent a list item', group: 'In a note', keys: ['Tab', 'Shift+Tab'] }
 ];
 
 /* Keys that cannot be given to a shortcut, and why: the computer or the browser keeps them, or */

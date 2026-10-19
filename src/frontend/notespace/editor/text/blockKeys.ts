@@ -1,4 +1,5 @@
 import { addRow, cellsInRow, tableGrid } from '../tables/tables';
+import { getRange, setRange } from './caret';
 import { caretAtEdge, caretElement, closestAtCaret, emptyParagraph, isEmptyContent, placeCaret } from './dom';
 import { joinLineOfToggle, toggleBody, withBreak, type LineChange } from './lines';
 import { tabKeys } from './tabs';
@@ -426,6 +427,50 @@ function listKeys(event: KeyboardEvent, root: HTMLElement): KeyResult | null {
   return { kind: 'lines', focus: paragraph, atEnd: false };
 }
 
+/* The list inside an item that a moved item joins: its last list of the same kind, or a new one */
+/* added at its end. */
+function nestedList(item: Element, like: Element) {
+  const last = item.lastElementChild;
+  if (last?.tagName === like.tagName && last.className === like.className) return last;
+  const list = like.cloneNode(false) as HTMLElement;
+  item.append(list);
+  return list;
+}
+
+/* Tab nests the selected list items under the item above them; Shift + Tab moves them out one */
+/* level, after the item they were in, taking the items below them along as their own nested */
+/* items (as in Google Docs). The first item of a list cannot go deeper, and a top-level item */
+/* cannot come out (Backspace does that); either way the key does nothing, so focus stays in the */
+/* note. Moving items loses the selection, so it is put back by its place in the text. */
+function listIndentKeys(event: KeyboardEvent, root: HTMLElement): KeyResult | null {
+  if (event.key !== 'Tab' || event.altKey || event.ctrlKey || event.metaKey) return null;
+  const item = closestAtCaret<HTMLLIElement>('li');
+  const list = item?.parentElement;
+  const range = window.getSelection()?.getRangeAt(0);
+  if (!item || !list || !range || !root.contains(item) || !list.matches('ul, ol')) return null;
+  event.preventDefault();
+  const items = Array.from(list.children).filter(child => child === item || range.intersectsNode(child));
+  const first = items[0];
+  const last = items[items.length - 1];
+  const caret = getRange(root);
+
+  if (!event.shiftKey) {
+    const above = first.previousElementSibling;
+    if (!above) return { kind: 'blocked' };
+    nestedList(above, list).append(...items);
+  } else {
+    const outer = list.parentElement;
+    if (outer?.tagName !== 'LI') return { kind: 'blocked' };
+    const below = [];
+    for (let next = last.nextElementSibling; next; next = next.nextElementSibling) below.push(next);
+    if (below.length) nestedList(last, list).append(...below);
+    outer.after(...items);
+    if (!list.childElementCount) list.remove();
+  }
+  if (caret) setRange(root, caret.start, caret.end);
+  return { kind: 'changed' };
+}
+
 /* Enter in a checklist item moves the text after the caret into a new, unticked item below (the */
 /* browser would copy the tick). Enter in an empty item leaves the list, like other lists. */
 function splitChecklistItem(event: KeyboardEvent, item: HTMLLIElement): KeyResult {
@@ -449,5 +494,5 @@ export function handleBlockKeys(event: KeyboardEvent, root: HTMLElement): KeyRes
   leaveCommentMark(event);
   const cell = closestAtCaret<HTMLTableCellElement>('td, th');
   if (cell && root.contains(cell)) return cellKeys(event, cell);
-  return enterTableKeys(event) ?? headingKeys(event, root) ?? tabKeys(event) ?? toggleKeys(event) ?? listKeys(event, root);
+  return enterTableKeys(event) ?? headingKeys(event, root) ?? tabKeys(event) ?? toggleKeys(event) ?? listIndentKeys(event, root) ?? listKeys(event, root);
 }

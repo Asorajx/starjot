@@ -269,6 +269,29 @@ describe('headings and lists', () => {
     expect(body.innerHTML).toBe('<h3>Plan</h3>');
   });
 
+  it('Tab nests a list item under the one above, joining its nested list', () => {
+    const body = editor('<ul><li>A<ul><li>A1</li></ul></li><li>B</li><li>C</li></ul>');
+    placeCaret(body.querySelectorAll('li')[2].firstChild as Node, 1);
+    expect(handleBlockKeys(press('Tab'), body)).toEqual({ kind: 'changed' });
+    expect(body.innerHTML).toBe('<ul><li>A<ul><li>A1</li><li>B</li></ul></li><li>C</li></ul>');
+  });
+
+  it('Shift + Tab moves an item out after its parent, taking the items below it along', () => {
+    const body = editor('<ol><li>A<ol><li>A1</li><li>A2</li><li>A3</li></ol></li><li>B</li></ol>');
+    placeCaret(body.querySelectorAll('li')[2].firstChild as Node, 0);
+    expect(handleBlockKeys(press('Tab', true), body)).toEqual({ kind: 'changed' });
+    expect(body.innerHTML).toBe('<ol><li>A<ol><li>A1</li></ol></li><li>A2<ol><li>A3</li></ol></li><li>B</li></ol>');
+  });
+
+  it('Tab on a first item, or Shift + Tab on a top-level one, changes nothing', () => {
+    const body = editor('<ul><li>A</li><li>B</li></ul>');
+    placeCaret(body.querySelector('li')?.firstChild as Node, 0);
+    expect(handleBlockKeys(press('Tab'), body)).toEqual({ kind: 'blocked' });
+    placeCaret(body.querySelectorAll('li')[1].firstChild as Node, 0);
+    expect(handleBlockKeys(press('Tab', true), body)).toEqual({ kind: 'blocked' });
+    expect(body.innerHTML).toBe('<ul><li>A</li><li>B</li></ul>');
+  });
+
   it('joins lists of the same kind side by side, but not different kinds', () => {
     const body = editor('<ul><li>A</li></ul><ul><li>B</li></ul><ul><li>C</li></ul><ol><li>1</li></ol><ul class="checklist"><li>T</li></ul><ol><li>2</li></ol>');
     expect(joinAdjacentLists(body)).toBe(true);
