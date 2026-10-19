@@ -43,7 +43,9 @@ export function Breadcrumb({ items, label = 'Breadcrumb' }: { items: Crumb[]; la
                 if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setPathOpen(false);
               }}
             >
-              <button type="button" className="editor-crumb-link" aria-label="Show the full path" aria-expanded={pathOpen}>…</button>
+              <button type="button" className="editor-crumb-link" aria-label="Show the full path" aria-expanded={pathOpen}>
+                <Icon name="more-horizontal" size={14} />
+              </button>
               {pathOpen && (
                 <span className="editor-crumb-path" role="menu" aria-label="Full path">
                   {items.map((crumb, index) => (crumb.open && index < items.length - 1 ? (

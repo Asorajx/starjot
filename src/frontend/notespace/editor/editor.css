@@ -330,6 +330,7 @@
 .note-title-input {
   display: block;
   width: 100%;
+  text-overflow: ellipsis;
   margin: 0 0 12px;
   padding: 0;
   background: transparent;
@@ -882,10 +883,14 @@
   text-overflow: ellipsis;
 }
 
-/* "…" stands in for the pages between the category and the parent page. */
+/* "…" stands in for the steps folded away. Its dots are an icon, centred on the line. */
 .editor-crumb-folded {
   position: relative;
   flex-shrink: 0;
+}
+
+.editor-crumb-folded .editor-crumb-link {
+  display: flex;
 }
 
 /* The full path, shown below "…". The top padding bridges the gap so the pointer can move into it. */
@@ -1439,6 +1444,7 @@
 .note-detail-field {
   width: 100%;
   max-width: 420px;
+  text-overflow: ellipsis;
   height: 30px;
   padding: 0 8px;
   margin-left: -8px;

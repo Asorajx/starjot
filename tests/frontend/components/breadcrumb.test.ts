@@ -26,7 +26,8 @@ function render(items: Crumb[]) {
   return holder;
 }
 
-const steps = (holder: Element) => Array.from(holder.querySelectorAll('.editor-crumb-step')).map(step => step.textContent);
+/* Each step's words, with the folded steps' button as "…". */
+const steps = (holder: Element) => Array.from(holder.querySelectorAll('.editor-crumb-step')).map(step => (step.querySelector('[aria-label="Show the full path"]') ? '…' : step.textContent));
 const trail = (count: number) => Array.from({ length: count }, (_, index) => ({ key: `k${index}`, label: `Step ${index + 1}`, open: vi.fn() }));
 
 

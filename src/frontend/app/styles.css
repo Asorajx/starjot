@@ -806,7 +806,9 @@ p {
   flex-shrink: 0;
   width: 28px;
   height: 28px;
-  margin-bottom: 4px;
+
+  /* Centred on the 32px tabs beside it, which sit on the bottom of the bar. */
+  margin-bottom: 2px;
   padding: 0;
   border: 0;
   border-radius: 4px;

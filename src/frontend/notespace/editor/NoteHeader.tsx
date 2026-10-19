@@ -4,7 +4,7 @@ import { EmojiPicker } from '../../components/EmojiPicker';
 import { Icon } from '../../components/Icon';
 import { usePreferences } from '../../app/preferences';
 import { noteIcon, noteTitle, scheduleSave, UNTITLED_NOTE, updateNote, useCategories, useNotes } from '../store';
-import { isEmptyContent, wrapLooseLines } from './text/dom';
+import { isEmptyContent, placeCaret, wrapLooseLines } from './text/dom';
 import { linkTypedAddress } from './links/links';
 import { applyMarkdownShortcut } from './text/markdown';
 import { deleteSelection, insertPasted } from './text/paste';
@@ -147,6 +147,20 @@ export function NoteHeader({ note, locked, onOpenNote }: NoteHeaderProps) {
     setPicking(false);
   };
 
+  /* Enter in the title moves on to the start of the note's text, ready to write (in either */
+  /* view: the first line of the note, or of its first block). */
+  function moveIntoText(event: KeyboardEvent<HTMLInputElement>) {
+    if (event.key !== 'Enter' || event.nativeEvent.isComposing || locked) return;
+    const content = event.currentTarget.closest('.editor-width')?.querySelector('.note-content');
+    const editable = content?.querySelector<HTMLElement>('[contenteditable="true"]');
+    const first = content?.querySelector('[data-note-editable]');
+    const line = first?.firstElementChild ?? first;
+    if (!editable || !line) return;
+    event.preventDefault();
+    editable.focus({ preventScroll: true });
+    placeCaret(line);
+  }
+
   return (
     <div className="note-header">
       {note.icon && (
@@ -193,6 +207,7 @@ export function NoteHeader({ note, locked, onOpenNote }: NoteHeaderProps) {
         readOnly={locked}
         value={note.title}
         onChange={event => changeText({ title: event.target.value })}
+        onKeyDown={moveIntoText}
       />
 
       {!note.detailsHidden && (
