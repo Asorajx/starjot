@@ -5,6 +5,9 @@ import { Icon } from './Icon';
 type DateTimePickerProps = {
   value: Date;
   onChange: (value: Date) => void;
+
+  /* Leave out the time, for choosing a day only. */
+  dateOnly?: boolean;
 };
 
 /* Times offered, every 15 minutes through the day. */
@@ -37,7 +40,7 @@ function timeLabel(minutes: number) {
 /* A date and time in the app's own style, in place of the browser's: a month calendar (← → ↑ ↓ */
 /* move the day, Page Up and Page Down the month) and a time, every 15 minutes (a time between */
 /* those, already chosen, is kept in the list). Each change is passed on straight away. */
-export function DateTimePicker({ value, onChange }: DateTimePickerProps) {
+export function DateTimePicker({ value, onChange, dateOnly = false }: DateTimePickerProps) {
   const [month, setMonth] = useState(() => new Date(value.getFullYear(), value.getMonth(), 1));
   const today = new Date();
   const minutes = value.getHours() * 60 + value.getMinutes();
@@ -102,15 +105,17 @@ export function DateTimePicker({ value, onChange }: DateTimePickerProps) {
           );
         })}
       </div>
-      <div className="date-picker-time">
-        <Icon name="clock" size={14} />
-        <Dropdown
-          label="Time"
-          value={String(minutes)}
-          options={steps.map(step => ({ value: String(step), label: timeLabel(step) }))}
-          onChange={chosen => onChange(new Date(value.getFullYear(), value.getMonth(), value.getDate(), Math.floor(Number(chosen) / 60), Number(chosen) % 60))}
-        />
-      </div>
+      {!dateOnly && (
+        <div className="date-picker-time">
+          <Icon name="clock" size={14} />
+          <Dropdown
+            label="Time"
+            value={String(minutes)}
+            options={steps.map(step => ({ value: String(step), label: timeLabel(step) }))}
+            onChange={chosen => onChange(new Date(value.getFullYear(), value.getMonth(), value.getDate(), Math.floor(Number(chosen) / 60), Number(chosen) % 60))}
+          />
+        </div>
+      )}
     </div>
   );
 }

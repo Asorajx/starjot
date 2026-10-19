@@ -4,6 +4,7 @@ import { Icon } from '../components/Icon';
 import { TASKS } from '../../backend/data/sampleTasks';
 import type { BoardTab, StatusTab, Task } from '../../shared/types/task';
 import { BOARD_TABS, TAB_DESCRIPTIONS } from './data';
+import { Timeline } from './timeline/Timeline';
 
 type BoardspaceProps = {
   tab: BoardTab;
@@ -90,31 +91,20 @@ function BoardspaceTabs({ tab, onTabChange }: BoardspaceProps) {
    Boardspace Views
    ========================= */
 
-/* The Gantt chart is a separate page in public/gantt, embedded so its scripts and styles stay isolated. */
+/* The Gantt timeline of the project's sprints and work (see timeline/Timeline.tsx). */
 function TimelineView(props: BoardspaceProps) {
   return (
     <div className="content-pad board-page board-page--timeline">
       <div className="page-intro board-intro">
         <div>
           <h1>Boardspace</h1>
-          <p>View the schedule across sprints, epics, features, and tasks.</p>
+          <p>Plan sprints and see epics, features and tasks across the calendar.</p>
         </div>
       </div>
 
       <div className="board-panel">
         <BoardspaceTabs {...props} />
-        <section className="timeline-integration" aria-label="Project Gantt timeline">
-          <iframe
-            className="timeline-integration-frame"
-            src={`${import.meta.env.BASE_URL}gantt/index.html?embed=1`}
-            title="Editable Gantt timeline and sprint planner"
-            loading="eager"
-          />
-          <p className="timeline-integration-note">
-            <Icon name="info" size={15} /> The timeline saves changes in this browser. Boardspace's other tabs
-            currently show sample cards and are not connected to these tasks yet.
-          </p>
-        </section>
+        <Timeline />
       </div>
     </div>
   );

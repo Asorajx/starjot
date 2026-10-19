@@ -8,7 +8,6 @@ src/frontend/app/dark-theme.css
 # Local notes and documentation kept off GitHub
 docs/
 assets/README.md
-public/gantt/README.md
 
 # Local editor settings
 .vscode/

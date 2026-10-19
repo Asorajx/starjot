@@ -343,7 +343,6 @@ function SettingsSectionContent({ section }: { section: SettingsSection }) {
             </div>
           </Row>
         </Group>
-        <div className="info-banner"><Icon name="info" size={17} /> Dark mode covers Notespace, Boardspace and Settings. The Gantt timeline in Boardspace stays light for now.</div>
       </>
     );
   }

@@ -119,3 +119,58 @@
     height: 44px;
   }
 }
+
+
+/* =========================
+   Date Field
+   ========================= */
+
+/* A day in a form: a button showing it, with the calendar opening under it. */
+.date-field {
+  position: relative;
+  display: flex;
+}
+
+.date-field-button {
+  display: inline-flex;
+  flex: 1;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  min-width: 0;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--paper);
+  color: var(--ink);
+  font: inherit;
+  font-size: 12px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.date-field-button:hover {
+  border-color: var(--accent-line);
+}
+
+.date-field-button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.date-field-popover {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 95;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--paper);
+  box-shadow: 0 10px 30px rgba(28, 54, 96, .18);
+}
+
+.date-field-popover.is-end {
+  right: 0;
+  left: auto;
+}

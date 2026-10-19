@@ -1,56 +1,1036 @@
 /* =========================
-   Boardspace Timeline Integration
+   Boardspace Timeline
    ========================= */
 
-/* Give the wide timeline more room without changing the other Boardspace views. */
+/* The timeline page uses the full width, since the calendar is wide. */
 .board-page--timeline {
   width: 100%;
   max-width: none;
-  padding: 32px 32px 32px;
+  padding: 32px;
 }
 
-.timeline-integration {
+.timeline-card {
+  --meta-width: 600px;
+  display: flex;
+  flex-direction: column;
   min-width: 0;
-  padding: 0;
+  background: var(--paper);
 }
 
-/* The embedded tool handles its own scrolling, dialogs, and responsive layout. */
-.timeline-integration-frame {
-  display: block;
-  width: 100%;
-  height: clamp(570px, calc(100dvh - 270px), 1000px);
+/* "More room for the timeline" hides the Status and Assignee columns. */
+.timeline-card.is-wide {
+  --meta-width: 320px;
+}
+
+.timeline-card.is-wide .timeline-cell-status,
+.timeline-card.is-wide .timeline-cell-assignee {
+  display: none;
+}
+
+.timeline-top,
+.timeline-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--line);
+}
+
+.timeline-fill {
+  flex: 1;
+}
+
+/* The project's name, edited in place. */
+.timeline-title {
+  flex: 0 1 320px;
+  min-width: 0;
+  height: 36px;
+  margin-left: -8px;
+  padding: 0 8px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 16px;
+  font-weight: 750;
+  text-overflow: ellipsis;
+}
+
+.timeline-title:hover {
+  border-color: var(--line);
+}
+
+.timeline-title:focus {
+  border-color: var(--accent);
+  outline: none;
+}
+
+.timeline-search {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  width: 240px;
+  max-width: 100%;
+  height: 32px;
+  padding: 0 8px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  color: #5d6f88;
+}
+
+.timeline-search:focus-within {
+  border-color: var(--accent);
+}
+
+.timeline-search input {
+  flex: 1;
+  min-width: 0;
   border: 0;
-  background: #fff;
+  outline: none;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 12px;
 }
 
-.timeline-integration-note {
+.timeline-counts {
+  color: #5d6f88;
+  font-size: 12px;
+}
+
+/* Day, Week and Month, side by side. */
+.timeline-zoom {
+  display: inline-flex;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+}
+
+.timeline-zoom button {
+  height: 30px;
+  padding: 0 12px;
+  border: 0;
+  background: transparent;
+  color: #56657b;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.timeline-zoom button + button {
+  border-left: 1px solid var(--line);
+}
+
+.timeline-zoom button.is-active {
+  background: var(--accent-soft);
+  color: var(--accent-text);
+}
+
+.timeline-zoom button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+
+/* =========================
+   Grid
+   ========================= */
+
+/* The grid scrolls both ways inside the card: the header stays at the top and the work column */
+/* at the left. Week lines and today's line are drawn on every row's calendar. */
+.timeline-body {
+  position: relative;
+  min-width: 0;
+}
+
+.timeline-scroll {
+  position: relative;
+  height: clamp(420px, calc(100dvh - 300px), 1000px);
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+
+.timeline-grid {
+  width: max-content;
+  min-width: 100%;
+}
+
+.timeline-row {
+  display: flex;
+  min-height: 36px;
+  border-bottom: 1px solid #edf1f7;
+  background: #ffffff;
+}
+
+.timeline-row.is-sprint {
+  min-height: 40px;
+  background: #f4f8ff;
+}
+
+.timeline-meta {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  display: flex;
+  flex-shrink: 0;
+  width: var(--meta-width);
+  border-right: 1px solid var(--line);
+  background: inherit;
+}
+
+.timeline-cell-work {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  padding: 0 8px;
+}
+
+.timeline-cell-status {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  width: 136px;
+  padding: 0 8px;
+}
+
+.timeline-cell-assignee {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 8px;
+  width: 168px;
+  min-width: 0;
+  padding: 0 8px;
+}
+
+.timeline-lane {
+  position: relative;
+  flex-shrink: 0;
+  width: var(--lane-width);
+  background-image: repeating-linear-gradient(to right, transparent 0 calc(var(--week-width) - 1px), #eef2f8 calc(var(--week-width) - 1px) var(--week-width));
+}
+
+.timeline-lane::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: var(--today-x);
+  width: 2px;
+  background: var(--accent);
+  opacity: .45;
+  pointer-events: none;
+}
+
+/* The header: column names, then month names over the day marks. */
+.timeline-head {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  min-height: 56px;
+  background: #f7f9fc;
+}
+
+.timeline-head .timeline-meta {
+  z-index: 4;
+  align-items: flex-end;
+  padding-bottom: 8px;
+  color: #56657b;
+  font-size: 11px;
+  font-weight: 750;
+  letter-spacing: .6px;
+  text-transform: uppercase;
+}
+
+.timeline-head .timeline-cell-work {
+  padding-left: 12px;
+}
+
+.timeline-months span,
+.timeline-ticks span {
+  position: absolute;
+  overflow: hidden;
+  padding: 0 8px;
+  color: #56657b;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.timeline-months span {
+  top: 8px;
+  font-weight: 700;
+  border-left: 1px solid var(--line);
+}
+
+.timeline-ticks span {
+  top: 32px;
+  border-left: 1px solid #e3e9f2;
+}
+
+.timeline-ticks span.is-current {
+  color: var(--accent-text);
+  font-weight: 700;
+}
+
+/* While a row is dragged by its handle, where it would land: a line above or below an item, */
+/* a tint inside an item, or a tint on a sprint's heading. */
+.timeline-row.is-drop-before {
+  box-shadow: inset 0 2px 0 var(--accent);
+}
+
+.timeline-row.is-drop-after {
+  box-shadow: inset 0 -2px 0 var(--accent);
+}
+
+.timeline-row.is-drop-inside,
+.timeline-row.is-drop-section {
+  background: var(--accent-soft);
+}
+
+
+/* =========================
+   Row Parts
+   ========================= */
+
+.timeline-handle {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 16px;
+  height: 24px;
+  color: #8a98ad;
+  cursor: grab;
+}
+
+.timeline-handle.is-empty {
+  cursor: default;
+}
+
+/* Handles, folds and add buttons stay quiet until their row is pointed at. */
+.timeline-row:not(:hover, :focus-within) .timeline-handle,
+.timeline-row:not(:hover, :focus-within) .timeline-add {
+  opacity: 0;
+}
+
+.timeline-fold,
+.timeline-add,
+.timeline-search-clear {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: #5d6f88;
+  cursor: pointer;
+}
+
+.timeline-fold.is-empty {
+  cursor: default;
+}
+
+.timeline-fold .icon {
+  transition: transform .15s ease;
+}
+
+.timeline-fold.is-folded .icon {
+  transform: rotate(-90deg);
+}
+
+.timeline-fold:hover:not(.is-empty),
+.timeline-add:hover,
+.timeline-search-clear:hover {
+  background: var(--accent-faint);
+  color: var(--accent-text);
+}
+
+.timeline-fold:focus-visible,
+.timeline-add:focus-visible,
+.timeline-name:focus-visible,
+.timeline-handle:focus-visible,
+.timeline-search-clear:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+  opacity: 1;
+}
+
+/* A small coloured square for each kind of work. */
+.timeline-type {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  color: #ffffff;
+}
+
+.timeline-type.is-epic {
+  background: #7c5cc4;
+}
+
+.timeline-type.is-feature {
+  background: #2f6fde;
+}
+
+.timeline-type.is-task {
+  background: #1f8a70;
+}
+
+.timeline-name {
+  min-width: 0;
+  overflow: hidden;
+  padding: 4px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 12px;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.timeline-row.is-sprint .timeline-name {
+  font-weight: 750;
+}
+
+.timeline-name:hover {
+  color: var(--accent-text);
+  text-decoration: underline;
+}
+
+.timeline-name.is-static {
+  cursor: default;
+}
+
+.timeline-name.is-static:hover {
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.timeline-count {
+  flex-shrink: 0;
+  min-width: 20px;
+  padding: 0 4px;
+  border-radius: 4px;
+  background: #eef2f8;
+  color: #56657b;
+  font-size: 11px;
+  font-weight: 650;
+  line-height: 18px;
+  text-align: center;
+}
+
+.timeline-dates {
+  overflow: hidden;
+  color: #56657b;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.timeline-progress {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.timeline-progress-track {
+  flex: 1;
+  height: 6px;
+  overflow: hidden;
+  border-radius: 4px;
+  background: #e3e9f2;
+}
+
+.timeline-progress-track b {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+}
+
+.timeline-progress-value {
+  color: #56657b;
+  font-size: 11px;
+  font-weight: 650;
+}
+
+/* A work item's status as a tinted chip, which opens the status choices. */
+.timeline-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 24px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 4px;
+  background: #eef2f8;
+  color: #45566f;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.timeline-status.is-progress {
+  background: #e3edff;
+  color: #2457b8;
+}
+
+.timeline-status.is-review {
+  background: #efe8fb;
+  color: #6340a8;
+}
+
+.timeline-status.is-done {
+  background: #e2f4ec;
+  color: #1c6d52;
+}
+
+.timeline-status.is-blocked {
+  background: #fde8e7;
+  color: #b42d27;
+}
+
+.timeline-avatar {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  font-size: 11px;
+}
+
+.timeline-assignee {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  overflow: hidden;
+  padding: 4px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: #45566f;
+  font: inherit;
+  font-size: 12px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.timeline-assignee:hover {
+  background: var(--accent-faint);
+}
+
+.timeline-status:focus-visible,
+.timeline-assignee:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+
+/* =========================
+   Bars
+   ========================= */
+
+.timeline-bar {
+  position: absolute;
+  top: 50%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 24px;
+  overflow: hidden;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 4px;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 650;
+  white-space: nowrap;
+  transform: translateY(-50%);
+  user-select: none;
+}
+
+.timeline-bar span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.timeline-bar:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* A sprint's bar is its period, in the accent tint; clicking it edits the sprint. */
+.timeline-bar.is-sprint {
+  border-left: 3px solid var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent-text);
+  cursor: pointer;
+}
+
+/* A work item's bar, in its own colour: drag the middle to move it, an end to change its length. */
+.timeline-bar.is-work {
+  background: var(--bar-color);
+  color: #ffffff;
+  cursor: grab;
+  touch-action: none;
+}
+
+.timeline-bar.is-work.is-dragging {
+  box-shadow: 0 4px 12px rgba(16, 24, 40, .24);
+  cursor: grabbing;
+}
+
+/* An epic's bar shows its task completion at its end. */
+.timeline-bar em {
+  margin-left: auto;
+  font-style: normal;
+  opacity: .9;
+}
+
+.timeline-bar-end {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 8px;
+  cursor: ew-resize;
+}
+
+.timeline-bar-end.is-start {
+  left: 0;
+}
+
+.timeline-bar-end.is-end {
+  right: 0;
+}
+
+/* The new dates beside the pointer while a bar is dragged. */
+.timeline-drag-label {
+  position: fixed;
+  z-index: 85;
+  padding: 4px 8px;
+  border-radius: 4px;
+  background: #202c43;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 650;
+  pointer-events: none;
+}
+
+.timeline-empty {
+  position: absolute;
+  top: 120px;
+  left: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: min(360px, calc(100% - 32px));
+  color: #56657b;
+  text-align: center;
+  transform: translateX(-50%);
+}
+
+.timeline-empty h3 {
+  margin: 8px 0 0;
+  color: var(--ink);
+  font-size: 16px;
+}
+
+.timeline-empty p {
+  margin: 0 0 8px;
+  font-size: 12px;
+}
+
+.timeline-no-match {
+  margin: 0;
+  padding: 24px 16px;
+  color: #56657b;
+  font-size: 12px;
+}
+
+
+/* =========================
+   Menus
+   ========================= */
+
+.board-menu {
+  position: relative;
+  display: inline-flex;
+}
+
+.board-menu .board-menu-items {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  min-width: 232px;
+}
+
+.board-menu-items .page-menu-item {
+  width: 100%;
+  height: auto;
+  min-height: 44px;
+  padding: 8px;
+}
+
+.board-menu-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.board-menu-text small {
+  color: #5d6f88;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.board-menu-items .page-menu-item:hover small {
+  color: inherit;
+}
+
+.board-menu-divider {
+  display: block;
+  height: 1px;
+  margin: 4px 0;
+  background: var(--line);
+}
+
+
+/* =========================
+   Editor and Members
+   ========================= */
+
+/* The editor slides in at the right, over a dimmed page. */
+.board-drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  background: rgba(15, 23, 42, .28);
+}
+
+.board-drawer {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  width: min(440px, 100%);
+  background: var(--paper);
+  box-shadow: -12px 0 32px rgba(16, 24, 40, .18);
+  animation: drawer-in .18s cubic-bezier(.23, 1, .32, 1);
+}
+
+@keyframes drawer-in {
+  from {
+    transform: translateX(24px);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .board-drawer {
+    animation: none;
+  }
+}
+
+.board-drawer-head {
   display: flex;
   align-items: flex-start;
-  gap: 8px;
-  margin: 0;
-  padding: 12px 24px;
-  border-top: 1px solid var(--line);
-  background: var(--accent-faint);
-  color: var(--muted-deep);
+  justify-content: space-between;
+  gap: 12px;
+  padding: 24px;
+  border-bottom: 1px solid var(--line);
+}
+
+.board-drawer-head h2 {
+  margin: 4px 0 0;
+  color: var(--ink);
+  font-size: 18px;
+}
+
+.board-drawer-overline {
+  color: var(--accent-text);
   font-size: 11px;
-  line-height: 1.55;
+  font-weight: 800;
+  letter-spacing: 1px;
 }
 
-.timeline-integration-note .icon {
-  flex-shrink: 0;
-  margin-top: 1px;
+.board-drawer-form {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 16px;
+  overflow-y: auto;
+  padding: 24px;
 }
 
+.board-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.board-field > span:first-child {
+  color: #45566f;
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.board-field-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.board-field-pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.board-field-hint {
+  color: #5d6f88;
+  font-size: 11px;
+}
+
+.board-input {
+  height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--paper);
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+}
+
+.board-input:focus {
+  border-color: var(--accent);
+  outline: none;
+}
+
+/* Choices in the editor fill their column. */
+.board-field .dropdown {
+  display: flex;
+}
+
+.board-field .dropdown-button {
+  flex: 1;
+  justify-content: space-between;
+  height: 36px;
+  min-width: 0;
+}
+
+.board-link {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--accent-text);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.board-link:hover {
+  text-decoration: underline;
+}
+
+.board-swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.board-swatch {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.board-swatch.is-chosen {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+.board-swatch:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.board-range {
+  width: 100%;
+  accent-color: var(--accent);
+}
+
+.board-progress {
+  display: block;
+  height: 8px;
+  overflow: hidden;
+  border-radius: 4px;
+  background: #e3e9f2;
+}
+
+.board-progress b {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+}
+
+.board-form-error {
+  margin: 0;
+  color: #b42d27;
+  font-size: 12px;
+}
+
+.board-drawer-foot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: auto;
+  padding-top: 16px;
+}
+
+.board-drawer-fill {
+  flex: 1;
+}
+
+.board-delete {
+  color: #b42d27;
+}
+
+.members-dialog {
+  width: min(440px, calc(100% - 32px));
+}
+
+.members-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.members-head h2 {
+  margin: 0;
+}
+
+.members-head p {
+  margin: 4px 0 0;
+  color: #5d6f88;
+  font-size: 12px;
+}
+
+.members-add {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.members-add .board-input {
+  flex: 1;
+  min-width: 0;
+}
+
+.members-list {
+  display: flex;
+  flex-direction: column;
+  max-height: 320px;
+  margin: 16px 0 0;
+  overflow-y: auto;
+  padding: 0;
+  list-style: none;
+}
+
+.members-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid #edf1f7;
+}
+
+.members-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--ink);
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.members-count {
+  color: #5d6f88;
+  font-size: 11px;
+}
+
+.members-empty {
+  margin: 16px 0 0;
+  color: #5d6f88;
+  font-size: 12px;
+}
+
+
+/* =========================
+   Touch and Phones
+   ========================= */
+
+@media (pointer: coarse) {
+  .timeline-handle,
+  .timeline-add {
+    opacity: 1 !important;
+  }
+
+  .timeline-fold,
+  .timeline-add,
+  .board-swatch {
+    width: 44px;
+    height: 44px;
+  }
+}
+
+/* Phones show a narrow Work column beside the calendar, without the row handles (dragging by */
+/* them needs a mouse), the + buttons (Create adds work) or the counts; the editor fills the */
+/* screen. */
 @media (max-width: 700px) {
   .board-page--timeline {
     padding: 24px 12px 64px;
   }
 
-  .timeline-integration-frame {
-    height: max(590px, calc(100dvh - 240px));
+  .timeline-card,
+  .timeline-card.is-wide {
+    --meta-width: 168px;
   }
 
-  .timeline-integration-note {
-    padding: 12px 12px;
+  .timeline-cell-status,
+  .timeline-cell-assignee,
+  .timeline-handle,
+  .timeline-add,
+  .timeline-count {
+    display: none;
+  }
+
+  .timeline-search {
+    width: 100%;
+  }
+
+  .board-field-pair {
+    grid-template-columns: 1fr;
   }
 }
