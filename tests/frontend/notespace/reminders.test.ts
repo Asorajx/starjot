@@ -52,17 +52,6 @@ describe('reminders in the text', () => {
     expect(cleanHtml('<span class="reminder-chip is-due" data-reminder="bad id" data-at="never" data-done="yes">x</span>')).toBe('<span class="reminder-chip"></span>');
   });
 
-  it('change in a note\'s saved text: a new time, or removed', async () => {
-    const store = await import('../../../src/frontend/notespace/store');
-    const { changeReminder } = await import('../../../src/frontend/notespace/reminders');
-    const made = store.createNote();
-    store.updateNote(made.id, { content: `<p>Call ${chip('r1', new Date(2026, 9, 19, 9, 0))}</p>` });
-    changeReminder(made.id, 'r1', { at: new Date(2026, 9, 20, 9, 0) });
-    expect(store.getNote(made.id)?.content).toBe(`<p>Call ${chip('r1', new Date(2026, 9, 20, 9, 0))}</p>`);
-    changeReminder(made.id, 'r1', 'remove');
-    expect(store.getNote(made.id)?.content).toBe('<p>Call </p>');
-  });
-
   it('offer later today, tomorrow and next Monday', () => {
     expect(reminderChoices(NOW).map(choice => choice.at.getTime())).toEqual([
       new Date(2026, 9, 18, 17, 0).getTime(),

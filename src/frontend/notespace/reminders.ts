@@ -1,6 +1,5 @@
 import { iconMarkup } from '../components/Icon';
 import { escapeHtml } from '../lib/html';
-import { getNote, updateNote } from './store';
 import type { Note } from '../../shared/types/note';
 
 
@@ -114,21 +113,6 @@ export function reminderGroups(notes: Note[], now: Date) {
     today: open.filter(reminder => !isDue(reminder, now) && Date.parse(reminder.at) < tomorrow),
     later: open.filter(reminder => Date.parse(reminder.at) >= tomorrow)
   };
-}
-
-/* Change a reminder in a note's saved text: a new time, or removed. An open note shows the */
-/* change too (see session.watch). */
-export function changeReminder(noteId: string, id: string, change: { at: Date } | 'remove') {
-  const note = getNote(noteId);
-  if (!note) return;
-  const template = document.createElement('template');
-  template.innerHTML = note.content;
-  const chip = Array.from(template.content.querySelectorAll<HTMLElement>('.reminder-chip')).find(item => item.dataset.reminder === id);
-  if (!chip) return;
-  if (change === 'remove') chip.remove();
-  else chip.dataset.at = change.at.toISOString();
-  chip.replaceChildren();
-  updateNote(noteId, { content: template.innerHTML });
 }
 
 

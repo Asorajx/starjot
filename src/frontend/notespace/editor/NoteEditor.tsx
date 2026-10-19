@@ -7,7 +7,7 @@ import { FindBar } from './find/FindBar';
 import { takeFindForNote } from './find/pendingFind';
 import { Icon } from '../../components/Icon';
 import {
-  deleteNote, flushSave, getNote, isLocked, isTemporarilyUnlocked, markOpened, setPinned, updateNote,
+  deleteNote, flushSave, getNote, markOpened, updateNote,
   updatedLabel, useCategories, useNote
 } from '../store';
 import type { NoteMode } from '../../../shared/types/note';
@@ -25,11 +25,11 @@ import { LockStatus } from './LockStatus';
 import { DrawingTools } from './drawing/DrawingTools';
 import { emptyParagraph } from './text/dom';
 import { ExportDialog } from '../export/ExportDialog';
-import { TEXT_LAYER } from './drawing/drawing';
 import { ImageTools } from './images/ImageTools';
 import { LinkTools } from './links/LinkTools';
 import { copyPageLink } from './links/links';
 import { NoteBreadcrumb } from './NoteBreadcrumb';
+import { NoteStarButton, UndoRedoButtons, useActiveLayer, useNoteLock } from './noteParts';
 import { PageBar, SaveStatus, type PageHistory } from '../PageBar';
 import { NoteColorStrip } from '../NoteColors';
 import { NoteHeader } from './NoteHeader';
@@ -133,31 +133,18 @@ function DocumentEditor({ noteId, history, view, active, onClose, onOpenNote, on
   /* Ids that link the panel buttons to their panels; each open note needs its own. */
   const panelId = useId();
 
-  /* A locked note may be unlocked for a short time; it locks itself again when that time is up, */
-  /* so the lock is checked again every few seconds while the countdown runs. */
-  const temporary = note ? isTemporarilyUnlocked(note) : false;
-  const locked = note ? isLocked(note) : false;
-  const [, setTick] = useState(0);
-  useEffect(() => {
-    if (!temporary) return;
-    const timer = window.setInterval(() => setTick(tick => tick + 1), 5000);
-    return () => window.clearInterval(timer);
-  }, [temporary]);
+  const { locked, temporary } = useNoteLock(note);
 
   /* Drawing mode (the pencil in the page bar) lets the mouse draw over the note. A locked note, */
   /* or drawing turned off in Settings, shows the drawing but cannot be drawn on. */
   const [drawingMode, setDrawingMode] = useState(false);
   const drawing = drawingMode && !locked && drawingSettings.enabled;
 
-  /* The layer being drawn on. It starts as the top drawing layer, and moves to another one if */
-  /* it is removed (or undone away). */
-  const [chosenLayer, setChosenLayer] = useState('');
-  const drawingLayers = note?.drawingLayers.filter(layer => layer.id !== TEXT_LAYER) ?? [];
-  const activeLayer = drawingLayers.some(layer => layer.id === chosenLayer) ? chosenLayer : drawingLayers.at(-1)?.id ?? '';
+  const [activeLayer, setChosenLayer] = useActiveLayer(note);
 
   /* One editing session per open note: undo history, Sticky state and editor actions. */
   const session = useMemo(() => new EditorSession(noteId, getNote(noteId)?.content ?? ''), [noteId]);
-  const { canUndo, canRedo, sticky } = useSessionValue(session, snapshot => snapshot);
+  const sticky = useSessionValue(session, snapshot => snapshot.sticky);
   const revision = useSessionValue(session, snapshot => snapshot.revision);
 
   /* Show edits made to this note in another pane. */
@@ -392,14 +379,7 @@ function DocumentEditor({ noteId, history, view, active, onClose, onOpenNote, on
         <span className="page-bar-fill" />
         <SaveStatus />
 
-        <span className="page-bar-group" role="group" aria-label="Undo and redo">
-          <button type="button" className="page-bar-button" data-tooltip="Undo" data-shortcut="Ctrl + Z" aria-label="Undo" disabled={!canUndo || locked} onMouseDown={keepSelection} onClick={() => session.undo()}>
-            <Icon name="undo" size={17} />
-          </button>
-          <button type="button" className="page-bar-button" data-tooltip="Redo" data-shortcut="Ctrl + Y" aria-label="Redo" disabled={!canRedo || locked} onMouseDown={keepSelection} onClick={() => session.redo()}>
-            <Icon name="redo" size={17} />
-          </button>
-        </span>
+        <UndoRedoButtons session={session} locked={locked} />
 
         {/* Turns red ("Unstick") when the selection is inside one sticky group. */}
         <button
@@ -434,17 +414,7 @@ function DocumentEditor({ noteId, history, view, active, onClose, onOpenNote, on
           <Icon name="list" size={17} />
         </button>
 
-        {/* Starred notes are listed in the sidebar and on the notes home page. */}
-        <button
-          type="button"
-          className={`page-bar-button star-button ${note.pinned ? 'is-starred' : ''}`}
-          aria-pressed={note.pinned}
-          data-tooltip={note.pinned ? 'Unstar' : 'Star'}
-          aria-label={note.pinned ? 'Unstar' : 'Star'}
-          onClick={() => setPinned(note.id, !note.pinned)}
-        >
-          <Icon name="star" size={17} />
-        </button>
+        <NoteStarButton note={note} />
 
         {note.locked && <LockStatus noteId={note.id} temporary={temporary} unlockedUntil={note.unlockedUntil} />}
 

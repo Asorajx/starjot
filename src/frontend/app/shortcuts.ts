@@ -173,7 +173,3 @@ export function resetShortcut(id: ShortcutId) {
 export function resetAllShortcuts() {
   updatePreferences({ shortcuts: {} });
 }
-
-export function isShortcutId(id: string): id is ShortcutId {
-  return SHORTCUTS.some(item => item.id === id);
-}

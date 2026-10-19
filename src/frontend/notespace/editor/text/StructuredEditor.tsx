@@ -170,11 +170,7 @@ export const StructuredEditor = memo(function StructuredEditor({ session, conten
     session.setSticky(stickyStateFor(blocks, selection.picked.length ? selection.picked : selection.activeId ? [selection.activeId] : []));
   }, [session, blocks, selection]);
 
-
-  /* =========================
-     Block Actions
-     ========================= */
-
+  /* Adding, moving, joining and removing blocks. */
   function addBlock(id: string, position: 'above' | 'below') {
     if (locked) return;
     const live = liveBlocks();
@@ -458,11 +454,7 @@ export const StructuredEditor = memo(function StructuredEditor({ session, conten
     current.addRange(all);
   }
 
-
-  /* =========================
-     Session and Page Events
-     ========================= */
-
+  /* Following the editing session and the page around the editor. */
   /* Register this editor's actions with the session (Sticky button, Ctrl+A, code language changes). */
   useEffect(() => {
     session.setAdapter({
@@ -624,11 +616,7 @@ export const StructuredEditor = memo(function StructuredEditor({ session, conten
     event.dataTransfer.setData('text/plain', '');
   }
 
-
-  /* =========================
-     Keyboard, Mouse and Typing
-     ========================= */
-
+  /* Keys, the mouse and typing inside the blocks. */
   function handleKeyDown(event: KeyboardEvent<HTMLDivElement>) {
     const native = event.nativeEvent;
     if (native.isComposing) return;
@@ -854,11 +842,6 @@ export const StructuredEditor = memo(function StructuredEditor({ session, conten
     window.getSelection()?.removeAllRanges();
     window.getSelection()?.addRange(range);
   }
-
-
-  /* =========================
-     Rendering
-     ========================= */
 
   /* Groups show their brackets while their text is selected or while they are being dragged. */
   const revealedGroups = new Set(blocks

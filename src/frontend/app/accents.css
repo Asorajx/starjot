@@ -13,7 +13,6 @@
 /* white text on the accent, and accent text on white and on the soft tint, readable (4.5:1; */
 /* tests/frontend/app/accents.test.ts checks this). The dark theme converts every block. The */
 /* swatches in Settings (.accent-swatch) take their colours from the same blocks. */
-
 :root,
 .accent-swatch[data-accent="blue"] {
   --accent: #3570e6;

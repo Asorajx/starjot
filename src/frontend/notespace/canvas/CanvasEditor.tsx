@@ -9,13 +9,14 @@ import { NoteColorStrip } from '../NoteColors';
 import { PageBar, SaveStatus, type PageHistory } from '../PageBar';
 import { safeHref } from '../sanitize';
 import {
-  deleteNote, flushSave, getNote, isLocked, isTemporarilyUnlocked, markOpened, scheduleSave, setPinned, UNTITLED_NOTE, updateNote, useCategories, useNote
+  deleteNote, flushSave, getNote, markOpened, scheduleSave, UNTITLED_NOTE, updateNote, useCategories, useNote
 } from '../store';
 import { DrawingLayer } from '../editor/drawing/DrawingLayer';
 import { DrawingTools, type CanvasTool } from '../editor/drawing/DrawingTools';
-import { joinBoxes, strokesBounds, TEXT_LAYER, type Box } from '../editor/drawing/drawing';
+import { joinBoxes, strokesBounds, type Box } from '../editor/drawing/drawing';
 import { LockStatus } from '../editor/LockStatus';
 import { NoteBreadcrumb } from '../editor/NoteBreadcrumb';
+import { NoteStarButton, UndoRedoButtons, useActiveLayer, useNoteLock } from '../editor/noteParts';
 import { EditorSession, useSessionValue } from '../editor/session';
 import { SelectionToolbar } from '../editor/format/SelectionToolbar';
 import { SlashMenu } from '../editor/text/SlashMenu';
@@ -121,21 +122,11 @@ export function CanvasEditor({ noteId, history, active, onClose, onOpenNote, onO
   /* Clicking outside the settings, or Escape, closes them. */
   useDismiss(settingsOpen, '.editor-flyout, [data-panel-toggle]', () => setSettingsOpen(false));
 
-  const temporary = note ? isTemporarilyUnlocked(note) : false;
-  const locked = note ? isLocked(note) : false;
-  const [, setTick] = useState(0);
-  useEffect(() => {
-    if (!temporary) return;
-    const timer = window.setInterval(() => setTick(tick => tick + 1), 5000);
-    return () => window.clearInterval(timer);
-  }, [temporary]);
-
-  const [chosenLayer, setChosenLayer] = useState('');
-  const drawingLayers = note?.drawingLayers.filter(layer => layer.id !== TEXT_LAYER) ?? [];
-  const activeLayer = drawingLayers.some(layer => layer.id === chosenLayer) ? chosenLayer : drawingLayers.at(-1)?.id ?? '';
+  const { locked, temporary } = useNoteLock(note);
+  const [activeLayer, setChosenLayer] = useActiveLayer(note);
 
   const session = useMemo(() => new EditorSession(noteId, getNote(noteId)?.content ?? ''), [noteId]);
-  const { canUndo, canRedo, revision } = useSessionValue(session, snapshot => snapshot);
+  const revision = useSessionValue(session, snapshot => snapshot.revision);
   useEffect(() => session.watch(), [session]);
 
   const content = note?.content ?? '';
@@ -590,7 +581,6 @@ export function CanvasEditor({ noteId, history, active, onClose, onOpenNote, onO
     onClose();
   }
 
-  const keepSelection = (event: ReactMouseEvent) => event.preventDefault();
   const viewClasses = [
     'canvas-view',
     grabbing ? 'is-grabbing' : '',
@@ -609,25 +599,9 @@ export function CanvasEditor({ noteId, history, active, onClose, onOpenNote, onO
         <span className="page-bar-fill" />
         <SaveStatus />
 
-        <span className="page-bar-group" role="group" aria-label="Undo and redo">
-          <button type="button" className="page-bar-button" data-tooltip="Undo" data-shortcut="Ctrl + Z" aria-label="Undo" disabled={!canUndo || locked} onMouseDown={keepSelection} onClick={() => session.undo()}>
-            <Icon name="undo" size={17} />
-          </button>
-          <button type="button" className="page-bar-button" data-tooltip="Redo" data-shortcut="Ctrl + Y" aria-label="Redo" disabled={!canRedo || locked} onMouseDown={keepSelection} onClick={() => session.redo()}>
-            <Icon name="redo" size={17} />
-          </button>
-        </span>
+        <UndoRedoButtons session={session} locked={locked} />
 
-        <button
-          type="button"
-          className={`page-bar-button star-button ${note.pinned ? 'is-starred' : ''}`}
-          aria-pressed={note.pinned}
-          data-tooltip={note.pinned ? 'Unstar' : 'Star'}
-          aria-label={note.pinned ? 'Unstar' : 'Star'}
-          onClick={() => setPinned(note.id, !note.pinned)}
-        >
-          <Icon name="star" size={17} />
-        </button>
+        <NoteStarButton note={note} />
 
         {note.locked && <LockStatus noteId={note.id} temporary={temporary} unlockedUntil={note.unlockedUntil} />}
 

@@ -86,7 +86,7 @@ export function TableOfContents({ id, session, content, open, onClose }: TableOf
           <button
             key={index}
             type="button"
-            className={`outline-item ${heading.depth ? '' : 'outline-item--top'} ${heading.tabs.length ? 'outline-item--in-tab' : ''}`}
+            className={`outline-item ${heading.depth ? '' : 'outline-item--top'}`}
             style={{ '--depth': heading.depth } as CSSProperties}
             onClick={() => go(index)}
           >
