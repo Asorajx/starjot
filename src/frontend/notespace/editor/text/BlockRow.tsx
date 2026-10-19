@@ -80,7 +80,7 @@ export function BlockRow({ block, selected, ranged, picked, dragging, drop, regi
           onMouseDown={keepFocus}
           onClick={event => onAdd(block.id, event.altKey ? 'above' : 'below')}
         >
-          <Icon name="plus" size={15} />
+          <Icon name="plus" size={16} />
         </button>
         <button
           type="button"

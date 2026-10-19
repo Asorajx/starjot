@@ -290,6 +290,15 @@ describe('headings and lists', () => {
     expect(body.innerHTML).toBe('<ol><li>A<ol><li>A1</li></ol></li><li>A2<ol><li>A3</li></ol></li><li>B</li></ol>');
   });
 
+  it('Enter on an empty nested item moves it out one level; at the top level it is left to the list', () => {
+    const body = editor('<ul><li>A<ul><li>A1</li><li><br></li></ul></li><li>B</li></ul>');
+    placeCaret(body.querySelectorAll('li')[2], 0);
+    expect(handleBlockKeys(press('Enter'), body)).toEqual({ kind: 'changed' });
+    expect(body.innerHTML).toBe('<ul><li>A<ul><li>A1</li></ul></li><li><br></li><li>B</li></ul>');
+    placeCaret(body.querySelectorAll('li')[2], 0);
+    expect(handleBlockKeys(press('Enter'), body)).toBeNull();
+  });
+
   it('Tab on a first item, or Shift + Tab on a top-level one, changes nothing', () => {
     const body = editor('<ul><li>A</li><li>B</li></ul>');
     placeCaret(body.querySelector('li')?.firstChild as Node, 0);

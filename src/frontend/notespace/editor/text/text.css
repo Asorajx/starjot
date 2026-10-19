@@ -28,9 +28,15 @@
   box-shadow: inset 2px 0 var(--accent-line);
 }
 
+/* A divider's block is too thin for the bar and background; the divider shows its own highlight. */
+.structured-document .editable-block.is-selected:has(> .block-content > hr:only-child) {
+  background: transparent;
+  box-shadow: none;
+}
+
 .block-controls {
   position: absolute;
-  top: 4px;
+  top: var(--controls-top, 4px);
   left: 18px;
   display: flex;
   align-items: center;
@@ -39,6 +45,32 @@
   visibility: hidden;
   opacity: 0;
   pointer-events: none;
+}
+
+/* The controls sit level with the block's first line, which is taller or lower than a line of */
+/* text in some blocks: a big heading, the inside of a quote or table, or a thin divider. */
+.editable-block:has(> .block-content > h1:first-child) {
+  --controls-top: 9px;
+}
+
+.editable-block:has(> .block-content > h3:first-child) {
+  --controls-top: 2px;
+}
+
+.editable-block:has(> .block-content > :is(h4, h5, h6):first-child) {
+  --controls-top: 0px;
+}
+
+.editable-block:has(> .block-content > blockquote:first-child) {
+  --controls-top: 15px;
+}
+
+.editable-block:has(> .block-content > table:first-child) {
+  --controls-top: 10px;
+}
+
+.editable-block:has(> .block-content > hr:only-child) {
+  --controls-top: -8px;
 }
 
 /* Only devices that really hover (a mouse); a tapped block on a phone keeps a "sticky" hover. */

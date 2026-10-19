@@ -443,19 +443,23 @@ function nestedList(item: Element, like: Element) {
 /* them along as their own nested items. The first item of a list cannot go deeper, and a top-level item */
 /* cannot come out (Backspace does that); either way the key does nothing, so focus stays in the */
 /* note. Moving items loses the selection, so it is put back by its place in the text. */
+/* Enter on an empty item of a nested list moves it out one level too, so pressing Enter on */
+/* empty items steps out of a list one level at a time (from the top level it leaves the list). */
 function listIndentKeys(event: KeyboardEvent, root: HTMLElement): KeyResult | null {
-  if (event.key !== 'Tab' || event.altKey || event.ctrlKey || event.metaKey) return null;
+  if ((event.key !== 'Tab' && event.key !== 'Enter') || event.altKey || event.ctrlKey || event.metaKey) return null;
   const item = closestAtCaret<HTMLLIElement>('li');
   const list = item?.parentElement;
   const range = window.getSelection()?.getRangeAt(0);
   if (!item || !list || !range || !root.contains(item) || !list.matches('ul, ol')) return null;
+  const stepOut = event.key === 'Enter' && !event.shiftKey && range.collapsed && isEmptyContent(item) && list.parentElement?.tagName === 'LI';
+  if (event.key === 'Enter' && !stepOut) return null;
   event.preventDefault();
   const items = Array.from(list.children).filter(child => child === item || range.intersectsNode(child));
   const first = items[0];
   const last = items[items.length - 1];
   const caret = getRange(root);
 
-  if (!event.shiftKey) {
+  if (event.key === 'Tab' && !event.shiftKey) {
     const above = first.previousElementSibling;
     if (!above) return { kind: 'blocked' };
     const deeper = nestedList(above, list);
@@ -475,7 +479,8 @@ function listIndentKeys(event: KeyboardEvent, root: HTMLElement): KeyResult | nu
     outer.after(...items);
     if (!list.childElementCount) list.remove();
   }
-  if (caret) setRange(root, caret.start, caret.end);
+  if (stepOut) placeCaret(item);
+  else if (caret) setRange(root, caret.start, caret.end);
   return { kind: 'changed' };
 }
 

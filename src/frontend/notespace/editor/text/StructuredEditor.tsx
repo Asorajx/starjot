@@ -733,7 +733,10 @@ export const StructuredEditor = memo(function StructuredEditor({ session, conten
     /* Expand Markdown markers such as # or - typed at the start of an empty line. */
     if (applyMarkdownShortcut(native, editable)) {
       session.checkpoint();
-      commitTyping();
+
+      /* A divider (---) adds a line under it, which belongs in a block of its own. */
+      if (editable.childElementCount > 1) splitLines(closestAtCaret('p, li, h1, h2, h3, h4, h5, h6'), false);
+      else commitTyping();
       return;
     }
 
