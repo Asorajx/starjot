@@ -381,6 +381,22 @@ export function typeOutsideComment(event: InputEvent) {
   return true;
 }
 
+/* Backspace at the start of a heading turns it into normal text, as in most editors, so a */
+/* paragraph joined into a heading (or split off from one with Enter) can be made text again. */
+/* A second Backspace then joins the line to the one above. A toggle's title is left to */
+/* toggleKeys, and a heading inside a list item to listKeys. */
+function headingKeys(event: KeyboardEvent, root: HTMLElement): KeyResult | null {
+  if (event.key !== 'Backspace' || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || !window.getSelection()?.isCollapsed) return null;
+  const heading = closestAtCaret<HTMLHeadingElement>('h1, h2, h3, h4, h5, h6');
+  if (!heading || !root.contains(heading) || heading.classList.contains('toggle-summary') || heading.closest('li') || !caretAtEdge(heading, 'start')) return null;
+  event.preventDefault();
+  const paragraph = document.createElement('p');
+  paragraph.append(...Array.from(heading.childNodes));
+  withBreak(paragraph);
+  heading.replaceWith(paragraph);
+  return { kind: 'lines', focus: paragraph, atEnd: false };
+}
+
 /* Backspace at the start of a list item (not inside another list) turns it into a normal line, */
 /* as in most editors; the browser would otherwise do nothing for a list at the top of a note. */
 /* Items after it move into a new list below the line, and lists inside the item follow the line. */
@@ -426,12 +442,12 @@ function splitChecklistItem(event: KeyboardEvent, item: HTMLLIElement): KeyResul
   return { kind: 'lines', focus: next, atEnd: false };
 }
 
-/* Keys with special meaning in table cells, tab blocks, toggle lists and lists. Returns null for */
-/* every other key. */
+/* Keys with special meaning in table cells, headings, tab blocks, toggle lists and lists. */
+/* Returns null for every other key. */
 export function handleBlockKeys(event: KeyboardEvent, root: HTMLElement): KeyResult | null {
   leavePageLink(event);
   leaveCommentMark(event);
   const cell = closestAtCaret<HTMLTableCellElement>('td, th');
   if (cell && root.contains(cell)) return cellKeys(event, cell);
-  return enterTableKeys(event) ?? tabKeys(event) ?? toggleKeys(event) ?? listKeys(event, root);
+  return enterTableKeys(event) ?? headingKeys(event, root) ?? tabKeys(event) ?? toggleKeys(event) ?? listKeys(event, root);
 }

@@ -7,6 +7,8 @@ import { handleBlockKeys } from './blockKeys';
 import { hydrateTables } from '../tables/tables';
 import { highlight, highlightAll, insertNewline, preAtCaret } from '../code/code';
 import { caretAtEdge, closestAtCaret, emptyParagraph, placeCaret, selectContents, wrapLooseLines } from './dom';
+import { dividerKeys, selectDividerAtCaret } from './dividers';
+import { joinAdjacentLists } from './lines';
 import { imageFiles, insertImageFiles } from '../images/images';
 import { linkTypedAddress } from '../links/links';
 import { applyMarkdownShortcut, joinTypedDashes } from './markdown';
@@ -43,11 +45,16 @@ export const ContinuousEditor = memo(function ContinuousEditor({ session, conten
     return () => session.setBody(null);
   }, [session]);
 
-  /* Read the document from the page, tidy it, and save it. */
+  /* Read the document from the page, tidy it, and save it. Lists that end up side by side are */
+  /* joined; moving their items loses the caret, so it is put back by its place in the text. */
   function commit() {
     const body = bodyRef.current;
     if (!body) return;
     wrapLooseLines(body);
+    if (body.querySelector('ul + ul, ol + ol')) {
+      const caret = getRange(body);
+      if (joinAdjacentLists(body) && caret) setRange(body, caret.start, caret.end);
+    }
     session.save(body.innerHTML);
   }
 
@@ -127,6 +134,7 @@ export const ContinuousEditor = memo(function ContinuousEditor({ session, conten
         savedRange.current = null;
       }
       refreshSticky();
+      if (body) selectDividerAtCaret(body);
 
       /* Selecting text inside a group shows its brackets, even when indicators are hidden. */
       const range = selection?.rangeCount && selection.anchorNode && body?.contains(selection.anchorNode) ? selection.getRangeAt(0) : null;
@@ -147,6 +155,16 @@ export const ContinuousEditor = memo(function ContinuousEditor({ session, conten
     const body = bodyRef.current;
     const native = event.nativeEvent;
     if (!body || native.isComposing || locked) return;
+
+    /* A selected divider: the arrow keys step past it and Enter adds a line below it. */
+    const dividerKey = dividerKeys(native, body);
+    if (dividerKey) {
+      if (dividerKey === 'changed') {
+        session.checkpoint();
+        commit();
+      }
+      return;
+    }
 
     /* In code, Enter adds a code line; Shift + Enter leaves the code block. */
     const pre = preAtCaret(body);

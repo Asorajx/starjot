@@ -16,6 +16,20 @@ export function withBreak<T extends HTMLElement>(element: T) {
   return element;
 }
 
+/* Lists of the same kind side by side become one list: they look like one list anyway, a new */
+/* bullet typed under a list joins it, and numbering carries on. Returns whether any were joined. */
+export function joinAdjacentLists(root: HTMLElement) {
+  let joined = false;
+  root.querySelectorAll('ul + ul, ol + ol').forEach(list => {
+    const previous = list.previousElementSibling;
+    if (!previous || previous.tagName !== list.tagName || previous.classList.contains('checklist') !== list.classList.contains('checklist')) return;
+    previous.append(...Array.from(list.childNodes));
+    list.remove();
+    joined = true;
+  });
+  return joined;
+}
+
 /* The line holding the caret: a paragraph, heading or list item inside the editor. */
 export function lineAtCaret(root: HTMLElement) {
   const line = closestAtCaret('p, h1, h2, h3, h4, h5, h6, li');

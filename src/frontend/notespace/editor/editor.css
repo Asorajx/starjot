@@ -122,6 +122,18 @@
   margin-bottom: 8px;
 }
 
+/* A list inside a list item keeps the items' own spacing, instead of a whole list's gap after */
+/* it, so the next item does not look like the start of another list. */
+.article-body li > :is(ul, ol),
+.block-content li > :is(ul, ol) {
+  margin: 8px 0 0;
+}
+
+.article-body li > :is(ul, ol) > li:last-child,
+.block-content li > :is(ul, ol) > li:last-child {
+  margin-bottom: 0;
+}
+
 .article-body strong,
 .block-content strong {
   color: #41546e;
@@ -1037,6 +1049,12 @@
   margin: 16px 0;
   border: 0;
   border-top: 1px solid #e0e7f2;
+}
+
+/* A divider selected by clicking it (see dividers.ts): Backspace or Delete removes it. */
+.note-editable hr.is-selected {
+  border-top: 2px solid var(--accent);
+  outline: 4px solid var(--accent-soft);
 }
 
 @media (max-width: 700px) {

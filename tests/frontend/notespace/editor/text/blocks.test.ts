@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { convertLine, createPageBlock, createPageMention, createTable, insertBlock, insertInline } from '../../../../../src/frontend/notespace/editor/text/lines';
+import { convertLine, createPageBlock, createPageMention, createTable, insertBlock, insertInline, joinAdjacentLists } from '../../../../../src/frontend/notespace/editor/text/lines';
 import { hydratePages, pageWidth, setPageWidth } from '../../../../../src/frontend/notespace/editor/text/pageBlocks';
 import { handleBlockKeys, lineBelowTable } from '../../../../../src/frontend/notespace/editor/text/blockKeys';
 import { matchCommands } from '../../../../../src/frontend/notespace/editor/text/slashCommands';
@@ -246,6 +246,34 @@ describe('table and toggle keys', () => {
     placeCaret(body.querySelector('.toggle-summary')?.firstChild as Node, 0);
     expect(handleBlockKeys(press('Backspace'), body)?.kind).toBe('lines');
     expect(body.innerHTML).toBe('<p>T</p><p>A</p>');
+  });
+});
+
+
+/* =========================
+   Headings and Lists
+   ========================= */
+
+describe('headings and lists', () => {
+  it('Backspace at the start of a heading turns it into normal text, keeping its words', () => {
+    const body = editor('<p>Above</p><h3>Plan <strong>now</strong></h3>');
+    placeCaret(body.querySelector('h3')?.firstChild as Node, 0);
+    expect(handleBlockKeys(press('Backspace'), body)?.kind).toBe('lines');
+    expect(body.innerHTML).toBe('<p>Above</p><p>Plan <strong>now</strong></p>');
+  });
+
+  it('Backspace inside a heading is left to the browser', () => {
+    const body = editor('<h3>Plan</h3>');
+    placeCaret(body.querySelector('h3')?.firstChild as Node, 2);
+    expect(handleBlockKeys(press('Backspace'), body)).toBeNull();
+    expect(body.innerHTML).toBe('<h3>Plan</h3>');
+  });
+
+  it('joins lists of the same kind side by side, but not different kinds', () => {
+    const body = editor('<ul><li>A</li></ul><ul><li>B</li></ul><ul><li>C</li></ul><ol><li>1</li></ol><ul class="checklist"><li>T</li></ul><ol><li>2</li></ol>');
+    expect(joinAdjacentLists(body)).toBe(true);
+    expect(body.innerHTML).toBe('<ul><li>A</li><li>B</li><li>C</li></ul><ol><li>1</li></ol><ul class="checklist"><li>T</li></ul><ol><li>2</li></ol>');
+    expect(joinAdjacentLists(body)).toBe(false);
   });
 });
 
