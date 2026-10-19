@@ -150,3 +150,28 @@
 [data-theme="dark"] ::highlight(find-scope) {
   background-color: var(--accent-soft);
 }
+
+/* A switch that is on keeps the accent colour; the generated grey for the switch's track would */
+/* otherwise cover it, so on and off looked the same. A disabled switch stays grey. */
+[data-theme="dark"] .preview-switch--on:not(:disabled) {
+  background: var(--accent);
+}
+
+/* A note's words in near-white, so they stand out from the dark page and are easy to read; */
+/* headings are brightest, quotes a little quieter. Bold words take the colour around them, and */
+/* text colours chosen in the note still win, since they are set on the words themselves. */
+[data-theme="dark"] :is(.note-body, .block-content) :is(p, li, td, ol, ul, p.toggle-summary) {
+  color: hsl(216 12% 88%);
+}
+
+[data-theme="dark"] :is(.note-body, .block-content) :is(h1, h2, h3, h4, h5, h6, th) {
+  color: hsl(216 20% 96%);
+}
+
+[data-theme="dark"] :is(.note-body, .block-content) blockquote {
+  color: hsl(216 8% 76%);
+}
+
+[data-theme="dark"] .block-content strong {
+  color: inherit;
+}
