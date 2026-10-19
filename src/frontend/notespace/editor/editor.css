@@ -92,12 +92,8 @@
   letter-spacing: -.5px;
   font-weight: 770;
   color: #2b3d59;
-  margin: 24px 0 16px;
+  margin: 32px 0 8px;
   line-height: 1.36;
-}
-
-.article-body h2:first-of-type {
-  margin-top: 8px;
 }
 
 .article-body p,
@@ -111,7 +107,7 @@
 .article-body ul,
 .block-content ul {
   padding-left: 24px;
-  margin: 4px 0 24px;
+  margin: 0 0 16px;
   color: #66758c;
   font-size: 13px;
   line-height: 1.9;
@@ -144,7 +140,7 @@
   border-left: 3px solid var(--accent-tint);
   background: var(--accent-faint);
   padding: 12px 24px;
-  margin: 24px 0 32px;
+  margin: 0 0 16px;
   font-size: 12px;
   font-style: italic;
   color: #5b76ae;
@@ -297,7 +293,7 @@
 
 .editable-block {
   position: relative;
-  margin: 8px 0 12px;
+  margin: 0 0 8px;
   padding: 4px 4px 4px 24px;
   border-radius: 4px;
 }
@@ -313,20 +309,67 @@
   color: #637895;
 }
 
-.block-content h2 {
-  margin: 4px 0 4px;
+
+/* =========================
+   Line Spacing
+   ========================= */
+
+/* One rhythm for both modes. Text, lists, quotes, code and tables have 16px after them. */
+/* Headings have more room above than below, so each sits with the text it starts: 32px above */
+/* a heading 1 or 2, 24px above a 3 or 4, 16px above a 5, and 8px below every heading. A */
+/* heading straight under another is 8px below it; a divider has 24px on each side. */
+.article-body > :first-child,
+.block-content > :first-child {
+  margin-top: 0;
 }
 
-.block-content p {
-  margin: 0;
+.article-body :is(h1, h2, h3, h4, h5, h6) + :is(h1, h2, h3, h4, h5, h6),
+.block-content :is(h1, h2, h3, h4, h5, h6) + :is(h1, h2, h3, h4, h5, h6) {
+  margin-top: 8px;
 }
 
-.block-content ul {
-  margin: 0;
+/* The last line inside a quote or table cell adds no gap of its own (the box has padding). */
+:is(.article-body, .block-content) :is(blockquote, td, th) > :last-child {
+  margin-bottom: 0;
 }
 
-.block-content blockquote {
-  margin: 0;
+/* In Block mode each block holds its own lines, so the gaps go on the blocks instead: 8px of */
+/* margin plus the blocks' 4px padding on each side make the same 16px, and a block starting */
+/* with a heading or divider gets the extra room above it. Margins of neighbouring blocks */
+/* overlap, as lines' margins do. */
+.block-content > :last-child,
+.block-content > :is(ul, ol):last-child > li:last-child {
+  margin-bottom: 0;
+}
+
+/* A block's least height (one line, for an empty block) would leave room under a divider or */
+/* a small heading, so a block with content is as tall as its content. */
+.editable-block > .block-content:has(> *) {
+  min-height: 0;
+}
+
+.editable-block:has(> .block-content > :is(h1, h2):first-child) {
+  margin-top: 24px;
+}
+
+.editable-block:has(> .block-content > :is(h3, h4):first-child) {
+  margin-top: 16px;
+}
+
+.editable-block:has(> .block-content > :is(h5, h6):first-child) {
+  margin-top: 8px;
+}
+
+.editable-block:has(> .block-content > :is(h1, h2, h3, h4, h5, h6):last-child) {
+  margin-bottom: 0;
+}
+
+.editable-block:has(> .block-content > :is(h1, h2, h3, h4, h5, h6):last-child) + .editable-block:has(> .block-content > :is(h1, h2, h3, h4, h5, h6):first-child) {
+  margin-top: 0;
+}
+
+.editable-block:has(> .block-content > hr:only-child) {
+  margin: 16px 0;
 }
 
 
@@ -389,7 +432,7 @@
 .block-content h3 {
   color: #364a66;
   font-size: 16px;
-  margin: 24px 0 12px;
+  margin: 24px 0 8px;
 }
 
 
@@ -981,7 +1024,7 @@
 /* Markdown-generated headings, lists and code share the same look in both modes. */
 .note-editable h1,
 .block-content h1 {
-  margin: 16px 0 12px;
+  margin: 32px 0 8px;
   color: #22344f;
   font-size: 28px;
   line-height: 1.3;
@@ -989,7 +1032,7 @@
 
 .note-editable h4,
 .block-content h4 {
-  margin: 12px 0 8px;
+  margin: 24px 0 8px;
   color: #394b66;
   font-size: 14px;
 }
@@ -999,7 +1042,7 @@
 .note-editable h6,
 .block-content h5,
 .block-content h6 {
-  margin: 12px 0 8px;
+  margin: 16px 0 8px;
   color: #4b5b74;
   font-size: 13px;
 }
@@ -1007,7 +1050,7 @@
 .note-editable ol,
 .block-content ol {
   padding-left: 24px;
-  margin: 8px 0 16px;
+  margin: 0 0 16px;
   color: #65738a;
   font-size: 13px;
   line-height: 1.9;
@@ -1015,7 +1058,7 @@
 
 .note-editable pre,
 .block-content pre {
-  margin: 12px 0 24px;
+  margin: 0 0 16px;
   padding: 48px 16px 16px;
   overflow-x: auto;
   border: 1px solid #e2eaf6;
@@ -1046,7 +1089,7 @@
 
 .note-editable hr,
 .block-content hr {
-  margin: 16px 0;
+  margin: 24px 0;
   border: 0;
   border-top: 1px solid #e0e7f2;
 }
