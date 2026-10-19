@@ -175,3 +175,11 @@
 [data-theme="dark"] .block-content strong {
   color: inherit;
 }
+
+/* The chosen option in Note and Canvas settings (structure, layout, page size) stands out with */
+/* a full accent border and a deeper tint: the light theme's faint tint barely shows on dark. */
+[data-theme="dark"] .option-tile.selected,
+[data-theme="dark"] .option-chip.selected {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}

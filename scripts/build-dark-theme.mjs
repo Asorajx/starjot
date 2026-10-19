@@ -199,6 +199,13 @@ function prefixSelector(selector) {
   }).join(',\n');
 }
 
+/* Colour properties whose value is a theme variable (such as var(--accent)) or a colour keyword */
+/* (transparent, inherit, currentColor). Such values already suit both themes, but are copied as */
+/* they are, so the dark rules keep the light styles' order: a selected item's accent then still */
+/* wins over the converted colours of the plain item before it, as it does in the light theme. */
+const COLOR_PROPERTY = /^(color|background(-color)?|border(-top|-right|-bottom|-left)?(-color)?|outline(-color)?|fill|stroke|text-decoration-color|caret-color)$/;
+const THEMED_VALUE = /var\(--|^(transparent|inherit|currentColor)$/i;
+
 /* Return only the colour declarations of a rule, converted; null when the rule sets no colours. */
 function convertRule(selector, body) {
   const declarations = body.split(';').map(item => item.trim()).filter(Boolean).flatMap(item => {
@@ -207,7 +214,16 @@ function convertRule(selector, body) {
     const property = item.slice(0, index).trim();
     const value = item.slice(index + 1).trim();
     COLOR.lastIndex = 0;
-    if (!COLOR.test(value)) return [];
+    if (!COLOR.test(value)) {
+      if (!COLOR_PROPERTY.test(property) || !THEMED_VALUE.test(value)) return [];
+
+      /* A border or outline shorthand keeps only its colour part, as below. */
+      if (/^(border(-top|-right|-bottom|-left)?|outline)$/.test(property)) {
+        const color = value.match(/var\(--[\w-]+\)|(transparent|currentColor)/i)?.[0];
+        return color ? [`  ${property}-color: ${color};`] : [];
+      }
+      return [`  ${property}: ${value};`];
+    }
 
     /* Border and outline shorthands only change their colour. Repeating the whole shorthand */
     /* would also reset widths, undoing rules such as "border-right: 0" that shape the sticky brackets. */
