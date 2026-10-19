@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { dayTicks, draggedDates, monthBands, timelineScale, widthOf, xOf } from '../../../src/frontend/boardspace/timeline/scale';
-import { csvDay, csvProject, projectCsv, timelineSvg } from '../../../src/frontend/boardspace/timeline/files';
+import { csvDay, csvProject, projectCsv, timelineSvg } from '../../../src/frontend/boardspace/files';
 import type { BoardProject } from '../../../src/shared/types/board';
 
 const PROJECT: BoardProject = {

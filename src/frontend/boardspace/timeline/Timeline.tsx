@@ -1,23 +1,13 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type DragEvent, type KeyboardEvent, type PointerEvent as ReactPointerEvent } from 'react';
-import { Avatar } from '../../components/Avatar';
-import { ConfirmDialog } from '../../components/ConfirmDialog';
-import { Dropdown } from '../../components/Dropdown';
-import { Icon, type IconName } from '../../components/Icon';
-import { useDismiss } from '../../lib/useDismiss';
+import { useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type DragEvent, type KeyboardEvent, type PointerEvent as ReactPointerEvent } from 'react';
+import { Icon } from '../../components/Icon';
 import { showToast } from '../../lib/toasts';
-import type { BoardProject, WorkItem, WorkStatus, WorkType } from '../../../shared/types/board';
+import type { BoardProject, WorkItem } from '../../../shared/types/board';
 import { dayRange, today } from '../dates';
-import {
-  canDrop, moveSprint, moveWork, replaceBoard, setAssignee, setBoardTitle, setDates, setStatus, TITLE_LENGTH, toggleItemFolded, toggleSprintFolded, useBoard, type Drop
-} from '../board';
-import { BACKLOG, childType, epicCompletion, initialsOf, shownSprintOf, sprintCompletion, timelineRows, WORK_STATUSES, WORK_TYPES, type ItemRow, type SprintRow } from '../workItems';
+import { canDrop, moveSprint, moveWork, setDates, toggleItemFolded, toggleSprintFolded, useBoard, type Drop } from '../board';
+import { BACKLOG, childType, epicCompletion, shownSprintOf, sprintCompletion, timelineRows, WORK_TYPES, type ItemRow, type SprintRow } from '../workItems';
+import type { EditorTarget } from '../WorkEditor';
+import { AssigneePicker, Progress, StatusPicker, WorkTypeIcon } from '../workParts';
 import { dayTicks, draggedDates, monthBands, timelineScale, widthOf, xOf, ZOOMS, type DragMode, type Scale, type Zoom } from './scale';
-import { exportBackup, exportCsv, exportPng, exportSvg, readProjectFile } from './files';
-import { MembersDialog } from './MembersDialog';
-import { WorkEditor, type EditorTarget } from './WorkEditor';
-
-/* The icon beside each kind of work. */
-const TYPE_ICONS: Record<WorkType, IconName> = { epic: 'layers', feature: 'blocks', task: 'check-square' };
 
 /* A card narrower than this hides the Status and Assignee columns, so the calendar has room. */
 const NARROW_CARD = 880;
@@ -31,43 +21,6 @@ type BarDrag = { pointerId: number; id: string; mode: DragMode; startX: number; 
 /* A row being dragged by its handle, and where it would land. */
 type RowDrag = { kind: 'sprint' | 'item'; id: string };
 type DropHint = { key: string; mode: 'before' | 'after' | 'inside' | 'section' };
-
-
-/* =========================
-   Menus
-   ========================= */
-
-type MenuItem = { key: string; label: string; hint: string; icon: IconName; divider?: boolean; run: () => void };
-
-/* A button that opens a small menu of choices under it (Create, Export). */
-function MenuButton({ label, icon, primary = false, items }: { label: string; icon: IconName; primary?: boolean; items: MenuItem[] }) {
-  const [open, setOpen] = useState(false);
-  const holder = useRef<HTMLSpanElement>(null);
-  useDismiss(open, `[data-menu="${label}"]`, () => setOpen(false));
-  useEffect(() => {
-    if (open) holder.current?.querySelector<HTMLButtonElement>('[role="menuitem"]')?.focus();
-  }, [open]);
-  return (
-    <span className="board-menu" data-menu={label} ref={holder}>
-      <button type="button" className={`btn ${primary ? 'btn-primary' : 'btn-secondary'}`} aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen(!open)}>
-        <Icon name={icon} size={16} /><span>{label}</span><Icon name="chevron-down" size={14} />
-      </button>
-      {open && (
-        <span className="page-menu board-menu-items" role="menu" aria-label={label}>
-          {items.map(item => (
-            <span key={item.key}>
-              {item.divider && <span className="board-menu-divider" role="separator" />}
-              <button type="button" role="menuitem" className="page-menu-item" onClick={() => { setOpen(false); item.run(); }}>
-                <Icon name={item.icon} size={16} />
-                <span className="board-menu-text">{item.label}<small>{item.hint}</small></span>
-              </button>
-            </span>
-          ))}
-        </span>
-      )}
-    </span>
-  );
-}
 
 
 /* =========================
@@ -89,16 +42,6 @@ function FoldButton({ folded, label, onToggle }: { folded: boolean; label: strin
     <button type="button" className={`timeline-fold ${folded ? 'is-folded' : ''}`} aria-label={`${folded ? 'Show' : 'Hide'} what is in ${label}`} aria-expanded={!folded} onClick={onToggle}>
       <Icon name="chevron-down" size={14} />
     </button>
-  );
-}
-
-/* A bar of progress with its percentage beside it. */
-function Progress({ percent, label }: { percent: number; label: string }) {
-  return (
-    <span className="timeline-progress" role="progressbar" aria-label={label} aria-valuemin={0} aria-valuemax={100} aria-valuenow={percent} data-tooltip={label}>
-      <span className="timeline-progress-track"><b style={{ width: `${percent}%` }} /></span>
-      <span className="timeline-progress-value">{percent}%</span>
-    </span>
   );
 }
 
@@ -157,8 +100,6 @@ function ItemRowView({ row, scale, board, dropHint, onEdit, onRowDragStart, barD
   const hint = dropHint?.key === `item:${item.id}` ? `is-drop-${dropHint.mode}` : '';
   const isEpic = item.type === 'epic';
   const completion = isEpic ? epicCompletion(board.items, item.id) : null;
-  const members = [...board.members];
-  if (item.assignee && !members.includes(item.assignee)) members.push(item.assignee);
 
   /* An item whose parent is shown in another sprint says so, since its parent is not above it. */
   const parent = board.items.find(entry => entry.id === item.parentId);
@@ -177,7 +118,7 @@ function ItemRowView({ row, scale, board, dropHint, onEdit, onRowDragStart, barD
         <div className="timeline-cell-work" style={{ paddingLeft: 4 + Math.min(row.depth, 7) * 16 }}>
           <span className="timeline-handle" draggable aria-label={`Drag ${item.name} to move it`} data-tooltip="Drag to move" onDragStart={event => onRowDragStart({ kind: 'item', id: item.id }, event)}><Icon name="grip" size={14} /></span>
           <FoldButton folded={folded} label={item.name} onToggle={row.children ? () => toggleItemFolded(item.id) : undefined} />
-          <span className={`timeline-type is-${item.type}`} data-tooltip={WORK_TYPES[item.type].label}><Icon name={TYPE_ICONS[item.type]} size={12} /></span>
+          <WorkTypeIcon type={item.type} />
           <button type="button" className="timeline-name" title={`${item.name}${elsewhere}`} onClick={() => onEdit({ kind: 'item', id: item.id })}>{item.name}</button>
           {row.children > 0 && <span className="timeline-count">{row.children}</span>}
           <button type="button" className="timeline-add" aria-label={`Add work inside ${item.name}`} data-tooltip={`Add a ${WORK_TYPES[childType(item)].label.toLowerCase()}`} onClick={() => onEdit({ kind: 'item', type: childType(item), parentId: item.id, sprintId: shownSprintOf(board, item) })}>
@@ -187,25 +128,10 @@ function ItemRowView({ row, scale, board, dropHint, onEdit, onRowDragStart, barD
         <div className="timeline-cell-status">
           {completion
             ? <Progress percent={completion.percent} label={completion.total ? `${completion.done} of ${completion.total} tasks done` : 'No tasks yet'} />
-            : (
-              <Dropdown
-                label={`Status of ${item.name}`}
-                className={`timeline-status is-${item.status}`}
-                value={item.status}
-                options={(Object.keys(WORK_STATUSES) as WorkStatus[]).map(status => ({ value: status, label: WORK_STATUSES[status] }))}
-                onChange={status => setStatus(item.id, status)}
-              />
-            )}
+            : <StatusPicker item={item} />}
         </div>
         <div className="timeline-cell-assignee">
-          <Avatar initials={item.assignee ? initialsOf(item.assignee) : '–'} className="timeline-avatar" />
-          <Dropdown
-            label={`Assignee of ${item.name}`}
-            className="timeline-assignee"
-            value={item.assignee}
-            options={[{ value: '', label: 'Unassigned' }, ...members.sort((a, b) => a.localeCompare(b)).map(name => ({ value: name, label: name }))]}
-            onChange={name => setAssignee(item.id, name)}
-          />
+          <AssigneePicker item={item} board={board} />
         </div>
       </div>
       <div className="timeline-lane">
@@ -237,22 +163,17 @@ function ItemRowView({ row, scale, board, dropHint, onEdit, onRowDragStart, barD
 /* tasks as a tree on the left, and bars on a calendar on the right. Drag a bar to move it, or */
 /* an end to change its length (snapping to the Day, Week or Month scale); click it (or Enter) */
 /* to edit. Drag a row's handle to reorder it, or drop it inside another item or onto a sprint. */
-/* The project saves in this browser; Export makes a picture, a spreadsheet or a backup. */
-export function Timeline() {
+/* It sits in the project frame, which opens the editor (onEdit). */
+export function Timeline({ onEdit }: { onEdit: (target: EditorTarget) => void }) {
   const board = useBoard();
   const [zoom, setZoom] = useState<Zoom>('week');
   const [search, setSearch] = useState('');
   const [wide, setWide] = useState(false);
-  const [editing, setEditing] = useState<EditorTarget | null>(null);
-  const [membersOpen, setMembersOpen] = useState(false);
-  const [importing, setImporting] = useState<{ project: BoardProject; message: string; warning: boolean } | null>(null);
   const [barDrag, setBarDrag] = useState<BarDrag | null>(null);
   const [dropHint, setDropHint] = useState<DropHint | null>(null);
-  const [title, setTitle] = useState(board.title);
   const [narrow, setNarrow] = useState(false);
   const cardRef = useRef<HTMLElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const fileRef = useRef<HTMLInputElement>(null);
   const rowDrag = useRef<RowDrag | null>(null);
 
   const scale = useMemo(() => timelineScale(board, zoom), [board, zoom]);
@@ -261,8 +182,6 @@ export function Timeline() {
   const ticks = useMemo(() => dayTicks(scale), [scale]);
   const todayX = xOf(scale, today()) + scale.dayWidth / 2;
   const empty = !board.items.length && !board.sprints.length;
-
-  useEffect(() => setTitle(board.title), [board.title]);
 
   /* The card's width is measured (not a CSS container query, which would also hold the editor */
   /* panel, a fixed overlay, inside the card). */
@@ -306,7 +225,7 @@ export function Timeline() {
     setBarDrag(null);
     if (event.type === 'pointercancel') return;
     if (!current.moved) {
-      if (current.mode === 'move') setEditing({ kind: 'item', id: current.id });
+      if (current.mode === 'move') onEdit({ kind: 'item', id: current.id });
       return;
     }
     const { start, end } = current.dates;
@@ -362,76 +281,16 @@ export function Timeline() {
     else if (spot.drop) moveWork(drag.id, spot.drop);
   }
 
-  /* Import and export. */
-  async function chooseFile(file: File | undefined) {
-    if (!file) return;
-    try {
-      const result = await readProjectFile(file);
-      if (empty) finishImport(result);
-      else setImporting(result);
-    } catch (error) {
-      showToast({ kind: 'error', title: 'Import failed', description: `${(error as Error).message} Your project was not changed.` });
-    }
-  }
-
-  function finishImport(result: { project: BoardProject; message: string; warning: boolean }) {
-    replaceBoard(result.project);
-    setImporting(null);
-    setSearch('');
-    showToast({ kind: result.warning ? 'error' : 'success', title: 'Project imported', description: result.message, stay: result.warning });
-  }
-
-  async function exportAs(run: () => void | Promise<void>, done: string) {
-    try {
-      await run();
-      showToast({ kind: 'success', title: done });
-    } catch {
-      showToast({ kind: 'error', title: 'The export did not work', description: 'Try the SVG picture instead.' });
-    }
-  }
-
-  const lastSprint = [...board.sprints].sort((a, b) => a.order - b.order).at(-1)?.id ?? '';
-  const createItems: MenuItem[] = [
-    ...(['epic', 'feature', 'task'] as WorkType[]).map(type => ({ key: type, label: WORK_TYPES[type].label, hint: WORK_TYPES[type].hint, icon: TYPE_ICONS[type], run: () => setEditing({ kind: 'item', type, sprintId: lastSprint }) })),
-    { key: 'sprint', label: 'Sprint', hint: 'A planning period', icon: 'calendar-days', divider: true, run: () => setEditing({ kind: 'sprint' }) }
-  ];
-  const exportItems: MenuItem[] = [
-    { key: 'png', label: 'PNG picture', hint: 'The whole timeline', icon: 'image', run: () => exportAs(() => exportPng(board), 'PNG picture saved') },
-    { key: 'svg', label: 'SVG picture', hint: 'Sharp at any size', icon: 'image', run: () => exportAs(() => exportSvg(board), 'SVG picture saved') },
-    { key: 'csv', label: 'CSV spreadsheet', hint: 'Edit in Excel, then import', icon: 'table', run: () => exportAs(() => exportCsv(board), 'CSV spreadsheet saved') },
-    { key: 'json', label: 'Project backup', hint: 'Everything, to import later', icon: 'download', run: () => exportAs(() => exportBackup(board), 'Project backup saved') }
-  ];
-
   return (
     <section ref={cardRef} className={`timeline-card ${wide || narrow ? 'is-wide' : ''}`} aria-label="Timeline">
-      <div className="timeline-top">
-        <input
-          className="timeline-title"
-          aria-label="Project name"
-          maxLength={TITLE_LENGTH}
-          value={title}
-          onChange={event => setTitle(event.target.value)}
-          onBlur={() => setBoardTitle(title)}
-          onKeyDown={event => { if (event.key === 'Enter') event.currentTarget.blur(); }}
-        />
-        <span className="timeline-fill" />
-        <button type="button" className="btn btn-quiet" onClick={() => fileRef.current?.click()} data-tooltip="Open a project backup or a CSV spreadsheet (from Excel or Jira)" data-tooltip-wrap="" data-tooltip-align="end">
-          <Icon name="upload" size={16} /><span>Import</span>
-        </button>
-        <input ref={fileRef} type="file" hidden accept=".json,.csv,.txt,application/json,text/csv,text/plain" onChange={event => { void chooseFile(event.target.files?.[0]); event.target.value = ''; }} />
-        <MenuButton label="Export" icon="download" items={exportItems} />
-        <button type="button" className="btn btn-secondary" onClick={() => setMembersOpen(true)}><Icon name="users" size={16} /><span>Members</span></button>
-        <MenuButton label="Create" icon="plus" primary items={createItems} />
-      </div>
-
-      <div className="timeline-tools">
-        <label className="timeline-search">
+      <div className="board-tools">
+        <label className="board-search">
           <Icon name="search" size={15} />
           <input aria-label="Search work" placeholder="Search work" value={search} onChange={event => setSearch(event.target.value)} />
-          {search && <button type="button" className="timeline-search-clear" aria-label="Clear the search" onClick={() => setSearch('')}><Icon name="x" size={13} /></button>}
+          {search && <button type="button" className="board-search-clear" aria-label="Clear the search" onClick={() => setSearch('')}><Icon name="x" size={13} /></button>}
         </label>
-        <span className="timeline-counts">{board.items.length} {board.items.length === 1 ? 'item' : 'items'} · {board.sprints.length} {board.sprints.length === 1 ? 'sprint' : 'sprints'}</span>
-        <span className="timeline-fill" />
+        <span className="board-counts">{board.items.length} {board.items.length === 1 ? 'item' : 'items'} · {board.sprints.length} {board.sprints.length === 1 ? 'sprint' : 'sprints'}</span>
+        <span className="board-fill" />
         <button type="button" className="btn btn-quiet btn-sm" onClick={scrollToToday}>Today</button>
         <span className="timeline-zoom" role="radiogroup" aria-label="Scale">
           {ZOOMS.map(option => (
@@ -469,8 +328,8 @@ export function Timeline() {
             </div>
 
             {rows.map(row => (row.kind === 'sprint'
-              ? <SprintRowView key={`sprint:${row.id}`} row={row} scale={scale} board={board} dropHint={dropHint} onEdit={setEditing} onRowDragStart={startRowDrag} />
-              : <ItemRowView key={row.item.id} row={row} scale={scale} board={board} dropHint={dropHint} onEdit={setEditing} onRowDragStart={startRowDrag} barDrag={barDrag} onBarPointerDown={startBarDrag} />))}
+              ? <SprintRowView key={`sprint:${row.id}`} row={row} scale={scale} board={board} dropHint={dropHint} onEdit={onEdit} onRowDragStart={startRowDrag} />
+              : <ItemRowView key={row.item.id} row={row} scale={scale} board={board} dropHint={dropHint} onEdit={onEdit} onRowDragStart={startRowDrag} barDrag={barDrag} onBarPointerDown={startBarDrag} />))}
           </div>
 
           {!empty && search && !rows.length && <p className="timeline-no-match">No work matches “{search}”.</p>}
@@ -482,7 +341,7 @@ export function Timeline() {
             <Icon name="calendar-days" size={28} />
             <h3>Make a plan, see the timeline.</h3>
             <p>Add a sprint, or your first piece of work, to start mapping out the project.</p>
-            <button type="button" className="btn btn-primary" onClick={() => setEditing({ kind: 'sprint' })}><Icon name="plus" size={16} /> Add a sprint</button>
+            <button type="button" className="btn btn-primary" onClick={() => onEdit({ kind: 'sprint' })}><Icon name="plus" size={16} /> Add a sprint</button>
           </div>
         )}
       </div>
@@ -493,13 +352,6 @@ export function Timeline() {
         </span>
       )}
 
-      {editing && <WorkEditor key={JSON.stringify(editing)} target={editing} onClose={() => setEditing(null)} onManageMembers={() => setMembersOpen(true)} />}
-      {membersOpen && <MembersDialog onClose={() => setMembersOpen(false)} />}
-      {importing && (
-        <ConfirmDialog title="Replace this project?" confirmLabel="Import" onConfirm={() => finishImport(importing)} onCancel={() => setImporting(null)}>
-          The file holds {importing.message.charAt(0).toLowerCase()}{importing.message.slice(1)} It replaces everything in the current project, so export a project backup first if you may want it back.
-        </ConfirmDialog>
-      )}
     </section>
   );
 }

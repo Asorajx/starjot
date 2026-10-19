@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
-import { Avatar } from '../../components/Avatar';
-import { ConfirmDialog } from '../../components/ConfirmDialog';
-import { Icon } from '../../components/Icon';
-import { useEscape } from '../../lib/useDismiss';
-import { addMember, MEMBER_LENGTH, removeMember, useBoard } from '../board';
-import { initialsOf } from '../workItems';
+import { Avatar } from '../components/Avatar';
+import { ConfirmDialog } from '../components/ConfirmDialog';
+import { Icon } from '../components/Icon';
+import { useEscape } from '../lib/useDismiss';
+import { addMember, MEMBER_LENGTH, removeMember, useBoard } from './board';
+import { initialsOf } from './workItems';
 
 
 /* =========================

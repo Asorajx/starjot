@@ -96,7 +96,7 @@ export function StarjotHome({ onOpenNote, onOpenNotespace, onOpenBoardspace, onO
   const notes = useNotes();
   const lastEdited = newestFirst(notes)[0];
   const reminders = reminderGroups(notes, now);
-  const columns = BOARD_TABS.filter((view): view is { id: StatusTab; label: string } => view.id !== 'timeline');
+  const columns = BOARD_TABS.filter((view): view is { id: StatusTab; label: string } => view.id !== 'timeline' && view.id !== 'list');
 
   return (
     <div className="content-pad starjot-home">

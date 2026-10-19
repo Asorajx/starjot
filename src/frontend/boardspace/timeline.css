@@ -2,13 +2,6 @@
    Boardspace Timeline
    ========================= */
 
-/* The timeline page uses the full width, since the calendar is wide. */
-.board-page--timeline {
-  width: 100%;
-  max-width: none;
-  padding: 32px;
-}
-
 .timeline-card {
   --meta-width: 600px;
   display: flex;
@@ -25,79 +18,6 @@
 .timeline-card.is-wide .timeline-cell-status,
 .timeline-card.is-wide .timeline-cell-assignee {
   display: none;
-}
-
-.timeline-top,
-.timeline-tools {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-  padding: 12px 16px;
-  border-bottom: 1px solid var(--line);
-}
-
-.timeline-fill {
-  flex: 1;
-}
-
-/* The project's name, edited in place. */
-.timeline-title {
-  flex: 0 1 320px;
-  min-width: 0;
-  height: 36px;
-  margin-left: -8px;
-  padding: 0 8px;
-  border: 1px solid transparent;
-  border-radius: 4px;
-  background: transparent;
-  color: var(--ink);
-  font: inherit;
-  font-size: 16px;
-  font-weight: 750;
-  text-overflow: ellipsis;
-}
-
-.timeline-title:hover {
-  border-color: var(--line);
-}
-
-.timeline-title:focus {
-  border-color: var(--accent);
-  outline: none;
-}
-
-.timeline-search {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  width: 240px;
-  max-width: 100%;
-  height: 32px;
-  padding: 0 8px;
-  border: 1px solid var(--line);
-  border-radius: 4px;
-  color: #5d6f88;
-}
-
-.timeline-search:focus-within {
-  border-color: var(--accent);
-}
-
-.timeline-search input {
-  flex: 1;
-  min-width: 0;
-  border: 0;
-  outline: none;
-  background: transparent;
-  color: var(--ink);
-  font: inherit;
-  font-size: 12px;
-}
-
-.timeline-counts {
-  color: #5d6f88;
-  font-size: 12px;
 }
 
 /* Day, Week and Month, side by side. */
@@ -317,8 +237,7 @@
 }
 
 .timeline-fold,
-.timeline-add,
-.timeline-search-clear {
+.timeline-add {
   display: grid;
   flex-shrink: 0;
   place-items: center;
@@ -345,8 +264,7 @@
 }
 
 .timeline-fold:hover:not(.is-empty),
-.timeline-add:hover,
-.timeline-search-clear:hover {
+.timeline-add:hover {
   background: var(--accent-faint);
   color: var(--accent-text);
 }
@@ -354,34 +272,10 @@
 .timeline-fold:focus-visible,
 .timeline-add:focus-visible,
 .timeline-name:focus-visible,
-.timeline-handle:focus-visible,
-.timeline-search-clear:focus-visible {
+.timeline-handle:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 1px;
   opacity: 1;
-}
-
-/* A small coloured square for each kind of work. */
-.timeline-type {
-  display: grid;
-  flex-shrink: 0;
-  place-items: center;
-  width: 18px;
-  height: 18px;
-  border-radius: 4px;
-  color: #ffffff;
-}
-
-.timeline-type.is-epic {
-  background: #7c5cc4;
-}
-
-.timeline-type.is-feature {
-  background: #2f6fde;
-}
-
-.timeline-type.is-task {
-  background: #1f8a70;
 }
 
 .timeline-name {
@@ -436,105 +330,6 @@
   color: #56657b;
   font-size: 11px;
   white-space: nowrap;
-}
-
-.timeline-progress {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-}
-
-.timeline-progress-track {
-  flex: 1;
-  height: 6px;
-  overflow: hidden;
-  border-radius: 4px;
-  background: #e3e9f2;
-}
-
-.timeline-progress-track b {
-  display: block;
-  height: 100%;
-  background: var(--accent);
-}
-
-.timeline-progress-value {
-  color: #56657b;
-  font-size: 11px;
-  font-weight: 650;
-}
-
-/* A work item's status as a tinted chip, which opens the status choices. */
-.timeline-status {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  height: 24px;
-  padding: 0 8px;
-  border: 0;
-  border-radius: 4px;
-  background: #eef2f8;
-  color: #45566f;
-  font: inherit;
-  font-size: 11px;
-  font-weight: 700;
-  white-space: nowrap;
-  cursor: pointer;
-}
-
-.timeline-status.is-progress {
-  background: #e3edff;
-  color: #2457b8;
-}
-
-.timeline-status.is-review {
-  background: #efe8fb;
-  color: #6340a8;
-}
-
-.timeline-status.is-done {
-  background: #e2f4ec;
-  color: #1c6d52;
-}
-
-.timeline-status.is-blocked {
-  background: #fde8e7;
-  color: #b42d27;
-}
-
-.timeline-avatar {
-  flex-shrink: 0;
-  width: 24px;
-  height: 24px;
-  font-size: 11px;
-}
-
-.timeline-assignee {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  min-width: 0;
-  overflow: hidden;
-  padding: 4px;
-  border: 0;
-  border-radius: 4px;
-  background: transparent;
-  color: #45566f;
-  font: inherit;
-  font-size: 12px;
-  white-space: nowrap;
-  cursor: pointer;
-}
-
-.timeline-assignee:hover {
-  background: var(--accent-faint);
-}
-
-.timeline-status:focus-visible,
-.timeline-assignee:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 1px;
 }
 
 
@@ -662,332 +457,6 @@
 
 
 /* =========================
-   Menus
-   ========================= */
-
-.board-menu {
-  position: relative;
-  display: inline-flex;
-}
-
-.board-menu .board-menu-items {
-  position: absolute;
-  top: calc(100% + 4px);
-  right: 0;
-  min-width: 232px;
-}
-
-.board-menu-items .page-menu-item {
-  width: 100%;
-  height: auto;
-  min-height: 44px;
-  padding: 8px;
-}
-
-.board-menu-text {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.board-menu-text small {
-  color: #5d6f88;
-  font-size: 11px;
-  font-weight: 500;
-}
-
-.board-menu-items .page-menu-item:hover small {
-  color: inherit;
-}
-
-.board-menu-divider {
-  display: block;
-  height: 1px;
-  margin: 4px 0;
-  background: var(--line);
-}
-
-
-/* =========================
-   Editor and Members
-   ========================= */
-
-/* The editor slides in at the right, over a dimmed page. */
-.board-drawer-backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 90;
-  background: rgba(15, 23, 42, .28);
-}
-
-.board-drawer {
-  position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  display: flex;
-  flex-direction: column;
-  width: min(440px, 100%);
-  background: var(--paper);
-  box-shadow: -12px 0 32px rgba(16, 24, 40, .18);
-  animation: drawer-in .18s cubic-bezier(.23, 1, .32, 1);
-}
-
-@keyframes drawer-in {
-  from {
-    transform: translateX(24px);
-    opacity: 0;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .board-drawer {
-    animation: none;
-  }
-}
-
-.board-drawer-head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 24px;
-  border-bottom: 1px solid var(--line);
-}
-
-.board-drawer-head h2 {
-  margin: 4px 0 0;
-  color: var(--ink);
-  font-size: 18px;
-}
-
-.board-drawer-overline {
-  color: var(--accent-text);
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 1px;
-}
-
-.board-drawer-form {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  gap: 16px;
-  overflow-y: auto;
-  padding: 24px;
-}
-
-.board-field {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  min-width: 0;
-}
-
-.board-field > span:first-child {
-  color: #45566f;
-  font-size: 12px;
-  font-weight: 650;
-}
-
-.board-field-label-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.board-field-pair {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-}
-
-.board-field-hint {
-  color: #5d6f88;
-  font-size: 11px;
-}
-
-.board-input {
-  height: 36px;
-  padding: 0 12px;
-  border: 1px solid var(--line);
-  border-radius: 4px;
-  background: var(--paper);
-  color: var(--ink);
-  font: inherit;
-  font-size: 13px;
-}
-
-.board-input:focus {
-  border-color: var(--accent);
-  outline: none;
-}
-
-/* Choices in the editor fill their column. */
-.board-field .dropdown {
-  display: flex;
-}
-
-.board-field .dropdown-button {
-  flex: 1;
-  justify-content: space-between;
-  height: 36px;
-  min-width: 0;
-}
-
-.board-link {
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: var(--accent-text);
-  font: inherit;
-  font-size: 12px;
-  cursor: pointer;
-}
-
-.board-link:hover {
-  text-decoration: underline;
-}
-
-.board-swatches {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.board-swatch {
-  width: 28px;
-  height: 28px;
-  padding: 0;
-  border: 0;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-.board-swatch.is-chosen {
-  outline: 2px solid var(--ink);
-  outline-offset: 2px;
-}
-
-.board-swatch:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
-}
-
-.board-range {
-  width: 100%;
-  accent-color: var(--accent);
-}
-
-.board-progress {
-  display: block;
-  height: 8px;
-  overflow: hidden;
-  border-radius: 4px;
-  background: #e3e9f2;
-}
-
-.board-progress b {
-  display: block;
-  height: 100%;
-  background: var(--accent);
-}
-
-.board-form-error {
-  margin: 0;
-  color: #b42d27;
-  font-size: 12px;
-}
-
-.board-drawer-foot {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: auto;
-  padding-top: 16px;
-}
-
-.board-drawer-fill {
-  flex: 1;
-}
-
-.board-delete {
-  color: #b42d27;
-}
-
-.members-dialog {
-  width: min(440px, calc(100% - 32px));
-}
-
-.members-head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.members-head h2 {
-  margin: 0;
-}
-
-.members-head p {
-  margin: 4px 0 0;
-  color: #5d6f88;
-  font-size: 12px;
-}
-
-.members-add {
-  display: flex;
-  gap: 8px;
-  margin-top: 16px;
-}
-
-.members-add .board-input {
-  flex: 1;
-  min-width: 0;
-}
-
-.members-list {
-  display: flex;
-  flex-direction: column;
-  max-height: 320px;
-  margin: 16px 0 0;
-  overflow-y: auto;
-  padding: 0;
-  list-style: none;
-}
-
-.members-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 8px 0;
-  border-bottom: 1px solid #edf1f7;
-}
-
-.members-name {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  color: var(--ink);
-  font-size: 13px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.members-count {
-  color: #5d6f88;
-  font-size: 11px;
-}
-
-.members-empty {
-  margin: 16px 0 0;
-  color: #5d6f88;
-  font-size: 12px;
-}
-
-
-/* =========================
    Touch and Phones
    ========================= */
 
@@ -998,21 +467,15 @@
   }
 
   .timeline-fold,
-  .timeline-add,
-  .board-swatch {
+  .timeline-add {
     width: 44px;
     height: 44px;
   }
 }
 
 /* Phones show a narrow Work column beside the calendar, without the row handles (dragging by */
-/* them needs a mouse), the + buttons (Create adds work) or the counts; the editor fills the */
-/* screen. */
+/* them needs a mouse), the + buttons (Create adds work) or the counts. */
 @media (max-width: 700px) {
-  .board-page--timeline {
-    padding: 24px 12px 64px;
-  }
-
   .timeline-card,
   .timeline-card.is-wide {
     --meta-width: 168px;
@@ -1024,13 +487,5 @@
   .timeline-add,
   .timeline-count {
     display: none;
-  }
-
-  .timeline-search {
-    width: 100%;
-  }
-
-  .board-field-pair {
-    grid-template-columns: 1fr;
   }
 }

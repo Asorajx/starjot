@@ -208,7 +208,7 @@ function BoardspaceLists({ boardView, onOpenBoardView }: Pick<SidebarProps, 'boa
       {BOARD_TABS.map(view => (
         <SidebarLink
           key={view.id}
-          icon={view.id === 'timeline' ? 'calendar-days' : 'check-square'}
+          icon={view.id === 'timeline' ? 'calendar-days' : view.id === 'list' ? 'list' : 'check-square'}
           label={view.label}
           current={boardView === view.id}
           onClick={() => onOpenBoardView(view.id)}

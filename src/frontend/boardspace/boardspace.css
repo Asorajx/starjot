@@ -334,3 +334,831 @@
 }
 
 
+/* =========================
+   Project Views
+   ========================= */
+
+/* What the list and the timeline share: the project's top bar, the toolbar with its search and */
+/* filters, and the parts of a work item's row (kind, progress, status, assignee). */
+.board-page--project {
+  width: 100%;
+  max-width: none;
+  padding: 32px;
+}
+
+/* The project's menus (status, assignee, Create) may reach past the panel's edge. */
+.board-page--project .board-panel {
+  overflow: visible;
+}
+
+@media (max-width: 700px) {
+  .board-page--project {
+    padding: 24px 12px 64px;
+  }
+}
+
+.project-top,
+.board-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--line);
+}
+
+/* The project's bar stays one row: a long name shrinks instead of pushing the buttons down. */
+.project-top {
+  flex-wrap: nowrap;
+}
+
+.board-fill {
+  flex: 1;
+}
+
+/* The project's name, edited in place. */
+.project-title {
+  flex: 0 1 320px;
+  min-width: 0;
+  height: 36px;
+  margin-left: -8px;
+  padding: 0 8px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 16px;
+  font-weight: 750;
+  text-overflow: ellipsis;
+}
+
+.project-title:hover {
+  border-color: var(--line);
+}
+
+.project-title:focus {
+  border-color: var(--accent);
+  outline: none;
+}
+
+.board-search {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  width: 240px;
+  max-width: 100%;
+  height: 32px;
+  padding: 0 8px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  color: #5d6f88;
+}
+
+.board-search:focus-within {
+  border-color: var(--accent);
+}
+
+.board-search input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 12px;
+}
+
+.board-counts {
+  color: #5d6f88;
+  font-size: 12px;
+}
+
+.board-search-clear {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: #5d6f88;
+  cursor: pointer;
+}
+
+.board-search-clear:hover {
+  background: var(--accent-faint);
+  color: var(--accent-text);
+}
+
+.board-search-clear:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+/* A filter, such as Status: Any, which opens its choices; it is tinted while it narrows the view. */
+.board-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 32px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--paper);
+  color: #56657b;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 650;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.board-filter.is-active {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent-text);
+}
+
+.board-filter:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+/* A small coloured square for each kind of work. */
+.work-type {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  color: #ffffff;
+}
+
+.work-type.is-epic {
+  background: #7c5cc4;
+}
+
+.work-type.is-feature {
+  background: #2f6fde;
+}
+
+.work-type.is-task {
+  background: #1f8a70;
+}
+
+.work-progress {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.work-progress-track {
+  flex: 1;
+  height: 6px;
+  overflow: hidden;
+  border-radius: 4px;
+  background: #e3e9f2;
+}
+
+.work-progress-track b {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+}
+
+.work-progress-value {
+  color: #56657b;
+  font-size: 11px;
+  font-weight: 650;
+}
+
+/* A work item's status as a tinted chip, which opens the status choices. */
+.work-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 24px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 4px;
+  background: #eef2f8;
+  color: #45566f;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.work-status.is-progress {
+  background: #e3edff;
+  color: #2457b8;
+}
+
+.work-status.is-review {
+  background: #efe8fb;
+  color: #6340a8;
+}
+
+.work-status.is-done {
+  background: #e2f4ec;
+  color: #1c6d52;
+}
+
+.work-status.is-blocked {
+  background: #fde8e7;
+  color: #b42d27;
+}
+
+.work-avatar {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  font-size: 11px;
+}
+
+.work-assignee {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  overflow: hidden;
+  padding: 4px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: #45566f;
+  font: inherit;
+  font-size: 12px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.work-assignee:hover {
+  background: var(--accent-faint);
+}
+
+.work-status:focus-visible,
+.work-assignee:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+
+/* =========================
+   Menus
+   ========================= */
+
+.board-menu {
+  position: relative;
+  display: inline-flex;
+}
+
+.board-menu .board-menu-items {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  min-width: 232px;
+}
+
+.board-menu .board-menu-items.is-start {
+  right: auto;
+  left: 0;
+}
+
+/* A square button holding only an icon (More). */
+.btn.board-icon-button {
+  width: 36px;
+  padding: 0;
+}
+
+@media (pointer: coarse) {
+  .btn.board-icon-button {
+    width: 44px;
+  }
+}
+
+.board-menu-items .page-menu-item {
+  width: 100%;
+  height: auto;
+  min-height: 44px;
+  padding: 8px;
+}
+
+.board-menu-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.board-menu-text small {
+  color: #5d6f88;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.board-menu-items .page-menu-item:hover small {
+  color: inherit;
+}
+
+.board-menu-divider {
+  display: block;
+  height: 1px;
+  margin: 4px 0;
+  background: var(--line);
+}
+
+.board-menu-heading {
+  display: block;
+  padding: 8px 8px 4px;
+  color: #5d6f88;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+
+
+/* =========================
+   Editor and Members
+   ========================= */
+
+/* The editor slides in at the right, over a dimmed page. */
+.board-drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  background: rgba(15, 23, 42, .28);
+}
+
+.board-drawer {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  width: min(440px, 100%);
+  background: var(--paper);
+  box-shadow: -12px 0 32px rgba(16, 24, 40, .18);
+  animation: drawer-in .18s cubic-bezier(.23, 1, .32, 1);
+}
+
+@keyframes drawer-in {
+  from {
+    transform: translateX(24px);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .board-drawer {
+    animation: none;
+  }
+}
+
+.board-drawer-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 24px;
+  border-bottom: 1px solid var(--line);
+}
+
+.board-drawer-head h2 {
+  margin: 4px 0 0;
+  color: var(--ink);
+  font-size: 18px;
+}
+
+.board-drawer-overline {
+  color: var(--accent-text);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+
+.board-drawer-form {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 16px;
+  overflow-y: auto;
+  padding: 24px;
+}
+
+.board-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.board-field > span:first-child {
+  color: #45566f;
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.board-field-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.board-field-pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.board-field-hint {
+  color: #5d6f88;
+  font-size: 11px;
+}
+
+.board-input {
+  height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--paper);
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+}
+
+.board-input:focus {
+  border-color: var(--accent);
+  outline: none;
+}
+
+/* Choices in the editor fill their column. */
+.board-field .dropdown {
+  display: flex;
+}
+
+.board-field .dropdown-button {
+  flex: 1;
+  justify-content: space-between;
+  height: 36px;
+  min-width: 0;
+}
+
+.board-link {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--accent-text);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.board-link:hover {
+  text-decoration: underline;
+}
+
+.board-swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.board-swatch {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.board-swatch.is-chosen {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+.board-swatch:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.board-range {
+  width: 100%;
+  accent-color: var(--accent);
+}
+
+.board-progress {
+  display: block;
+  height: 8px;
+  overflow: hidden;
+  border-radius: 4px;
+  background: #e3e9f2;
+}
+
+.board-progress b {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+}
+
+.board-form-error {
+  margin: 0;
+  color: #b42d27;
+  font-size: 12px;
+}
+
+.board-drawer-foot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: auto;
+  padding-top: 16px;
+}
+
+.board-drawer-fill {
+  flex: 1;
+}
+
+.board-delete {
+  color: #b42d27;
+}
+
+.members-dialog {
+  width: min(440px, calc(100% - 32px));
+}
+
+.members-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.members-head h2 {
+  margin: 0;
+}
+
+.members-head p {
+  margin: 4px 0 0;
+  color: #5d6f88;
+  font-size: 12px;
+}
+
+.members-add {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.members-add .board-input {
+  flex: 1;
+  min-width: 0;
+}
+
+.members-list {
+  display: flex;
+  flex-direction: column;
+  max-height: 320px;
+  margin: 16px 0 0;
+  overflow-y: auto;
+  padding: 0;
+  list-style: none;
+}
+
+.members-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid #edf1f7;
+}
+
+.members-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--ink);
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.members-count {
+  color: #5d6f88;
+  font-size: 11px;
+}
+
+.members-empty {
+  margin: 16px 0 0;
+  color: #5d6f88;
+  font-size: 12px;
+}
+
+
+/* =========================
+   Work List
+   ========================= */
+
+.work-list-body {
+  position: relative;
+  min-height: 320px;
+}
+
+/* A narrow list drops the sprint and dates; a slim one the assignee too (see WorkList). */
+.work-list-card.is-narrow :is(.work-list-sprint, .work-list-start, .work-list-end),
+.work-list-card.is-slim .work-list-assignee {
+  display: none;
+}
+
+.work-list {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.work-list th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: 0 8px;
+  border-bottom: 1px solid var(--line);
+  background: #f7f9fc;
+  text-align: left;
+}
+
+/* A column heading sorts the list; its arrow shows which way. */
+.work-list-sort {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 36px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #56657b;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 750;
+  letter-spacing: .6px;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.work-list-sort .icon {
+  opacity: 0;
+}
+
+.work-list-sort:hover .icon,
+.work-list-sort.is-sorted .icon {
+  opacity: 1;
+}
+
+.work-list-sort.is-sorted {
+  color: var(--accent-text);
+}
+
+.work-list-sort:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.work-list td {
+  height: 44px;
+  padding: 4px 8px;
+  border-bottom: 1px solid #edf1f7;
+  color: #45566f;
+  white-space: nowrap;
+}
+
+.work-list tbody tr:hover {
+  background: #f7f9fc;
+}
+
+.work-list-type {
+  width: 34px;
+}
+
+.work-list-name {
+  width: 40%;
+  max-width: 0;
+}
+
+.work-list-status {
+  width: 136px;
+}
+
+.work-list-assignee {
+  width: 180px;
+}
+
+.work-list-sprint {
+  width: 120px;
+}
+
+.work-list-start,
+.work-list-end {
+  width: 88px;
+}
+
+/* The name opens the editor; what it sits inside is shown under it, quieter. */
+.work-list-open {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.work-list-open:hover {
+  color: var(--accent-text);
+  text-decoration: underline;
+}
+
+.work-list-open:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.work-list-parent {
+  display: block;
+  overflow: hidden;
+  color: #5d6f88;
+  font-size: 11px;
+  text-overflow: ellipsis;
+}
+
+.work-list-person {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
+}
+
+.work-list-muted {
+  color: #5d6f88;
+}
+
+.work-list-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  max-width: 360px;
+  margin: 48px auto;
+  color: #56657b;
+  text-align: center;
+}
+
+.work-list-empty h3 {
+  margin: 8px 0 0;
+  color: var(--ink);
+  font-size: 16px;
+}
+
+.work-list-empty p {
+  margin: 0 0 8px;
+  font-size: 12px;
+}
+
+.work-list-none {
+  margin: 0;
+  padding: 24px 16px;
+  color: #56657b;
+  font-size: 12px;
+}
+
+/* Bigger colour swatches for fingers. */
+@media (pointer: coarse) {
+  .board-swatch {
+    width: 44px;
+    height: 44px;
+  }
+}
+
+/* On phones the editor's paired fields stack and the search takes a line of its own. */
+@media (max-width: 700px) {
+  .board-field-pair {
+    grid-template-columns: 1fr;
+  }
+
+  .board-search {
+    width: 100%;
+  }
+}

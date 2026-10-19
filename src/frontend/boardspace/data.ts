@@ -10,6 +10,7 @@ export const BOARD_TABS: { id: BoardTab; label: string }[] = [
   { id: 'progress', label: 'In progress' },
   { id: 'review', label: 'In review' },
   { id: 'done', label: 'Done' },
+  { id: 'list', label: 'List' },
   { id: 'timeline', label: 'Timeline' }
 ];
 

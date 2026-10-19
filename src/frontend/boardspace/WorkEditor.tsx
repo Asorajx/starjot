@@ -1,13 +1,13 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
-import { ConfirmDialog } from '../../components/ConfirmDialog';
-import { DateField } from '../../components/DateField';
-import { Dropdown } from '../../components/Dropdown';
-import { Icon } from '../../components/Icon';
-import { useEscape } from '../../lib/useDismiss';
-import type { WorkStatus, WorkType } from '../../../shared/types/board';
-import { addDays, isoDay, parseDay, weekStart } from '../dates';
-import { deleteItem, deleteSprint, NAME_LENGTH, saveItem, saveSprint, useBoard } from '../board';
-import { BAR_COLORS, canHoldWork, epicCompletion, familyOf, shownSprintOf, WORK_STATUSES, WORK_TYPES } from '../workItems';
+import { ConfirmDialog } from '../components/ConfirmDialog';
+import { DateField } from '../components/DateField';
+import { Dropdown } from '../components/Dropdown';
+import { Icon } from '../components/Icon';
+import { useEscape } from '../lib/useDismiss';
+import type { WorkStatus, WorkType } from '../../shared/types/board';
+import { addDays, isoDay, parseDay, weekStart } from './dates';
+import { deleteItem, deleteSprint, NAME_LENGTH, saveItem, saveSprint, useBoard } from './board';
+import { BAR_COLORS, canHoldWork, epicCompletion, familyOf, shownSprintOf, WORK_STATUSES, WORK_TYPES } from './workItems';
 
 
 /* =========================

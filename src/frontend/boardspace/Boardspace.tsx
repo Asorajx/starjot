@@ -5,6 +5,8 @@ import { TASKS } from '../../backend/data/sampleTasks';
 import type { BoardTab, StatusTab, Task } from '../../shared/types/task';
 import { BOARD_TABS, TAB_DESCRIPTIONS } from './data';
 import { Timeline } from './timeline/Timeline';
+import { WorkList } from './list/WorkList';
+import { ProjectFrame } from './ProjectFrame';
 
 type BoardspaceProps = {
   tab: BoardTab;
@@ -49,7 +51,7 @@ export function TaskCard({ task }: { task: Task }) {
    Boardspace Tabs
    ========================= */
 
-/* Shared tabs for the status cards and the Gantt timeline. */
+/* Shared tabs for the status cards and the project's views (the list and the timeline). */
 function BoardspaceTabs({ tab, onTabChange }: BoardspaceProps) {
   const tabBar = useRef<HTMLDivElement>(null);
 
@@ -67,7 +69,7 @@ function BoardspaceTabs({ tab, onTabChange }: BoardspaceProps) {
   return (
     <div className="board-tabs" role="tablist" aria-label="Boardspace views" ref={tabBar}>
       {BOARD_TABS.map(item => {
-        const isTimeline = item.id === 'timeline';
+        const isView = item.id === 'timeline' || item.id === 'list';
         return (
           <button
             key={item.id}
@@ -77,8 +79,10 @@ function BoardspaceTabs({ tab, onTabChange }: BoardspaceProps) {
             className={`board-tab ${tab === item.id ? 'active' : ''}`}
             onClick={() => onTabChange(item.id)}
           >
-            {isTimeline && <Icon name="calendar-days" size={16} />}{item.label}{' '}
-            {!isTimeline && <span className="tab-count">{TASKS[item.id as StatusTab].length}</span>}
+            {item.id === 'list' && <Icon name="list" size={16} />}
+            {item.id === 'timeline' && <Icon name="calendar-days" size={16} />}
+            {item.label}{' '}
+            {!isView && <span className="tab-count">{TASKS[item.id as StatusTab].length}</span>}
           </button>
         );
       })}
@@ -91,20 +95,23 @@ function BoardspaceTabs({ tab, onTabChange }: BoardspaceProps) {
    Boardspace Views
    ========================= */
 
-/* The Gantt timeline of the project's sprints and work (see timeline/Timeline.tsx). */
-function TimelineView(props: BoardspaceProps) {
+/* The project's work as a list or a Gantt timeline (list/WorkList.tsx, timeline/Timeline.tsx), */
+/* both inside the project frame with its name, Import, Export, Members and Create. */
+function ProjectView(props: BoardspaceProps) {
   return (
-    <div className="content-pad board-page board-page--timeline">
+    <div className="content-pad board-page board-page--project">
       <div className="page-intro board-intro">
         <div>
           <h1>Boardspace</h1>
-          <p>Plan sprints and see epics, features and tasks across the calendar.</p>
+          <p>{props.tab === 'list' ? 'Every piece of work in the project, to sort and filter.' : 'Plan sprints and see epics, features and tasks across the calendar.'}</p>
         </div>
       </div>
 
       <div className="board-panel">
         <BoardspaceTabs {...props} />
-        <Timeline />
+        <ProjectFrame>
+          {edit => (props.tab === 'list' ? <WorkList onEdit={edit} /> : <Timeline onEdit={edit} />)}
+        </ProjectFrame>
       </div>
     </div>
   );
@@ -115,7 +122,7 @@ function Metric({ label, value, detail }: { label: string; value: number; detail
 }
 
 export function Boardspace(props: BoardspaceProps) {
-  if (props.tab === 'timeline') return <TimelineView {...props} />;
+  if (props.tab === 'timeline' || props.tab === 'list') return <ProjectView {...props} />;
 
   const tab = props.tab;
   const current = BOARD_TABS.find(item => item.id === tab) ?? BOARD_TABS[0];

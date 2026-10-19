@@ -5,7 +5,7 @@
 /* Work items remain separate from Notespace notes. */
 export type Priority = 'High' | 'Medium' | 'Low';
 export type StatusTab = 'todo' | 'progress' | 'review' | 'done';
-export type BoardTab = StatusTab | 'timeline';
+export type BoardTab = StatusTab | 'list' | 'timeline';
 
 export type Task = {
   id: string;
