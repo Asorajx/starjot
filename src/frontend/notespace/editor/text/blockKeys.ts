@@ -437,9 +437,10 @@ function nestedList(item: Element, like: Element) {
   return list;
 }
 
-/* Tab nests the selected list items under the item above them; Shift + Tab moves them out one */
-/* level, after the item they were in, taking the items below them along as their own nested */
-/* items (as in Google Docs). The first item of a list cannot go deeper, and a top-level item */
+/* Tab nests the selected list items under the item above them. Only those lines move, as in */
+/* Google Docs: an item's own nested items stay at their depth, following it as its siblings. */
+/* Shift + Tab moves them out one level, after the item they were in, taking the items below */
+/* them along as their own nested items. The first item of a list cannot go deeper, and a top-level item */
 /* cannot come out (Backspace does that); either way the key does nothing, so focus stays in the */
 /* note. Moving items loses the selection, so it is put back by its place in the text. */
 function listIndentKeys(event: KeyboardEvent, root: HTMLElement): KeyResult | null {
@@ -457,7 +458,14 @@ function listIndentKeys(event: KeyboardEvent, root: HTMLElement): KeyResult | nu
   if (!event.shiftKey) {
     const above = first.previousElementSibling;
     if (!above) return { kind: 'blocked' };
-    nestedList(above, list).append(...items);
+    const deeper = nestedList(above, list);
+    for (const moved of items) {
+      deeper.append(moved);
+      Array.from(moved.children).filter(child => child.tagName === deeper.tagName && child.className === deeper.className).forEach(own => {
+        deeper.append(...Array.from(own.children));
+        own.remove();
+      });
+    }
   } else {
     const outer = list.parentElement;
     if (outer?.tagName !== 'LI') return { kind: 'blocked' };

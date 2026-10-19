@@ -10,6 +10,7 @@ import {
   type DocBlock
 } from './blockModel';
 import { isRuleOnly, mergeContents, splitAtCaret } from './blockEditing';
+import { dividerKeys, selectDividerAtCaret, selectedDivider } from './dividers';
 import { deleteKeepingPages, hydratePages, pageBlocksIn } from './pageBlocks';
 import { handleBlockKeys } from './blockKeys';
 import { joinLineOfToggle } from './lines';
@@ -178,6 +179,31 @@ export const StructuredEditor = memo(function StructuredEditor({ session, conten
     const block = makeBlock('<p><br></p>', groupForNewBlock(live, index, position));
     live.splice(position === 'below' ? index + 1 : index, 0, block);
     applyBlocks(live, { id: block.id, position: 'start' });
+  }
+
+  /* Remove a selected divider. A block holding only the divider goes, and the caret moves to the */
+  /* block before it (Backspace) or after it (Delete); the only block becomes an empty line. A */
+  /* divider inside a larger block (in a toggle or tab, say) is taken out of it. */
+  function removeDivider(divider: HTMLHRElement, id: string, backward: boolean) {
+    const live = liveBlocks();
+    const index = live.findIndex(block => block.id === id);
+    const element = elements.current.get(id);
+    if (index < 0 || !element || !isRuleOnly(element)) {
+      session.checkpoint();
+      divider.remove();
+      commitTyping();
+      return;
+    }
+    if (live.length === 1) {
+      live[index] = { ...live[index], html: '<p><br></p>', version: live[index].version + 1 };
+      applyBlocks(live, { id, position: 'start' });
+      return;
+    }
+    const previous = live[index - 1];
+    const next = live[index + 1];
+    live.splice(index, 1);
+    const toPrevious = backward ? Boolean(previous) : !next;
+    applyBlocks(live, toPrevious ? { id: previous.id, position: 'end' } : { id: next.id, position: 'start' });
   }
 
   /* Move a block (or a whole sticky group) one step up or down. Free blocks jump over whole groups. */
@@ -505,6 +531,7 @@ export const StructuredEditor = memo(function StructuredEditor({ session, conten
     function handleSelectionChange() {
       const current = window.getSelection();
       if (!body || !current?.rangeCount) return;
+      selectDividerAtCaret(body);
       const range = current.getRangeAt(0);
 
       if (!body.contains(range.commonAncestorContainer)) {
@@ -628,6 +655,24 @@ export const StructuredEditor = memo(function StructuredEditor({ session, conten
       return;
     }
     if (locked) return;
+
+    /* A selected divider (see dividers.ts): Backspace or Delete removes its block, Enter adds a */
+    /* block below it, and the arrow keys step past it. */
+    const divider = bodyRef.current ? selectedDivider(bodyRef.current) : null;
+    const dividerId = blockIdOf(divider);
+    if (divider && dividerId && !event.altKey && !command) {
+      if (event.key === 'Backspace' || event.key === 'Delete') {
+        event.preventDefault();
+        removeDivider(divider, dividerId, event.key === 'Backspace');
+        return;
+      }
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        addBlock(dividerId, 'below');
+        return;
+      }
+      if (dividerKeys(native, bodyRef.current as HTMLElement)) return;
+    }
 
     const editable = closestAtCaret('.block-content');
     const id = blockIdOf(editable);

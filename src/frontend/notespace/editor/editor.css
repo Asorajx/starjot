@@ -1052,7 +1052,8 @@
 }
 
 /* A divider selected by clicking it (see dividers.ts): Backspace or Delete removes it. */
-.note-editable hr.is-selected {
+.note-editable hr.is-selected,
+.block-content hr.is-selected {
   border-top: 2px solid var(--accent);
   outline: 4px solid var(--accent-soft);
 }

@@ -276,6 +276,13 @@ describe('headings and lists', () => {
     expect(body.innerHTML).toBe('<ul><li>A<ul><li>A1</li><li>B</li></ul></li><li>C</li></ul>');
   });
 
+  it('Tab moves only that line: its own nested items stay at their depth', () => {
+    const body = editor('<ul><li>A</li><li>B<ul><li>B1</li><li>B2</li></ul></li><li>C</li></ul>');
+    placeCaret(body.querySelectorAll('li')[1].firstChild as Node, 0);
+    handleBlockKeys(press('Tab'), body);
+    expect(body.innerHTML).toBe('<ul><li>A<ul><li>B</li><li>B1</li><li>B2</li></ul></li><li>C</li></ul>');
+  });
+
   it('Shift + Tab moves an item out after its parent, taking the items below it along', () => {
     const body = editor('<ol><li>A<ol><li>A1</li><li>A2</li><li>A3</li></ol></li><li>B</li></ol>');
     placeCaret(body.querySelectorAll('li')[2].firstChild as Node, 0);

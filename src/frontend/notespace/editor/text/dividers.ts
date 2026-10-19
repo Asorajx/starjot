@@ -41,7 +41,9 @@ export function selectDividerAtCaret(root: HTMLElement) {
     window.getSelection()?.addRange(range);
   }
   const selected = divider ?? selectedDivider(root);
-  root.querySelectorAll('hr.is-selected').forEach(rule => rule !== selected && rule.classList.remove('is-selected'));
+  root.querySelectorAll('hr.is-selected').forEach(rule => {
+    if (rule !== selected) rule.removeAttribute('class');
+  });
   selected?.classList.add('is-selected');
 }
 
