@@ -161,3 +161,53 @@
   border: 1px solid var(--line);
   border-radius: 4px;
 }
+
+/* A space's heading opens the space: it lights up when pointed at, and its arrow nudges along. */
+.home-section-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 32px;
+  margin: 0 -8px;
+  padding: 4px 8px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.home-section-link:hover {
+  background: var(--accent-soft);
+  color: var(--accent-text);
+}
+
+.home-section-link:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.home-section-heading .home-section-link:hover svg {
+  color: inherit;
+}
+
+.home-section-chevron {
+  transition: transform 150ms ease-out;
+}
+
+.home-section-link:hover .home-section-chevron {
+  transform: translateX(2px);
+}
+
+@media (pointer: coarse) {
+  .home-section-link {
+    min-height: 44px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-section-chevron {
+    transition: none;
+  }
+}

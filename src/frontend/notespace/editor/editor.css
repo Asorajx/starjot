@@ -577,8 +577,14 @@
   color: var(--accent-text);
 }
 
-.note-toc-links .outline-item--nested {
-  padding-left: 32px;
+/* Each heading is indented under the one it belongs to (--depth, see outlineDepths); the */
+/* top-level ones are a little bolder, so the outline's shape is easy to see. */
+.note-toc-links .outline-item {
+  padding-left: calc(12px + var(--depth, 0) * 16px);
+}
+
+.note-toc-links .outline-item--top {
+  font-weight: 650;
 }
 
 /* A heading inside a tab block: the tab's name comes first, quieter than the heading. */

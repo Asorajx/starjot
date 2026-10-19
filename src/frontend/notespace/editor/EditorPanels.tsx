@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type CSSProperties } from 'react';
 import { getPreferences } from '../../app/preferences';
 import { STACK_LIMIT } from '../../app/noteTabs';
 import { Switch } from '../../components/Switch';
@@ -38,16 +38,34 @@ function jumpTo(session: EditorSession, target: 'top' | 'bottom' | number) {
   }
 }
 
-/* The outline is generated from the headings in the note's saved content. A heading inside a */
-/* tab block is indented and named with its tab, such as "Setup › Install". */
+/* How far each heading is indented in the outline, from its level (1 for H1 … 6 for H6): one */
+/* step deeper than the nearest heading above it of a higher level. Skipped levels add nothing, */
+/* so a note that starts at H2 starts at the left, and an H4 straight under an H2 is one step in. */
+export function outlineDepths(levels: number[]) {
+  const open: number[] = [];
+  return levels.map(level => {
+    while (open.length && open[open.length - 1] >= level) open.pop();
+    open.push(level);
+    return open.length - 1;
+  });
+}
+
+/* Deeper headings than this share the deepest indent, so long titles keep room. */
+const MAX_DEPTH = 4;
+
+/* The outline is generated from the headings in the note's saved content, each indented under */
+/* the heading it belongs to. A heading inside a tab block is named with its tab, such as */
+/* "Setup › Install". */
 export function TableOfContents({ id, session, content, open, onClose }: TableOfContentsProps) {
   const headings = useMemo(() => {
     const template = document.createElement('template');
     template.innerHTML = content;
-    return Array.from(template.content.querySelectorAll('h1, h2, h3, h4, h5, h6')).map(heading => ({
+    const found = Array.from(template.content.querySelectorAll('h1, h2, h3, h4, h5, h6'));
+    const depths = outlineDepths(found.map(heading => Number(heading.tagName.slice(1))));
+    return found.map((heading, index) => ({
       text: heading.textContent?.trim() ?? '',
       tabs: tabPathOf(heading),
-      nested: ['H3', 'H4', 'H5', 'H6'].includes(heading.tagName)
+      depth: Math.min(MAX_DEPTH, depths[index])
     }));
   }, [content]);
 
@@ -68,7 +86,8 @@ export function TableOfContents({ id, session, content, open, onClose }: TableOf
           <button
             key={index}
             type="button"
-            className={`outline-item ${heading.nested || heading.tabs.length ? 'outline-item--nested' : ''} ${heading.tabs.length ? 'outline-item--in-tab' : ''}`}
+            className={`outline-item ${heading.depth ? '' : 'outline-item--top'} ${heading.tabs.length ? 'outline-item--in-tab' : ''}`}
+            style={{ '--depth': heading.depth } as CSSProperties}
             onClick={() => go(index)}
           >
             {heading.tabs.length > 0 && <span className="outline-tab">{heading.tabs.join(' › ')} › </span>}

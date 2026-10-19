@@ -109,9 +109,14 @@ export function StarjotHome({ onOpenNote, onOpenNotespace, onOpenBoardspace, onO
       </header>
 
       {spaces.notes && <section className="home-section" aria-labelledby="home-notespace">
+        {/* The heading itself opens the space, where reading starts, rather than a button far off */}
+        {/* at the other end of the row. */}
         <div className="home-section-heading">
-          <h2 id="home-notespace"><Icon name="book-open" size={16} /> Notespace</h2>
-          <button type="button" className="btn btn-sm btn-tertiary" onClick={event => onOpenNotespace(opensNewTab(event))}>Open Notespace <Icon name="arrow-right" size={14} /></button>
+          <h2 id="home-notespace">
+            <button type="button" className="home-section-link" aria-label="Open Notespace" onClick={event => onOpenNotespace(opensNewTab(event))}>
+              <Icon name="book-open" size={16} /> Notespace <Icon name="chevron-right" size={16} className="home-section-chevron" />
+            </button>
+          </h2>
         </div>
         <div className="starjot-home-grid">
           <QuickNote onOpenNote={onOpenNote} />
@@ -142,8 +147,11 @@ export function StarjotHome({ onOpenNote, onOpenNotespace, onOpenBoardspace, onO
 
       {spaces.boardspace && <section className="home-section" aria-labelledby="home-boardspace">
         <div className="home-section-heading">
-          <h2 id="home-boardspace"><Icon name="layout-dashboard" size={16} /> Boardspace</h2>
-          <button type="button" className="btn btn-sm btn-tertiary" onClick={onOpenBoardspace}>Open Boardspace <Icon name="arrow-right" size={14} /></button>
+          <h2 id="home-boardspace">
+            <button type="button" className="home-section-link" aria-label="Open Boardspace" onClick={onOpenBoardspace}>
+              <Icon name="layout-dashboard" size={16} /> Boardspace <Icon name="chevron-right" size={16} className="home-section-chevron" />
+            </button>
+          </h2>
         </div>
         <div className="board-summary">
           {columns.map(column => (
