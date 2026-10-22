@@ -160,7 +160,7 @@
   align-items: flex-end;
   padding-bottom: 8px;
   color: #56657b;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 750;
   letter-spacing: .6px;
   text-transform: uppercase;
@@ -176,7 +176,7 @@
   overflow: hidden;
   padding: 0 8px;
   color: #56657b;
-  font-size: 11px;
+  font-size: 12px;
   white-space: nowrap;
 }
 
@@ -287,7 +287,7 @@
   background: transparent;
   color: var(--ink);
   font: inherit;
-  font-size: 12px;
+  font-size: 14px;
   text-align: left;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -319,7 +319,7 @@
   border-radius: 4px;
   background: #eef2f8;
   color: #56657b;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 650;
   line-height: 18px;
   text-align: center;
@@ -328,7 +328,7 @@
 .timeline-dates {
   overflow: hidden;
   color: #56657b;
-  font-size: 11px;
+  font-size: 12px;
   white-space: nowrap;
 }
 
@@ -349,7 +349,7 @@
   border: 0;
   border-radius: 4px;
   font: inherit;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 650;
   white-space: nowrap;
   transform: translateY(-50%);
@@ -418,7 +418,7 @@
   border-radius: 4px;
   background: #202c43;
   color: #ffffff;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 650;
   pointer-events: none;
 }
@@ -445,14 +445,14 @@
 
 .timeline-empty p {
   margin: 0 0 8px;
-  font-size: 12px;
+  font-size: 14px;
 }
 
 .timeline-no-match {
   margin: 0;
   padding: 24px 16px;
   color: #56657b;
-  font-size: 12px;
+  font-size: 14px;
 }
 
 

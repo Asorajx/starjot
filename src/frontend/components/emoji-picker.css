@@ -45,7 +45,7 @@
 .emoji-group-name {
   margin: 8px 4px 4px;
   color: #66778f;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
 }
 
@@ -99,7 +99,7 @@
   background: transparent;
   color: #d23f3f;
   font: inherit;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 650;
   cursor: pointer;
 }

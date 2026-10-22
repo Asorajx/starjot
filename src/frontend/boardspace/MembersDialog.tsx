@@ -51,8 +51,11 @@ export function MembersDialog({ onClose }: { onClose: () => void }) {
         </div>
 
         <form className="members-add" onSubmit={add}>
-          <input ref={inputRef} className="board-input" aria-label="New member's name" placeholder="Name" maxLength={MEMBER_LENGTH} value={name} onChange={event => setName(event.target.value)} />
-          <button type="submit" className="btn btn-primary">Add</button>
+          <label className="board-field">
+            <span>Add a member</span>
+            <input ref={inputRef} className="board-input" placeholder="Their name" maxLength={MEMBER_LENGTH} value={name} onChange={event => setName(event.target.value)} />
+          </label>
+          <button type="submit" className="btn btn-primary">Add member</button>
         </form>
         {error && <p className="board-form-error" role="alert">{error}</p>}
 

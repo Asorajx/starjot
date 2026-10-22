@@ -20,7 +20,7 @@
   background: var(--paper);
   color: #56657b;
   font: inherit;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 650;
   cursor: pointer;
 }
@@ -63,7 +63,7 @@
 .dropdown-heading {
   padding: 8px 8px 4px;
   color: #5b6b82;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
 }
 

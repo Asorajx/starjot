@@ -109,7 +109,7 @@
 
 .color-palette-heading {
   color: #667891;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
 }
 
@@ -164,7 +164,7 @@
   padding: 0 4px 4px;
   border-bottom: 1px solid #edf1f7;
   color: #667891;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   letter-spacing: .2px;
   white-space: nowrap;
@@ -183,7 +183,7 @@
   background: transparent;
   color: #4f6280;
   font: inherit;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   cursor: pointer;
 }
@@ -209,7 +209,7 @@
   background: #fff;
   color: #2b3d59;
   font: inherit;
-  font-size: 12px;
+  font-size: 14px;
   outline: none;
   resize: none;
 }

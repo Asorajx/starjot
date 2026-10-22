@@ -183,20 +183,22 @@ export function ColorMenu({ settings, onChange }: ColorMenuProps) {
         ))}
       </span>
       <ColorWheel color={settings.color} onChange={onChange} />
-      <input
-        className={`drawing-hex ${valid ? '' : 'is-invalid'}`}
-        value={typed}
-        placeholder="#hex code"
-        maxLength={7}
-        spellCheck={false}
-        aria-label="Hex colour code"
-        aria-invalid={!valid}
-        onChange={event => setTyped(event.target.value.trim())}
-        onBlur={applyTyped}
-        onKeyDown={event => {
-          if (event.key === 'Enter') applyTyped();
-        }}
-      />
+      <label className="drawing-hex-field">
+        <span>Hex code</span>
+        <input
+          className={`drawing-hex ${valid ? '' : 'is-invalid'}`}
+          value={typed}
+          placeholder="#1f6feb"
+          maxLength={7}
+          spellCheck={false}
+          aria-invalid={!valid}
+          onChange={event => setTyped(event.target.value.trim())}
+          onBlur={applyTyped}
+          onKeyDown={event => {
+            if (event.key === 'Enter') applyTyped();
+          }}
+        />
+      </label>
     </div>
   );
 }

@@ -49,7 +49,7 @@
   padding: 4px 4px 0;
   white-space: nowrap;
   font-weight: 660;
-  font-size: 12px;
+  font-size: 14px;
 }
 
 .board-tab:hover {
@@ -67,7 +67,7 @@
   color: #647893;
   border-radius: 4px;
   padding: 4px 8px;
-  font-size: 11px;
+  font-size: 12px;
 }
 
 /* Each status's colour, for its dot and its share of the Summary's status bar. Checked as a set */
@@ -188,7 +188,7 @@
   background: transparent;
   color: var(--ink);
   font: inherit;
-  font-size: 12px;
+  font-size: 14px;
 }
 
 .board-counts {
@@ -232,7 +232,7 @@
   background: var(--paper);
   color: #56657b;
   font: inherit;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 650;
   white-space: nowrap;
   cursor: pointer;
@@ -296,7 +296,7 @@
 
 .work-progress-value {
   color: #56657b;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 650;
 }
 
@@ -312,7 +312,7 @@
   background: #eef2f8;
   color: #45566f;
   font: inherit;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   white-space: nowrap;
   cursor: pointer;
@@ -342,7 +342,7 @@
   flex-shrink: 0;
   width: 24px;
   height: 24px;
-  font-size: 11px;
+  font-size: 12px;
 }
 
 /* Unassigned work shows a grey dash. */
@@ -363,7 +363,7 @@
   background: transparent;
   color: #45566f;
   font: inherit;
-  font-size: 12px;
+  font-size: 14px;
   white-space: nowrap;
   cursor: pointer;
 }
@@ -427,7 +427,7 @@
 
 .board-menu-text small {
   color: #5d6f88;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 500;
 }
 
@@ -446,7 +446,7 @@
   display: block;
   padding: 8px 8px 4px;
   color: #5d6f88;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: .04em;
@@ -508,7 +508,7 @@
 
 .board-drawer-overline {
   color: var(--accent-text);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 800;
   letter-spacing: 1px;
 }
@@ -531,7 +531,7 @@
 
 .board-field > span:first-child {
   color: #45566f;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 650;
 }
 
@@ -549,7 +549,7 @@
 
 .board-field-hint {
   color: #5d6f88;
-  font-size: 11px;
+  font-size: 12px;
 }
 
 .board-input {
@@ -560,7 +560,7 @@
   background: var(--paper);
   color: var(--ink);
   font: inherit;
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .board-input:focus {
@@ -586,7 +586,7 @@
   background: transparent;
   color: var(--accent-text);
   font: inherit;
-  font-size: 12px;
+  font-size: 14px;
   cursor: pointer;
 }
 
@@ -641,7 +641,7 @@
 .board-form-error {
   margin: 0;
   color: #b42d27;
-  font-size: 12px;
+  font-size: 14px;
 }
 
 .board-drawer-foot {
@@ -678,18 +678,19 @@
 .members-head p {
   margin: 4px 0 0;
   color: #5d6f88;
-  font-size: 12px;
+  font-size: 14px;
 }
 
+/* The name field (with its label) and its button share a bottom edge. */
 .members-add {
   display: flex;
+  align-items: flex-end;
   gap: 8px;
   margin-top: 16px;
 }
 
-.members-add .board-input {
+.members-add .board-field {
   flex: 1;
-  min-width: 0;
 }
 
 .members-list {
@@ -715,20 +716,20 @@
   min-width: 0;
   overflow: hidden;
   color: var(--ink);
-  font-size: 13px;
+  font-size: 14px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .members-count {
   color: #5d6f88;
-  font-size: 11px;
+  font-size: 12px;
 }
 
 .members-empty {
   margin: 16px 0 0;
   color: #5d6f88;
-  font-size: 12px;
+  font-size: 14px;
 }
 
 
@@ -750,7 +751,7 @@
 .work-list {
   width: 100%;
   border-collapse: collapse;
-  font-size: 12px;
+  font-size: 14px;
 }
 
 .work-list th {
@@ -774,7 +775,7 @@
   background: transparent;
   color: #56657b;
   font: inherit;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 750;
   letter-spacing: .6px;
   text-transform: uppercase;
@@ -838,16 +839,18 @@
 }
 
 /* The name opens the editor; what it sits inside is shown under it, quieter. */
+/* Name buttons look like text but stay at least 24px tall, an easy target. */
 .work-list-open {
   display: block;
   max-width: 100%;
+  min-height: 24px;
   overflow: hidden;
   padding: 0;
   border: 0;
   background: transparent;
   color: var(--ink);
   font: inherit;
-  font-size: 13px;
+  font-size: 14px;
   text-align: left;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -868,7 +871,7 @@
   display: block;
   overflow: hidden;
   color: #5d6f88;
-  font-size: 11px;
+  font-size: 12px;
   text-overflow: ellipsis;
 }
 
@@ -902,14 +905,14 @@
 
 .work-list-empty p {
   margin: 0 0 8px;
-  font-size: 12px;
+  font-size: 14px;
 }
 
 .work-list-none {
   margin: 0;
   padding: 24px 16px;
   color: #56657b;
-  font-size: 12px;
+  font-size: 14px;
 }
 
 
@@ -952,7 +955,7 @@
   gap: 8px;
   margin: 4px 4px 12px;
   color: #3a4d68;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 700;
 }
 
@@ -971,7 +974,7 @@
   margin: 0;
   padding: 16px 8px;
   color: #5d6f88;
-  font-size: 11px;
+  font-size: 12px;
   text-align: center;
 }
 
@@ -1003,13 +1006,14 @@
 .board-card-name {
   flex: 1;
   min-width: 0;
+  min-height: 24px;
   padding: 0;
   border: 0;
   border-radius: 4px;
   background: transparent;
   color: var(--ink);
   font: inherit;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 650;
   line-height: 1.4;
   text-align: left;
@@ -1029,7 +1033,7 @@
 
 .board-card-parent {
   color: #5d6f88;
-  font-size: 11px;
+  font-size: 12px;
 }
 
 .board-card-foot {
@@ -1037,7 +1041,7 @@
   align-items: center;
   gap: 8px;
   color: #5d6f88;
-  font-size: 11px;
+  font-size: 12px;
 }
 
 .board-card-sprint {
@@ -1105,7 +1109,7 @@
 
 .summary-tile strong {
   color: var(--ink);
-  font-size: 28px;
+  font-size: 24px;
   font-weight: 700;
   line-height: 1.1;
 }
@@ -1113,7 +1117,7 @@
 .summary-tile small,
 .summary-muted {
   color: #5d6f88;
-  font-size: 11px;
+  font-size: 12px;
 }
 
 .summary-grid {
@@ -1142,7 +1146,7 @@
 .summary-none {
   margin: 0;
   color: #5d6f88;
-  font-size: 12px;
+  font-size: 14px;
 }
 
 /* The status bar: each status's share, 2px apart, with rounded outer ends. */
@@ -1201,7 +1205,7 @@
   grid-template-columns: 8px 1fr 32px 40px;
   align-items: center;
   gap: 8px;
-  font-size: 12px;
+  font-size: 14px;
 }
 
 .summary-legend strong,
@@ -1231,7 +1235,7 @@
   min-width: 0;
   overflow: hidden;
   color: #2e405e;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 650;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1247,12 +1251,13 @@
   border-radius: 4px;
   background: var(--accent-soft);
   color: var(--accent-text);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 650;
 }
 
 .summary-link {
   min-width: 0;
+  min-height: 24px;
   overflow: hidden;
   padding: 0;
   border: 0;
@@ -1260,7 +1265,7 @@
   background: transparent;
   color: #2e405e;
   font: inherit;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 650;
   text-align: left;
   text-overflow: ellipsis;
@@ -1288,7 +1293,7 @@
   gap: 4px;
   margin: 0 0 8px;
   color: #3a4d68;
-  font-size: 12px;
+  font-size: 14px;
 }
 
 .summary-due h4.is-overdue svg {
@@ -1313,7 +1318,7 @@
 .summary-due-date {
   flex-shrink: 0;
   color: #5d6f88;
-  font-size: 11px;
+  font-size: 12px;
 }
 
 .summary-due-date.is-overdue {

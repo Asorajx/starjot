@@ -15,7 +15,7 @@
 
 .outline-item {
   display: block;
-  font-size: 11px;
+  font-size: 14px;
   line-height: 1.4;
   padding: 12px 8px;
   margin-bottom: 8px;
@@ -48,7 +48,7 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  font-size: 11px;
+  font-size: 12px;
   color: #67788c;
   margin-bottom: 24px;
 }
@@ -153,7 +153,7 @@
   align-items: center;
   gap: 12px;
   color: #647794;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 800;
   letter-spacing: 1.1px;
   margin-top: 64px;
@@ -167,7 +167,7 @@
 }
 
 .side-setting>strong {
-  font-size: 11px;
+  font-size: 12px;
   color: #455775;
 }
 
@@ -213,7 +213,7 @@
   background: #fff;
   color: #586b86;
   font: inherit;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   text-align: left;
   cursor: pointer;
@@ -245,7 +245,7 @@
 .option-row > span {
   flex: 1;
   color: #526581;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 650;
 }
 
@@ -257,7 +257,7 @@
   background: #fff;
   color: #586b86;
   font: inherit;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   cursor: pointer;
 }
@@ -275,7 +275,7 @@
 .option-tile em {
   margin-left: auto;
   color: #627896;
-  font-size: 11px;
+  font-size: 12px;
   font-style: normal;
 }
 
@@ -591,7 +591,7 @@
   gap: 12px;
   margin-bottom: 24px;
   color: #344962;
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .flyout-close {
@@ -653,7 +653,7 @@
 .toc-empty {
   margin: 8px 4px;
   color: #647891;
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1.7;
 }
 
@@ -664,7 +664,7 @@
   padding-top: 16px;
   border-top: 1px solid #edf1f7;
   color: #617795;
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1.6;
 }
 
@@ -681,7 +681,7 @@
   gap: 12px;
   padding: 12px 0 0;
   color: #526581;
-  font-size: 11px;
+  font-size: 14px;
   font-weight: 650;
   cursor: pointer;
 }
@@ -815,7 +815,7 @@
   left: 0;
   right: 0;
   color: #69778d;
-  font-size: 11px;
+  font-size: 12px;
   text-align: center;
 }
 
@@ -871,7 +871,7 @@
   min-width: 0;
   max-width: min(48vw, 510px);
   color: #66778f;
-  font-size: 11px;
+  font-size: 14px;
 }
 
 .editor-crumbs {
@@ -887,6 +887,7 @@
 /* The category and parent pages in the breadcrumb are links to those pages. */
 .editor-crumb-link {
   flex-shrink: 0;
+  min-height: 24px;
   padding: 0;
   border: 0;
   background: transparent;
@@ -1166,7 +1167,7 @@
   background: transparent;
   color: #4f6280;
   font: inherit;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   cursor: pointer;
 }
@@ -1278,7 +1279,7 @@
   background: transparent;
   color: #66778f;
   font: inherit;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   cursor: pointer;
 }
@@ -1405,7 +1406,7 @@
   height: 26px;
   padding: 0 8px;
   color: #66778f;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
 }
 
@@ -1494,7 +1495,7 @@
 }
 
 .note-page-icon {
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1;
 }
 

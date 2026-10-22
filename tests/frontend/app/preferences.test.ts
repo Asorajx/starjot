@@ -39,12 +39,16 @@ describe('preferences', () => {
     expect((await openApp()).getPreferences().density).toBe('compact');
   });
 
-  it('starts in light mode, even when the computer prefers dark mode', async () => {
+  it('starts by following the computer, so it opens dark when the computer prefers dark', async () => {
     const original = window.matchMedia;
     window.matchMedia = ((query: string) => ({ matches: query.includes('dark'), media: query })) as unknown as typeof window.matchMedia;
-    const preferences = await openApp();
-    expect(preferences.getPreferences().theme).toBe('light');
-    window.matchMedia = original;
+    try {
+      const preferences = await openApp();
+      expect(preferences.getPreferences().theme).toBe('system');
+      expect(preferences.shownTheme()).toBe('dark');
+    } finally {
+      window.matchMedia = original;
+    }
   });
 
   it('applies the theme to the page and remembers it', async () => {

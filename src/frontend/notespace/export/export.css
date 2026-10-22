@@ -19,7 +19,7 @@
 .export-label {
   flex-shrink: 0;
   color: #56657b;
-  font-size: 13px;
+  font-size: 14px;
   white-space: nowrap;
 }
 
@@ -40,7 +40,7 @@
   background: transparent;
   color: #1c2c47;
   font: inherit;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
   cursor: pointer;
 }
@@ -71,7 +71,7 @@
   background: #fff;
   color: #1c2c47;
   font: inherit;
-  font-size: 13px;
+  font-size: 14px;
   text-align: right;
 }
 
@@ -96,7 +96,7 @@
   align-items: center;
   gap: 8px;
   color: #56657b;
-  font-size: 13px;
+  font-size: 14px;
   cursor: pointer;
 }
 

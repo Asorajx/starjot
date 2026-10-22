@@ -25,7 +25,7 @@
 .starjot-home-subtitle {
   margin: 0;
   color: #68788f;
-  font-size: 13px;
+  font-size: 14px;
 }
 
 /* The quick note and "Where you left off" sit side by side, and stack when there is no room. */
@@ -37,7 +37,7 @@
 
 .home-card-label {
   color: var(--accent-text);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
 }
 
@@ -73,7 +73,7 @@
   background: var(--paper);
   color: var(--ink);
   font: inherit;
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.6;
   resize: vertical;
 }
@@ -85,7 +85,7 @@
 .quick-note-status {
   min-width: 0;
   color: #66778f;
-  font-size: 11px;
+  font-size: 12px;
 }
 
 /* A button that reads as a link inside a sentence. */
@@ -133,7 +133,7 @@
   background: var(--paper);
   color: #56657b;
   font: inherit;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 650;
   text-align: left;
   cursor: pointer;
@@ -160,7 +160,7 @@
 .board-summary-empty p {
   margin: 0;
   color: #56657b;
-  font-size: 12px;
+  font-size: 14px;
 }
 
 .board-summary-label {
@@ -175,7 +175,7 @@
 
 .board-summary-count {
   color: var(--ink);
-  font-size: 28px;
+  font-size: 24px;
   font-weight: 750;
   line-height: 1.2;
 }

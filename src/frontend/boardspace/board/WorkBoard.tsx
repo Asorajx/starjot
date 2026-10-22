@@ -188,7 +188,7 @@ function WorkCard({ item, board, dragging, onOpen, onKeyDown, onDragStart, onDra
         <span className="board-card-sprint">{sprint ? sprint.name : 'Backlog'}</span>
         {item.end && (
           <span className={`board-card-due ${overdue ? 'is-overdue' : ''}`} aria-label={`${overdue ? 'Overdue, due' : 'Due'} ${shortDay(item.end)}`}>
-            <Icon name="calendar-days" size={12} />{shortDay(item.end)}
+            <Icon name={overdue ? 'alert-triangle' : 'calendar-days'} size={12} />{shortDay(item.end)}
           </span>
         )}
         <span className="board-card-person" data-tooltip={item.assignee || 'Unassigned'} aria-label={item.assignee || 'Unassigned'}>

@@ -70,7 +70,7 @@
 .comment-popover p {
   margin: 0 0 12px;
   color: #3a4b64;
-  font-size: 12px;
+  font-size: 14px;
   line-height: 1.6;
   white-space: pre-wrap;
 }
@@ -81,7 +81,7 @@
   justify-content: space-between;
   gap: 8px;
   color: #667891;
-  font-size: 11px;
+  font-size: 12px;
 }
 
 .comment-delete {
@@ -94,7 +94,7 @@
   background: transparent;
   color: #d23f3f;
   font: inherit;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   cursor: pointer;
 }

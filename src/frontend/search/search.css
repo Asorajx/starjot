@@ -83,7 +83,7 @@
   background: var(--paper);
   color: #56657b;
   font: inherit;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 650;
   cursor: pointer;
 }
@@ -152,7 +152,7 @@
 
 .search-result-line {
   overflow: hidden;
-  font-size: 13px;
+  font-size: 14px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -191,7 +191,7 @@
   margin: 0;
   padding: 24px 12px;
   color: #66778e;
-  font-size: 13px;
+  font-size: 14px;
 }
 
 
@@ -223,25 +223,25 @@
 
 .search-preview-page > p {
   color: #34435d;
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.6;
 }
 
 .search-preview-subtitle {
   margin: 0 0 16px;
   color: #66778e;
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .search-preview-empty {
   color: #66778e;
-  font-size: 13px;
+  font-size: 14px;
 }
 
 /* The note's own text, shown smaller and without its interactive parts. */
 .search-preview-content {
   color: #34435d;
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.6;
   pointer-events: none;
 }
@@ -271,7 +271,7 @@
   margin: 0;
   padding-left: 24px;
   color: #34435d;
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.8;
 }
 
@@ -279,7 +279,7 @@
   display: grid;
   grid-template-columns: max-content 1fr;
   gap: 8px 16px;
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .search-preview-facts dt {

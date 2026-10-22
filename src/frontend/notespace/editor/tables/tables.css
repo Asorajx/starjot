@@ -62,7 +62,7 @@
 }
 
 .table-grip {
-  width: 22px;
+  width: 24px;
   height: 26px;
   border-color: transparent;
   background: transparent;
@@ -194,7 +194,7 @@
   box-shadow: 0 6px 18px rgba(28, 54, 96, .12);
   color: #2c3d58;
   font: inherit;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 650;
   white-space: nowrap;
   cursor: pointer;
@@ -231,7 +231,7 @@
   background: transparent;
   color: #2c3d58;
   font: inherit;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 600;
   text-align: left;
   cursor: pointer;

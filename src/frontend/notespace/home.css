@@ -26,7 +26,7 @@
   border-bottom: 1px solid #eef0f5;
   background: #fafbfd;
   color: #69778b;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 760;
   letter-spacing: .85px;
   padding: 0 24px;
@@ -65,7 +65,7 @@
 }
 
 .recent-text strong {
-  font-size: 11px;
+  font-size: 14px;
   font-weight: 680;
   color: #4b5b74;
   overflow: hidden;
@@ -95,7 +95,7 @@
   border-radius: 4px;
   background: #f1f4f9;
   color: #68778e;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   line-height: 18px;
   text-overflow: ellipsis;
@@ -118,7 +118,7 @@
 }
 
 .recent-text small {
-  font-size: 11px;
+  font-size: 12px;
   color: #69778d;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -126,12 +126,12 @@
 }
 
 .recent-category {
-  font-size: 11px;
+  font-size: 12px;
   color: #66778e;
 }
 
 .recent-time {
-  font-size: 11px;
+  font-size: 12px;
   color: #67788e;
   display: flex;
   align-items: center;
@@ -183,7 +183,7 @@
 
 .new-note-choice small {
   color: #5d6f88;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 500;
 }
 
@@ -288,7 +288,7 @@
   gap: 8px;
   min-width: 0;
   color: #2c3d58;
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .note-tile-title svg {
@@ -312,7 +312,7 @@
   display: -webkit-box;
   overflow: hidden;
   color: #68788f;
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1.6;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
@@ -321,7 +321,7 @@
 .note-tile-meta {
   margin-top: auto;
   color: #66778f;
-  font-size: 11px;
+  font-size: 12px;
 }
 
 /* The category page reuses the notes home layout, with a back link above the title. */
@@ -347,14 +347,14 @@
   gap: 8px;
   margin-left: auto;
   color: #66778f;
-  font-size: 11px;
+  font-size: 14px;
   font-weight: 600;
 }
 
 .notes-sort .dropdown-button {
   height: 28px;
   color: #2c3d58;
-  font-size: 11px;
+  font-size: 12px;
 }
 
 /* Each row is the open button (name, category, time) plus a pin button at the end. */
@@ -479,7 +479,7 @@
   background: var(--paper);
   color: #56657b;
   font: inherit;
-  font-size: 11px;
+  font-size: 14px;
   font-weight: 650;
   cursor: pointer;
 }
@@ -529,7 +529,7 @@
   background: transparent;
   color: var(--ink);
   font: inherit;
-  font-size: 11px;
+  font-size: 14px;
   font-weight: 650;
   outline: none;
 }
@@ -565,7 +565,7 @@
   margin: 0;
   padding: 32px 24px;
   color: #66778e;
-  font-size: 12px;
+  font-size: 14px;
 }
 
 
@@ -686,8 +686,8 @@
   display: grid;
   flex-shrink: 0;
   place-items: center;
-  width: 20px;
-  height: 20px;
+  width: 24px;
+  height: 24px;
   padding: 0;
   border: 0;
   border-radius: 50%;
@@ -713,7 +713,7 @@
   padding: 8px;
   border-top: 1px solid var(--line);
   color: #66778f;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
 }
 

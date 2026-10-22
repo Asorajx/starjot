@@ -37,7 +37,7 @@
 .block-controls {
   position: absolute;
   top: var(--controls-top, 4px);
-  left: 18px;
+  left: 14px;
   display: flex;
   align-items: center;
   height: 26px;
@@ -103,15 +103,15 @@
   position: static;
   display: grid;
   place-items: center;
-  flex: 0 0 19px;
-  width: 19px;
+  flex: 0 0 24px;
+  width: 24px;
   height: 26px;
   padding: 0;
   border: 0;
   border-radius: 4px;
   background: transparent;
   color: #647891;
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1;
   font-family: inherit;
   cursor: pointer;
@@ -278,7 +278,7 @@
 .slash-menu-label {
   margin: 4px 8px 4px;
   color: #66778f;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   letter-spacing: .04em;
   text-transform: uppercase;
@@ -295,7 +295,7 @@
   background: transparent;
   color: #2c3d58;
   font: inherit;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 600;
   text-align: left;
   cursor: pointer;
@@ -349,7 +349,7 @@
   background: #ffffff;
   color: var(--ink);
   font: inherit;
-  font-size: 12px;
+  font-size: 14px;
 }
 
 .slash-menu-search:focus {
@@ -639,7 +639,7 @@
 .page-preview-address {
   overflow: hidden;
   color: #65738a;
-  font-size: 11px;
+  font-size: 12px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -651,14 +651,14 @@
 
 .page-preview-meta {
   color: #69778d;
-  font-size: 11px;
+  font-size: 12px;
 }
 
 .page-preview-text {
   display: -webkit-box;
   overflow: hidden;
   color: #65738a;
-  font-size: 12px;
+  font-size: 14px;
   line-height: 1.6;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 4;
@@ -713,7 +713,7 @@
 
 .link-tools-form label > span {
   color: #667891;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
 }
 
@@ -726,7 +726,7 @@
   align-items: center;
   gap: 4px;
   color: #65738a;
-  font-size: 11px;
+  font-size: 12px;
 }
 
 .link-tools-suggestions {
@@ -737,7 +737,7 @@
 
 .link-tools-error {
   color: #c2410c;
-  font-size: 11px;
+  font-size: 12px;
 }
 
 .link-tools-actions {
@@ -1032,8 +1032,8 @@ ul.checklist > li.is-checked {
 .tab-strip-remove {
   display: grid;
   place-items: center;
-  width: 20px;
-  height: 20px;
+  width: 24px;
+  height: 24px;
   margin-right: 4px;
   color: #66778f;
   visibility: hidden;

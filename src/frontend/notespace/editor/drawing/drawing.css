@@ -535,6 +535,15 @@
   cursor: default;
 }
 
+.drawing-hex-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: #45566f;
+  font-size: 12px;
+  font-weight: 650;
+}
+
 .drawing-hex {
   width: 100%;
   height: 32px;

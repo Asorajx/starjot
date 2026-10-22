@@ -41,7 +41,7 @@
   margin-bottom: 8px;
   padding: 0 12px;
   color: #5b6b82;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 790;
   letter-spacing: 1.2px;
   text-transform: uppercase;
@@ -60,7 +60,7 @@
   background: transparent;
   color: #5b6b82;
   font: inherit;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 650;
   text-align: left;
   cursor: pointer;
@@ -97,7 +97,7 @@
 .settings-panel-subtitle {
   margin: 0 0 32px;
   color: #5b6b82;
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .settings-group {
@@ -105,7 +105,7 @@
 }
 
 .settings-group-title {
-  font-size: 11px;
+  font-size: 12px;
   text-transform: uppercase;
   color: #60789c;
   letter-spacing: 1px;
@@ -133,7 +133,7 @@
 .setting-row-text strong {
   font-weight: 680;
   color: #34435d;
-  font-size: 13px;
+  font-size: 14px;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -159,7 +159,7 @@
   border-radius: 4px;
   background: #f0f3f8;
   color: #5b6b82;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 650;
   line-height: 20px;
 }
@@ -183,7 +183,7 @@
   gap: 8px;
   min-height: 32px;
   color: #34435d;
-  font-size: 13px;
+  font-size: 14px;
   cursor: pointer;
 }
 
@@ -212,7 +212,7 @@
   background: transparent;
   color: #67778e;
   font: inherit;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 650;
   white-space: nowrap;
   cursor: pointer;
@@ -227,11 +227,12 @@
   color: var(--accent-text);
 }
 
+/* Switches are 24px tall, an easy target; the knob travels the width left beside it. */
 .preview-switch {
-  width: 35px;
-  height: 20px;
+  width: 40px;
+  height: 24px;
   background: #e1e8f0;
-  border-radius: 20px;
+  border-radius: 24px;
   display: inline-flex;
   align-items: center;
   padding: 4px;
@@ -239,8 +240,8 @@
 }
 
 .preview-switch>span {
-  width: 14px;
-  height: 14px;
+  width: 16px;
+  height: 16px;
   border-radius: 50%;
   background: white;
   box-shadow: 0 1px 3px #8593a6;
@@ -251,7 +252,7 @@
 }
 
 .preview-switch--on>span {
-  transform: translateX(15px);
+  transform: translateX(16px);
 }
 
 /* A switch that really changes a setting is a button, so it loses the button border and can be clicked. */
@@ -312,7 +313,7 @@
   background: #f2f5f9;
   border-radius: 4px;
   padding: 4px 8px;
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: .15px;
   font-weight: 700;
 }
@@ -327,7 +328,7 @@
   border-radius: 4px;
   padding: 16px 16px;
   line-height: 1.7;
-  font-size: 11px;
+  font-size: 12px;
 }
 
 .info-banner svg {
@@ -336,7 +337,7 @@
 }
 
 .fake-text {
-  font-size: 11px;
+  font-size: 12px;
   color: #67788f;
 }
 
@@ -353,13 +354,13 @@
 
 .about-card h3 {
   margin: 0 0 4px;
-  font-size: 20px;
+  font-size: 18px;
 }
 
 .about-card p {
   margin: 0;
   color: #5e789a;
-  font-size: 11px;
+  font-size: 12px;
 }
 
 
@@ -402,7 +403,7 @@
   padding: 8px 0;
   border-bottom: 1px solid #eef1f5;
   color: #34435d;
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .shortcut-keys,
