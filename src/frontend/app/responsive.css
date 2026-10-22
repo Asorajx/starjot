@@ -193,11 +193,6 @@
     gap: 4px;
   }
 
-  .article-body p,
-  .block-content p {
-    font-size: 12px;
-  }
-
   .board-intro {
     align-items: center;
   }

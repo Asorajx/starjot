@@ -11,10 +11,10 @@ import { useMediaQuery } from '../lib/useMediaQuery';
 /* One step of the path. Steps above the current page open it (Ctrl + click in a new tab). */
 export type Crumb = { key: string; label: string; open?: (inNewTab: boolean) => void };
 
-/* How many steps show, counting the current page, before earlier ones fold into "…": fewer on */
-/* a phone, so the page bar keeps room for its buttons. */
+/* How many steps show, counting the current page, before earlier ones fold into "…". A phone */
+/* shows just the current page (after "…", which opens the full path), so its name has room. */
 const SHOWN = 3;
-const SHOWN_ON_PHONE = 2;
+const SHOWN_ON_PHONE = 1;
 
 /* The path to the page shown, in the page bar: Notespace, then a category, parent notes and the */
 /* page itself (the last step). Earlier steps past the limit fold into "…", which shows the full */

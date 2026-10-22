@@ -7,7 +7,7 @@ import { FindBar } from './find/FindBar';
 import { takeFindForNote } from './find/pendingFind';
 import { Icon } from '../../components/Icon';
 import {
-  deleteNote, flushSave, getNote, markOpened, updateNote,
+  deleteNote, flushSave, getNote, markOpened, setPinned, updateNote,
   updatedLabel, useCategories, useNote
 } from '../store';
 import type { NoteMode } from '../../../shared/types/note';
@@ -37,16 +37,14 @@ import { pageGeometry, pageStep, usePages } from './layout/pagination';
 import { EditorSession, useSessionValue } from './session';
 import { StructuredEditor } from './text/StructuredEditor';
 import { zoomed } from '../../lib/geometry';
-import { useMediaQuery } from '../../lib/useMediaQuery';
 import { CanvasEditor } from '../canvas/CanvasEditor';
 
 type Panel = 'toc' | 'settings' | null;
 
-/* A note's 100% zoom shows it at this size, so its text reads comfortably (about 15.6px for */
-/* body text, which is styled at 13px). Zoom and Small text scale from here. Phones (the phone */
-/* layout starts at 700px wide) keep the note's own size: 1.2 fits too few words on a line. */
+/* A note's 100% zoom shows it at this size, so its text reads comfortably (about 16px for body */
+/* text, which is styled at 13px), on phones too: there the note fills the width to a 16px */
+/* edge, which still fits about 45 characters a line. Zoom and Small text scale from here. */
 const BASE_SCALE = 1.2;
-const PHONE_BASE_SCALE = 1;
 
 /* Small text shows a note at this share of its size. */
 const SMALL_TEXT_SCALE = 0.875;
@@ -186,9 +184,8 @@ function DocumentEditor({ noteId, history, view, active, onClose, onOpenNote, on
   /* 100% shows notes at BASE_SCALE. A paginated page too wide for the pane at that size (on a */
   /* phone, say) is shown at the size that fits instead, so 100% means "the whole page width"; */
   /* zooming in from there scrolls sideways. */
-  const phone = useMediaQuery('(max-width: 700px)');
   const fitScale = geometry && pageRoom > 0 ? pageRoom / geometry.width : Infinity;
-  const noteZoom = Math.min(phone ? PHONE_BASE_SCALE : BASE_SCALE, fitScale) * zoom * (smallText ? SMALL_TEXT_SCALE : 1);
+  const noteZoom = Math.min(BASE_SCALE, fitScale) * zoom * (smallText ? SMALL_TEXT_SCALE : 1);
 
   /* Remember when the note was opened, and save pending edits when leaving it. */
   useEffect(() => {
@@ -384,7 +381,7 @@ function DocumentEditor({ noteId, history, view, active, onClose, onOpenNote, on
         {/* Turns red ("Unstick") when the selection is inside one sticky group. */}
         <button
           type="button"
-          className={`page-bar-button note-sticky-button ${sticky === 'unstick' ? 'is-unstick' : ''}`}
+          className={`page-bar-button page-bar-wide note-sticky-button ${sticky === 'unstick' ? 'is-unstick' : ''}`}
           aria-pressed={sticky === 'unstick'}
           data-tooltip={sticky === 'unstick' ? 'Unstick' : 'Sticky'}
           aria-label={sticky === 'unstick' ? 'Unstick the selected group' : 'Sticky: keep the selected content together'}
@@ -398,7 +395,7 @@ function DocumentEditor({ noteId, history, view, active, onClose, onOpenNote, on
         {drawingSettings.enabled && (
           <button
             type="button"
-            className={`page-bar-button ${drawing ? 'selected' : ''}`}
+            className={`page-bar-button page-bar-wide ${drawing ? 'selected' : ''}`}
             aria-pressed={drawing}
             data-tooltip={drawing ? 'Stop drawing' : 'Draw'}
             data-shortcut={drawing ? 'Esc' : undefined}
@@ -410,11 +407,11 @@ function DocumentEditor({ noteId, history, view, active, onClose, onOpenNote, on
           </button>
         )}
 
-        <button type="button" data-panel-toggle className={`page-bar-button ${panel === 'toc' ? 'selected' : ''}`} data-tooltip={panel === 'toc' ? undefined : 'Contents'} aria-label="Contents" aria-expanded={panel === 'toc'} aria-controls={`${panelId}-toc`} onClick={() => togglePanel('toc')}>
+        <button type="button" data-panel-toggle className={`page-bar-button page-bar-wide ${panel === 'toc' ? 'selected' : ''}`} data-tooltip={panel === 'toc' ? undefined : 'Contents'} aria-label="Contents" aria-expanded={panel === 'toc'} aria-controls={`${panelId}-toc`} onClick={() => togglePanel('toc')}>
           <Icon name="list" size={17} />
         </button>
 
-        <NoteStarButton note={note} />
+        <NoteStarButton note={note} className="page-bar-wide" />
 
         {note.locked && <LockStatus noteId={note.id} temporary={temporary} unlockedUntil={note.unlockedUntil} />}
 
@@ -451,6 +448,24 @@ function DocumentEditor({ noteId, history, view, active, onClose, onOpenNote, on
           onCopyLink={() => copyPageLink(note.id)}
           onExport={() => { setPanel(null); setExporting(true); }}
           onDelete={() => { setPanel(null); setConfirmDelete(true); }}
+          phoneActions={(
+            <>
+              <button type="button" className="option-tile" onClick={() => togglePanel('toc')}>
+                <Icon name="list" size={16} /> Contents
+              </button>
+              <button type="button" className={`option-tile ${note.pinned ? 'selected' : ''}`} aria-pressed={note.pinned} onClick={() => setPinned(note.id, !note.pinned)}>
+                <Icon name="star" size={16} /> {note.pinned ? 'Starred' : 'Star'}
+              </button>
+              {drawingSettings.enabled && (
+                <button type="button" className={`option-tile ${drawing ? 'selected' : ''}`} aria-pressed={drawing} disabled={locked} onClick={() => { setPanel(null); toggleDrawing(); }}>
+                  <Icon name="pencil" size={16} /> {drawing ? 'Stop drawing' : 'Draw'}
+                </button>
+              )}
+              <button type="button" className="option-tile" disabled={sticky === 'none' || locked} onClick={() => session.toggleSticky()}>
+                <Icon name="link" size={16} /> {sticky === 'unstick' ? 'Unstick' : 'Sticky'}
+              </button>
+            </>
+          )}
         />
       </PageBar>
 

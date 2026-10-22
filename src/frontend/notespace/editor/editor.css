@@ -186,6 +186,12 @@
   margin-top: 0;
 }
 
+/* The note buttons that move here from the top bar on phones; hidden on wider screens (see the */
+/* phone rules below). */
+.option-grid.note-phone-actions {
+  display: none;
+}
+
 .option-grid.is-icons {
   grid-template-columns: repeat(4, 1fr);
 }
@@ -934,6 +940,7 @@
 }
 
 .editor-crumb-parent {
+  flex-shrink: 1;
   min-width: 0;
   max-width: 140px;
   overflow: hidden;
@@ -1103,14 +1110,46 @@
   outline: 4px solid var(--accent-soft);
 }
 
+/* On phones the note runs to the screen's 16px edge: the block controls sit above a block there */
+/* (see text.css), so the narrow pane's left gutter for them is not needed. */
 @media (max-width: 700px) {
-  .editor-wrap .editor-canvas {
+  .editor-wrap .editor-canvas,
+  .editor-wrap .editor-canvas:not(.is-paginated) {
     padding: 24px 16px 64px;
   }
 
-  /* Phones show at most two steps (see Breadcrumb.tsx), in less room. */
+  /* The title shows at 24px (20px at the note's 120%), like other page titles on phones, so more */
+  /* of a long title fits on its one line. */
+  .note-title-input {
+    font-size: 20px;
+  }
+
+  /* Phones keep the bar to one row: Forward, Contents, Star, Draw and Sticky move into Note */
+  /* settings (its first row there), leaving Back, the breadcrumb, Undo, Redo and Note settings. */
+  .page-bar-forward,
+  .page-bar-wide {
+    display: none;
+  }
+
+  /* Saving is quiet on phones: the indicator only shows when notes are not being kept. */
+  .save-status:not(.is-unsaved) {
+    display: none;
+  }
+
+  .option-grid.note-phone-actions {
+    display: grid;
+    margin-bottom: 8px;
+  }
+
+  /* Phones show "…" and the current page (see Breadcrumb.tsx), which takes the room the */
+  /* buttons leave. */
   .editor-breadcrumb {
-    max-width: 44vw;
+    flex: 1;
+    max-width: none;
+  }
+
+  .editor-breadcrumb + .page-bar-fill {
+    display: none;
   }
 
   .editor-crumbs,

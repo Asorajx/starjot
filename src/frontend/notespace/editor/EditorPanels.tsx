@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type CSSProperties } from 'react';
+import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from 'react';
 import { getPreferences } from '../../app/preferences';
 import { STACK_LIMIT } from '../../app/noteTabs';
 import { Switch } from '../../components/Switch';
@@ -138,6 +138,9 @@ type NoteSettingsProps = {
   /* Opens the Export window. */
   onExport: () => void;
   onDelete: () => void;
+
+  /* On phones, the note's buttons that leave the top bar there (Contents, Star, Draw, Sticky). */
+  phoneActions?: ReactNode;
 };
 
 const LAYOUTS: { id: PageLayout; title: string; tooltip: string; icon: IconName }[] = [
@@ -158,7 +161,7 @@ const SPLITS: { id: 'right' | 'down'; title: string; tooltip: string; icon: Icon
 ];
 
 export function NoteSettings({
-  id, note, open, zoom, view, onClose, onModeChange, onStickyIndicatorChange, onZoom, onLockChange, onPageChange, onCopyLink, onExport, onDelete
+  id, note, open, zoom, view, onClose, onModeChange, onStickyIndicatorChange, onZoom, onLockChange, onPageChange, onCopyLink, onExport, onDelete, phoneActions
 }: NoteSettingsProps) {
   /* "Copied" shows until the panel is closed. */
   const [copied, setCopied] = useState(false);
@@ -176,6 +179,8 @@ export function NoteSettings({
         <strong>Note settings</strong>
         <button type="button" className="flyout-close" aria-label="Close note settings" onClick={onClose}><Icon name="x" size={17} /></button>
       </div>
+
+      {phoneActions && <div className="option-grid is-three note-phone-actions">{phoneActions}</div>}
 
       <div className="option-grid is-three">
         <button

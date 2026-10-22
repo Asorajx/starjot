@@ -42,10 +42,10 @@ describe('breadcrumb', () => {
     expect(holder.querySelector('[aria-current="page"]')?.textContent).toBe('Step 3');
   });
 
-  it('folds earlier steps into "…" past three, or past two on a phone', () => {
+  it('folds earlier steps into "…" past three, or past the current page on a phone', () => {
     expect(steps(render(trail(5)))).toEqual(['…', 'Step 3', 'Step 4', 'Step 5']);
     phone = true;
-    expect(steps(render(trail(3)))).toEqual(['…', 'Step 2', 'Step 3']);
+    expect(steps(render(trail(3)))).toEqual(['…', 'Step 3']);
   });
 
   it('opens a step when clicked, in a new tab with Ctrl', () => {

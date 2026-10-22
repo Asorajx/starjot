@@ -49,7 +49,7 @@ export function HistoryButtons({ history }: { history: PageHistory }) {
       <button type="button" className="page-bar-button" data-tooltip={backLabel} data-tooltip-align="start" aria-label={backLabel} disabled={!history.back} onClick={history.onBack}>
         <Icon name="arrow-left" size={17} />
       </button>
-      <button type="button" className="page-bar-button" data-tooltip={forwardLabel} aria-label={forwardLabel} disabled={!history.forward} onClick={history.onForward}>
+      <button type="button" className="page-bar-button page-bar-forward" data-tooltip={forwardLabel} aria-label={forwardLabel} disabled={!history.forward} onClick={history.onForward}>
         <Icon name="arrow-right" size={17} />
       </button>
     </span>

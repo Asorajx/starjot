@@ -49,11 +49,11 @@ export function UndoRedoButtons({ session, locked }: { session: EditorSession; l
 }
 
 /* Star or unstar the note; starred notes are listed in the sidebar and on the notes home page. */
-export function NoteStarButton({ note }: { note: Note }) {
+export function NoteStarButton({ note, className = '' }: { note: Note; className?: string }) {
   return (
     <button
       type="button"
-      className={`page-bar-button star-button ${note.pinned ? 'is-starred' : ''}`}
+      className={`page-bar-button star-button ${note.pinned ? 'is-starred' : ''} ${className}`}
       aria-pressed={note.pinned}
       data-tooltip={note.pinned ? 'Unstar' : 'Star'}
       aria-label={note.pinned ? 'Unstar' : 'Star'}
