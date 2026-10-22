@@ -157,23 +157,38 @@
   background: var(--accent);
 }
 
-/* A note's words in near-white, so they stand out from the dark page and are easy to read; */
-/* headings are brightest, quotes a little quieter. Bold words take the colour around them, and */
-/* text colours chosen in the note still win, since they are set on the words themselves. */
+/* A note's words in the palette's primary text, so they stand out from the dark page and are */
+/* easy to read; headings are strongest, quotes secondary. Bold words take the colour around */
+/* them, and text colours chosen in the note still win, since they are set on the words. */
 [data-theme="dark"] :is(.note-body, .block-content) :is(p, li, td, ol, ul, p.toggle-summary) {
-  color: hsl(216 12% 88%);
+  color: var(--dark-text-1);
 }
 
 [data-theme="dark"] :is(.note-body, .block-content) :is(h1, h2, h3, h4, h5, h6, th) {
-  color: hsl(216 20% 96%);
+  color: var(--dark-text-strong);
 }
 
 [data-theme="dark"] :is(.note-body, .block-content) blockquote {
-  color: hsl(216 8% 76%);
+  color: var(--dark-text-2);
 }
 
 [data-theme="dark"] .block-content strong {
   color: inherit;
+}
+
+/* Elevation: parts that float over the page without a dimmed backdrop (menus, toolbars, */
+/* popovers, the floating sidebar, toasts) sit one surface lighter than cards, so they read as */
+/* raised; in the light theme a shadow does this. Windows over a dimmed page (dialogs, Settings, */
+/* Search, the editor panel) stand out already and keep the card surface. The gliding hover */
+/* highlight inside a raised part steps up once more, so it still shows. */
+[data-theme="dark"] :is(.page-menu, .table-menu, .slash-menu, .date-field-popover, .emoji-picker, .drawing-menu, .drawing-toolbar, .drawing-selection-bar, .selection-toolbar, .image-tools, .comment-popover, .page-preview, .link-tools, .editor-flyout, .editor-crumb-path, .find-bar, .toast, .table-cell-action),
+[data-theme="dark"] .app-shell.sidebar-floating .sidebar {
+  background-color: var(--dark-surface-2);
+}
+
+[data-theme="dark"] :is(.page-menu, .table-menu, .slash-menu, .editor-flyout, .editor-crumb-path) .fluid-highlight,
+[data-theme="dark"] .app-shell.sidebar-floating .sidebar .fluid-highlight {
+  background-color: var(--dark-surface-3);
 }
 
 /* Backdrops dim with plain black in the dark theme too (the generated theme would tint or */

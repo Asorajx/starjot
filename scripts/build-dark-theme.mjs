@@ -3,8 +3,10 @@
    ========================= */
 
 /* Builds src/frontend/app/dark-theme.css from the light stylesheets. Run it with: npm run theme */
-/* Every rule that sets a colour is copied under [data-theme="dark"] with the colour converted: */
-/* light backgrounds become dark, dark text becomes light, and strong accent colours stay the same. */
+/* Every rule that sets a colour is copied under [data-theme="dark"] with the colour converted. */
+/* Greys take their role's colour from the hand-chosen dark palette (app/dark-palette.css): a */
+/* background becomes a surface, text a text level and a border a line, by how strong it was in */
+/* the light theme. Tinted colours keep their hue as darker tints, and strong accent colours stay. */
 /* Hand-made adjustments belong in src/frontend/app/dark-overrides.css, which loads after this file. */
 import { readFileSync, writeFileSync } from 'node:fs';
 
@@ -13,7 +15,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 const ENTRY = 'src/frontend/main.tsx';
 const SOURCES = [...readFileSync(ENTRY, 'utf8').matchAll(/^import '\.\/(.+\.css)';$/gm)]
   .map(match => `src/frontend/${match[1]}`)
-  .filter(path => !/dark-(theme|overrides)\.css$/.test(path));
+  .filter(path => !/dark-(theme|overrides|palette)\.css$/.test(path));
 const OUTPUT = 'src/frontend/app/dark-theme.css';
 const PREFIX = '[data-theme="dark"]';
 
@@ -124,11 +126,8 @@ function readable(hsl, against = SURFACE) {
   return lighten(hsl, against, READABLE);
 }
 
-/* Backgrounds, like the dark mode of most apps: the page is near-black, white surfaces (cards, */
-/* notes) are dark grey, and pale highlights (selected or hovered items) are a little lighter still. */
-/* Grey colours become neutral grey; clearly coloured tints keep a hint of their colour. */
-const PAGE = { h: 0, s: 0, l: 6 };
-
+/* Backgrounds that are not palette greys (see paletteRole): clearly coloured tints keep a hint of */
+/* their colour as darker tints. */
 function convertBackground(hsl, isWhite, neutral) {
   if (isAccent(hsl) || hsl.l < 50) return hsl;
   if (isWhite) return { h: 0, s: 0, l: 10 };
@@ -151,6 +150,42 @@ function convertShadow(color) {
   return `rgba(0, 0, 0, ${Math.min(0.55, Number((color.a * 3).toFixed(3)))})`;
 }
 
+
+/* =========================
+   Dark Palette Roles
+   ========================= */
+
+/* The light theme's design variables and their places in the dark palette. */
+const PALETTE_VARIABLES = {
+  '--bg': 'var(--dark-page)',
+  '--paper': 'var(--dark-surface-1)',
+  '--ink': 'var(--dark-text-1)',
+  '--muted': 'var(--dark-text-2)',
+  '--muted-deep': 'var(--dark-text-2)',
+  '--line': 'var(--dark-line-1)'
+};
+
+/* A grey's role in the palette, or null for colours that keep their own conversion (tints, */
+/* accents, dark fills, see-through colours and white text). Greys in the light theme are a */
+/* little blue, so text counts as grey below 40% saturation (or 55% for the darkest inks, such as */
+/* navy titles and code); backgrounds and borders use isNeutral, since pale colours can look */
+/* white whatever their saturation. */
+function paletteRole(kind, color, hsl) {
+  if (color.a < 1 || isAccent(hsl)) return null;
+  if (kind === 'text') {
+    const ink = hsl.s < 55 && hsl.l < 35;
+    if ((hsl.s >= 40 && !ink) || hsl.l > 88) return null;
+    if (hsl.l < 30) return 'var(--dark-text-1)';
+    return hsl.l < 75 ? 'var(--dark-text-2)' : 'var(--dark-text-3)';
+  }
+  if (!isNeutral(color) || hsl.l < 50) return null;
+  const depth = 100 - hsl.l;
+  if (kind === 'border') return depth <= 10 ? 'var(--dark-line-1)' : depth <= 22 ? 'var(--dark-line-2)' : 'var(--dark-line-3)';
+  if (depth <= 1) return 'var(--dark-surface-1)';
+  if (depth <= 4) return 'var(--dark-surface-2)';
+  return depth <= 9 ? 'var(--dark-surface-3)' : 'var(--dark-surface-4)';
+}
+
 /* Pick the conversion from the property, or from the variable's name for custom properties. */
 function kindOf(property) {
   if (SHADOW_PROPERTIES.has(property) || property === '--shadow') return 'shadow';
@@ -160,7 +195,7 @@ function kindOf(property) {
 }
 
 function convertValue(property, value) {
-  if (property === '--bg') return format(PAGE, 1);
+  if (property in PALETTE_VARIABLES) return PALETTE_VARIABLES[property];
   if (property in ACCENT_SHADES) {
     return value.replace(COLOR, match => {
       const color = parseColor(match);
@@ -173,6 +208,8 @@ function convertValue(property, value) {
     const color = parseColor(match);
     if (kind === 'shadow') return convertShadow(color);
     const hsl = toHsl(color);
+    const role = property.startsWith('--accent') ? null : paletteRole(kind, color, hsl);
+    if (role) return role;
     const isWhite = color.r === 255 && color.g === 255 && color.b === 255;
     const neutral = isNeutral(color);
     const converted = kind === 'text' ? convertText(hsl, property.startsWith('--accent')) : kind === 'border' ? convertBorder(hsl, neutral) : convertBackground(hsl, isWhite, neutral);
