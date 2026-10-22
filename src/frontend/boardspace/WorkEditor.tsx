@@ -4,10 +4,12 @@ import { DateField } from '../components/DateField';
 import { Dropdown } from '../components/Dropdown';
 import { Icon } from '../components/Icon';
 import { useEscape } from '../lib/useDismiss';
+import { usePreferences } from '../app/preferences';
 import type { WorkStatus, WorkType } from '../../shared/types/board';
 import { addDays, isoDay, parseDay, weekStart } from './dates';
 import { deleteItem, deleteSprint, NAME_LENGTH, saveItem, saveSprint, useBoard } from './board';
 import { BAR_COLORS, canHoldWork, epicCompletion, familyOf, shownSprintOf, WORK_STATUSES, WORK_TYPES } from './workItems';
+import { WorkNotes } from './WorkNotes';
 
 
 /* =========================
@@ -24,6 +26,9 @@ type WorkEditorProps = {
   target: EditorTarget;
   onClose: () => void;
   onManageMembers: () => void;
+
+  /* Opens a note in a new tab (linked notes); left out, the editor has no Notes section. */
+  onOpenNote?: (noteId: string) => void;
 };
 
 /* A new item or sprint starts on this week's Monday and lasts a week. */
@@ -35,8 +40,9 @@ function thisWeek() {
 /* A panel at the right of the window for adding or changing a sprint or a work item: its name, */
 /* kind, status, where it sits, who it is for, its colour, progress and dates. An epic's */
 /* progress comes from its tasks, so it shows that instead of a status. Delete asks first. */
-export function WorkEditor({ target, onClose, onManageMembers }: WorkEditorProps) {
+export function WorkEditor({ target, onClose, onManageMembers, onOpenNote }: WorkEditorProps) {
   const board = useBoard();
+  const { spaces } = usePreferences();
   const nameRef = useRef<HTMLInputElement>(null);
   const [error, setError] = useState('');
   const [confirming, setConfirming] = useState(false);
@@ -78,15 +84,15 @@ export function WorkEditor({ target, onClose, onManageMembers }: WorkEditorProps
   const isEpic = fields.type === 'epic';
   const kindName = target.kind === 'sprint' ? 'sprint' : 'work item';
 
-  function save(event: FormEvent) {
-    event.preventDefault();
+  /* Saves the fields; false (with the reason shown) when they cannot be saved yet. */
+  function commit() {
     if (!fields.name.trim()) {
       setError('Enter a name.');
-      return;
+      return false;
     }
     if (!parseDay(fields.start) || !parseDay(fields.end) || fields.end < fields.start) {
       setError('Choose an end date on or after the start date.');
-      return;
+      return false;
     }
     if (target.kind === 'sprint') {
       saveSprint({ name: fields.name, start: fields.start, end: fields.end }, sprint?.id);
@@ -105,7 +111,19 @@ export function WorkEditor({ target, onClose, onManageMembers }: WorkEditorProps
         progress: fields.progress
       }, item?.id);
     }
+    return true;
+  }
+
+  function save(event: FormEvent) {
+    event.preventDefault();
+    if (commit()) onClose();
+  }
+
+  /* Before a linked note opens (in Notespace), the editor saves and closes, so nothing is lost. */
+  function leave() {
+    if (!commit()) return false;
     onClose();
+    return true;
   }
 
   function remove() {
@@ -203,6 +221,11 @@ export function WorkEditor({ target, onClose, onManageMembers }: WorkEditorProps
                   />
                 </div>
               </div>
+
+              {/* Linking notes needs Notespace; a new item is created before notes can be linked. */}
+              {spaces.notes && onOpenNote && (item
+                ? <WorkNotes item={item} onLeave={leave} onOpenNote={onOpenNote} />
+                : <div className="board-field"><span>Notes</span><small className="board-field-hint">Create the work item first, then link notes to it.</small></div>)}
 
               <div className="board-field">
                 <span>Colour</span>

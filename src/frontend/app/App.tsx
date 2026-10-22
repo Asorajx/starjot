@@ -19,6 +19,7 @@ import { PageBar, placeExists, placeLabel, type PageHistory } from '../notespace
 import { createNote, flushSave, getNote, updateNote } from '../notespace/store';
 import { Settings, type SettingsSection } from '../settings/Settings';
 import { Boardspace } from '../boardspace/Boardspace';
+import { openWorkItem } from '../boardspace/openWork';
 import type { BoardTab } from '../../shared/types/board';
 import type { NoteKind } from '../../shared/types/note';
 import {
@@ -639,6 +640,10 @@ export function App() {
           onOpenHome={openHome}
           onOpenNewPage={openNewPage}
           onOpenSettings={openSettings}
+          onOpenWorkItem={item => {
+            openBoardView(item.type === 'epic' ? 'list' : 'board');
+            openWorkItem(item.id);
+          }}
         />
       );
     } else if (shown.kind === 'category') {
@@ -739,7 +744,7 @@ export function App() {
       </div>
     );
   } else {
-    screen = <div className="main-scroll"><Boardspace tab={workTab} onTabChange={setWorkTab} /></div>;
+    screen = <div className="main-scroll"><Boardspace tab={workTab} onTabChange={setWorkTab} onOpenNote={id => openInNewTab({ kind: 'note', id })} /></div>;
   }
 
   return (

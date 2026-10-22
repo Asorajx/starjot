@@ -10,6 +10,9 @@ import { assigneeChoices, sprintChoices } from '../list/listRows';
 import { initialsOf, shownSprintOf, WORK_STATUSES } from '../workItems';
 import type { EditorTarget } from '../WorkEditor';
 import { WorkTypeIcon } from '../workParts';
+import { linkedNotes, NoteCount } from '../WorkNotes';
+import { usePreferences } from '../../app/preferences';
+import { useNotes } from '../../notespace/store';
 import { boardColumns, currentSprint, isOverdue, type BoardFilters } from './boardColumns';
 
 const STATUSES = Object.keys(WORK_STATUSES) as WorkStatus[];
@@ -175,6 +178,8 @@ function WorkCard({ item, board, dragging, onOpen, onKeyDown, onDragStart, onDra
   const parent = board.items.find(entry => entry.id === item.parentId);
   const sprint = board.sprints.find(entry => entry.id === shownSprintOf(board, item));
   const overdue = isOverdue(item);
+  const notes = useNotes();
+  const { spaces } = usePreferences();
   return (
     <article className={`board-card ${dragging ? 'is-dragging' : ''}`} data-card={item.id} draggable onDragStart={onDragStart} onDragEnd={onDragEnd}>
       <div className="board-card-top">
@@ -191,6 +196,7 @@ function WorkCard({ item, board, dragging, onOpen, onKeyDown, onDragStart, onDra
             <Icon name={overdue ? 'alert-triangle' : 'calendar-days'} size={12} />{shortDay(item.end)}
           </span>
         )}
+        {spaces.notes && <NoteCount count={linkedNotes(item, notes).length} />}
         <span className="board-card-person" data-tooltip={item.assignee || 'Unassigned'} aria-label={item.assignee || 'Unassigned'}>
           <Avatar initials={item.assignee ? initialsOf(item.assignee) : '–'} className={`work-avatar ${item.assignee ? '' : 'is-nobody'}`} />
         </span>

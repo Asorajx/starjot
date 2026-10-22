@@ -45,6 +45,9 @@ export type WorkItem = {
   /* An epic moved to the backlog on purpose stays there, even when its children are in sprints. */
   manualBacklog: boolean;
   order: number;
+
+  /* The ids of Notespace notes linked to it (missing on items saved before links existed). */
+  notes?: string[];
 };
 
 export type BoardProject = {

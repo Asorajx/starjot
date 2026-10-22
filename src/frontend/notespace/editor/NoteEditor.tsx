@@ -11,6 +11,7 @@ import {
   updatedLabel, useCategories, useNote
 } from '../store';
 import type { NoteMode } from '../../../shared/types/note';
+import type { WorkItem } from '../../../shared/types/board';
 import type { SettingsSection } from '../../settings/Settings';
 import { CodeLanguagePickers } from './code/CodeLanguagePickers';
 import { CommentLayer } from './comments/CommentLayer';
@@ -82,6 +83,9 @@ type NoteEditorProps = {
 
   /* Opens Settings at one group of settings (the drawing toolbar's settings button). */
   onOpenSettings: (section: SettingsSection) => void;
+
+  /* Opens a work item linked to this note in Boardspace's editor (the note's Work row). */
+  onOpenWorkItem?: (item: WorkItem) => void;
 };
 
 
@@ -106,7 +110,7 @@ export function NoteEditor(props: NoteEditorProps) {
   return kind === 'canvas' ? <CanvasEditor {...props} /> : <DocumentEditor {...props} />;
 }
 
-function DocumentEditor({ noteId, history, view, active, onClose, onOpenNote, onOpenNoteInNewTab, onGoToNote, onOpenCategory, onOpenHome, onOpenNewPage, onOpenSettings }: NoteEditorProps) {
+function DocumentEditor({ noteId, history, view, active, onClose, onOpenNote, onOpenNoteInNewTab, onGoToNote, onOpenCategory, onOpenHome, onOpenNewPage, onOpenSettings, onOpenWorkItem }: NoteEditorProps) {
   const note = useNote(noteId);
 
   /* Re-render when categories are renamed, so the breadcrumb stays current. */
@@ -507,7 +511,7 @@ function DocumentEditor({ noteId, history, view, active, onClose, onOpenNote, on
               <span className="meta-dot">•</span>
               <span>{updatedLabel(note)}</span>
             </div>
-            <NoteHeader note={note} locked={locked} onOpenNote={onOpenNote} />
+            <NoteHeader note={note} locked={locked} onOpenNote={onOpenNote} onOpenWorkItem={onOpenWorkItem} />
             <div className="article-rule" />
 
             {/* The key re-creates the editor after undo/redo or a mode change, so it shows the saved content. */}

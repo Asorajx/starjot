@@ -14,6 +14,7 @@ import { BAR_COLORS, canHoldWork, familyOf, itemOrder, shownSprintOf, sprintOrde
 const MAX_SPRINTS = 300;
 const MAX_ITEMS = 1500;
 const MAX_MEMBERS = 200;
+const MAX_NOTE_LINKS = 50;
 export const NAME_LENGTH = 140;
 export const TITLE_LENGTH = 70;
 export const MEMBER_LENGTH = 80;
@@ -72,7 +73,8 @@ export function cleanProject(raw: unknown): BoardProject {
       color: isColor(item.color) ? String(item.color) : BAR_COLORS[0],
       progress: Math.max(0, Math.min(100, Number(item.progress) || 0)),
       manualBacklog: item.manualBacklog === true,
-      order: orderOf(item.order, index)
+      order: orderOf(item.order, index),
+      notes: noteLinks(item.notes)
     });
   });
 
@@ -278,6 +280,27 @@ export function setStatus(id: string, status: WorkStatus) {
     item.status = status;
     if (status === 'done') item.progress = 100;
     else if (wasDone && item.progress === 100) item.progress = 0;
+  });
+}
+
+/* Linked note ids, each once, from saved or imported data. */
+function noteLinks(raw: unknown) {
+  if (!Array.isArray(raw)) return [];
+  return [...new Set(raw.map(id => text(id, 100)).filter(Boolean))].slice(0, MAX_NOTE_LINKS);
+}
+
+/* Link a note to a work item, or unlink it. Links change at once, like status and assignee. */
+export function linkNote(id: string, noteId: string) {
+  change(draft => {
+    const item = draft.items.find(entry => entry.id === id);
+    if (item && !item.notes?.includes(noteId)) item.notes = noteLinks([...(item.notes ?? []), noteId]);
+  });
+}
+
+export function unlinkNote(id: string, noteId: string) {
+  change(draft => {
+    const item = draft.items.find(entry => entry.id === id);
+    if (item) item.notes = (item.notes ?? []).filter(entry => entry !== noteId);
   });
 }
 

@@ -13,6 +13,9 @@ import { WORK_TYPES } from './workItems';
 type ProjectFrameProps = {
   /* The view inside the frame (the list or the timeline), given a way to open the editor. */
   children: (edit: (target: EditorTarget) => void) => ReactNode;
+
+  /* Opens a note in a new tab, for the editor's linked notes. */
+  onOpenNote?: (noteId: string) => void;
 };
 
 type Imported = { project: BoardProject; message: string; warning: boolean };
@@ -25,7 +28,7 @@ type Imported = { project: BoardProject; message: string; warning: boolean };
 /* What every Boardspace view of the project shares: the project's name (edited in place), */
 /* Create and More (Members, Import, Export) above the view, and the editor panel, the members window */
 /* and the import question it opens. The view opens the editor through the function it is given. */
-export function ProjectFrame({ children }: ProjectFrameProps) {
+export function ProjectFrame({ children, onOpenNote }: ProjectFrameProps) {
   const board = useBoard();
   const [title, setTitle] = useState(board.title);
   const [editing, setEditing] = useState<EditorTarget | null>(null);
@@ -107,7 +110,7 @@ export function ProjectFrame({ children }: ProjectFrameProps) {
 
       {children(setEditing)}
 
-      {editing && <WorkEditor key={JSON.stringify(editing)} target={editing} onClose={() => setEditing(null)} onManageMembers={() => setMembersOpen(true)} />}
+      {editing && <WorkEditor key={JSON.stringify(editing)} target={editing} onClose={() => setEditing(null)} onManageMembers={() => setMembersOpen(true)} onOpenNote={onOpenNote} />}
       {membersOpen && <MembersDialog onClose={() => setMembersOpen(false)} />}
       {importing && (
         <ConfirmDialog title="Replace this project?" confirmLabel="Import" onConfirm={() => finishImport(importing)} onCancel={() => setImporting(null)}>

@@ -12,11 +12,17 @@ import { pastedLines } from './text/clipboard';
 import type { Note } from '../../../shared/types/note';
 import { formatDate } from '../../lib/dates';
 import { opensNewTab, type OpenById } from '../../lib/clicks';
+import { useBoard } from '../../boardspace/board';
+import { WorkTypeIcon } from '../../boardspace/workParts';
+import type { WorkItem } from '../../../shared/types/board';
 
 type NoteHeaderProps = {
   note: Note;
   locked: boolean;
   onOpenNote: OpenById;
+
+  /* Opens a linked work item in Boardspace's editor; left out, the Work row does not show. */
+  onOpenWorkItem?: (item: WorkItem) => void;
 };
 
 /* Every page inside a page, at any depth (only one level today, but older notes may have more). */
@@ -127,9 +133,14 @@ function PageList({ notes, parentId, onOpenNote }: PageListProps) {
 
 /* The top of a note: its icon, title and details (category, description, dates, comments, sub-pages). */
 /* Details can be hidden per note; they can only be edited while the note is unlocked. */
-export function NoteHeader({ note, locked, onOpenNote }: NoteHeaderProps) {
+export function NoteHeader({ note, locked, onOpenNote, onOpenWorkItem }: NoteHeaderProps) {
   const categories = useCategories();
   const notes = useNotes();
+  const board = useBoard();
+  const { spaces } = usePreferences();
+
+  /* The work items this note is linked to (links are made from the work item, in Boardspace). */
+  const work = spaces.boardspace && onOpenWorkItem ? board.items.filter(item => item.notes?.includes(note.id)) : [];
   const pageCount = countPages(notes, note.id);
   const [picking, setPicking] = useState(false);
 
@@ -241,6 +252,20 @@ export function NoteHeader({ note, locked, onOpenNote }: NoteHeaderProps) {
 
           <dt>Created</dt>
           <dd>{formatDate(note.createdAt)}</dd>
+
+          {work.length > 0 && (
+            <>
+              <dt>Work</dt>
+              <dd className="note-work">
+                {work.map(item => (
+                  <button key={item.id} type="button" className="note-work-item" onClick={() => onOpenWorkItem?.(item)}>
+                    <WorkTypeIcon type={item.type} />
+                    {item.name}
+                  </button>
+                ))}
+              </dd>
+            </>
+          )}
 
           <dt className="note-remarks-label">Remarks</dt>
           <dd className="note-remarks-cell"><RemarksField note={note} locked={locked} /></dd>

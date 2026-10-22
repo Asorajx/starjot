@@ -158,4 +158,25 @@ describe('project store', () => {
     expect(board.getBoard().items[0].assignee).toBe('');
     expect(board.getBoard().members).toEqual([]);
   });
+
+  it('links notes to a work item once each, unlinks them, and keeps links through a backup', async () => {
+    const board = await openBoard();
+    board.replaceBoard({ ...board.getBoard(), items: [item('t')] });
+    board.linkNote('t', 'note_a');
+    board.linkNote('t', 'note_a');
+    board.linkNote('t', 'note_b');
+    expect(board.getBoard().items[0].notes).toEqual(['note_a', 'note_b']);
+    board.unlinkNote('t', 'note_a');
+    expect(board.getBoard().items[0].notes).toEqual(['note_b']);
+    const copy = board.cleanProject(JSON.parse(JSON.stringify(board.getBoard())));
+    expect(copy.items[0].notes).toEqual(['note_b']);
+  });
+
+  it('reads links saved before they existed, or written badly, as a clean list', async () => {
+    const board = await openBoard();
+    const older = board.cleanProject({ ...project([item('t')]), items: [{ ...item('t'), notes: undefined }] });
+    expect(older.items[0].notes).toEqual([]);
+    const messy = board.cleanProject({ ...project([item('t')]), items: [{ ...item('t'), notes: ['a', 'a', '', 7, 'b'] }] });
+    expect(messy.items[0].notes).toEqual(['a', '7', 'b']);
+  });
 });

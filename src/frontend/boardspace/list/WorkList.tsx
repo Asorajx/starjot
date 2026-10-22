@@ -1,4 +1,4 @@
-import { useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useLayoutEffect, useMemo, useRef, useState, type MouseEvent } from 'react';
 import { Dropdown } from '../../components/Dropdown';
 import { Icon } from '../../components/Icon';
 import type { WorkStatus, WorkType } from '../../../shared/types/board';
@@ -7,6 +7,9 @@ import { useBoard } from '../board';
 import { epicCompletion, shownSprintOf, WORK_STATUSES, WORK_TYPES } from '../workItems';
 import type { EditorTarget } from '../WorkEditor';
 import { AssigneePicker, Progress, StatusPicker, WorkTypeIcon } from '../workParts';
+import { linkedNotes, NoteCount } from '../WorkNotes';
+import { usePreferences } from '../../app/preferences';
+import { useNotes } from '../../notespace/store';
 import { assigneeChoices, listRows, NO_FILTERS, sprintChoices, type ListFilters, type ListSort, type SortKey } from './listRows';
 
 /* The columns that sort the list when their heading is clicked. */
@@ -36,6 +39,8 @@ const SLIM_LIST = 520;
 /* order). Status and assignee change in place; the name (or Enter on a row) opens the editor. */
 export function WorkList({ onEdit }: { onEdit: (target: EditorTarget) => void }) {
   const board = useBoard();
+  const notes = useNotes();
+  const { spaces } = usePreferences();
   const [filters, setFilters] = useState<ListFilters>(NO_FILTERS);
   const [sort, setSort] = useState<ListSort>({ key: 'order', descending: false });
   const rows = useMemo(() => listRows(board, filters, sort), [board, filters, sort]);
@@ -53,6 +58,13 @@ export function WorkList({ onEdit }: { onEdit: (target: EditorTarget) => void })
     observer.observe(card);
     return () => observer.disconnect();
   }, []);
+
+  /* A click anywhere on a row opens its editor, except on the row's own controls (status, */
+  /* assignee, the name button) or after selecting text. The name stays the keyboard's way in. */
+  function openRow(event: MouseEvent, id: string) {
+    if ((event.target as Element).closest('button, input, a, [role="listbox"]') || window.getSelection()?.toString()) return;
+    onEdit({ kind: 'item', id });
+  }
 
   function sortBy(key: SortKey) {
     setSort(current => (current.key !== key ? { key, descending: false } : current.descending ? { key: 'order', descending: false } : { key, descending: true }));
@@ -127,10 +139,13 @@ export function WorkList({ onEdit }: { onEdit: (target: EditorTarget) => void })
               const sprint = board.sprints.find(entry => entry.id === shownSprintOf(board, item));
               const completion = item.type === 'epic' ? epicCompletion(board.items, item.id) : null;
               return (
-                <tr key={item.id}>
+                <tr key={item.id} className="work-list-row" onClick={event => openRow(event, item.id)}>
                   <td className="work-list-type"><WorkTypeIcon type={item.type} /></td>
                   <td className="work-list-name">
-                    <button type="button" className="work-list-open" onClick={() => onEdit({ kind: 'item', id: item.id })}>{item.name}</button>
+                    <span className="work-list-title">
+                      <button type="button" className="work-list-open" onClick={() => onEdit({ kind: 'item', id: item.id })}>{item.name}</button>
+                      {spaces.notes && <NoteCount count={linkedNotes(item, notes).length} />}
+                    </span>
                     {parent && <small className="work-list-parent">in {parent.name}</small>}
                   </td>
                   <td className="work-list-status">

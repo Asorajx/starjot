@@ -11,6 +11,9 @@ import { ProjectFrame } from './ProjectFrame';
 type BoardspaceProps = {
   tab: BoardTab;
   onTabChange: (tab: BoardTab) => void;
+
+  /* Opens a note in a new tab, from a work item's linked notes. */
+  onOpenNote?: (noteId: string) => void;
 };
 
 
@@ -83,7 +86,7 @@ export function Boardspace(props: BoardspaceProps) {
 
       <div className="board-panel">
         <BoardspaceTabs {...props} />
-        <ProjectFrame>{edit => <View onEdit={edit} />}</ProjectFrame>
+        <ProjectFrame onOpenNote={props.onOpenNote}>{edit => <View onEdit={edit} />}</ProjectFrame>
       </div>
     </div>
   );
