@@ -8,7 +8,7 @@ export type StatusTab = 'todo' | 'progress' | 'review' | 'done';
 export type BoardTab = StatusTab | ProjectTab;
 
 /* The views of the Boardspace project (the rest are the sample status cards). */
-export type ProjectTab = 'list' | 'board' | 'timeline';
+export type ProjectTab = 'summary' | 'list' | 'board' | 'timeline';
 
 export type Task = {
   id: string;

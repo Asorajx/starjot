@@ -176,6 +176,17 @@
   color: inherit;
 }
 
+/* Boardspace's status colours, stepped for the dark surface (checked as a set; see boardspace.css). */
+/* The generated theme converts the light values under :root[data-theme="dark"]; the same */
+/* selector here, loaded later, wins. */
+:root[data-theme="dark"] {
+  --status-todo: #3987e5;
+  --status-progress: #d95926;
+  --status-review: #9085e9;
+  --status-done: #199e70;
+  --status-blocked: #e66767;
+}
+
 /* The chosen option in Note and Canvas settings (structure, layout, page size) stands out with */
 /* a full accent border and a deeper tint: the light theme's faint tint barely shows on dark. */
 [data-theme="dark"] .option-tile.selected,

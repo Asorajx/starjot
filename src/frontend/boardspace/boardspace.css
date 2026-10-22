@@ -119,32 +119,45 @@
   margin: 0 0 8px;
 }
 
+/* Each status's colour, for its dot and its share of the Summary's status bar. Checked as a set */
+/* for colour-blind readers and contrast (the dataviz validator), in both themes: the dark */
+/* values are in dark-overrides.css. The bar's gaps and the legend's names and counts carry the */
+/* done / blocked pair, which is close for some colour-blind readers. */
+:root {
+  --status-todo: #2a78d6;
+  --status-progress: #eb6834;
+  --status-review: #6250d6;
+  --status-done: #1baf7a;
+  --status-blocked: #e34948;
+}
+
 .work-status-dot {
   height: 8px;
   width: 8px;
+  flex-shrink: 0;
   border-radius: 50%;
   background: #94aaca;
   display: inline-block;
 }
 
 .work-status-dot--todo {
-  background: #7da7ed;
+  background: var(--status-todo);
 }
 
 .work-status-dot--progress {
-  background: #e9ad65;
+  background: var(--status-progress);
 }
 
 .work-status-dot--review {
-  background: #ae92e1;
+  background: var(--status-review);
 }
 
 .work-status-dot--done {
-  background: #66b9a2;
+  background: var(--status-done);
 }
 
 .work-status-dot--blocked {
-  background: #e07a74;
+  background: var(--status-blocked);
 }
 
 .board-section-head p {
@@ -522,12 +535,13 @@
   width: 100%;
 }
 
+/* The unfilled track is a lighter step of the fill's own colour, so the whole bar reads as one. */
 .work-progress-track {
   flex: 1;
   height: 6px;
   overflow: hidden;
   border-radius: 4px;
-  background: #e3e9f2;
+  background: var(--accent-soft);
 }
 
 .work-progress-track b {
@@ -1305,6 +1319,293 @@
   display: inline-flex;
   margin-left: auto;
 }
+
+
+/* =========================
+   Project Summary
+   ========================= */
+
+.project-summary {
+  padding: 16px;
+}
+
+/* Headline numbers in a row of tiles, wrapping two by two when narrow. */
+.summary-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(128px, 1fr));
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.summary-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+}
+
+.summary-tile-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #56657b;
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.summary-tile.is-alert .summary-tile-label svg {
+  color: var(--status-blocked);
+}
+
+.summary-tile strong {
+  color: var(--ink);
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.summary-tile small,
+.summary-muted {
+  color: #5d6f88;
+  font-size: 11px;
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 12px;
+}
+
+.summary-panel {
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+}
+
+.summary-panel h3 {
+  margin: 0;
+  color: var(--ink);
+  font-size: 14px;
+}
+
+.summary-panel > .summary-muted {
+  margin: 4px 0 16px;
+}
+
+.summary-none {
+  margin: 0;
+  color: #5d6f88;
+  font-size: 12px;
+}
+
+/* The status bar: each status's share, 2px apart, with rounded outer ends. */
+.summary-stack {
+  display: flex;
+  gap: 2px;
+  height: 16px;
+  margin-bottom: 16px;
+  overflow: hidden;
+  border-radius: 4px;
+}
+
+.summary-segment {
+  min-width: 4px;
+  flex-basis: 0;
+}
+
+.summary-segment.is-todo {
+  background: var(--status-todo);
+}
+
+.summary-segment.is-progress {
+  background: var(--status-progress);
+}
+
+.summary-segment.is-review {
+  background: var(--status-review);
+}
+
+.summary-segment.is-done {
+  background: var(--status-done);
+}
+
+.summary-segment.is-blocked {
+  background: var(--status-blocked);
+}
+
+/* The legend doubles as the bar's numbers, so nothing depends on colour alone. */
+.summary-legend,
+.summary-rows,
+.summary-due-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.summary-legend {
+  gap: 8px;
+}
+
+.summary-legend li {
+  display: grid;
+  grid-template-columns: 8px 1fr 32px 40px;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.summary-legend strong,
+.summary-legend .summary-muted {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.summary-legend-name {
+  color: #3a4d68;
+}
+
+.summary-rows li {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.summary-row-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.summary-row-name {
+  min-width: 0;
+  overflow: hidden;
+  color: #2e405e;
+  font-size: 12px;
+  font-weight: 650;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.summary-row-head .summary-muted {
+  margin-left: auto;
+  white-space: nowrap;
+}
+
+.summary-chip {
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: var(--accent-soft);
+  color: var(--accent-text);
+  font-size: 11px;
+  font-weight: 650;
+}
+
+.summary-link {
+  min-width: 0;
+  overflow: hidden;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: #2e405e;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 650;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.summary-link:hover {
+  color: var(--accent-text);
+  text-decoration: underline;
+}
+
+.summary-link:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.summary-due + .summary-due {
+  margin-top: 16px;
+}
+
+.summary-due h4 {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: 0 0 8px;
+  color: #3a4d68;
+  font-size: 12px;
+}
+
+.summary-due h4.is-overdue svg {
+  color: var(--status-blocked);
+}
+
+.summary-due-list {
+  gap: 8px;
+}
+
+.summary-due-list li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.summary-due-list .summary-link {
+  flex: 1;
+}
+
+.summary-due-date {
+  flex-shrink: 0;
+  color: #5d6f88;
+  font-size: 11px;
+}
+
+.summary-due-date.is-overdue {
+  color: #b42d27;
+  font-weight: 650;
+}
+
+/* Each person's open work as a thin bar against the busiest person's. */
+.summary-rows .summary-person {
+  display: grid;
+  grid-template-columns: 24px minmax(64px, 1fr) 2fr;
+  align-items: center;
+  column-gap: 8px;
+  row-gap: 4px;
+}
+
+.summary-person .work-avatar {
+  grid-row: span 2;
+}
+
+.summary-bar {
+  height: 8px;
+}
+
+.summary-bar b {
+  display: block;
+  height: 100%;
+  min-width: 2px;
+  border-radius: 0 4px 4px 0;
+  background: var(--accent);
+}
+
+.summary-person-count {
+  grid-column: 2 / 4;
+}
+
 
 /* Bigger colour swatches for fingers. */
 @media (pointer: coarse) {

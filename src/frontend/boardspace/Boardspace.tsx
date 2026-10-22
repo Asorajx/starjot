@@ -7,6 +7,7 @@ import { BOARD_TABS, isProjectTab, PROJECT_ICONS, TAB_DESCRIPTIONS } from './dat
 import { Timeline } from './timeline/Timeline';
 import { WorkList } from './list/WorkList';
 import { WorkBoard } from './board/WorkBoard';
+import { ProjectSummary } from './summary/ProjectSummary';
 import { ProjectFrame } from './ProjectFrame';
 
 type BoardspaceProps = {
@@ -52,7 +53,7 @@ export function TaskCard({ task }: { task: Task }) {
    Boardspace Tabs
    ========================= */
 
-/* Shared tabs for the status cards and the project's views (the list, board and timeline). */
+/* Shared tabs for the status cards and the project's views (summary, list, board and timeline). */
 function BoardspaceTabs({ tab, onTabChange }: BoardspaceProps) {
   const tabBar = useRef<HTMLDivElement>(null);
 
@@ -95,10 +96,12 @@ function BoardspaceTabs({ tab, onTabChange }: BoardspaceProps) {
    Boardspace Views
    ========================= */
 
-/* The project's work as a list, a board or a Gantt timeline (list/WorkList.tsx, */
-/* board/WorkBoard.tsx, timeline/Timeline.tsx), inside the project frame with its name, Create */
-/* and More. */
+/* The project's work as a summary, a list, a board or a Gantt timeline (summary/, list/, */
+/* board/ and timeline/), inside the project frame with its name, Create and More. */
+const PROJECT_VIEWS = { summary: ProjectSummary, list: WorkList, board: WorkBoard, timeline: Timeline };
+
 const PROJECT_INTROS = {
+  summary: 'The project at a glance: progress, due dates and who is doing what.',
   list: 'Every piece of work in the project, to sort and filter.',
   board: 'Features and tasks as cards, moved across a column for each status.',
   timeline: 'Plan sprints and see epics, features and tasks across the calendar.'
@@ -117,7 +120,10 @@ function ProjectView(props: BoardspaceProps & { tab: ProjectTab }) {
       <div className="board-panel">
         <BoardspaceTabs {...props} />
         <ProjectFrame>
-          {edit => (props.tab === 'list' ? <WorkList onEdit={edit} /> : props.tab === 'board' ? <WorkBoard onEdit={edit} /> : <Timeline onEdit={edit} />)}
+          {edit => {
+            const View = PROJECT_VIEWS[props.tab];
+            return <View onEdit={edit} />;
+          }}
         </ProjectFrame>
       </div>
     </div>
