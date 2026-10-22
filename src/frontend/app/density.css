@@ -130,10 +130,6 @@
   padding: 12px;
 }
 
-[data-density="compact"] .task-card {
-  padding: 16px 16px 12px;
-}
-
 /* Menus and search */
 [data-density="compact"] .page-menu-item {
   height: 28px;

@@ -60,7 +60,7 @@ export function MembersDialog({ onClose }: { onClose: () => void }) {
           <ul className="members-list">
             {board.members.map(member => (
               <li key={member} className="members-row">
-                <Avatar initials={initialsOf(member)} className="avatar--task" />
+                <Avatar initials={initialsOf(member)} className="work-avatar" />
                 <span className="members-name">{member}</span>
                 <span className="members-count">{assignedTo(member)} assigned</span>
                 <button type="button" className="inbox-action" aria-label={`Remove ${member}`} data-tooltip="Remove" data-tooltip-align="end" onClick={() => askToRemove(member)}>

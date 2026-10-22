@@ -19,7 +19,7 @@ import { PageBar, placeExists, placeLabel, type PageHistory } from '../notespace
 import { createNote, flushSave, getNote, updateNote } from '../notespace/store';
 import { Settings, type SettingsSection } from '../settings/Settings';
 import { Boardspace } from '../boardspace/Boardspace';
-import type { BoardTab } from '../../shared/types/task';
+import type { BoardTab } from '../../shared/types/board';
 import type { NoteKind } from '../../shared/types/note';
 import {
   activeTab, addTab, canAddTab, canStack, closeTab, currentPlace, cycleTab, focusedGroup, focusGroup, goTo, isOpenInStack, isSplit, moveTab, newTab,
@@ -152,9 +152,9 @@ function openingPage(): { screen: ScreenId; place: Place; view: BoardTab } {
   const { spaces, startScreen } = getPreferences();
   const address = parseAddress(window.location.hash);
   if (address?.kind === 'board' && spaces.boardspace) return { screen: 'boardspace', place: { kind: 'start' }, view: address.view };
-  if (address?.kind === 'place' && placeAllowed(address.place, spaces)) return { screen: 'notes', place: address.place, view: 'todo' };
-  if (startScreen === 'boardspace' && spaces.boardspace) return { screen: 'boardspace', place: { kind: 'start' }, view: 'todo' };
-  return { screen: 'notes', place: startScreen === 'notes' && spaces.notes ? { kind: 'home' } : { kind: 'start' }, view: 'todo' };
+  if (address?.kind === 'place' && placeAllowed(address.place, spaces)) return { screen: 'notes', place: address.place, view: 'summary' };
+  if (startScreen === 'boardspace' && spaces.boardspace) return { screen: 'boardspace', place: { kind: 'start' }, view: 'summary' };
+  return { screen: 'notes', place: startScreen === 'notes' && spaces.notes ? { kind: 'home' } : { kind: 'start' }, view: 'summary' };
 }
 
 /* Only navigation lives here; note content belongs to the Notespace store. */

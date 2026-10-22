@@ -28,10 +28,6 @@
     padding: 32px 32px;
   }
 
-  .task-grid {
-    grid-template-columns: repeat(2,minmax(0,1fr));
-  }
-
   .board-tabs {
     gap: 32px;
   }
@@ -182,20 +178,6 @@
     align-items: center;
   }
 
-  .board-metrics {
-    grid-template-columns: repeat(2,1fr);
-    gap: 12px;
-    margin-bottom: 24px;
-  }
-
-  .metric {
-    padding: 16px 16px;
-  }
-
-  .metric strong {
-    font-size: 24px;
-  }
-
   .board-tabs {
     padding: 0 16px;
     gap: 24px;
@@ -204,37 +186,6 @@
   .board-tab {
     height: 50px;
     font-size: 11px;
-  }
-
-  .board-panel-content {
-    padding: 24px 16px;
-  }
-
-  .board-section-head {
-    align-items: flex-start;
-  }
-
-  .board-section-head h2 {
-    font-size: 18px;
-  }
-
-  .board-section-head p {
-    max-width: 195px;
-    line-height: 1.5;
-  }
-
-  .board-section-head .btn {
-    font-size: 11px;
-    padding: 0 8px;
-    height: 33px;
-  }
-
-  .task-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .task-card {
-    min-height: 215px;
   }
 
   /* On phones Settings fills the screen, with its menu as a scrolling row along the top. */
@@ -340,15 +291,6 @@
   .notes-home .page-intro .btn svg {
     width: 20px;
     height: 20px;
-  }
-
-  .board-section-head .btn {
-    font-size: 0;
-  }
-
-  .board-section-head .btn svg {
-    height: 18px;
-    width: 18px;
   }
 
   .settings-content {

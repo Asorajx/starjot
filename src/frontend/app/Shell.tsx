@@ -7,10 +7,10 @@ import { Icon, type IconName } from '../components/Icon';
 import { enabledScreens, screenLabel, type ScreenId } from './screens';
 import { noteIcon, noteTitle, useCategories, useNotes } from '../notespace/store';
 import { sortNotes, starredNotes } from '../notespace/NoteList';
-import { BOARD_TABS, isProjectTab, PROJECT_ICONS } from '../boardspace/data';
+import { BOARD_TABS, BOARD_ICONS } from '../boardspace/data';
 import { shownTheme, updatePreferences, usePreferences } from './preferences';
 import type { Note } from '../../shared/types/note';
-import type { BoardTab } from '../../shared/types/task';
+import type { BoardTab } from '../../shared/types/board';
 
 type NavigationProps = {
   screen: ScreenId;
@@ -204,11 +204,11 @@ function NotespaceLists({ openNoteId, openCategoryId, onOpenNote, onOpenCategory
 /* Boardspace has one board for now, so its list is the board's views. */
 function BoardspaceLists({ boardView, onOpenBoardView }: Pick<SidebarProps, 'boardView' | 'onOpenBoardView'>) {
   return (
-    <SidebarList id="sidebar-board" title="Board" empty="">
+    <SidebarList id="sidebar-board" title="Views" empty="">
       {BOARD_TABS.map(view => (
         <SidebarLink
           key={view.id}
-          icon={isProjectTab(view.id) ? PROJECT_ICONS[view.id] : 'check-square'}
+          icon={BOARD_ICONS[view.id]}
           label={view.label}
           current={boardView === view.id}
           onClick={() => onOpenBoardView(view.id)}

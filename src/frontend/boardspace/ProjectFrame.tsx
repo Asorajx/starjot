@@ -5,6 +5,7 @@ import type { BoardProject, WorkType } from '../../shared/types/board';
 import { replaceBoard, setBoardTitle, TITLE_LENGTH, useBoard } from './board';
 import { exportBackup, exportCsv, exportPng, exportSvg, readProjectFile } from './files';
 import { MembersDialog } from './MembersDialog';
+import { onWorkRequest, takeWorkRequest } from './openWork';
 import { WorkEditor, type EditorTarget } from './WorkEditor';
 import { MenuButton, TYPE_ICONS, type MenuItem } from './workParts';
 import { WORK_TYPES } from './workItems';
@@ -32,6 +33,16 @@ export function ProjectFrame({ children }: ProjectFrameProps) {
   const [importing, setImporting] = useState<Imported | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   useEffect(() => setTitle(board.title), [board.title]);
+
+  /* A work item chosen in Search opens in the editor (see openWork.ts). */
+  useEffect(() => {
+    const open = () => {
+      const id = takeWorkRequest();
+      if (id) setEditing({ kind: 'item', id });
+    };
+    open();
+    return onWorkRequest(open);
+  }, []);
 
   /* A file replaces the project; when the project holds anything, that is asked first. */
   async function chooseFile(file: File | undefined) {

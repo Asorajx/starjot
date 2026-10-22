@@ -60,3 +60,6 @@ export type BoardProject = {
   collapsedSprints: Record<string, true>;
   collapsedItems: Record<string, true>;
 };
+
+/* The views of the project, Boardspace's tabs. */
+export type BoardTab = 'summary' | 'list' | 'board' | 'timeline';

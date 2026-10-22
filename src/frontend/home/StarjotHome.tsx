@@ -7,10 +7,11 @@ import { reminderGroups } from '../notespace/reminders';
 import { usePreferences } from '../app/preferences';
 import { editedText, newestFirst } from '../notespace/NoteList';
 import { createNote, noteIcon, noteTitle, updateNote, useNotes } from '../notespace/store';
-import { BOARD_TABS, isProjectTab } from '../boardspace/data';
-import { TASKS } from '../../backend/data/sampleTasks';
+import { useBoard } from '../boardspace/board';
+import { projectSummary } from '../boardspace/summary/summaryStats';
+import { WORK_STATUSES } from '../boardspace/workItems';
 import { readQuickNoteDraft, writeQuickNoteDraft } from '../../backend/storage/draftStorage';
-import type { BoardTab, StatusTab } from '../../shared/types/task';
+import type { BoardTab } from '../../shared/types/board';
 import { quickNoteParts } from './quickNote';
 
 type StarjotHomeProps = {
@@ -96,7 +97,8 @@ export function StarjotHome({ onOpenNote, onOpenNotespace, onOpenBoardspace, onO
   const notes = useNotes();
   const lastEdited = newestFirst(notes)[0];
   const reminders = reminderGroups(notes, now);
-  const columns = BOARD_TABS.filter((view): view is { id: StatusTab; label: string } => !isProjectTab(view.id));
+  const board = useBoard();
+  const work = projectSummary(board);
 
   return (
     <div className="content-pad starjot-home">
@@ -153,14 +155,25 @@ export function StarjotHome({ onOpenNote, onOpenNotespace, onOpenBoardspace, onO
             </button>
           </h2>
         </div>
-        <div className="board-summary">
-          {columns.map(column => (
-            <button key={column.id} type="button" className="board-summary-item" onClick={() => onOpenBoardView(column.id)}>
-              <span className="board-summary-count">{TASKS[column.id].length}</span>
-              <span>{column.label}</span>
+        {/* The project's cards per status (each opening the Board), then what is overdue (the Summary). */}
+        {/* With no work yet, a line and a button to start instead of a row of zeros. */}
+        {!board.items.length ? (
+          <div className="board-summary-empty">
+            <p>No work yet. Plan sprints and tasks in Boardspace.</p>
+            <button type="button" className="btn btn-secondary" onClick={onOpenBoardspace}>Open Boardspace <Icon name="arrow-right" size={16} /></button>
+          </div>
+        ) : <div className="board-summary">
+          {work.byStatus.map(entry => (
+            <button key={entry.status} type="button" className="board-summary-item" onClick={() => onOpenBoardView('board')}>
+              <span className="board-summary-count">{entry.count}</span>
+              <span className="board-summary-label"><span className={`work-status-dot work-status-dot--${entry.status}`} />{WORK_STATUSES[entry.status]}</span>
             </button>
           ))}
-        </div>
+          <button type="button" className="board-summary-item" onClick={() => onOpenBoardView('summary')}>
+            <span className="board-summary-count">{work.overdue.length}</span>
+            <span className="board-summary-label">{work.overdue.length > 0 && <Icon name="alert-triangle" size={13} className="board-summary-alert" />}Overdue</span>
+          </button>
+        </div>}
       </section>}
     </div>
   );

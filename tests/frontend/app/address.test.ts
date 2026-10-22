@@ -26,6 +26,12 @@ describe('page addresses', () => {
     expect(parseAddress('#note=atlas')).toEqual({ kind: 'place', place: { kind: 'note', id: 'atlas' } });
   });
 
+  it('opens the Board for links to the removed status views', () => {
+    for (const view of ['todo', 'progress', 'review', 'done']) {
+      expect(parseAddress(`#board=${view}`)).toEqual({ kind: 'board', view: 'board' });
+    }
+  });
+
   it('ignores addresses it does not know', () => {
     for (const hash of ['', '#', '#settings', '#board=garden', '#note=', '#note=<script>', '#home=1', '#category=a b']) {
       expect(parseAddress(hash)).toBeNull();

@@ -144,6 +144,35 @@
   background: var(--accent-soft);
 }
 
+/* Shown instead of the tiles while the project has no work. */
+.board-summary-empty {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--paper);
+}
+
+.board-summary-empty p {
+  margin: 0;
+  color: #56657b;
+  font-size: 12px;
+}
+
+.board-summary-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.board-summary-alert {
+  color: var(--status-blocked);
+}
+
 .board-summary-count {
   color: var(--ink);
   font-size: 28px;

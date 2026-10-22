@@ -7,10 +7,13 @@ import { useEscape } from '../lib/useDismiss';
 import { cleanHtml, htmlToText } from '../notespace/sanitize';
 import { starredNotes } from '../notespace/NoteList';
 import { ancestorsOf, categoryName, getNote, noteIcon, noteTitle, useCategories, useNotes } from '../notespace/store';
-import { BOARD_TABS } from '../boardspace/data';
-import { TASKS } from '../../backend/data/sampleTasks';
+import { getBoard, useBoard } from '../boardspace/board';
+import { dayRange } from '../boardspace/dates';
+import { openWorkItem } from '../boardspace/openWork';
+import { epicCompletion, shownSprintOf, WORK_STATUSES, WORK_TYPES } from '../boardspace/workItems';
+import { TYPE_ICONS } from '../boardspace/workParts';
 import type { Note, NoteKind } from '../../shared/types/note';
-import type { StatusTab, Task } from '../../shared/types/task';
+import type { BoardProject, BoardTab, WorkItem } from '../../shared/types/board';
 import { dayGroup, search, type SearchEntry, type SearchResult, type Snippet } from './searchIndex';
 
 type SearchWindowProps = {
@@ -26,7 +29,7 @@ type SearchWindowProps = {
   /* findTerm: words to show with the find bar. */
   onOpenNote: (id: string, inNewTab: boolean, findTerm: string) => void;
   onOpenCategory: (id: string, inNewTab: boolean) => void;
-  onOpenBoardView: (view: StatusTab) => void;
+  onOpenBoardView: (view: BoardTab) => void;
 
   /* "Create new note" or "Create new canvas": the title (empty for an untitled note), the category */
   /* to start in, and which kind of note. */
@@ -48,13 +51,16 @@ const KIND_ICONS: Record<SearchEntry['kind'], IconName> = { note: 'file-text', c
 /* The last rows of the results make a new note: a document first, then a canvas. */
 const CREATE_KINDS: NoteKind[] = ['document', 'canvas'];
 
-/* Which column each Boardspace item is in. */
-const TASK_COLUMNS = new Map<string, { task: Task; column: StatusTab }>(
-  (Object.keys(TASKS) as StatusTab[]).flatMap(column => TASKS[column].map(task => [task.id, { task, column }] as const))
-);
+/* A work item's sprint name, or Backlog. */
+function sprintName(board: BoardProject, item: WorkItem) {
+  return board.sprints.find(sprint => sprint.id === shownSprintOf(board, item))?.name ?? 'Backlog';
+}
 
-function columnLabel(column: StatusTab) {
-  return BOARD_TABS.find(view => view.id === column)?.label ?? column;
+/* A work item's kind and status (an epic's task progress instead). */
+function workState(board: BoardProject, item: WorkItem) {
+  if (item.type !== 'epic') return `${WORK_TYPES[item.type].label} · ${WORK_STATUSES[item.status]}`;
+  const { done, total } = epicCompletion(board.items, item.id);
+  return `Epic · ${done} of ${total} tasks done`;
 }
 
 
@@ -76,23 +82,25 @@ function noteEntry(note: Note): SearchEntry {
   };
 }
 
-/* Everything search can find in the spaces turned on, made again when notes or categories change. */
+/* Everything search can find in the spaces turned on, made again when notes, categories or the */
+/* Boardspace project change. Work items match on their name, kind, status, assignee and parent. */
 function useEntries(spaces: Spaces) {
   const notes = useNotes();
   const categories = useCategories();
+  const board = useBoard();
   return useMemo(() => [
     ...(spaces.notes ? notes.map(noteEntry) : []),
     ...(spaces.notes ? categories.map((category): SearchEntry => ({ kind: 'category', id: category.id, title: category.name, path: ['Category'], text: '', scope: category.id, updatedAt: '' })) : []),
-    ...(spaces.boardspace ? [...TASK_COLUMNS.values()] : []).map(({ task, column }): SearchEntry => ({
+    ...(spaces.boardspace ? board.items : []).map((item): SearchEntry => ({
       kind: 'task',
-      id: task.id,
-      title: task.title,
-      path: ['Boardspace', columnLabel(column)],
-      text: [task.id, ...task.tags, task.description, task.person].join('\n'),
+      id: item.id,
+      title: item.name,
+      path: ['Boardspace', sprintName(board, item)],
+      text: [workState(board, item), item.assignee, board.items.find(parent => parent.id === item.parentId)?.name ?? ''].filter(Boolean).join('\n'),
       scope: 'boardspace',
       updatedAt: ''
     }))
-  ], [notes, categories, spaces]);
+  ], [notes, categories, board, spaces]);
 }
 
 type Group = { label: string; results: SearchResult[] };
@@ -157,6 +165,7 @@ function PreviewSkeleton() {
 /* a Boardspace item's details. Note text is sanitized again before it is shown. */
 function Preview({ entry }: { entry: SearchEntry }) {
   const notes = useNotes();
+  const board = useBoard();
   if (entry.kind === 'note') {
     const note = getNote(entry.id);
     if (!note) return null;
@@ -182,19 +191,19 @@ function Preview({ entry }: { entry: SearchEntry }) {
       </article>
     );
   }
-  const found = TASK_COLUMNS.get(entry.id);
-  if (!found) return null;
-  const { task, column } = found;
+  const item = board.items.find(work => work.id === entry.id);
+  if (!item) return null;
+  const parent = board.items.find(work => work.id === item.parentId);
   return (
     <article className="search-preview-page">
-      <span className="search-preview-icon" aria-hidden="true"><Icon name="check-square" size={28} /></span>
-      <h2>{task.title}</h2>
-      <p className="search-preview-subtitle">{task.id} · {columnLabel(column)} · {task.priority} priority</p>
-      <p>{task.description}</p>
+      <span className="search-preview-icon" aria-hidden="true"><Icon name={TYPE_ICONS[item.type]} size={28} /></span>
+      <h2>{item.name}</h2>
+      <p className="search-preview-subtitle">{workState(board, item)}</p>
       <dl className="search-preview-facts">
-        <dt>Assignee</dt><dd>{task.person}</dd>
-        <dt>Due</dt><dd>{task.date}</dd>
-        <dt>Tags</dt><dd>{task.tags.join(', ')}</dd>
+        <dt>Assignee</dt><dd>{item.assignee || 'Unassigned'}</dd>
+        <dt>Sprint</dt><dd>{sprintName(board, item)}</dd>
+        <dt>Dates</dt><dd>{dayRange(item.start, item.end)}</dd>
+        {parent && <><dt>Inside</dt><dd>{parent.name}</dd></>}
       </dl>
     </article>
   );
@@ -297,8 +306,13 @@ export function SearchWindow({ initialQuery, inNewTab, onClose, onOpenNote, onOp
     if (entry.kind === 'note') onOpenNote(entry.id, newTab, result.findTerm);
     else if (entry.kind === 'category') onOpenCategory(entry.id, newTab);
     else {
-      const found = TASK_COLUMNS.get(entry.id);
-      if (found) onOpenBoardView(found.column);
+
+      /* A work item opens in the editor, over the Board (or the List for an epic, which the */
+      /* board leaves out). */
+      const item = getBoard().items.find(work => work.id === entry.id);
+      if (!item) return;
+      onOpenBoardView(item.type === 'epic' ? 'list' : 'board');
+      openWorkItem(item.id);
     }
   }
 

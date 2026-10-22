@@ -1,4 +1,4 @@
-import type { BoardTab } from '../../shared/types/task';
+import type { BoardTab } from '../../shared/types/board';
 import type { Place } from './noteTabs';
 
 
@@ -12,7 +12,11 @@ import type { Place } from './noteTabs';
 /* the server, so it works on any static host and in the desktop app. */
 export type Address = { kind: 'place'; place: Place } | { kind: 'board'; view: BoardTab };
 
-const BOARD_VIEWS: BoardTab[] = ['todo', 'progress', 'review', 'done', 'summary', 'list', 'board', 'timeline'];
+const BOARD_VIEWS: BoardTab[] = ['summary', 'list', 'board', 'timeline'];
+
+/* Views that were removed (the sample status cards), kept so old links and bookmarks open the */
+/* Board instead of nothing. */
+const OLD_BOARD_VIEWS = ['todo', 'progress', 'review', 'done'];
 const ID = /^[a-zA-Z0-9_-]{1,90}$/;
 
 export function addressOf(address: Address) {
@@ -32,5 +36,6 @@ export function parseAddress(hash: string): Address | null {
   if (name === 'category' && ID.test(value)) return { kind: 'place', place: { kind: 'category', id: value } };
   if (name === 'note' && ID.test(value)) return { kind: 'place', place: { kind: 'note', id: value } };
   if (name === 'board' && BOARD_VIEWS.includes(value as BoardTab)) return { kind: 'board', view: value as BoardTab };
+  if (name === 'board' && OLD_BOARD_VIEWS.includes(value)) return { kind: 'board', view: 'board' };
   return null;
 }
