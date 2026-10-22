@@ -1179,7 +1179,8 @@ p {
    Dialogs
    ========================= */
 
-/* The backdrop covers the whole window and centres the dialog with grid. */
+/* The backdrop covers the whole window and centres the dialog with grid. It dims with plain */
+/* black, so the page keeps its own colours (a tinted dim turned the app blue). */
 .dialog-backdrop {
   position: fixed;
   inset: 0;
@@ -1187,7 +1188,7 @@ p {
   display: grid;
   place-items: center;
   padding: 24px;
-  background: rgba(15, 25, 45, .38);
+  background: rgba(0, 0, 0, .32);
 }
 
 .dialog {

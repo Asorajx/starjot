@@ -176,6 +176,16 @@
   color: inherit;
 }
 
+/* Backdrops dim with plain black in the dark theme too (the generated theme would tint or */
+/* lighten it), a little more strongly so the window above still stands out. */
+[data-theme="dark"] .dialog-backdrop {
+  background: rgba(0, 0, 0, .55);
+}
+
+[data-theme="dark"] .board-drawer-backdrop {
+  background: rgba(0, 0, 0, .45);
+}
+
 /* Boardspace's status colours, stepped for the dark surface (checked as a set; see boardspace.css). */
 /* The generated theme converts the light values under :root[data-theme="dark"]; the same */
 /* selector here, loaded later, wins. */
