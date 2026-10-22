@@ -5,7 +5,10 @@
 /* Work items remain separate from Notespace notes. */
 export type Priority = 'High' | 'Medium' | 'Low';
 export type StatusTab = 'todo' | 'progress' | 'review' | 'done';
-export type BoardTab = StatusTab | 'list' | 'timeline';
+export type BoardTab = StatusTab | ProjectTab;
+
+/* The views of the Boardspace project (the rest are the sample status cards). */
+export type ProjectTab = 'list' | 'board' | 'timeline';
 
 export type Task = {
   id: string;

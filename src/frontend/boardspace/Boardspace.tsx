@@ -2,10 +2,11 @@ import { useEffect, useRef } from 'react';
 import { Avatar } from '../components/Avatar';
 import { Icon } from '../components/Icon';
 import { TASKS } from '../../backend/data/sampleTasks';
-import type { BoardTab, StatusTab, Task } from '../../shared/types/task';
-import { BOARD_TABS, TAB_DESCRIPTIONS } from './data';
+import type { BoardTab, ProjectTab, StatusTab, Task } from '../../shared/types/task';
+import { BOARD_TABS, isProjectTab, PROJECT_ICONS, TAB_DESCRIPTIONS } from './data';
 import { Timeline } from './timeline/Timeline';
 import { WorkList } from './list/WorkList';
+import { WorkBoard } from './board/WorkBoard';
 import { ProjectFrame } from './ProjectFrame';
 
 type BoardspaceProps = {
@@ -51,7 +52,7 @@ export function TaskCard({ task }: { task: Task }) {
    Boardspace Tabs
    ========================= */
 
-/* Shared tabs for the status cards and the project's views (the list and the timeline). */
+/* Shared tabs for the status cards and the project's views (the list, board and timeline). */
 function BoardspaceTabs({ tab, onTabChange }: BoardspaceProps) {
   const tabBar = useRef<HTMLDivElement>(null);
 
@@ -69,7 +70,7 @@ function BoardspaceTabs({ tab, onTabChange }: BoardspaceProps) {
   return (
     <div className="board-tabs" role="tablist" aria-label="Boardspace views" ref={tabBar}>
       {BOARD_TABS.map(item => {
-        const isView = item.id === 'timeline' || item.id === 'list';
+        const isView = isProjectTab(item.id);
         return (
           <button
             key={item.id}
@@ -79,8 +80,7 @@ function BoardspaceTabs({ tab, onTabChange }: BoardspaceProps) {
             className={`board-tab ${tab === item.id ? 'active' : ''}`}
             onClick={() => onTabChange(item.id)}
           >
-            {item.id === 'list' && <Icon name="list" size={16} />}
-            {item.id === 'timeline' && <Icon name="calendar-days" size={16} />}
+            {isProjectTab(item.id) && <Icon name={PROJECT_ICONS[item.id]} size={16} />}
             {item.label}{' '}
             {!isView && <span className="tab-count">{TASKS[item.id as StatusTab].length}</span>}
           </button>
@@ -95,22 +95,29 @@ function BoardspaceTabs({ tab, onTabChange }: BoardspaceProps) {
    Boardspace Views
    ========================= */
 
-/* The project's work as a list or a Gantt timeline (list/WorkList.tsx, timeline/Timeline.tsx), */
-/* both inside the project frame with its name, Import, Export, Members and Create. */
-function ProjectView(props: BoardspaceProps) {
+/* The project's work as a list, a board or a Gantt timeline (list/WorkList.tsx, */
+/* board/WorkBoard.tsx, timeline/Timeline.tsx), inside the project frame with its name, Create */
+/* and More. */
+const PROJECT_INTROS = {
+  list: 'Every piece of work in the project, to sort and filter.',
+  board: 'Features and tasks as cards, moved across a column for each status.',
+  timeline: 'Plan sprints and see epics, features and tasks across the calendar.'
+};
+
+function ProjectView(props: BoardspaceProps & { tab: ProjectTab }) {
   return (
     <div className="content-pad board-page board-page--project">
       <div className="page-intro board-intro">
         <div>
           <h1>Boardspace</h1>
-          <p>{props.tab === 'list' ? 'Every piece of work in the project, to sort and filter.' : 'Plan sprints and see epics, features and tasks across the calendar.'}</p>
+          <p>{PROJECT_INTROS[props.tab]}</p>
         </div>
       </div>
 
       <div className="board-panel">
         <BoardspaceTabs {...props} />
         <ProjectFrame>
-          {edit => (props.tab === 'list' ? <WorkList onEdit={edit} /> : <Timeline onEdit={edit} />)}
+          {edit => (props.tab === 'list' ? <WorkList onEdit={edit} /> : props.tab === 'board' ? <WorkBoard onEdit={edit} /> : <Timeline onEdit={edit} />)}
         </ProjectFrame>
       </div>
     </div>
@@ -122,9 +129,9 @@ function Metric({ label, value, detail }: { label: string; value: number; detail
 }
 
 export function Boardspace(props: BoardspaceProps) {
-  if (props.tab === 'timeline' || props.tab === 'list') return <ProjectView {...props} />;
-
   const tab = props.tab;
+  if (isProjectTab(tab)) return <ProjectView {...props} tab={tab} />;
+
   const current = BOARD_TABS.find(item => item.id === tab) ?? BOARD_TABS[0];
   const total = Object.values(TASKS).reduce((sum, list) => sum + list.length, 0);
 

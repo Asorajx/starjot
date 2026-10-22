@@ -12,7 +12,7 @@ import type { Place } from './noteTabs';
 /* the server, so it works on any static host and in the desktop app. */
 export type Address = { kind: 'place'; place: Place } | { kind: 'board'; view: BoardTab };
 
-const BOARD_VIEWS: BoardTab[] = ['todo', 'progress', 'review', 'done', 'list', 'timeline'];
+const BOARD_VIEWS: BoardTab[] = ['todo', 'progress', 'review', 'done', 'list', 'board', 'timeline'];
 const ID = /^[a-zA-Z0-9_-]{1,90}$/;
 
 export function addressOf(address: Address) {

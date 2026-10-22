@@ -1,4 +1,4 @@
-import type { BoardProject, WorkItem, WorkStatus, WorkType } from '../../../shared/types/board';
+import type { BoardProject, Sprint, WorkItem, WorkStatus, WorkType } from '../../../shared/types/board';
 import { BACKLOG, shownSprintOf, sprintOrder, timelineRows, WORK_STATUSES } from '../workItems';
 
 
@@ -13,6 +13,15 @@ export type ListFilters = { search: string; type: WorkType | ''; status: WorkSta
 
 export const NO_FILTERS: ListFilters = { search: '', type: '', status: '', assignee: '', sprint: '' };
 export const NOBODY = '__nobody__';
+
+/* The Assignee and Sprint filters' choices, shared by the list and the board. */
+export function assigneeChoices(members: string[]) {
+  return [{ value: '', label: 'Anyone' }, { value: NOBODY, label: 'Unassigned' }, ...[...members].sort((a, b) => a.localeCompare(b)).map(name => ({ value: name, label: name }))];
+}
+
+export function sprintChoices(sprints: Sprint[]) {
+  return [{ value: '', label: 'Any' }, ...[...sprints].sort(sprintOrder).map(sprint => ({ value: sprint.id, label: sprint.name })), { value: BACKLOG, label: 'Backlog' }];
+}
 
 /* The column the list is sorted by. "order" is the project's own order: sprint by sprint, each */
 /* sprint's work as a tree (as on the timeline, ignoring folding). */

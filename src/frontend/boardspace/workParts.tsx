@@ -51,7 +51,7 @@ export function AssigneePicker({ item, board }: { item: WorkItem; board: BoardPr
   if (item.assignee && !members.includes(item.assignee)) members.push(item.assignee);
   return (
     <>
-      <Avatar initials={item.assignee ? initialsOf(item.assignee) : '–'} className="work-avatar" />
+      <Avatar initials={item.assignee ? initialsOf(item.assignee) : '–'} className={`work-avatar ${item.assignee ? '' : 'is-nobody'}`} />
       <Dropdown
         label={`Assignee of ${item.name}`}
         className="work-assignee"

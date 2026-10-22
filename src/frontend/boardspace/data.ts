@@ -1,4 +1,4 @@
-import type { BoardTab, StatusTab } from '../../shared/types/task';
+import type { BoardTab, ProjectTab, StatusTab } from '../../shared/types/task';
 
 
 /* =========================
@@ -11,8 +11,18 @@ export const BOARD_TABS: { id: BoardTab; label: string }[] = [
   { id: 'review', label: 'In review' },
   { id: 'done', label: 'Done' },
   { id: 'list', label: 'List' },
+  { id: 'board', label: 'Board' },
   { id: 'timeline', label: 'Timeline' }
 ];
+
+export const PROJECT_TABS: ProjectTab[] = ['list', 'board', 'timeline'];
+
+export function isProjectTab(tab: BoardTab): tab is ProjectTab {
+  return (PROJECT_TABS as BoardTab[]).includes(tab);
+}
+
+/* The icon beside each project view, in the tabs and the sidebar. */
+export const PROJECT_ICONS = { list: 'list', board: 'kanban', timeline: 'calendar-days' } as const;
 
 /* The short description shown under each status heading. */
 export const TAB_DESCRIPTIONS: Record<StatusTab, string> = {

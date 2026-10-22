@@ -7,7 +7,7 @@ import { reminderGroups } from '../notespace/reminders';
 import { usePreferences } from '../app/preferences';
 import { editedText, newestFirst } from '../notespace/NoteList';
 import { createNote, noteIcon, noteTitle, updateNote, useNotes } from '../notespace/store';
-import { BOARD_TABS } from '../boardspace/data';
+import { BOARD_TABS, isProjectTab } from '../boardspace/data';
 import { TASKS } from '../../backend/data/sampleTasks';
 import { readQuickNoteDraft, writeQuickNoteDraft } from '../../backend/storage/draftStorage';
 import type { BoardTab, StatusTab } from '../../shared/types/task';
@@ -96,7 +96,7 @@ export function StarjotHome({ onOpenNote, onOpenNotespace, onOpenBoardspace, onO
   const notes = useNotes();
   const lastEdited = newestFirst(notes)[0];
   const reminders = reminderGroups(notes, now);
-  const columns = BOARD_TABS.filter((view): view is { id: StatusTab; label: string } => view.id !== 'timeline' && view.id !== 'list');
+  const columns = BOARD_TABS.filter((view): view is { id: StatusTab; label: string } => !isProjectTab(view.id));
 
   return (
     <div className="content-pad starjot-home">

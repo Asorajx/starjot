@@ -1040,6 +1040,26 @@ p {
 
 
 /* =========================
+   Avatars
+   ========================= */
+
+/* A person's initials in a circle (components/Avatar.tsx); places set its size. */
+.avatar {
+  display: inline-grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  color: var(--accent-text);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+
+/* =========================
    Sidebar Visibility
    ========================= */
 

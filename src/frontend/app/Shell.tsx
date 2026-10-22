@@ -7,7 +7,7 @@ import { Icon, type IconName } from '../components/Icon';
 import { enabledScreens, screenLabel, type ScreenId } from './screens';
 import { noteIcon, noteTitle, useCategories, useNotes } from '../notespace/store';
 import { sortNotes, starredNotes } from '../notespace/NoteList';
-import { BOARD_TABS } from '../boardspace/data';
+import { BOARD_TABS, isProjectTab, PROJECT_ICONS } from '../boardspace/data';
 import { shownTheme, updatePreferences, usePreferences } from './preferences';
 import type { Note } from '../../shared/types/note';
 import type { BoardTab } from '../../shared/types/task';
@@ -208,7 +208,7 @@ function BoardspaceLists({ boardView, onOpenBoardView }: Pick<SidebarProps, 'boa
       {BOARD_TABS.map(view => (
         <SidebarLink
           key={view.id}
-          icon={view.id === 'timeline' ? 'calendar-days' : view.id === 'list' ? 'list' : 'check-square'}
+          icon={isProjectTab(view.id) ? PROJECT_ICONS[view.id] : 'check-square'}
           label={view.label}
           current={boardView === view.id}
           onClick={() => onOpenBoardView(view.id)}

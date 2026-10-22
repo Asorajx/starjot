@@ -36,6 +36,7 @@ const PATHS = {
   'sparkles': '<path d="m12 3 1.7 5.3L19 10l-5.3 1.7L12 17l-1.7-5.3L5 10l5.3-1.7L12 3ZM5 19l.7 1.3L7 21l-1.3.7L5 23l-.7-1.3L3 21l1.3-.7L5 19ZM20 2l.5 1.5L22 4l-1.5.5L20 6l-.5-1.5L18 4l1.5-.5Z"/>',
   'lightbulb': '<path d="M9 18h6m-6 3h6M8.4 15.3a7 7 0 1 1 7.2 0c-.8.6-.9 1.1-.9 2.7H9.3c0-1.6-.1-2.1-.9-2.7Z"/>',
   'check-square': '<rect x="3" y="3" width="18" height="18" rx="3"/><path d="m8 12 3 3 5-6"/>',
+  'kanban': '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M8 7v7M12 7v4M16 7v9"/>',
   'list': '<path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>',
   'grid': '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>',
   'link': '<path d="M10 13a5 5 0 0 0 7 .2l3-3a5 5 0 0 0-7.1-7.1l-1.7 1.7M14 11a5 5 0 0 0-7-.2l-3 3a5 5 0 0 0 7.1 7.1l1.7-1.7"/>',

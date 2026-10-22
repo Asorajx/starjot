@@ -4,10 +4,10 @@ import { Icon } from '../../components/Icon';
 import type { WorkStatus, WorkType } from '../../../shared/types/board';
 import { shortDay } from '../dates';
 import { useBoard } from '../board';
-import { BACKLOG, epicCompletion, shownSprintOf, sprintOrder, WORK_STATUSES, WORK_TYPES } from '../workItems';
+import { epicCompletion, shownSprintOf, WORK_STATUSES, WORK_TYPES } from '../workItems';
 import type { EditorTarget } from '../WorkEditor';
 import { AssigneePicker, Progress, StatusPicker, WorkTypeIcon } from '../workParts';
-import { listRows, NO_FILTERS, NOBODY, type ListFilters, type ListSort, type SortKey } from './listRows';
+import { assigneeChoices, listRows, NO_FILTERS, sprintChoices, type ListFilters, type ListSort, type SortKey } from './listRows';
 
 /* The columns that sort the list when their heading is clicked. */
 const COLUMNS: { key: SortKey; label: string; className: string }[] = [
@@ -41,7 +41,6 @@ export function WorkList({ onEdit }: { onEdit: (target: EditorTarget) => void })
   const rows = useMemo(() => listRows(board, filters, sort), [board, filters, sort]);
   const filter = (changes: Partial<ListFilters>) => setFilters(current => ({ ...current, ...changes }));
   const filtered = Object.values({ ...filters, search: '' }).some(Boolean) || Boolean(filters.search.trim());
-  const sprints = [...board.sprints].sort(sprintOrder);
   const cardRef = useRef<HTMLElement>(null);
   const [width, setWidth] = useState(Infinity);
 
@@ -88,7 +87,7 @@ export function WorkList({ onEdit }: { onEdit: (target: EditorTarget) => void })
           prefix="Assignee"
           className={`board-filter ${filters.assignee ? 'is-active' : ''}`}
           value={filters.assignee}
-          options={[{ value: '', label: 'Anyone' }, { value: NOBODY, label: 'Unassigned' }, ...[...board.members].sort((a, b) => a.localeCompare(b)).map(name => ({ value: name, label: name }))]}
+          options={assigneeChoices(board.members)}
           onChange={assignee => filter({ assignee })}
         />
         <Dropdown
@@ -96,7 +95,7 @@ export function WorkList({ onEdit }: { onEdit: (target: EditorTarget) => void })
           prefix="Sprint"
           className={`board-filter ${filters.sprint ? 'is-active' : ''}`}
           value={filters.sprint}
-          options={[{ value: '', label: 'Any' }, ...sprints.map(sprint => ({ value: sprint.id, label: sprint.name })), { value: BACKLOG, label: 'Backlog' }]}
+          options={sprintChoices(board.sprints)}
           onChange={sprint => filter({ sprint })}
         />
         {filtered && <button type="button" className="btn btn-quiet btn-sm" onClick={() => setFilters(NO_FILTERS)}>Clear</button>}
