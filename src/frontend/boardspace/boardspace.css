@@ -9,12 +9,6 @@
   padding: 32px;
 }
 
-@media (max-width: 700px) {
-  .board-page {
-    padding: 24px 12px 64px;
-  }
-}
-
 .board-intro {
   margin-bottom: 32px;
 }
@@ -1369,7 +1363,38 @@
 @media (max-width: 700px) {
   .board-columns {
     grid-template-columns: repeat(5, 85%);
+    padding: 12px 0;
+  }
+
+  /* The panel loses its frame on phones, so its toolbar and views line up with the page's */
+  /* 16px edge instead of sitting inside a second inset. */
+  .board-panel {
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .board-panel .board-tabs {
+    padding: 0;
+  }
+
+  .project-top,
+  .board-tools {
+    padding: 12px 0;
+  }
+
+  .project-summary {
+    padding: 16px 0;
+  }
+
+  .summary-tile,
+  .summary-panel {
     padding: 12px;
+  }
+
+  .work-list :is(th, td):first-child {
+    padding-left: 0;
   }
 
   .board-field-pair {

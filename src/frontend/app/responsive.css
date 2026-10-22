@@ -106,8 +106,30 @@
     background: var(--accent-faint);
   }
 
+  /* One 16px edge that everything lines up to. Lists drop their box and run edge to edge with */
+  /* dividers; cards and the boxes that remain keep 12px inside, so nothing is inset twice. */
   .content-pad {
-    padding: 32px 24px 32px;
+    padding: 24px 16px 32px;
+  }
+
+  .recent-table {
+    border: 0;
+    border-top: 1px solid var(--line);
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .note-row-open {
+    padding: 8px 0;
+  }
+
+  .note-tile,
+  .quick-note,
+  .home-resume,
+  .board-summary-item,
+  .board-summary-empty {
+    padding: 12px;
   }
 
   .page-intro {
@@ -145,11 +167,13 @@
   }
 
   .recent-columns {
-    padding: 0 12px;
+    padding: 0;
+    background: transparent;
   }
 
   .recent-row {
-    padding: 12px 12px;
+    padding: 12px 0;
+    background: transparent;
   }
 
   .recent-time {
@@ -291,10 +315,6 @@
   .notes-home .page-intro .btn svg {
     width: 20px;
     height: 20px;
-  }
-
-  .settings-content {
-    padding: 24px 12px;
   }
 
   .setting-row {
