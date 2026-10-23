@@ -106,6 +106,33 @@
   align-self: center;
 }
 
+/* The kind of note after its title, as a small tinted pill: documents teal, canvases violet. */
+/* Each is a fixed colour for its kind, not the accent (which means chosen or clickable). */
+.note-kind-pill {
+  flex-shrink: 0;
+  align-self: center;
+  padding: 0 4px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  color: #5d6f88;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 18px;
+  white-space: nowrap;
+}
+
+.note-kind-pill.is-document {
+  border-color: #c8e7e2;
+  background: #e7f5f3;
+  color: #0f6b64;
+}
+
+.note-kind-pill.is-canvas {
+  border-color: #ddd0f5;
+  background: #f3eefc;
+  color: #5b3fa0;
+}
+
 /* The lock beside a locked note's title, in the same amber as the lock in the note bar. */
 .note-locked-mark {
   display: inline-flex;

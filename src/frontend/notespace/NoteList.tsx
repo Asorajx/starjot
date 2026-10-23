@@ -61,6 +61,13 @@ function SubpageTag({ note }: { note: Note }) {
   return <span className="note-subpage-tag" title={label}>{label}</span>;
 }
 
+/* A small pill after a note's title saying what kind of note it is, so documents and canvases */
+/* can be told apart at a glance (in words, not only by the icon). */
+function KindPill({ note }: { note: Note }) {
+  const canvas = note.kind === 'canvas';
+  return <span className={`note-kind-pill ${canvas ? 'is-canvas' : 'is-document'}`}>{canvas ? 'Canvas' : 'Document'}</span>;
+}
+
 /* A small lock beside a locked note's title. Unlocked notes show nothing, which is the usual case. */
 function LockedMark({ note }: { note: Note }) {
   if (!note.locked) return null;
@@ -104,6 +111,7 @@ export function NoteTile({ note, onOpen, onMenu, large = false }: NoteTileProps)
         <span className="note-tile-title">
           {note.icon ? <span className="note-tile-icon" aria-hidden="true">{note.icon}</span> : <Icon name={noteIcon(note)} size={16} />}
           <strong>{noteTitle(note)}</strong>
+          <KindPill note={note} />
           <LockedMark note={note} />
         </span>
         <SubpageTag note={note} />
@@ -126,7 +134,7 @@ function NoteRow({ note, onOpen, onMenu, time }: { note: Note; onOpen: OpenNote;
         <span className="recent-name">
           {note.icon && <span className="note-row-icon" aria-hidden="true">{note.icon}</span>}
           <span className="recent-text">
-            <span className="note-row-title"><strong>{noteTitle(note)}</strong><LockedMark note={note} /><SubpageTag note={note} /></span>
+            <span className="note-row-title"><strong>{noteTitle(note)}</strong><KindPill note={note} /><LockedMark note={note} /><SubpageTag note={note} /></span>
             <small>{note.subtitle || note.preview}</small>
           </span>
         </span>

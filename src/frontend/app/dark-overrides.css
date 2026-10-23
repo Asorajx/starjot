@@ -201,6 +201,20 @@
   background: rgba(0, 0, 0, .45);
 }
 
+/* The kind pills keep their colours in the dark theme (the generator would read the pale tints */
+/* as grey): documents teal, canvases violet, dimmed so they stay quieter than the note's title. */
+[data-theme="dark"] .note-kind-pill.is-document {
+  border-color: #1a3b37;
+  background: #132d2a;
+  color: #6fb0a7;
+}
+
+[data-theme="dark"] .note-kind-pill.is-canvas {
+  border-color: #352a50;
+  background: #2a2140;
+  color: #a594d4;
+}
+
 /* Boardspace's status colours, stepped for the dark surface (checked as a set; see boardspace.css). */
 /* The generated theme converts the light values under :root[data-theme="dark"]; the same */
 /* selector here, loaded later, wins. */
