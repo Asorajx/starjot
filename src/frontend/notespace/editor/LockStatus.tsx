@@ -35,12 +35,14 @@ export function LockStatus({ noteId, temporary, unlockedUntil }: LockStatusProps
       <button
         type="button"
         className={`page-bar-button page-locked ${temporary ? 'is-open' : ''}`}
-        data-tooltip={open ? undefined : label}
+        data-tooltip={open || !temporary ? undefined : label}
+        data-tooltip-align="start"
         aria-label={label}
         aria-expanded={open}
         onClick={() => setOpen(value => !value)}
       >
         <Icon name={temporary ? 'unlock' : 'lock'} size={17} />
+        <span className="page-locked-text">{temporary ? 'Unlocked' : 'Locked'}</span>
       </button>
       {open && (
         <span className="page-menu lock-menu" role="menu">

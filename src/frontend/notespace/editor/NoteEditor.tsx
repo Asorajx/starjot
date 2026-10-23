@@ -7,7 +7,7 @@ import { FindBar } from './find/FindBar';
 import { takeFindForNote } from './find/pendingFind';
 import { Icon } from '../../components/Icon';
 import {
-  deleteNote, flushSave, getNote, markOpened, setPinned, updateNote,
+  deleteNote, flushSave, getNote, markOpened, updateNote,
   updatedLabel, useCategories, useNote
 } from '../store';
 import type { NoteMode } from '../../../shared/types/note';
@@ -30,7 +30,7 @@ import { ImageTools } from './images/ImageTools';
 import { LinkTools } from './links/LinkTools';
 import { copyPageLink } from './links/links';
 import { NoteBreadcrumb } from './NoteBreadcrumb';
-import { NoteStarButton, UndoRedoButtons, useActiveLayer, useNoteLock } from './noteParts';
+import { UndoRedoButtons, useActiveLayer, useNoteLock } from './noteParts';
 import { PageBar, SaveStatus, type PageHistory } from '../PageBar';
 import { NoteColorStrip } from '../NoteColors';
 import { NoteHeader } from './NoteHeader';
@@ -377,6 +377,9 @@ function DocumentEditor({ noteId, history, view, active, onClose, onOpenNote, on
       <NoteColorStrip color={note.color} />
       <PageBar history={history} className={`editor-page-bar ${typing && !panel ? 'is-hidden' : ''}`}>
         <NoteBreadcrumb note={note} onOpenHome={onOpenHome} onOpenNote={(id, inNewTab) => (inNewTab ? onOpenNoteInNewTab(id) : onGoToNote(id))} onOpenCategory={onOpenCategory} />
+
+        {/* A locked note's lock sits by its name, where it is easy to find and unlock. */}
+        {note.locked && <LockStatus noteId={note.id} temporary={temporary} unlockedUntil={note.unlockedUntil} />}
         <span className="page-bar-fill" />
         <SaveStatus />
 
@@ -415,11 +418,8 @@ function DocumentEditor({ noteId, history, view, active, onClose, onOpenNote, on
           <Icon name="list" size={17} />
         </button>
 
-        <NoteStarButton note={note} className="page-bar-wide" />
 
-        {note.locked && <LockStatus noteId={note.id} temporary={temporary} unlockedUntil={note.unlockedUntil} />}
-
-        <button type="button" data-panel-toggle data-tooltip-align="end" className={`page-bar-button ${panel === 'settings' ? 'selected' : ''}`} data-tooltip={panel === 'settings' ? undefined : 'Note settings'} aria-label="Note settings" aria-expanded={panel === 'settings'} aria-controls={`${panelId}-settings`} onClick={() => togglePanel('settings')}>
+        <button type="button" data-panel-toggle data-tooltip-align="end" className={`page-bar-button page-bar-settings ${panel === 'settings' ? 'selected' : ''}`} data-tooltip={panel === 'settings' ? undefined : 'Note settings'} aria-label="Note settings" aria-expanded={panel === 'settings'} aria-controls={`${panelId}-settings`} onClick={() => togglePanel('settings')}>
           <Icon name="sliders-horizontal" size={17} />
         </button>
 
@@ -456,9 +456,6 @@ function DocumentEditor({ noteId, history, view, active, onClose, onOpenNote, on
             <>
               <button type="button" className="option-tile" onClick={() => togglePanel('toc')}>
                 <Icon name="list" size={16} /> Contents
-              </button>
-              <button type="button" className={`option-tile ${note.pinned ? 'selected' : ''}`} aria-pressed={note.pinned} onClick={() => setPinned(note.id, !note.pinned)}>
-                <Icon name="star" size={16} /> {note.pinned ? 'Starred' : 'Star'}
               </button>
               {drawingSettings.enabled && (
                 <button type="button" className={`option-tile ${drawing ? 'selected' : ''}`} aria-pressed={drawing} disabled={locked} onClick={() => { setPanel(null); toggleDrawing(); }}>

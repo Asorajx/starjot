@@ -4,6 +4,7 @@ import { STACK_LIMIT } from '../../app/noteTabs';
 import { Switch } from '../../components/Switch';
 import { Icon, type IconName } from '../../components/Icon';
 import { NoteColorPicker } from '../NoteColors';
+import { setPinned } from '../store';
 import { showTabOf, tabPathOf } from './text/tabs';
 import type { EditorSession } from './session';
 import type { Note, NoteMode, PageLayout, PageSize } from '../../../shared/types/note';
@@ -139,7 +140,7 @@ type NoteSettingsProps = {
   onExport: () => void;
   onDelete: () => void;
 
-  /* On phones, the note's buttons that leave the top bar there (Contents, Star, Draw, Sticky). */
+  /* On phones, the note's buttons that leave the top bar there (Contents, Draw, Sticky). */
   phoneActions?: ReactNode;
 };
 
@@ -182,7 +183,30 @@ export function NoteSettings({
 
       {phoneActions && <div className="option-grid is-three note-phone-actions">{phoneActions}</div>}
 
-      <div className="option-grid is-three">
+      {/* Star and Lock, then Copy link and Export, two by two. */}
+      <div className="option-grid note-settings-actions">
+        <button
+          type="button"
+          className={`option-tile ${note.pinned ? 'selected' : ''}`}
+          aria-pressed={note.pinned}
+          data-tooltip="Starred notes are listed first on Notespace Home and in the sidebar."
+          data-tooltip-align="start"
+          data-tooltip-wrap=""
+          onClick={() => setPinned(note.id, !note.pinned)}
+        >
+          <Icon name="star" size={16} /> {note.pinned ? 'Starred' : 'Star'}
+        </button>
+        <button
+          type="button"
+          className={`option-tile ${note.locked ? 'selected' : ''}`}
+          aria-pressed={note.locked}
+          data-tooltip="A locked note can be read, selected and commented on, but not changed."
+          data-tooltip-align="end"
+          data-tooltip-wrap=""
+          onClick={() => onLockChange(!note.locked)}
+        >
+          <Icon name={note.locked ? 'lock' : 'unlock'} size={16} /> {note.locked ? 'Locked' : 'Lock'}
+        </button>
         <button
           type="button"
           className={`option-tile ${copied ? 'selected' : ''}`}
@@ -197,21 +221,11 @@ export function NoteSettings({
           type="button"
           className="option-tile"
           data-tooltip="Save this note as a PDF, HTML, Markdown or plain text file."
+          data-tooltip-align="end"
           data-tooltip-wrap=""
           onClick={onExport}
         >
           <Icon name="download" size={16} /> Export
-        </button>
-        <button
-          type="button"
-          className={`option-tile ${note.locked ? 'selected' : ''}`}
-          aria-pressed={note.locked}
-          data-tooltip="A locked note can be read, selected and commented on, but not changed."
-          data-tooltip-align="end"
-          data-tooltip-wrap=""
-          onClick={() => onLockChange(!note.locked)}
-        >
-          <Icon name={note.locked ? 'lock' : 'unlock'} size={16} /> {note.locked ? 'Locked' : 'Lock'}
         </button>
       </div>
 

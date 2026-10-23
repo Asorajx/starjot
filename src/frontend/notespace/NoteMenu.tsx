@@ -4,7 +4,7 @@ import { Icon } from '../components/Icon';
 import { useDismiss } from '../lib/useDismiss';
 import { TitleEditor } from '../components/TitleEditor';
 import { NoteColorPicker } from './NoteColors';
-import { deleteNote, getNote, noteTitle, updateNote } from './store';
+import { deleteNote, getNote, noteTitle, setPinned, updateNote } from './store';
 
 
 /* =========================
@@ -23,9 +23,9 @@ export type NoteMenu = {
   menu: ReactNode;
 };
 
-/* The right-click menu of a note in a list: open it here or in a new tab, rename it (on the row or */
-/* card itself), or delete it */
-/* (after asking). A locked note cannot be renamed or deleted until it is unlocked, as inside the note. */
+/* The right-click menu of a note in a list (Notespace's lists and the sidebar): open it here or */
+/* in a new tab, star or unstar it, rename it (on the row, card or sidebar line itself), give it */
+/* a colour, or delete it (after asking). A locked note cannot be renamed or deleted until it is unlocked, as inside the note. */
 export function useNoteMenu({ onOpen, onOpenInNewTab }: NoteMenuActions): NoteMenu {
   /* title: the note's title in the row or card right-clicked, which Rename edits in place. */
   const [open, setOpen] = useState<{ id: string; top: number; left: number; title: HTMLElement | null } | null>(null);
@@ -40,7 +40,7 @@ export function useNoteMenu({ onOpen, onOpenInNewTab }: NoteMenuActions): NoteMe
     const fromKeyboard = event.clientX === 0 && event.clientY === 0;
     const target = event.currentTarget as Element;
     const box = target.getBoundingClientRect();
-    const title = target.querySelector<HTMLElement>('.note-row-title strong, .note-tile-title strong');
+    const title = target.querySelector<HTMLElement>('.note-row-title strong, .note-tile-title strong, .sidebar-link-label');
     setOpen({ id, top: fromKeyboard ? box.bottom : event.clientY, left: fromKeyboard ? box.left : event.clientX, title });
   }
 
@@ -71,6 +71,9 @@ export function useNoteMenu({ onOpen, onOpenInNewTab }: NoteMenuActions): NoteMe
           </button>
           <button type="button" role="menuitem" className="page-menu-item" onClick={() => run(onOpenInNewTab)}>
             <Icon name="external-link" size={14} /> Open in new tab
+          </button>
+          <button type="button" role="menuitem" className="page-menu-item" onClick={() => run(id => setPinned(id, !note.pinned))}>
+            <Icon name="star" size={14} /> {note.pinned ? 'Unstar' : 'Star'}
           </button>
           <button
             type="button"

@@ -1,4 +1,5 @@
 import type { MouseEvent, ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import { BrandMark } from '../components/BrandMark';
 import { opensNewTab, startNoteDrag, type OpenById } from '../lib/clicks';
 import { keyParts, keysOf, shortcutLabel } from './shortcuts';
@@ -7,6 +8,7 @@ import { Icon, type IconName } from '../components/Icon';
 import { enabledScreens, screenLabel, type ScreenId } from './screens';
 import { noteIcon, noteTitle, useCategories, useNotes } from '../notespace/store';
 import { sortNotes, starredNotes } from '../notespace/NoteList';
+import { useNoteMenu } from '../notespace/NoteMenu';
 import { BOARD_TABS, BOARD_ICONS } from '../boardspace/data';
 import { shownTheme, updatePreferences, usePreferences } from './preferences';
 import type { Note } from '../../shared/types/note';
@@ -112,10 +114,13 @@ type SidebarLinkProps = {
 
   /* A note's line can be dragged onto the tab bar to open it in a new tab. */
   noteId?: string;
+
+  /* Right-click (or the menu key) opens the note's menu. */
+  onContextMenu?: (event: MouseEvent) => void;
 };
 
 /* One line in a sidebar list: a note, a category, or a view of the board. */
-function SidebarLink({ icon, emoji, label, current, onClick, noteId }: SidebarLinkProps) {
+function SidebarLink({ icon, emoji, label, current, onClick, noteId, onContextMenu }: SidebarLinkProps) {
   return (
     <li>
       <button
@@ -125,6 +130,7 @@ function SidebarLink({ icon, emoji, label, current, onClick, noteId }: SidebarLi
         draggable={Boolean(noteId)}
         onDragStart={noteId ? event => startNoteDrag(event, noteId) : undefined}
         onClick={onClick}
+        onContextMenu={onContextMenu}
       >
         {emoji ? <span className="sidebar-link-emoji" aria-hidden="true">{emoji}</span> : icon && <Icon name={icon} size={14} />}
         <span className="sidebar-link-label">{label}</span>
@@ -160,7 +166,8 @@ function SidebarList({ id, title, empty, children }: SidebarListProps) {
 }
 
 /* Notespace: starred notes, the notes opened most recently, and categories, each as chosen in */
-/* Settings → Sidebar. */
+/* Settings → Sidebar. Right-clicking a note opens its menu (see NoteMenu.tsx), shown over the */
+/* page, since the sidebar may be a sliding popup. */
 function NotespaceLists({ openNoteId, openCategoryId, onOpenNote, onOpenCategory }: Pick<SidebarProps, 'openNoteId' | 'openCategoryId' | 'onOpenNote' | 'onOpenCategory'>) {
   const notes = useNotes();
   const categories = useCategories();
@@ -168,6 +175,7 @@ function NotespaceLists({ openNoteId, openCategoryId, onOpenNote, onOpenCategory
   const starred = starredNotes(notes).slice(0, LIST_COUNT);
   const recent = sortNotes(notes.filter(note => note.openedAt), 'opened').slice(0, LIST_COUNT);
   const shownCategories = categories.filter(category => !sidebar.hiddenCategories.includes(category.id));
+  const noteMenu = useNoteMenu({ onOpen: id => onOpenNote(id, false), onOpenInNewTab: id => onOpenNote(id, true) });
   const link = (note: Note) => (
     <SidebarLink
       key={note.id}
@@ -177,6 +185,7 @@ function NotespaceLists({ openNoteId, openCategoryId, onOpenNote, onOpenCategory
       noteId={note.id}
       current={openNoteId === note.id}
       onClick={event => onOpenNote(note.id, opensNewTab(event))}
+      onContextMenu={event => noteMenu.onContextMenu(event, note.id)}
     />
   );
 
@@ -197,6 +206,7 @@ function NotespaceLists({ openNoteId, openCategoryId, onOpenNote, onOpenCategory
           ))}
         </SidebarList>
       )}
+      {createPortal(noteMenu.menu, document.body)}
     </>
   );
 }

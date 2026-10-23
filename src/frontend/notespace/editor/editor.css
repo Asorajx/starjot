@@ -192,6 +192,10 @@
   display: none;
 }
 
+.option-grid.note-settings-actions {
+  margin-top: 0;
+}
+
 .option-grid.is-icons {
   grid-template-columns: repeat(4, 1fr);
 }
@@ -1124,10 +1128,34 @@
     font-size: 20px;
   }
 
-  /* Phones keep the bar to one row: Forward, Contents, Star, Draw and Sticky move into Note */
-  /* settings (its first row there), leaving Back, the breadcrumb, Undo, Redo and Note settings. */
+  /* Phones keep the bar to one row: Forward, Contents, Draw and Sticky move into Note settings */
+  /* (its first row there), leaving Back, the breadcrumb, Undo, Redo and Note settings. */
   .page-bar-forward,
   .page-bar-wide {
+    display: none;
+  }
+
+  /* The lock stays at the bar's end on phones, just before Note settings, with its menu lined */
+  /* up with its right edge. */
+  .page-bar .lock-status {
+    order: 1;
+  }
+
+  .page-bar .page-bar-settings {
+    order: 2;
+  }
+
+  .lock-menu {
+    right: 0;
+    left: auto;
+  }
+
+  .lock-status .page-locked {
+    width: 32px;
+    padding: 0;
+  }
+
+  .page-locked-text {
     display: none;
   }
 

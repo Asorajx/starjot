@@ -262,19 +262,28 @@
   display: inline-flex;
 }
 
+/* The lock says what it is ("Locked", or "Unlocked" while unlocked for a while, with the */
+/* minutes left in its tooltip). On phones it is the icon alone (see editor.css). */
 .lock-status .page-locked {
+  width: auto;
+  gap: 4px;
+  padding: 0 8px;
   color: #937016;
+  font-size: 12px;
+  font-weight: 650;
 }
 
 .lock-status .page-locked.is-open {
   color: #b45309;
 }
 
-/* The menu opens under the button, lined up with its right edge, rather than at the pointer. */
+/* The menu opens under the button, lined up with its left edge (the lock sits by the note's */
+/* name), rather than at the pointer. On phones the lock is at the bar's end, so it lines up with */
+/* the right edge there (see editor.css). */
 .lock-menu {
   position: absolute;
   top: calc(100% + 4px);
-  right: 0;
+  left: 0;
   min-width: 200px;
   text-transform: none;
   letter-spacing: normal;
