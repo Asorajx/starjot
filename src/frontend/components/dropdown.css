@@ -29,6 +29,20 @@
   border-color: #c9d7ee;
 }
 
+/* The chosen value stays on one line, ending in "…" when it is too long (the menu shows it in */
+/* full, and so does the button's accessible name). */
+.dropdown-button > span {
+  min-width: 0;
+  overflow: hidden;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dropdown-button > svg {
+  flex-shrink: 0;
+}
+
 .dropdown button strong {
   font-weight: 700;
 }
@@ -73,7 +87,17 @@
   color: var(--accent-text);
 }
 
+/* A long option wraps and its row grows to fit, keeping the same space as one-line rows. */
+.dropdown-menu .dropdown-item {
+  height: auto;
+  min-height: 32px;
+  padding-block: 6px;
+  line-height: 1.4;
+  text-align: left;
+}
+
 .dropdown-check {
+  flex-shrink: 0;
   margin-left: auto;
   color: var(--accent-text);
 }
