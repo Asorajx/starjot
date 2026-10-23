@@ -20,7 +20,7 @@ export const TITLE_LENGTH = 70;
 export const MEMBER_LENGTH = 80;
 
 export function blankProject(): BoardProject {
-  return { version: 5, title: 'Untitled project', members: [], sprints: [], items: [], collapsedSprints: {}, collapsedItems: {} };
+  return { version: 5, title: 'Untitled project', members: [], sprints: [], items: [], collapsedSprints: {}, collapsedItems: {}, collapsedCards: {} };
 }
 
 export function newId(kind: 's' | 'i') {
@@ -107,7 +107,7 @@ export function cleanProject(raw: unknown): BoardProject {
     }
   }
 
-  for (const key of ['collapsedSprints', 'collapsedItems'] as const) {
+  for (const key of ['collapsedSprints', 'collapsedItems', 'collapsedCards'] as const) {
     const folded = record[key];
     if (folded && typeof folded === 'object') {
       Object.entries(folded as Record<string, unknown>).slice(0, MAX_ITEMS + MAX_SPRINTS).forEach(([id, value]) => {
@@ -267,7 +267,10 @@ export function deleteItem(id: string) {
   change(draft => {
     const family = familyOf(draft.items, id);
     draft.items = draft.items.filter(item => !family.has(item.id));
-    family.forEach(member => { delete draft.collapsedItems[member]; });
+    family.forEach(member => {
+      delete draft.collapsedItems[member];
+      delete draft.collapsedCards[member];
+    });
   });
 }
 
@@ -322,6 +325,16 @@ export function toggleItemFolded(id: string) {
   change(draft => {
     if (draft.collapsedItems[id]) delete draft.collapsedItems[id];
     else draft.collapsedItems[id] = true;
+  });
+}
+
+/* Collapse Board cards to their name only, or expand them again (one card, or all shown). */
+export function setCardsCollapsed(ids: string[], collapsed: boolean) {
+  change(draft => {
+    ids.forEach(id => {
+      if (collapsed) draft.collapsedCards[id] = true;
+      else delete draft.collapsedCards[id];
+    });
   });
 }
 

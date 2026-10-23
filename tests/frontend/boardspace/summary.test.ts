@@ -23,7 +23,8 @@ const PROJECT: BoardProject = {
     item('later', { sprintId: 's2', status: 'blocked', assignee: 'Dee', end: '2026-11-20', order: 5 })
   ],
   collapsedSprints: {},
-  collapsedItems: {}
+  collapsedItems: {},
+  collapsedCards: {}
 };
 
 const summary = projectSummary(PROJECT, '2026-10-22');

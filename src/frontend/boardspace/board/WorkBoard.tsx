@@ -4,7 +4,7 @@ import { Dropdown } from '../../components/Dropdown';
 import { Icon } from '../../components/Icon';
 import { showToast } from '../../lib/toasts';
 import type { BoardProject, WorkItem, WorkStatus } from '../../../shared/types/board';
-import { setStatus, useBoard } from '../board';
+import { setCardsCollapsed, setStatus, useBoard } from '../board';
 import { shortDay } from '../dates';
 import { assigneeChoices, sprintChoices } from '../list/listRows';
 import { initialsOf, shownSprintOf, WORK_STATUSES } from '../workItems';
@@ -39,6 +39,10 @@ export function WorkBoard({ onEdit }: { onEdit: (target: EditorTarget) => void }
   const all = board.items.filter(item => item.type !== 'epic').length;
   const filtered = Boolean(filters.search.trim() || filters.assignee || filters.sprint);
   const filter = (changes: Partial<BoardFilters>) => setFilters(current => ({ ...current, ...changes }));
+
+  /* One button collapses every shown card to its name, or expands them all once each one is. */
+  const shownIds = columns.flatMap(column => column.items.map(item => item.id));
+  const allCollapsed = shownIds.length > 0 && shownIds.every(id => board.collapsedCards[id]);
 
   /* A card moved with the keyboard lands in another column, so its name is focused again there. */
   const moved = useRef<string | null>(null);
@@ -97,6 +101,11 @@ export function WorkBoard({ onEdit }: { onEdit: (target: EditorTarget) => void }
         />
         {filtered && <button type="button" className="btn btn-quiet btn-sm" onClick={() => setFilters({ search: '', assignee: '', sprint: '' })}>Clear</button>}
         <span className="board-fill" />
+        {shown > 0 && (
+          <button type="button" className="btn btn-quiet btn-sm" aria-pressed={allCollapsed} onClick={() => setCardsCollapsed(shownIds, !allCollapsed)}>
+            <Icon name={allCollapsed ? 'chevrons-up-down' : 'chevrons-down-up'} size={14} /> {allCollapsed ? 'Expand all' : 'Collapse all'}
+          </button>
+        )}
         <span className="board-counts">{filtered ? `${shown} of ${all}` : all} {all === 1 ? 'card' : 'cards'}</span>
       </div>
 
@@ -173,34 +182,48 @@ type WorkCardProps = {
 };
 
 /* One card: its kind and name, what it sits inside, its sprint, due date (red once overdue) */
-/* and assignee. */
+/* and assignee. The arrow at its top right collapses it to its kind and name, or expands it. */
 function WorkCard({ item, board, dragging, onOpen, onKeyDown, onDragStart, onDragEnd }: WorkCardProps) {
   const parent = board.items.find(entry => entry.id === item.parentId);
   const sprint = board.sprints.find(entry => entry.id === shownSprintOf(board, item));
   const overdue = isOverdue(item);
+  const collapsed = Boolean(board.collapsedCards[item.id]);
   const notes = useNotes();
   const { spaces } = usePreferences();
   return (
-    <article className={`board-card ${dragging ? 'is-dragging' : ''}`} data-card={item.id} draggable onDragStart={onDragStart} onDragEnd={onDragEnd}>
+    <article className={`board-card ${dragging ? 'is-dragging' : ''} ${collapsed ? 'is-collapsed' : ''}`} data-card={item.id} draggable onDragStart={onDragStart} onDragEnd={onDragEnd}>
       <div className="board-card-top">
         <WorkTypeIcon type={item.type} />
         <button type="button" className="board-card-name" onClick={onOpen} onKeyDown={onKeyDown} data-tooltip="Open" data-shortcut="Alt + ← / → to move">
           {item.name}
         </button>
+        <button
+          type="button"
+          className="board-card-fold"
+          aria-expanded={!collapsed}
+          aria-label={`${collapsed ? 'Expand' : 'Collapse'} ${item.name}`}
+          data-tooltip={collapsed ? 'Expand' : 'Collapse'}
+          data-tooltip-align="end"
+          onClick={() => setCardsCollapsed([item.id], !collapsed)}
+        >
+          <Icon name={collapsed ? 'chevron-right' : 'chevron-down'} size={14} />
+        </button>
       </div>
-      {parent && <small className="board-card-parent">in {parent.name}</small>}
-      <div className="board-card-foot">
-        <span className="board-card-sprint">{sprint ? sprint.name : 'Backlog'}</span>
-        {item.end && (
-          <span className={`board-card-due ${overdue ? 'is-overdue' : ''}`} aria-label={`${overdue ? 'Overdue, due' : 'Due'} ${shortDay(item.end)}`}>
-            <Icon name={overdue ? 'alert-triangle' : 'calendar-days'} size={12} />{shortDay(item.end)}
+      {!collapsed && parent && <small className="board-card-parent">in {parent.name}</small>}
+      {!collapsed && (
+        <div className="board-card-foot">
+          <span className="board-card-sprint">{sprint ? sprint.name : 'Backlog'}</span>
+          {item.end && (
+            <span className={`board-card-due ${overdue ? 'is-overdue' : ''}`} aria-label={`${overdue ? 'Overdue, due' : 'Due'} ${shortDay(item.end)}`}>
+              <Icon name={overdue ? 'alert-triangle' : 'calendar-days'} size={12} />{shortDay(item.end)}
+            </span>
+          )}
+          {spaces.notes && <NoteCount count={linkedNotes(item, notes).length} />}
+          <span className="board-card-person" data-tooltip={item.assignee || 'Unassigned'} aria-label={item.assignee || 'Unassigned'}>
+            <Avatar initials={item.assignee ? initialsOf(item.assignee) : '–'} className={`work-avatar ${item.assignee ? '' : 'is-nobody'}`} />
           </span>
-        )}
-        {spaces.notes && <NoteCount count={linkedNotes(item, notes).length} />}
-        <span className="board-card-person" data-tooltip={item.assignee || 'Unassigned'} aria-label={item.assignee || 'Unassigned'}>
-          <Avatar initials={item.assignee ? initialsOf(item.assignee) : '–'} className={`work-avatar ${item.assignee ? '' : 'is-nobody'}`} />
-        </span>
-      </div>
+        </div>
+      )}
     </article>
   );
 }

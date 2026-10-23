@@ -17,7 +17,7 @@ function item(id: string, fields: Partial<WorkItem> = {}): WorkItem {
 }
 
 function project(items: WorkItem[], sprints = [{ id: 's1', name: 'Sprint 1', start: '2026-10-05', end: '2026-10-16', order: 0 }]): BoardProject {
-  return { version: 5, title: 'Test', members: [], sprints, items, collapsedSprints: {}, collapsedItems: {} };
+  return { version: 5, title: 'Test', members: [], sprints, items, collapsedSprints: {}, collapsedItems: {}, collapsedCards: {} };
 }
 
 
@@ -178,5 +178,19 @@ describe('project store', () => {
     expect(older.items[0].notes).toEqual([]);
     const messy = board.cleanProject({ ...project([item('t')]), items: [{ ...item('t'), notes: ['a', 'a', '', 7, 'b'] }] });
     expect(messy.items[0].notes).toEqual(['a', '7', 'b']);
+  });
+
+  it('collapses Board cards and expands them, forgets a deleted card, and reads older projects', async () => {
+    const board = await openBoard();
+    board.replaceBoard({ ...board.getBoard(), items: [item('a'), item('b')] });
+    board.setCardsCollapsed(['a', 'b'], true);
+    expect(board.getBoard().collapsedCards).toEqual({ a: true, b: true });
+    board.setCardsCollapsed(['a'], false);
+    expect(board.getBoard().collapsedCards).toEqual({ b: true });
+    board.deleteItem('b');
+    expect(board.getBoard().collapsedCards).toEqual({});
+    const { collapsedCards, ...older } = project([item('t')]);
+    expect(collapsedCards).toEqual({});
+    expect(board.cleanProject(older).collapsedCards).toEqual({});
   });
 });

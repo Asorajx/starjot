@@ -24,7 +24,8 @@ const PROJECT: BoardProject = {
     item('later', { sprintId: '', name: 'Archive old site' })
   ],
   collapsedSprints: { s1: true },
-  collapsedItems: {}
+  collapsedItems: {},
+  collapsedCards: {}
 };
 
 const ids = (filters: Partial<ListFilters> = {}, sort: ListSort = { key: 'order', descending: false }) => listRows(PROJECT, { ...NO_FILTERS, ...filters }, sort).map(entry => entry.id);

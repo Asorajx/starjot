@@ -13,7 +13,8 @@ const PROJECT: BoardProject = {
     { id: 't', name: '=Write copy', type: 'task', parentId: 'e', sprintId: 's1', status: 'done', assignee: 'Ana', start: '2026-10-05', end: '2026-10-07', color: '#4e82f7', progress: 100, manualBacklog: false, order: 1 }
   ],
   collapsedSprints: {},
-  collapsedItems: {}
+  collapsedItems: {},
+  collapsedCards: {}
 };
 
 

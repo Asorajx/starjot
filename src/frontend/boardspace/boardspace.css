@@ -1131,7 +1131,13 @@
   gap: 8px;
 }
 
+/* A long name stops after two lines with an ellipsis (the editor shows it in full). */
 .board-card-name {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
   flex: 1;
   min-width: 0;
   min-height: 24px;
@@ -1159,9 +1165,44 @@
   outline-offset: 2px;
 }
 
+/* A collapsed card shows only its kind, name and the arrow to expand it. */
+.board-card.is-collapsed {
+  padding-block: 8px;
+}
+
+/* The card's collapse arrow, at its top right. */
+.board-card-fold {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  margin: 0 -4px 0 0;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: #5d6f88;
+  cursor: pointer;
+}
+
+.board-card-fold:hover {
+  background: var(--accent-soft);
+  color: var(--accent-text);
+}
+
+.board-card-fold:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* What the card sits inside, on one line (the editor shows it in full). */
 .board-card-parent {
+  overflow: hidden;
   color: #5d6f88;
   font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .board-card-foot {

@@ -62,6 +62,9 @@ export type BoardProject = {
   /* Sprints and items folded on the timeline, by id. */
   collapsedSprints: Record<string, true>;
   collapsedItems: Record<string, true>;
+
+  /* Cards on the Board showing their name only, by item id. */
+  collapsedCards: Record<string, true>;
 };
 
 /* The views of the project, Boardspace's tabs. */

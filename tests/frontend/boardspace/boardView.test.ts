@@ -23,7 +23,8 @@ const PROJECT: BoardProject = {
     item('c', { sprintId: 's2', status: 'blocked', order: 4 })
   ],
   collapsedSprints: {},
-  collapsedItems: {}
+  collapsedItems: {},
+  collapsedCards: {}
 };
 
 const ids = (filters = {}) => boardColumns(PROJECT, { search: '', assignee: '', sprint: '', ...filters }).map(column => `${column.status}: ${column.items.map(entry => entry.id).join(' ')}`);
