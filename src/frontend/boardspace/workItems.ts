@@ -19,8 +19,20 @@ export const WORK_STATUSES: Record<WorkStatus, string> = {
   blocked: 'Blocked'
 };
 
-/* The colours offered for work items' bars; the first is the default. */
-export const BAR_COLORS = ['#4e82f7', '#2466d9', '#17a0b5', '#28a58c', '#8a72e7', '#db8e48', '#db6488', '#536780'];
+/* The colours offered for work items' bars; the first is the default. Each is dark enough for */
+/* the bar's white name to pass 4.5:1. */
+export const BAR_COLORS = ['#2c6af5', '#1d4ea8', '#128091', '#20826e', '#7a5ee4', '#ab6322', '#d13b68', '#536780'];
+
+/* The earlier, lighter colours, each moved to the colour that replaced it when a project loads. */
+export const OLD_BAR_COLORS: Record<string, string> = {
+  '#4e82f7': '#2c6af5',
+  '#2466d9': '#1d4ea8',
+  '#17a0b5': '#128091',
+  '#28a58c': '#20826e',
+  '#8a72e7': '#7a5ee4',
+  '#db8e48': '#ab6322',
+  '#db6488': '#d13b68'
+};
 
 /* The section of the timeline for work in no sprint. */
 export const BACKLOG = '__backlog__';

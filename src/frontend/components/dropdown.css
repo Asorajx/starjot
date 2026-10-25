@@ -47,6 +47,11 @@
   font-weight: 700;
 }
 
+/* A filter's name before its value ("Sprint: Sprint 2"), lighter so the value stands out. */
+.dropdown-prefix {
+  font-weight: 500;
+}
+
 .dropdown > .dropdown-menu {
   position: absolute;
   top: calc(100% + 4px);

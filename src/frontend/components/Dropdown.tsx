@@ -136,7 +136,7 @@ export function Dropdown<T extends string>({ value, options, onChange, label, pr
         onKeyDown={handleKeyDown}
       >
         {current?.icon && <Icon name={current.icon} size={14} />}
-        <span>{prefix && <>{prefix} </>}<strong>{current?.label}</strong></span>
+        <span>{prefix && <><span className="dropdown-prefix">{prefix}:</span> </>}<strong>{current?.label}</strong></span>
         {!disabled && <Icon name="chevron-down" size={14} className={`dropdown-chevron ${open ? 'is-flipped' : ''}`} />}
       </button>
 

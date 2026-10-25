@@ -104,7 +104,7 @@ describe('project store', () => {
     expect(cleaned.title).toBe('Untitled project');
     expect(cleaned.sprints).toEqual([]);
     expect(cleaned.items.map(entry => entry.id)).toEqual(['a', 'b']);
-    expect(cleaned.items[0]).toMatchObject({ type: 'task', color: '#4e82f7' });
+    expect(cleaned.items[0]).toMatchObject({ type: 'task', color: '#2c6af5' });
     expect(cleaned.items.some(entry => entry.parentId === '')).toBe(true);
     expect(cleaned.members).toEqual(['Ana', 'Bo']);
     expect(() => cleanProject({ hello: 1 })).toThrow();
@@ -178,6 +178,12 @@ describe('project store', () => {
     expect(older.items[0].notes).toEqual([]);
     const messy = board.cleanProject({ ...project([item('t')]), items: [{ ...item('t'), notes: ['a', 'a', '', 7, 'b'] }] });
     expect(messy.items[0].notes).toEqual(['a', '7', 'b']);
+  });
+
+  it('moves bars in the earlier, lighter colours to their darker ones and keeps other colours', async () => {
+    const board = await openBoard();
+    const cleaned = board.cleanProject(project([item('a', { color: '#DB8E48' }), item('b', { color: '#536780' }), item('c', { color: '#123456' })]));
+    expect(cleaned.items.map(entry => entry.color)).toEqual(['#ab6322', '#536780', '#123456']);
   });
 
   it('collapses Board cards and expands them, forgets a deleted card, and reads older projects', async () => {

@@ -3,7 +3,7 @@ import { readBoard, writeBoard } from '../../backend/storage/boardStorage';
 import { showToast } from '../lib/toasts';
 import type { BoardProject, Sprint, WorkItem, WorkStatus, WorkType } from '../../shared/types/board';
 import { parseDay } from './dates';
-import { BAR_COLORS, canHoldWork, familyOf, itemOrder, shownSprintOf, sprintOrder, WORK_STATUSES, WORK_TYPES } from './workItems';
+import { BAR_COLORS, OLD_BAR_COLORS, canHoldWork, familyOf, itemOrder, shownSprintOf, sprintOrder, WORK_STATUSES, WORK_TYPES } from './workItems';
 
 
 /* =========================
@@ -70,7 +70,7 @@ export function cleanProject(raw: unknown): BoardProject {
       assignee: text(item.assignee, MEMBER_LENGTH),
       start,
       end,
-      color: isColor(item.color) ? String(item.color) : BAR_COLORS[0],
+      color: isColor(item.color) ? OLD_BAR_COLORS[String(item.color).toLowerCase()] ?? String(item.color).toLowerCase() : BAR_COLORS[0],
       progress: Math.max(0, Math.min(100, Number(item.progress) || 0)),
       manualBacklog: item.manualBacklog === true,
       order: orderOf(item.order, index),
