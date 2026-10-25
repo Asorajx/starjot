@@ -114,3 +114,19 @@ describe('safeHref', () => {
     expect(safeHref('data:text/html,hi')).toBeNull();
   });
 });
+
+
+/* =========================
+   Long Notes
+   ========================= */
+
+describe('long notes', () => {
+  it('keeps the end of a note far past the old 250,000 character limit', () => {
+    const paragraph = `<p>${'word '.repeat(40)}</p>`;
+    const html = paragraph.repeat(Math.ceil(400000 / paragraph.length)) + '<p>END_MARKER</p>';
+    expect(html.length).toBeGreaterThan(400000);
+    const cleaned = cleanHtml(html);
+    expect(cleaned.endsWith('<p>END_MARKER</p>')).toBe(true);
+    expect(cleaned.length).toBe(html.length);
+  });
+});

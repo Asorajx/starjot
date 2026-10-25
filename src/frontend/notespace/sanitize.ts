@@ -14,7 +14,6 @@ const ALLOWED_TAGS = new Set([
   'BLOCKQUOTE', 'BR', 'SPAN', 'PRE', 'CODE', 'TABLE', 'COLGROUP', 'COL', 'THEAD', 'TBODY', 'TR', 'TH', 'TD'
 ]);
 const DROPPED_TAGS = new Set(['SCRIPT', 'STYLE', 'IFRAME', 'SVG', 'FORM', 'OBJECT']);
-const MAX_CONTENT = 250000;
 
 /* Sticky groups, toggle lists, tab blocks and the tab shown, checklists and their ticked items, */
 /* reminders, a canvas's text boxes, page blocks, page links, code languages, code token colours, comment marks and */
@@ -129,10 +128,12 @@ function cleanNode(node: Node): Node | null {
   return copy;
 }
 
-/* Keep only safe document tags and classes when saving or displaying HTML. */
+/* Keep only safe document tags and classes when saving or displaying HTML. Nothing is cut off, */
+/* however long the note: a note too big for storage fails to save visibly (the note bar warns */
+/* and the text stays in the editor) rather than losing its end. */
 export function cleanHtml(input: unknown) {
   const template = document.createElement('template');
-  template.innerHTML = String(input ?? '').slice(0, MAX_CONTENT);
+  template.innerHTML = String(input ?? '');
   const safe = document.createElement('div');
   template.content.childNodes.forEach(node => {
     const cleaned = cleanNode(node);
