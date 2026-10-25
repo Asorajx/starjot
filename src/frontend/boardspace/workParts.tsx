@@ -77,12 +77,15 @@ type MenuButtonProps = {
   primary?: boolean;
   /* Show the icon alone, with the label as its tooltip (the More menu). */
   iconOnly?: boolean;
+
+  /* Show the icon alone on phones only, so the project's name has room (Create). */
+  compactOnPhone?: boolean;
   items: MenuItem[];
 };
 
 /* A button that opens a small menu of choices under it (Create, More). The menu lines up with */
 /* the button's right edge, or its left edge when there is no room on the left (a wrapped bar). */
-export function MenuButton({ label, icon, primary = false, iconOnly = false, items }: MenuButtonProps) {
+export function MenuButton({ label, icon, primary = false, iconOnly = false, compactOnPhone = false, items }: MenuButtonProps) {
   const [open, setOpen] = useState(false);
   const [fromStart, setFromStart] = useState(false);
   const holder = useRef<HTMLSpanElement>(null);
@@ -103,16 +106,16 @@ export function MenuButton({ label, icon, primary = false, iconOnly = false, ite
     <span className="board-menu" data-menu={label} ref={holder}>
       <button
         type="button"
-        className={`btn ${primary ? 'btn-primary' : 'btn-secondary'} ${iconOnly ? 'board-icon-button' : ''}`}
+        className={`btn ${primary ? 'btn-primary' : 'btn-secondary'} ${iconOnly ? 'board-icon-button' : ''} ${compactOnPhone ? 'is-compact-on-phone' : ''}`}
         aria-haspopup="menu"
         aria-expanded={open}
-        aria-label={iconOnly ? label : undefined}
+        aria-label={iconOnly || compactOnPhone ? label : undefined}
         data-tooltip={iconOnly && !open ? label : undefined}
         data-tooltip-align={iconOnly ? 'end' : undefined}
         onClick={() => setOpen(!open)}
       >
         <Icon name={icon} size={16} />
-        {!iconOnly && <><span>{label}</span><Icon name="chevron-down" size={14} /></>}
+        {!iconOnly && <><span className="board-menu-label">{label}</span><Icon name="chevron-down" size={14} className="board-menu-chevron" /></>}
       </button>
       {open && (
         <span className={`page-menu board-menu-items ${fromStart ? 'is-start' : ''}`} role="menu" aria-label={label}>

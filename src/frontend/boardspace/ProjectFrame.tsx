@@ -104,7 +104,7 @@ export function ProjectFrame({ children, onOpenNote }: ProjectFrameProps) {
         />
         <span className="board-fill" />
         <input ref={fileRef} type="file" hidden accept=".json,.csv,.txt,application/json,text/csv,text/plain" onChange={event => { void chooseFile(event.target.files?.[0]); event.target.value = ''; }} />
-        <MenuButton label="Create" icon="plus" primary items={createItems} />
+        <MenuButton label="Create" icon="plus" primary compactOnPhone items={createItems} />
         <MenuButton label="More" icon="more-horizontal" iconOnly items={moreItems} />
       </div>
 

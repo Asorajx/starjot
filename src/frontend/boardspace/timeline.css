@@ -7,7 +7,6 @@
   display: flex;
   flex-direction: column;
   min-width: 0;
-  background: var(--paper);
 }
 
 /* "More room for the timeline" hides the Status and Assignee columns. */
