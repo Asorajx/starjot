@@ -477,7 +477,7 @@
   flex-direction: column;
   width: min(440px, 100%);
   background: var(--paper);
-  box-shadow: -12px 0 32px rgba(16, 24, 40, .18);
+  box-shadow: var(--shadow-window);
   animation: drawer-in .18s cubic-bezier(.23, 1, .32, 1);
 }
 

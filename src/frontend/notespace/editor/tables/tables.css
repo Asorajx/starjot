@@ -191,7 +191,7 @@
   border: 1px solid #dfe7f3;
   border-radius: 4px;
   background: #ffffff;
-  box-shadow: 0 6px 18px rgba(28, 54, 96, .12);
+  box-shadow: var(--shadow-float);
   color: #2c3d58;
   font: inherit;
   font-size: 12px;
@@ -216,7 +216,45 @@
   border: 1px solid #dfe7f3;
   border-radius: 4px;
   background: #ffffff;
-  box-shadow: 0 10px 30px rgba(28, 54, 96, .18);
+  box-shadow: var(--shadow-float);
+  transform-origin: top left;
+  animation: menu-in .14s cubic-bezier(.2, .8, .2, 1);
+}
+
+/* Every menu grows in from the edge it opens from, and fades out quickly when it closes (the */
+/* dropdowns and Create / More; see usePresence). \`scale\` and \`translate\` leave any */
+/* positioning \`transform\` alone. */
+.page-menu.is-end {
+  transform-origin: top right;
+}
+
+.page-menu.is-up {
+  --menu-shift: 4px;
+  transform-origin: bottom left;
+}
+
+.page-menu.is-up.is-end {
+  transform-origin: bottom right;
+}
+
+.page-menu.is-closing {
+  pointer-events: none;
+  animation: menu-out .1s ease-in forwards;
+}
+
+@keyframes menu-in {
+  from {
+    opacity: 0;
+    scale: .96;
+    translate: 0 var(--menu-shift, -4px);
+  }
+}
+
+@keyframes menu-out {
+  to {
+    opacity: 0;
+    scale: .96;
+  }
 }
 
 .table-menu-item,

@@ -7,6 +7,13 @@
   background: var(--bg);
 }
 
+/* Floating parts already sit a surface higher with a border, so their shadow only needs to be a */
+/* faint lift, never a dark halo over the page. */
+:root[data-theme="dark"] {
+  --shadow-float: 0 4px 12px rgba(0, 0, 0, .22);
+  --shadow-window: 0 16px 40px rgba(0, 0, 0, .4);
+}
+
 /* The top bar of Boardspace and Settings matches the note bar, so every screen has the same */
 /* bar above the same page (the generator would put it one step lower, close to the page). */
 [data-theme="dark"] .topbar {
@@ -199,7 +206,8 @@
 
 /* Backdrops dim with plain black in the dark theme too (the generated theme would tint or */
 /* lighten it), a little more strongly so the window above still stands out. */
-[data-theme="dark"] .dialog-backdrop {
+[data-theme="dark"] .dialog-backdrop,
+[data-theme="dark"] .search-backdrop {
   background: rgba(0, 0, 0, .55);
 }
 

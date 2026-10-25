@@ -591,7 +591,7 @@
   background: #fff;
   border: 1px solid #e0e8f4;
   border-radius: 4px;
-  box-shadow: 0 18px 55px rgba(28, 54, 96, .16);
+  box-shadow: var(--shadow-float);
 }
 
 .flyout-heading {
@@ -976,7 +976,7 @@
   border: 1px solid #e2e8f1;
   border-radius: 4px;
   background: #ffffff;
-  box-shadow: 0 8px 24px rgb(15 23 42 / 12%);
+  box-shadow: var(--shadow-float);
 }
 
 .editor-crumb-path::before {

@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type KeyboardEvent } from 'react';
 import { useEscape } from '../lib/useDismiss';
+import { usePresence } from '../lib/usePresence';
 import { Icon, type IconName } from './Icon';
 
 export type DropdownOption<T extends string> = {
@@ -39,6 +40,9 @@ type DropdownProps<T extends string> = {
   style?: CSSProperties;
 };
 
+/* The tallest a menu grows before it scrolls (as .dropdown-menu in dropdown.css). */
+const MENU_HEIGHT = 320;
+
 
 /* =========================
    Dropdown
@@ -46,8 +50,10 @@ type DropdownProps<T extends string> = {
 
 /* A select box in the app's own style: a button showing the chosen option, and a menu like the */
 /* note menu, with an icon beside each option and a tick on the chosen one. From the keyboard it */
-/* works like a select box: ↑ and ↓ move (choosing straight away while closed), Enter or Space */
-/* opens or chooses, and Escape or Tab closes. A click anywhere else closes it too. */
+/* works like a select box: ↑ and ↓ move (choosing straight away while closed), Home and End go */
+/* to the first and last, a letter jumps to the next option starting with it, Enter or Space */
+/* opens or chooses, and Escape or Tab closes. A click anywhere else closes it too. The menu */
+/* fades in and out, and is never taller than the room left on screen. */
 export function Dropdown<T extends string>({ value, options, onChange, label, prefix, className = 'dropdown-button', alignEnd, disabled = false, wrapperClassName = '', style }: DropdownProps<T>) {
   const [open, setOpen] = useState(false);
 
@@ -56,17 +62,24 @@ export function Dropdown<T extends string>({ value, options, onChange, label, pr
   /* is more room above. Checked each time it opens, before it is shown. */
   const [flipped, setFlipped] = useState(false);
   const [upward, setUpward] = useState(false);
+  const [room, setRoom] = useState<number | undefined>();
   const menuRef = useRef<HTMLDivElement>(null);
+  const { mounted, closing } = usePresence(open);
   useLayoutEffect(() => {
-    if (!open) {
-      setFlipped(false);
-      setUpward(false);
-      return;
-    }
-    const menu = menuRef.current?.getBoundingClientRect();
+    if (!open) return;
+    const menu = menuRef.current;
     const button = wrapRef.current?.getBoundingClientRect();
-    if (menu && !alignEnd && menu.right > window.innerWidth - 8) setFlipped(true);
-    if (menu && button && menu.bottom > window.innerHeight - 8 && button.top > window.innerHeight - button.bottom) setUpward(true);
+    if (!menu || !button) return;
+
+    /* Worked out from the button and the menu's full size, not where the menu last sat. */
+    const width = menu.offsetWidth;
+    const height = Math.min(menu.scrollHeight + 2, MENU_HEIGHT);
+    setFlipped(!alignEnd && button.left + width > window.innerWidth - 8);
+    const below = window.innerHeight - button.bottom - 12;
+    const above = button.top - 12;
+    const up = height > below && above > below;
+    setUpward(up);
+    setRoom(height > (up ? above : below) ? Math.max(120, up ? above : below) : undefined);
   }, [open, alignEnd]);
   const chosen = Math.max(0, options.findIndex(option => option.value === value));
   const [active, setActive] = useState(chosen);
@@ -115,8 +128,20 @@ export function Dropdown<T extends string>({ value, options, onChange, label, pr
       event.preventDefault();
       if (open) choose(active);
       else setOpen(true);
+    } else if ((event.key === 'Home' || event.key === 'End') && open) {
+      event.preventDefault();
+      setActive(event.key === 'Home' ? 0 : options.length - 1);
     } else if (event.key === 'Tab') {
       setOpen(false);
+    } else if (event.key.length === 1 && /\S/.test(event.key) && !event.ctrlKey && !event.metaKey && !event.altKey) {
+      const letter = event.key.toLowerCase();
+      const from = open ? active : chosen;
+      const order = [...options.keys()].map(step => (from + 1 + step) % options.length);
+      const found = order.find(index => options[index].label.toLowerCase().startsWith(letter));
+      if (found === undefined) return;
+      event.preventDefault();
+      if (open) setActive(found);
+      else onChange(options[found].value);
     }
   }
 
@@ -140,8 +165,16 @@ export function Dropdown<T extends string>({ value, options, onChange, label, pr
         {!disabled && <Icon name="chevron-down" size={14} className={`dropdown-chevron ${open ? 'is-flipped' : ''}`} />}
       </button>
 
-      {open && (
-        <div ref={menuRef} className={`page-menu dropdown-menu ${alignEnd || flipped ? 'is-end' : ''} ${upward ? 'is-up' : ''}`} id={listId} role="listbox" aria-label={label}>
+      {mounted && (
+        <div
+          ref={menuRef}
+          className={`page-menu dropdown-menu ${alignEnd || flipped ? 'is-end' : ''} ${upward ? 'is-up' : ''} ${closing ? 'is-closing' : ''}`}
+          style={room ? { maxHeight: room } : undefined}
+          id={listId}
+          role="listbox"
+          aria-label={label}
+          aria-hidden={closing || undefined}
+        >
           {options.map((option, index) => (
             <div key={option.value} role="presentation">
               {option.divider && <div className="dropdown-divider" role="presentation" />}
@@ -151,9 +184,9 @@ export function Dropdown<T extends string>({ value, options, onChange, label, pr
                 role="option"
                 aria-selected={index === chosen}
                 className={`page-menu-item dropdown-item ${index === active ? 'is-active' : ''}`}
-                onMouseMove={() => index !== active && setActive(index)}
+                onMouseMove={() => !closing && index !== active && setActive(index)}
                 onMouseDown={event => event.preventDefault()}
-                onClick={() => choose(index)}
+                onClick={() => !closing && choose(index)}
               >
                 {option.icon && <Icon name={option.icon} size={14} />}
                 <span>{option.label}</span>

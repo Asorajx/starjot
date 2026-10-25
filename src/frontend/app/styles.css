@@ -12,6 +12,11 @@
 
   /* The accent colour variables (--accent and its shades) are in app/accents.css. */
   --shadow: none;
+
+  /* Shadows: a soft lift for floating parts (menus, toolbars, popovers, panels) and a deeper one */
+  /* for windows over the page. Dark mode sets its own in dark-overrides.css. */
+  --shadow-float: 0 4px 12px rgba(16, 24, 40, .08), 0 1px 2px rgba(16, 24, 40, .06);
+  --shadow-window: 0 16px 40px rgba(16, 24, 40, .14);
   color-scheme: light;
 }
 
@@ -841,7 +846,8 @@ p {
    ========================= */
 
 /* Any element with a data-tooltip attribute shows that text in a small dark label below it, after */
-/* a short pause on hover (or straight away on keyboard focus). Icon-only buttons use these so their */
+/* a short pause on hover (or straight away on keyboard focus, or once another tooltip has just */
+/* shown: see app/warmTooltips.ts). Icon-only buttons use these so their */
 /* names are easy to find. data-tooltip-align="start" or "end" lines the label up with the left or */
 /* right edge instead, for buttons near the sides of the window. */
 [data-tooltip] {
@@ -860,7 +866,7 @@ p {
   border-radius: 4px;
   background: #202c43;
   color: #fff;
-  box-shadow: 0 4px 12px rgba(16, 24, 40, .16);
+  box-shadow: var(--shadow-float);
   font-size: 12px;
   font-weight: 600;
   line-height: 16px;
@@ -883,8 +889,10 @@ p {
   display: none;
 }
 
-[data-tooltip]:focus-visible::after {
+[data-tooltip]:focus-visible::after,
+[data-tooltips-warm] [data-tooltip]:hover::after {
   animation-delay: 0s;
+  animation-duration: .08s;
 }
 
 /* Longer explanations (such as in Note settings) wrap onto several lines. */
@@ -920,13 +928,17 @@ p {
   bottom: calc(100% + 4px);
 }
 
+/* The label fades in while settling 2px towards its button (`translate`, so the positioning */
+/* `transform` above is left alone). */
 @keyframes tooltip-in {
   from {
     opacity: 0;
+    translate: 0 -2px;
   }
 
   to {
     opacity: 1;
+    translate: 0 0;
   }
 }
 
@@ -1103,7 +1115,7 @@ p {
 
 .app-shell.sidebar-floating.sidebar-open .sidebar,
 .app-shell.sidebar-floating .sidebar:has(:focus-visible) {
-  box-shadow: 0 18px 50px rgba(20, 38, 70, .2);
+  box-shadow: var(--shadow-window);
   transform: none;
 }
 
@@ -1211,7 +1223,7 @@ p {
   border: 1px solid var(--line);
   border-radius: 4px;
   background: var(--paper);
-  box-shadow: 0 24px 70px rgba(15, 25, 45, .28);
+  box-shadow: var(--shadow-window);
 }
 
 .dialog h2 {
@@ -1287,7 +1299,7 @@ p {
   border-left: 4px solid var(--accent);
   border-radius: 4px;
   background: var(--paper);
-  box-shadow: 0 10px 30px rgba(28, 54, 96, .18);
+  box-shadow: var(--shadow-float);
   pointer-events: auto;
   animation: toast-in .2s cubic-bezier(.23, 1, .32, 1);
 }

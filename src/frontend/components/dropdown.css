@@ -108,6 +108,10 @@
 }
 
 /* The chevron turns upside down while the menu is open. */
+.dropdown-chevron {
+  transition: transform .15s ease;
+}
+
 .dropdown .is-flipped {
   transform: rotate(180deg);
 }

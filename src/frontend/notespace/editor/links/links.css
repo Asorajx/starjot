@@ -64,7 +64,7 @@
   border: 1px solid #e0e8f4;
   border-radius: 4px;
   background: #fff;
-  box-shadow: 0 14px 40px rgba(28, 54, 96, .16);
+  box-shadow: var(--shadow-float);
 }
 
 .comment-popover p {

@@ -105,10 +105,17 @@ function useEntries(spaces: Spaces) {
 
 type Group = { label: string; results: SearchResult[] };
 
+/* "12 results", or "Showing 50 of 73 results" when the list of notes is cut short. */
+function resultCount(total: number, shown: number) {
+  const words = `${total} ${total === 1 ? 'result' : 'results'}`;
+  return shown < total ? `Showing ${shown} of ${words}` : words;
+}
+
 /* Before anything is typed: starred notes, then the most recent notes by day (when they were */
 /* last opened, or last edited for notes never opened here), each note once (nothing while */
-/* Notespace is turned off). After: notes, categories, then Boardspace items, each best first. */
-function useGroups(entries: SearchEntry[], query: string, titleOnly: boolean, scope: string, withNotes: boolean): Group[] {
+/* Notespace is turned off). After: notes, categories, then Boardspace items, each best first, */
+/* with how many matched in all (`total`, null before anything is typed). */
+function useGroups(entries: SearchEntry[], query: string, titleOnly: boolean, scope: string, withNotes: boolean): { groups: Group[]; total: number | null } {
   const allNotes = useNotes();
   const notes = withNotes ? allNotes : [];
   return useMemo(() => {
@@ -130,14 +137,15 @@ function useGroups(entries: SearchEntry[], query: string, titleOnly: boolean, sc
         if (groups[groups.length - 1]?.label !== label) groups.push({ label, results: [] });
         groups[groups.length - 1].results.push(...resultFor(note));
       }
-      return groups;
+      return { groups, total: null };
     }
     const results = search(entries, query, { titleOnly, scope });
-    return [
+    const groups = [
       { label: 'Notes', results: results.filter(result => result.entry.kind === 'note').slice(0, RESULT_COUNT) },
       { label: 'Categories', results: results.filter(result => result.entry.kind === 'category') },
       { label: 'Boardspace', results: results.filter(result => result.entry.kind === 'task') }
     ].filter(group => group.results.length);
+    return { groups, total: results.length };
   }, [entries, notes, query, titleOnly, scope]);
 }
 
@@ -260,7 +268,7 @@ export function SearchWindow({ initialQuery, inNewTab, onClose, onOpenNote, onOp
   const allCategories = useCategories();
   const categories = spaces.notes ? allCategories : [];
   const entries = useEntries(spaces);
-  const groups = useGroups(entries, query, titleOnly, scope, spaces.notes);
+  const { groups, total } = useGroups(entries, query, titleOnly, scope, spaces.notes);
   const flat = groups.flatMap(group => group.results);
 
   /* The rows are the results, then "Create new note" and "Create new canvas" (their indexes are */
@@ -384,6 +392,11 @@ export function SearchWindow({ initialQuery, inNewTab, onClose, onOpenNote, onOp
             options={scopeOptions}
             onChange={setScope}
           />
+          {total !== null && (
+            <span className="search-count" role="status">
+              {resultCount(total, groups.reduce((shown, group) => shown + group.results.length, 0))}
+            </span>
+          )}
         </div>
 
         <div className={`search-body ${showPreview ? 'has-preview' : ''}`}>

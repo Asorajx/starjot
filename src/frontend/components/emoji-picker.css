@@ -13,7 +13,7 @@
   border: 1px solid var(--line);
   border-radius: 4px;
   background: var(--paper);
-  box-shadow: 0 14px 40px rgba(28, 54, 96, .16);
+  box-shadow: var(--shadow-float);
 }
 
 .emoji-tabs {

@@ -3,6 +3,7 @@ import { Avatar } from '../components/Avatar';
 import { Dropdown } from '../components/Dropdown';
 import { Icon, type IconName } from '../components/Icon';
 import { useDismiss } from '../lib/useDismiss';
+import { usePresence } from '../lib/usePresence';
 import type { BoardProject, WorkItem, WorkStatus, WorkType } from '../../shared/types/board';
 import { setAssignee, setStatus } from './board';
 import { initialsOf, WORK_STATUSES, WORK_TYPES } from './workItems';
@@ -89,15 +90,13 @@ export function MenuButton({ label, icon, primary = false, iconOnly = false, com
   const [open, setOpen] = useState(false);
   const [fromStart, setFromStart] = useState(false);
   const holder = useRef<HTMLSpanElement>(null);
+  const { mounted, closing } = usePresence(open);
   useDismiss(open, `[data-menu="${label}"]`, () => setOpen(false));
   useLayoutEffect(() => {
-    if (!open) {
-      setFromStart(false);
-      return;
-    }
+    if (!open) return;
     const button = holder.current?.getBoundingClientRect();
     const menu = holder.current?.querySelector('.board-menu-items')?.getBoundingClientRect();
-    if (button && menu) setFromStart(button.right - menu.width < 8);
+    if (button && menu) setFromStart(button.right - menu.width < 8 && button.left + menu.width <= window.innerWidth - 8);
   }, [open]);
   useEffect(() => {
     if (open) holder.current?.querySelector<HTMLButtonElement>('[role="menuitem"]')?.focus();
@@ -117,8 +116,8 @@ export function MenuButton({ label, icon, primary = false, iconOnly = false, com
         <Icon name={icon} size={16} />
         {!iconOnly && <><span className="board-menu-label">{label}</span><Icon name="chevron-down" size={14} className="board-menu-chevron" /></>}
       </button>
-      {open && (
-        <span className={`page-menu board-menu-items ${fromStart ? 'is-start' : ''}`} role="menu" aria-label={label}>
+      {mounted && (
+        <span className={`page-menu board-menu-items ${fromStart ? 'is-start' : 'is-end'} ${closing ? 'is-closing' : ''}`} role="menu" aria-label={label} aria-hidden={closing || undefined}>
           {items.map(item => (
             <span key={item.key}>
               {(item.divider || item.heading) && <span className="board-menu-divider" role="separator" />}
