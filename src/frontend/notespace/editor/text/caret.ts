@@ -113,8 +113,10 @@ export function getLength(root: Element) {
   return textUnits(root).reduce((total, node) => total + unitLength(node), 0);
 }
 
-/* Select a range of characters and keep it visible inside the scrolling editor. */
-export function setRange(root: Element | null, start: number, end = start) {
+/* Select a range of characters and keep it visible inside the scrolling editor (or, with reveal */
+/* false, leave the scroll where it is: coming back to a tab puts the caret back without moving */
+/* the view, which is restored on its own). */
+export function setRange(root: Element | null, start: number, end = start, reveal = true) {
   if (!root) return;
   const from = pointAt(root, start);
   const to = end === start ? from : pointAt(root, end);
@@ -128,9 +130,9 @@ export function setRange(root: Element | null, start: number, end = start) {
   const selection = window.getSelection();
   selection?.removeAllRanges();
   selection?.addRange(range);
-  startElement?.scrollIntoView({ block: 'nearest' });
+  if (reveal) startElement?.scrollIntoView({ block: 'nearest' });
 }
 
-export function setOffset(root: Element | null, offset: number) {
-  setRange(root, offset, offset);
+export function setOffset(root: Element | null, offset: number, reveal = true) {
+  setRange(root, offset, offset, reveal);
 }

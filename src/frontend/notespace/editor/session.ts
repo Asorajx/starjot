@@ -45,8 +45,11 @@ export type SessionSnapshot = {
 export class EditorSession {
   readonly noteId: string;
 
-  /* A caret position to restore the next time the editor renders the document. */
+  /* A caret position to restore the next time the editor renders the document, and whether */
+  /* putting it back should scroll it into view (after undo, yes; coming back to a tab, no: the */
+  /* tab's own scroll position is restored instead). */
   pendingCaret: number | null = null;
+  revealCaret = true;
 
   /* Where the caret and the scroll were, kept while the tab is not shown (see sessions.ts). */
   view: { caret: number | null; scroll: number } = { caret: null, scroll: 0 };

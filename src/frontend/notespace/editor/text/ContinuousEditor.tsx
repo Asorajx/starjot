@@ -74,9 +74,10 @@ export const ContinuousEditor = memo(function ContinuousEditor({ session, conten
     hydratePages(body);
     hydrateTables(body);
     if (session.pendingCaret !== null) {
-      setOffset(body, session.pendingCaret);
+      setOffset(body, session.pendingCaret, session.revealCaret);
       session.pendingCaret = null;
     }
+    session.revealCaret = true;
     session.relayout();
   }, []);
 

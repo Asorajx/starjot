@@ -24,6 +24,7 @@ export function sessionFor(tabId: string, noteId: string) {
     sessions.delete(key);
     session.catchUp();
     session.pendingCaret = session.view.caret;
+    session.revealCaret = false;
   } else {
     session = new EditorSession(noteId, getNote(noteId)?.content ?? '');
   }

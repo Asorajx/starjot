@@ -161,9 +161,10 @@ export const StructuredEditor = memo(function StructuredEditor({ session, conten
   /* Restore the caret after undo/redo re-created this editor. */
   useLayoutEffect(() => {
     if (session.pendingCaret !== null) {
-      setOffset(bodyRef.current, session.pendingCaret);
+      setOffset(bodyRef.current, session.pendingCaret, session.revealCaret);
       session.pendingCaret = null;
     }
+    session.revealCaret = true;
     session.relayout();
   }, [session]);
 
