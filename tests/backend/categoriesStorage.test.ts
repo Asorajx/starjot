@@ -19,9 +19,12 @@ describe('categories storage', () => {
     expect(readCategories()).toEqual([{ id: 'work', name: 'Work' }]);
   });
 
-  it('ignores unreadable data', () => {
+  it('keeps unreadable data aside, then saves normally', () => {
     localStorage.setItem('starjot-categories-v1', '{broken');
     expect(readCategories()).toBeNull();
+    expect(localStorage.getItem('starjot-categories-v1-damaged')).toBe('{broken');
+    writeCategories([{ id: 'work', name: 'Work' }]);
+    expect(readCategories()).toEqual([{ id: 'work', name: 'Work' }]);
   });
 });
 

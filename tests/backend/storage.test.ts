@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { readNotes, writeNotes } from '../../src/backend/storage/notesStorage';
+import { damagedCopies, readDamagedCopy } from '../../src/backend/storage/damagedCopies';
 import { readPreferences, writePreferences } from '../../src/backend/storage/preferencesStorage';
 import { readQuickNoteDraft, writeQuickNoteDraft } from '../../src/backend/storage/draftStorage';
 import type { Note } from '../../src/shared/types/note';
@@ -13,19 +14,33 @@ beforeEach(() => localStorage.clear());
    ========================= */
 
 describe('notes storage', () => {
-  it('returns null before anything is saved', () => {
-    expect(readNotes()).toBeNull();
+  it('reports nothing saved before anything is saved', () => {
+    expect(readNotes()).toEqual({ status: 'empty' });
   });
 
   it('reads back the notes and deleted ids it saved', () => {
     const note = { id: 'n1', title: 'Hello' } as Note;
     writeNotes([note], ['atlas']);
-    expect(readNotes()).toEqual({ notes: [note], deleted: ['atlas'] });
+    expect(readNotes()).toEqual({ status: 'ok', saved: { notes: [note], deleted: ['atlas'] } });
   });
 
-  it('ignores saved data in an unexpected shape', () => {
-    localStorage.setItem('starjot-notespace-v1', JSON.stringify({ notes: 'broken' }));
-    expect(readNotes()).toBeNull();
+  it('keeps saved data in an unexpected shape, or broken JSON, aside instead of treating it as empty', () => {
+    const shape = JSON.stringify({ notes: 'broken' });
+    localStorage.setItem('starjot-notespace-v1', shape);
+    expect(readNotes()).toEqual({ status: 'damaged', canSave: true });
+    expect(readDamagedCopy('starjot-notespace-v1-damaged')).toBe(shape);
+
+    localStorage.setItem('starjot-notespace-v1', '{"notes": [');
+    expect(readNotes()).toEqual({ status: 'damaged', canSave: true });
+    expect(readDamagedCopy('starjot-notespace-v1-damaged-2')).toBe('{"notes": [');
+    expect(damagedCopies().map(copy => copy.key)).toEqual(['starjot-notespace-v1-damaged', 'starjot-notespace-v1-damaged-2']);
+  });
+
+  it('does not keep the same damaged data twice', () => {
+    localStorage.setItem('starjot-notespace-v1', 'not json');
+    readNotes();
+    readNotes();
+    expect(damagedCopies()).toHaveLength(1);
   });
 });
 

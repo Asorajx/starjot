@@ -6,7 +6,10 @@ import { startWarmTooltips } from './app/warmTooltips';
 import { startMenuKeys } from './app/menuKeys';
 import { removeUnusedImages } from './notespace/imageStore';
 import { imageIdsIn } from './notespace/editor/images/images';
-import { getNotes, isStorageAvailable } from './notespace/store';
+import { getNotes, notesReadCleanly } from './notespace/store';
+import { damagedOnLoad } from '../backend/storage/damagedCopies';
+import { getBoard } from './boardspace/board';
+import { showToast } from './lib/toasts';
 
 /* Styles load in their original cascade order to preserve the design. */
 import './app/styles.css';
@@ -53,7 +56,24 @@ document.execCommand('defaultParagraphSeparator', false, 'p');
 /* Images no note uses any more (deleted from notes, or in deleted notes) are removed from the */
 /* image store when the app opens. Never when the saved notes could not be read: every image */
 /* would look unused. */
-if (isStorageAvailable()) removeUnusedImages(new Set(getNotes().flatMap(note => imageIdsIn(note.content))));
+if (notesReadCleanly()) removeUnusedImages(new Set(getNotes().flatMap(note => imageIdsIn(note.content))));
+
+/* Saved data that could not be read was kept aside (or left untouched) while loading; say so */
+/* once. Loading the board here makes sure its saved project has been checked too. */
+getBoard();
+const damaged = damagedOnLoad();
+if (damaged.length) {
+  const names = damaged.map(item => item.label.toLowerCase()).join(' and ');
+  const unsaved = damaged.filter(item => !item.kept);
+  showToast({
+    kind: 'error',
+    stay: true,
+    title: `Some saved ${names} could not be read`,
+    description: unsaved.length
+      ? `Starjot will not save over them, so changes to ${unsaved.map(item => item.label.toLowerCase()).join(' and ')} are not kept for now. Free up space, then reload.`
+      : 'A copy was kept, so nothing was lost. You can download it from Settings → Storage.'
+  });
+}
 
 const container = document.getElementById('app');
 if (container) createRoot(container).render(<App />);

@@ -17,6 +17,23 @@ function openApp() {
    ========================= */
 
 describe('note store', () => {
+  it('keeps unreadable saved notes aside, never tidies images then, and saves only once they are kept', async () => {
+    localStorage.setItem('starjot-notespace-v1', '{"notes": [{"id": "mine"');
+    const store = await openApp();
+    expect(store.notesReadCleanly()).toBe(false);
+    store.createNote();
+    store.save();
+    expect(localStorage.getItem('starjot-notespace-v1-damaged')).toBe('{"notes": [{"id": "mine"');
+
+    localStorage.clear();
+    vi.resetModules();
+    const fresh = await openApp();
+    expect(fresh.notesReadCleanly()).toBe(false);
+    fresh.save();
+    vi.resetModules();
+    expect((await openApp()).notesReadCleanly()).toBe(true);
+  });
+
   it('starts new notes with the view and layout chosen in Settings', async () => {
     let store = await openApp();
     expect(store.createNote()).toMatchObject({ mode: 'continuous', layout: 'pageless', pageSize: 'a4' });

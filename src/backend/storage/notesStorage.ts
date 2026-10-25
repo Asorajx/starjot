@@ -1,4 +1,5 @@
 import type { Note } from '../../shared/types/note';
+import { keepDamagedCopy } from './damagedCopies';
 
 
 /* =========================
@@ -16,16 +17,30 @@ export type StoredNotes = {
   deleted: string[];
 };
 
-/* Returns the saved notes, or null when nothing has been saved yet. */
-/* Throws when storage cannot be read, so the frontend can warn that notes will not be kept. */
-export function readNotes(): StoredNotes | null {
+/* What reading found: nothing saved yet, the saved notes, or saved data that could not be read. */
+/* Damaged data is copied aside first (see damagedCopies.ts); `canSave` is false when even */
+/* that failed, and the original must then not be written over. */
+export type NotesRead =
+  | { status: 'empty' }
+  | { status: 'ok'; saved: StoredNotes }
+  | { status: 'damaged'; canSave: boolean };
+
+/* Throws when storage cannot be read at all, so the frontend can warn that notes will not be kept. */
+export function readNotes(): NotesRead {
   const saved = localStorage.getItem(STORAGE_KEY);
-  if (!saved) return null;
-  const parsed = JSON.parse(saved);
-  if (!Array.isArray(parsed.notes)) return null;
+  if (!saved) return { status: 'empty' };
+  let parsed: { notes?: unknown; deleted?: unknown } | null = null;
+  try {
+    parsed = JSON.parse(saved);
+  } catch {
+    parsed = null;
+  }
+  if (!parsed || typeof parsed !== 'object' || !Array.isArray(parsed.notes)) {
+    return { status: 'damaged', canSave: keepDamagedCopy(STORAGE_KEY, 'Notes', saved) };
+  }
   return {
-    notes: parsed.notes,
-    deleted: Array.isArray(parsed.deleted) ? parsed.deleted.map(String) : []
+    status: 'ok',
+    saved: { notes: parsed.notes, deleted: Array.isArray(parsed.deleted) ? parsed.deleted.map(String) : [] }
   };
 }
 

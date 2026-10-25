@@ -43,6 +43,14 @@ let state: StoreState = { notes: [], categories: [], saveStatus: 'saved' };
 /* Ids of deleted sample notes, so they are not added back the next time the app opens. */
 let deletedIds: string[] = [];
 let storageAvailable = true;
+
+/* True when the saved notes were read as they are: only then can images that no note uses be */
+/* tidied away. False while nothing was read, or the notes could not be read. */
+let readCleanly = false;
+
+/* Set when saved notes could not be read and could not be copied aside either: saving then */
+/* stays off, so the unreadable notes are never written over. */
+let writesBlocked = false;
 let saveTimer: number | undefined;
 const listeners = new Set<() => void>();
 
@@ -160,8 +168,15 @@ function repairParents(notes: Note[]) {
 function load(): Note[] {
   const seeds = SAMPLE_NOTES.map(normalizeNote).filter((note): note is Note => note !== null);
   try {
-    const saved = readNotes();
-    if (!saved) return seeds;
+    const read = readNotes();
+    if (read.status === 'empty') return seeds;
+    if (read.status === 'damaged') {
+      writesBlocked = !read.canSave;
+      if (writesBlocked) storageAvailable = false;
+      return seeds;
+    }
+    const saved = read.saved;
+    readCleanly = true;
     deletedIds = saved.deleted;
     const restored = saved.notes.slice(0, MAX_NOTES).map(normalizeNote).filter((note): note is Note => note !== null);
     const ids = new Set(restored.map((note: Note) => note.id));
@@ -187,6 +202,10 @@ function setState(changes: Partial<StoreState>) {
 export function save() {
   window.clearTimeout(saveTimer);
   saveTimer = undefined;
+  if (writesBlocked) {
+    setState({ saveStatus: 'unsaved' });
+    return false;
+  }
   try {
     writeNotes(state.notes, deletedIds);
     writeCategories(state.categories);
@@ -475,6 +494,11 @@ export function updatedLabel(note: Note) {
   if (minutes < 60) return `${minutes} min ago`;
   if (minutes < 1440) return `${Math.floor(minutes / 60)} hr ago`;
   return new Date(note.updatedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+}
+
+/* Whether the saved notes were read as they are (see readCleanly). */
+export function notesReadCleanly() {
+  return readCleanly;
 }
 
 export function isStorageAvailable() {

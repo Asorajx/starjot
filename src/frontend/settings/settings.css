@@ -158,6 +158,12 @@
   justify-content: flex-end;
 }
 
+/* Two buttons side by side in a setting (Download and Remove for kept data). */
+.setting-actions {
+  display: flex;
+  gap: 8px;
+}
+
 /* Settings that do not work yet carry this tag, and their controls cannot be used. */
 .preview-tag {
   padding: 0 8px;

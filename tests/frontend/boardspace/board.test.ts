@@ -186,6 +186,20 @@ describe('project store', () => {
     expect(cleaned.items.map(entry => entry.color)).toEqual(['#ab6322', '#536780', '#123456']);
   });
 
+  it('keeps a damaged saved project aside instead of losing it to a blank one', async () => {
+    localStorage.setItem('gantt-studio-saas-v1', '{"title": "Mine", "items": [');
+    const board = await openBoard();
+    expect(board.getBoard().items).toEqual([]);
+    board.setBoardTitle('New name');
+    expect(localStorage.getItem('gantt-studio-saas-v1-damaged')).toBe('{"title": "Mine", "items": [');
+
+    vi.resetModules();
+    localStorage.clear();
+    localStorage.setItem('gantt-studio-saas-v1', JSON.stringify({ hello: 1 }));
+    await openBoard();
+    expect(localStorage.getItem('gantt-studio-saas-v1-damaged')).toBe(JSON.stringify({ hello: 1 }));
+  });
+
   it('collapses Board cards and expands them, forgets a deleted card, and reads older projects', async () => {
     const board = await openBoard();
     board.replaceBoard({ ...board.getBoard(), items: [item('a'), item('b')] });

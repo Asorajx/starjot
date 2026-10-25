@@ -13,6 +13,9 @@ import { useCategories } from '../notespace/store';
 import { Switch } from '../components/Switch';
 import { useEscape } from '../lib/useDismiss';
 import { useFocusTrap } from '../lib/useFocusTrap';
+import { ConfirmDialog } from '../components/ConfirmDialog';
+import { downloadFile } from '../lib/files';
+import { damagedCopies, readDamagedCopy, removeDamagedCopy } from '../../backend/storage/damagedCopies';
 
 export type SettingsSection = 'general' | 'appearance' | 'spaces' | 'sidebar' | 'notes' | 'typing' | 'drawing' | 'shortcuts' | 'storage' | 'about';
 
@@ -249,6 +252,54 @@ function Segmented<T extends string>({ label, options, value, onChange }: {
 }
 
 /* A section's title, with a line under it only where it tells something the settings do not. */
+/* Saved data that could not be read, kept aside when Starjot opened (see damagedCopies.ts): each */
+/* can be downloaded as it was, or removed after asking. Shown only when there are any. */
+const COPY_NAMES: Record<string, string> = {
+  'starjot-notespace-v1': 'Notes',
+  'starjot-categories-v1': 'Categories',
+  'gantt-studio-saas-v1': 'Boardspace'
+};
+
+function DamagedCopies() {
+  const [copies, setCopies] = useState(damagedCopies);
+  const [removing, setRemoving] = useState<string | null>(null);
+  if (!copies.length) return null;
+  const nameOf = (key: string) => COPY_NAMES[key.replace(/-damaged(-\d+)?$/, '')] ?? key;
+
+  function download(key: string) {
+    const raw = readDamagedCopy(key);
+    if (raw !== null) downloadFile(`${key}.json`, new Blob([raw], { type: 'application/json' }));
+  }
+
+  return (
+    <Group title="Unreadable saved data">
+      {copies.map(copy => (
+        <Row key={copy.key} title={nameOf(copy.key)} description={`Kept aside because it could not be read (${copy.size.toLocaleString()} characters). Download it to look at it or recover it.`}>
+          <span className="setting-actions">
+            <button type="button" className="btn btn-secondary btn-sm" onClick={() => download(copy.key)}><Icon name="download" size={14} /> Download</button>
+            <button type="button" className="btn btn-quiet btn-sm" onClick={() => setRemoving(copy.key)}>Remove</button>
+          </span>
+        </Row>
+      ))}
+      {removing && (
+        <ConfirmDialog
+          title="Remove this copy?"
+          confirmLabel="Remove"
+          danger
+          onCancel={() => setRemoving(null)}
+          onConfirm={() => {
+            removeDamagedCopy(removing);
+            setRemoving(null);
+            setCopies(damagedCopies());
+          }}
+        >
+          The unreadable {nameOf(removing).toLowerCase()} data is deleted for good. Download it first if you might need it.
+        </ConfirmDialog>
+      )}
+    </Group>
+  );
+}
+
 function Heading({ title, subtitle }: { title: string; subtitle?: string }) {
   return (
     <>
@@ -568,6 +619,7 @@ function SettingsSectionContent({ section }: { section: SettingsSection }) {
           <Row title="Storage location" description="Notes, categories and preferences are saved in this browser, and images in its database."><span className="fake-text">This browser</span></Row>
           <Row title="Offline content" description="Everything is on this device, so Starjot works without an internet connection."><span className="fake-text">Available</span></Row>
         </Group>
+        <DamagedCopies />
         <Group title="Attachments">
           <Row preview title="File attachments" description="Add documents and other files to notes."><span className="future-chip">Coming later</span></Row>
         </Group>

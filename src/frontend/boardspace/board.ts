@@ -1,5 +1,5 @@
 import { useSyncExternalStore } from 'react';
-import { readBoard, writeBoard } from '../../backend/storage/boardStorage';
+import { markBoardDamaged, readBoard, writeBoard } from '../../backend/storage/boardStorage';
 import { showToast } from '../lib/toasts';
 import type { BoardProject, Sprint, WorkItem, WorkStatus, WorkType } from '../../shared/types/board';
 import { parseDay } from './dates';
@@ -118,11 +118,13 @@ export function cleanProject(raw: unknown): BoardProject {
   return project;
 }
 
+/* A saved project that is not a project at all is kept aside (it is never saved over). */
 function load() {
   try {
     const saved = readBoard();
     return saved ? cleanProject(saved) : blankProject();
   } catch {
+    markBoardDamaged();
     return blankProject();
   }
 }

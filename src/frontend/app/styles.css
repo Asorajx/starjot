@@ -1386,12 +1386,12 @@ p {
   white-space: nowrap;
 }
 
+/* The description wraps, so a longer message (such as how to recover data) is read in full. */
 .toast-text small {
-  overflow: hidden;
   color: #66778f;
   font-size: 12px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
 }
 
 /* × sits in the toast's top-right corner. */
