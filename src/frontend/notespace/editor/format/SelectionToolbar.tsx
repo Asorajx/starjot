@@ -5,6 +5,7 @@ import { safeHref } from '../../sanitize';
 import { COLOR_NAMES, applyColor, colorAt, type ColorClass, type ColorKind, type ColorName } from './colors';
 import type { EditorSession } from '../session';
 import { useEscape } from '../../../lib/useDismiss';
+import { changeLinesType, LINE_TYPES, linesInRange, typeOfLine, type LineType } from './lineTypes';
 
 type SelectionToolbarProps = {
   session: EditorSession;
@@ -18,16 +19,37 @@ type Size = { width: number; height: number };
 type Anchor = { selection: Box; end: Box; kind: string };
 type Mode = 'buttons' | 'link' | 'comment' | 'color';
 
+/* How the Turn into list was opened: by resting the pointer on the kind (it closes when the */
+/* pointer leaves), or by a click or key (it takes focus and stays until a choice or Escape). */
+type TypesOpen = 'hover' | 'keys' | null;
+
+/* The list opens beside the bar (right, or left near the window's edge), or below the kind */
+/* when neither side has room. */
+type TypesSide = 'right' | 'left' | 'below';
+
+/* The pause before the list opens on hover, and the grace period for moving into it. */
+const HOVER_OPEN = 150;
+const HOVER_CLOSE = 250;
+
 /* The editor's top bar covers this much of the window, so the toolbar never goes above it. */
 const TOP_LIMIT = 64;
 const GAP = 8;
 
-const FORMATS: { command: string; icon: IconName; label: string }[] = [
-  { command: 'bold', icon: 'bold', label: 'Bold' },
-  { command: 'italic', icon: 'italic', label: 'Italic' },
-  { command: 'underline', icon: 'underline', label: 'Underline' },
+const FORMATS: { command: string; icon: IconName; label: string; shortcut?: string }[] = [
+  { command: 'bold', icon: 'bold', label: 'Bold', shortcut: 'Ctrl + B' },
+  { command: 'italic', icon: 'italic', label: 'Italic', shortcut: 'Ctrl + I' },
+  { command: 'underline', icon: 'underline', label: 'Underline', shortcut: 'Ctrl + U' },
   { command: 'strikeThrough', icon: 'strikethrough', label: 'Strikethrough' }
 ];
+
+/* Whether the selected text already has a format (all of it bold, say), so its button shows as on. */
+function formatIsOn(command: string) {
+  try {
+    return document.queryCommandState(command);
+  } catch {
+    return false;
+  }
+}
 
 
 /* =========================
@@ -186,8 +208,9 @@ function rememberColor(color: ColorClass) {
    Selection Toolbar
    ========================= */
 
-/* A small bar that appears above selected note text: what kind of text it is (on top), then */
-/* formatting, links and comments. */
+/* A small bar that appears above selected note text: what kind of text it is (on top; click it */
+/* to turn the selected lines into another kind), then formatting, links and comments. A format */
+/* the selection already has shows as on. */
 /* It uses fixed positioning, so it lines up with the selection at any note zoom level. */
 export function SelectionToolbar({ session, locked }: SelectionToolbarProps) {
   const [anchor, setAnchor] = useState<Anchor | null>(null);
@@ -203,10 +226,20 @@ export function SelectionToolbar({ session, locked }: SelectionToolbarProps) {
   const modeRef = useRef(mode);
   modeRef.current = mode;
 
+  /* Bumped after a format is applied, so the buttons show the new state straight away. */
+  const [, setFormatted] = useState(0);
+  const typesRef = useRef<HTMLDivElement>(null);
+  const kindRef = useRef<HTMLButtonElement>(null);
+  const [typesOpen, setTypesOpen] = useState<TypesOpen>(null);
+  const [typesSide, setTypesSide] = useState<TypesSide>('right');
+  const typesOpenRef = useRef<TypesOpen>(null);
+  typesOpenRef.current = typesOpen;
+  const hoverTimer = useRef<number | undefined>(undefined);
+
   useEffect(() => {
     /* Show the bar for a non-empty selection inside the note; hide it otherwise. */
     function update() {
-      if (modeRef.current !== 'buttons') return;
+      if (modeRef.current !== 'buttons' || typesOpenRef.current === 'keys') return;
       const selection = window.getSelection();
       const body = session.body();
       const range = selection?.rangeCount ? selection.getRangeAt(0) : null;
@@ -244,6 +277,34 @@ export function SelectionToolbar({ session, locked }: SelectionToolbarProps) {
     setMode('buttons');
   });
 
+  /* Escape closes the Turn into list (giving the note its selection back if the list had focus). */
+  useEscape(typesOpen !== null, () => closeTypes(true));
+
+  /* Opened from a click or key, the list takes focus on the current kind (or the first). */
+  useEffect(() => {
+    if (typesOpen !== 'keys') return;
+    const list = typesRef.current;
+    (list?.querySelector<HTMLElement>('[aria-checked="true"]') ?? list?.querySelector<HTMLElement>('[role="menuitemradio"]'))?.focus();
+  }, [typesOpen]);
+
+  /* Pick the side with room each time the list opens. */
+  useLayoutEffect(() => {
+    if (!typesOpen) return;
+    const bar = barRef.current?.getBoundingClientRect();
+    const width = typesRef.current?.offsetWidth ?? 0;
+    if (!bar) return;
+    if (bar.right + GAP + width <= window.innerWidth - GAP) setTypesSide('right');
+    else if (bar.left - GAP - width >= GAP) setTypesSide('left');
+    else setTypesSide('below');
+  }, [typesOpen]);
+
+  useEffect(() => () => window.clearTimeout(hoverTimer.current), []);
+
+  /* The list closes when the selection goes away. */
+  useEffect(() => {
+    if (!anchor) setTypesOpen(null);
+  }, [anchor]);
+
   /* Re-measure whenever the bar changes shape, such as opening the comment box. */
   useLayoutEffect(() => {
     const bar = barRef.current;
@@ -254,6 +315,15 @@ export function SelectionToolbar({ session, locked }: SelectionToolbarProps) {
 
   if (!anchor) return null;
   const position = placeToolbar(anchor, size, { width: window.innerWidth, height: window.innerHeight });
+
+  /* The selected lines whose kind can be changed (none in a table cell or a toggle's title), and */
+  /* their kind when they all share one. */
+  const body = session.body();
+  const lines = !locked && body && savedRange.current ? linesInRange(savedRange.current, body) : null;
+  const lineKinds = new Set(lines?.map(typeOfLine));
+  const lineKind = lineKinds.size === 1 ? [...lineKinds][0] : null;
+  const linkNode = savedRange.current?.commonAncestorContainer;
+  const inLink = Boolean((linkNode instanceof Element ? linkNode : linkNode?.parentElement)?.closest('a[href]'));
 
   /* Put the remembered selection back, so a command applies to the text that was selected. */
   function restoreSelection() {
@@ -272,10 +342,75 @@ export function SelectionToolbar({ session, locked }: SelectionToolbarProps) {
     setAnchor(null);
   }
 
+  function openTypes(how: Exclude<TypesOpen, null>) {
+    window.clearTimeout(hoverTimer.current);
+    if (how === 'hover' && typesOpen) return;
+    setTypesOpen(how);
+  }
+
+  /* Close the list; with focus in it, focus goes back to the note's selection (or the kind). */
+  function closeTypes(refocus = false) {
+    window.clearTimeout(hoverTimer.current);
+    const hadFocus = typesOpenRef.current === 'keys';
+    setTypesOpen(null);
+    if (!hadFocus || !refocus) return;
+    restoreSelection();
+  }
+
+  /* Resting the pointer on the kind opens the list after a moment; leaving the kind and the list */
+  /* closes it after a short grace, so the pointer can travel from one to the other. */
+  function hoverKind(entering: boolean) {
+    window.clearTimeout(hoverTimer.current);
+    if (entering) {
+      if (!typesOpen) hoverTimer.current = window.setTimeout(() => setTypesOpen(open => open ?? 'hover'), HOVER_OPEN);
+    } else if (typesOpenRef.current === 'hover') {
+      hoverTimer.current = window.setTimeout(() => setTypesOpen(open => (open === 'hover' ? null : open)), HOVER_CLOSE);
+    }
+  }
+
+  /* → (or Enter, Space or ↓) on the kind opens the list with focus; ← in the list goes back. */
+  function handleKindKey(event: KeyboardEvent<HTMLButtonElement>) {
+    if (!['ArrowRight', 'ArrowDown', 'Enter', ' '].includes(event.key)) return;
+    event.preventDefault();
+    openTypes('keys');
+  }
+
+  function handleTypesKey(event: KeyboardEvent<HTMLDivElement>) {
+    if (event.key !== 'ArrowLeft') return;
+    event.preventDefault();
+    setTypesOpen(null);
+    kindRef.current?.focus();
+  }
+
   function format(command: string) {
     session.checkpoint();
     document.execCommand(command);
     session.commit();
+    setFormatted(count => count + 1);
+  }
+
+  /* Turn the selected lines into another kind (one undo step), then select their words again */
+  /* so the bar stays on them (in Block mode the block is redrawn, leaving the caret at the end). */
+  function changeType(type: LineType) {
+    const range = savedRange.current;
+    const root = session.body();
+    window.clearTimeout(hoverTimer.current);
+    setTypesOpen(null);
+    if (!range || !root) return;
+    restoreSelection();
+    const found = linesInRange(range, root);
+    if (!found) return;
+    session.checkpoint();
+    const { first, last } = changeLinesType(found, type, root);
+    session.linesChanged(last, true);
+    requestAnimationFrame(() => {
+      if (!first.isConnected || !last.isConnected) return;
+      const words = document.createRange();
+      words.setStart(first, 0);
+      words.setEnd(last, last.childNodes.length);
+      window.getSelection()?.removeAllRanges();
+      window.getSelection()?.addRange(words);
+    });
   }
 
   /* The link button removes a link when the selection is already inside one. */
@@ -344,31 +479,97 @@ export function SelectionToolbar({ session, locked }: SelectionToolbarProps) {
   /* Buttons keep the note's selection by ignoring the mouse press itself. */
   const keepSelection = (event: MouseEvent) => event.preventDefault();
 
+  /* The Turn into list, beside the bar. */
+  function renderTypes() {
+    return (
+      <div className={`page-menu selection-types is-${typesSide}`} role="menu" aria-label="Turn into" ref={typesRef} onKeyDown={handleTypesKey}>
+        {LINE_TYPES.map(type => (
+          <button
+            key={type.id}
+            type="button"
+            role="menuitemradio"
+            aria-checked={type.id === lineKind}
+            className="page-menu-item selection-type"
+            onMouseDown={keepSelection}
+            onClick={() => changeType(type.id)}
+          >
+            <Icon name={type.icon} size={14} />
+            <span>{type.label}</span>
+            {type.id === lineKind && <Icon name="check" size={14} className="dropdown-check" />}
+          </button>
+        ))}
+      </div>
+    );
+  }
+
   return (
     <div ref={barRef} className="selection-toolbar" role="toolbar" aria-label="Format selected text" style={{ top: position.top, left: position.left }}>
-      {mode === 'buttons' && <span className="selection-kind">{anchor.kind}</span>}
-      {mode === 'buttons' && (
+      {mode === 'buttons' && (lines
+        ? (
+          <div className="selection-kind-row" onMouseEnter={() => hoverKind(true)} onMouseLeave={() => hoverKind(false)}>
+            <button
+              ref={kindRef}
+              type="button"
+              className={`selection-kind is-button ${typesOpen ? 'is-open' : ''}`}
+              aria-haspopup="menu"
+              aria-expanded={Boolean(typesOpen)}
+              aria-label={`${anchor.kind}: turn into another kind of line`}
+              onMouseDown={keepSelection}
+              onClick={() => openTypes('keys')}
+              onKeyDown={handleKindKey}
+            >
+              <span>{anchor.kind}</span>
+              <Icon name="chevron-right" size={14} />
+            </button>
+            {typesOpen && renderTypes()}
+          </div>
+        )
+        : <span className="selection-kind">{anchor.kind}</span>)}
+      {mode === 'buttons' && !locked && (
         <div className="selection-toolbar-row">
           {!locked && (
             <button type="button" className="selection-tool selection-color" aria-label="Text and background colour" data-tooltip="Colour" onMouseDown={keepSelection} onClick={() => setMode('color')}>
               A
             </button>
           )}
-          {!locked && FORMATS.map(item => (
-            <button key={item.command} type="button" className="selection-tool" aria-label={item.label} onMouseDown={keepSelection} onClick={() => format(item.command)}>
-              <Icon name={item.icon} size={15} />
-            </button>
-          ))}
+          {!locked && FORMATS.map(item => {
+            const on = formatIsOn(item.command);
+            return (
+              <button
+                key={item.command}
+                type="button"
+                className={`selection-tool ${on ? 'is-active' : ''}`}
+                aria-label={item.label}
+                aria-pressed={on}
+                data-tooltip={item.label}
+                data-shortcut={item.shortcut}
+                onMouseDown={keepSelection}
+                onClick={() => format(item.command)}
+              >
+                <Icon name={item.icon} size={15} />
+              </button>
+            );
+          })}
           {!locked && (
-            <button type="button" className="selection-tool" aria-label="Add or remove link" onMouseDown={keepSelection} onClick={startLink}>
+            <button
+              type="button"
+              className={`selection-tool ${inLink ? 'is-active' : ''}`}
+              aria-label={inLink ? 'Remove link' : 'Add link'}
+              aria-pressed={inLink}
+              data-tooltip={inLink ? 'Remove link' : 'Link'}
+              onMouseDown={keepSelection}
+              onClick={startLink}
+            >
               <Icon name="link" size={15} />
             </button>
           )}
-          {!locked && <span className="selection-divider" />}
-          <button type="button" className="selection-tool selection-tool--text" aria-label="Comment" onMouseDown={keepSelection} onClick={() => setMode('comment')}>
-            <Icon name="message-square" size={15} /> <span className="selection-tool-label">Comment</span>
-          </button>
         </div>
+      )}
+      {mode === 'buttons' && (
+        <button type="button" className="selection-tool selection-comment-button" onMouseDown={keepSelection} onClick={() => setMode('comment')}>
+          <Icon name="message-square" size={15} />
+          <span>Comment</span>
+        </button>
       )}
 
       {mode === 'color' && savedRange.current && (

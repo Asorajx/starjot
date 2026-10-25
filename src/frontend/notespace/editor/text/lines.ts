@@ -37,7 +37,7 @@ export function lineAtCaret(root: HTMLElement) {
 }
 
 /* Build a converted line and the element inside it that holds the text. */
-function buildLine(kind: CommandId): { element: HTMLElement; text: HTMLElement } {
+export function buildLine(kind: CommandId): { element: HTMLElement; text: HTMLElement } {
   if (/^h[1-5]$/.test(kind)) {
     const heading = document.createElement(kind);
     return { element: heading, text: heading };
@@ -131,7 +131,7 @@ export function createPageBlock(noteId: string) {
 
 /* Put an element where a list item was, splitting the list around it. */
 /* The list item itself is removed when remove is true, or kept above the element otherwise. */
-function placeBesideListItem(item: HTMLElement, element: HTMLElement, remove: boolean) {
+export function placeBesideListItem(item: HTMLElement, element: HTMLElement, remove: boolean) {
   const list = item.parentElement as HTMLElement;
   const after = [];
   for (let next = item.nextElementSibling; next; next = next.nextElementSibling) after.push(next);

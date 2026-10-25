@@ -14,7 +14,7 @@
   border: 1px solid #dfe7f3;
   border-radius: 4px;
   background: #fff;
-  box-shadow: 0 10px 30px rgba(28, 54, 96, .18);
+  box-shadow: var(--shadow-float);
   transform: translateX(-50%);
 }
 
@@ -153,16 +153,29 @@
   outline-offset: 1px;
 }
 
+/* The bar is a column: the kind of text on top, the format buttons, then Comment at the bottom, */
+/* each set apart by a thin line. */
 .selection-toolbar-row {
   display: flex;
   align-items: center;
   gap: 4px;
+  padding-top: 4px;
+  border-top: 1px solid #edf1f7;
+}
+
+.selection-tool.selection-comment-button {
+  justify-content: flex-start;
+  gap: 8px;
+  width: 100%;
+  border-top: 1px solid #edf1f7;
+  border-radius: 0 0 4px 4px;
+  font-size: 14px;
+  font-weight: 600;
 }
 
 /* What kind of text is selected, on top of the buttons. */
 .selection-kind {
-  padding: 0 4px 4px;
-  border-bottom: 1px solid #edf1f7;
+  padding: 4px;
   color: #667891;
   font-size: 12px;
   font-weight: 700;
@@ -194,11 +207,69 @@
   color: var(--accent-text);
 }
 
-.selection-divider {
-  width: 1px;
-  height: 18px;
-  margin: 0 4px;
-  background: #e3e9f2;
+/* A format the selection already has (bold, a link…) shows as on: tinted, like a chosen item. */
+.selection-tool.is-active {
+  background: var(--accent-soft);
+  color: var(--accent-text);
+  box-shadow: inset 0 0 0 1px var(--accent-line);
+}
+
+/* The kind of line is a button when the selected lines can become another kind. */
+/* The kind spans the bar, with an arrow to the list it opens beside the bar. */
+.selection-kind-row {
+  position: relative;
+  display: flex;
+}
+
+.selection-kind.is-button {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 28px;
+  padding: 0 4px 0 8px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.selection-kind.is-button:hover,
+.selection-kind.is-button:focus-visible,
+.selection-kind.is-button.is-open {
+  background: var(--accent-soft);
+  color: var(--accent-text);
+}
+
+/* The kinds to turn the lines into, in a menu beside the bar (lined up with its top edge), or */
+/* below the kind when neither side has room. */
+.page-menu.selection-types {
+  position: absolute;
+  top: -5px;
+  left: calc(100% + 9px);
+  min-width: 200px;
+  max-height: min(360px, 60vh);
+  overflow-y: auto;
+}
+
+.page-menu.selection-types.is-left {
+  right: calc(100% + 9px);
+  left: auto;
+  transform-origin: top right;
+}
+
+.page-menu.selection-types.is-below {
+  top: calc(100% + 4px);
+  left: 0;
+}
+
+.selection-type {
+  width: 100%;
+  text-align: left;
 }
 
 .selection-input {

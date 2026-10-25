@@ -269,14 +269,9 @@
     font-size: 18px;
   }
 
-  /* The selection toolbar fits a phone's width with its 44px buttons: no gaps between them, and */
-  /* Comment shows only its icon. */
+  /* The selection toolbar fits a phone's width with its 44px buttons: no gaps between them. */
   .selection-toolbar-row {
     gap: 0;
-  }
-
-  .selection-tool-label {
-    display: none;
   }
 
   .settings-panel-subtitle {
