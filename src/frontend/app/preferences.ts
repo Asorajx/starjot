@@ -92,6 +92,9 @@ export type Preferences = {
   /* Notespace Home's All notes as rows, or as larger cards in a grid. */
   notesView: 'list' | 'gallery';
 
+  /* The widths of the Timeline's Work, Status and Assignee columns, as last dragged. */
+  timelineColumns: TimelineColumns;
+
   /* Note colours on rows and cards; when off, a note's colour shows only in its hover preview. */
   noteColorsInLists: boolean;
 
@@ -196,10 +199,30 @@ function loadDrawing(saved: unknown): DrawingPreferences {
   };
 }
 
+/* The Timeline's columns, in pixels: how narrow and wide each may be dragged, and where it starts. */
+export type TimelineColumn = 'work' | 'status' | 'assignee';
+export type TimelineColumns = Record<TimelineColumn, number>;
+export const TIMELINE_COLUMNS: Record<TimelineColumn, { min: number; max: number; initial: number }> = {
+  work: { min: 160, max: 640, initial: 296 },
+  status: { min: 96, max: 280, initial: 136 },
+  assignee: { min: 120, max: 320, initial: 168 }
+};
+
+export function clampColumn(column: TimelineColumn, width: number) {
+  const { min, max } = TIMELINE_COLUMNS[column];
+  return Math.round(Math.min(max, Math.max(min, width)));
+}
+
+function loadTimelineColumns(saved: unknown): TimelineColumns {
+  const record = (saved && typeof saved === 'object' ? saved : {}) as Record<string, unknown>;
+  const width = (column: TimelineColumn) => (typeof record[column] === 'number' ? clampColumn(column, record[column] as number) : TIMELINE_COLUMNS[column].initial);
+  return { work: width('work'), status: width('status'), assignee: width('assignee') };
+}
+
 /* Light mode is the default; once a theme is chosen in Settings it is remembered between visits. */
 function load(): Preferences {
   const defaults: Preferences = {
-    theme: 'system', accent: 'blue', density: 'comfortable', startScreen: 'start', spaces: loadSpaces(null), sidebar: loadSidebar(null), newNotes: loadNewNotes(null), openNotesIn: 'current', openNewSubNotes: true, zoom: 1, sidebarCollapsed: false, contentsScroll: 'smooth', notesSort: 'edited', notesView: 'list', noteColorsInLists: true, hideHeaderWhileTyping: true, tips: true, spellcheck: true, typingShortcuts: true, shortcuts: {}, drawing: loadDrawing(null),
+    theme: 'system', accent: 'blue', density: 'comfortable', startScreen: 'start', spaces: loadSpaces(null), sidebar: loadSidebar(null), newNotes: loadNewNotes(null), openNotesIn: 'current', openNewSubNotes: true, zoom: 1, sidebarCollapsed: false, contentsScroll: 'smooth', notesSort: 'edited', notesView: 'list', timelineColumns: loadTimelineColumns(null), noteColorsInLists: true, hideHeaderWhileTyping: true, tips: true, spellcheck: true, typingShortcuts: true, shortcuts: {}, drawing: loadDrawing(null),
     exportSettings: normalizeExportSettings(null),
     recentColors: []
   };
@@ -219,6 +242,7 @@ function load(): Preferences {
     contentsScroll: saved.contentsScroll === 'instant' ? 'instant' : 'smooth',
     notesSort: saved.notesSort === 'opened' || saved.notesSort === 'title' ? saved.notesSort : defaults.notesSort,
     notesView: saved.notesView === 'gallery' ? 'gallery' : 'list',
+    timelineColumns: loadTimelineColumns(saved.timelineColumns),
     noteColorsInLists: saved.noteColorsInLists !== false,
     hideHeaderWhileTyping: saved.hideHeaderWhileTyping !== false,
     tips: saved.tips !== false,

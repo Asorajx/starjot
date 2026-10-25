@@ -1,5 +1,6 @@
 import { useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type DragEvent, type KeyboardEvent, type PointerEvent as ReactPointerEvent } from 'react';
 import { Icon } from '../../components/Icon';
+import { clampColumn, getPreferences, TIMELINE_COLUMNS, updatePreferences, usePreferences, type TimelineColumn } from '../../app/preferences';
 import { showToast } from '../../lib/toasts';
 import type { BoardProject, WorkItem } from '../../../shared/types/board';
 import { dayRange, today } from '../dates';
@@ -156,6 +157,83 @@ function ItemRowView({ row, scale, board, dropHint, onEdit, onRowDragStart, barD
 
 
 /* =========================
+   Column Widths
+   ========================= */
+
+/* How far one press of ← or → moves a column's edge (Shift moves it further). */
+const RESIZE_STEP = 16;
+
+/* The edge at the right of a column's heading. Drag it to make the column narrower or wider on */
+/* every row, or use ← and → once it has focus; double-click it for the first width again. The */
+/* width follows the pointer straight away and is remembered when the drag ends. */
+function ColumnResizer({ column, label }: { column: TimelineColumn; label: string }) {
+  const { timelineColumns } = usePreferences();
+  const width = timelineColumns[column];
+  const drag = useRef<{ startX: number; startWidth: number; width: number } | null>(null);
+  const [dragging, setDragging] = useState(false);
+
+  function save(next: number) {
+    updatePreferences({ timelineColumns: { ...getPreferences().timelineColumns, [column]: clampColumn(column, next) } });
+  }
+
+  /* While dragging, only the card's variable changes; the preference is saved once, at the end. */
+  function show(target: Element, next: number) {
+    target.closest<HTMLElement>('.timeline-card')?.style.setProperty(`--${column}-width`, `${next}px`);
+  }
+
+  function start(event: ReactPointerEvent<HTMLSpanElement>) {
+    if (event.button !== 0) return;
+    event.preventDefault();
+    event.stopPropagation();
+    event.currentTarget.setPointerCapture(event.pointerId);
+    drag.current = { startX: event.clientX, startWidth: width, width };
+    setDragging(true);
+  }
+
+  function move(event: ReactPointerEvent<HTMLSpanElement>) {
+    const current = drag.current;
+    if (!current) return;
+    current.width = clampColumn(column, current.startWidth + event.clientX - current.startX);
+    show(event.currentTarget, current.width);
+  }
+
+  function end() {
+    const current = drag.current;
+    drag.current = null;
+    setDragging(false);
+    if (current && current.width !== current.startWidth) save(current.width);
+  }
+
+  function handleKey(event: KeyboardEvent<HTMLSpanElement>) {
+    if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+    event.preventDefault();
+    const step = (event.shiftKey ? 4 : 1) * RESIZE_STEP;
+    save(width + (event.key === 'ArrowRight' ? step : -step));
+  }
+
+  const limits = TIMELINE_COLUMNS[column];
+  return (
+    <span
+      className={`timeline-resizer ${dragging ? 'is-dragging' : ''}`}
+      role="separator"
+      aria-orientation="vertical"
+      aria-label={`Resize the ${label} column`}
+      aria-valuenow={width}
+      aria-valuemin={limits.min}
+      aria-valuemax={limits.max}
+      tabIndex={0}
+      onPointerDown={start}
+      onPointerMove={move}
+      onPointerUp={end}
+      onPointerCancel={end}
+      onDoubleClick={() => save(limits.initial)}
+      onKeyDown={handleKey}
+    />
+  );
+}
+
+
+/* =========================
    Timeline
    ========================= */
 
@@ -166,6 +244,7 @@ function ItemRowView({ row, scale, board, dropHint, onEdit, onRowDragStart, barD
 /* It sits in the project frame, which opens the editor (onEdit). */
 export function Timeline({ onEdit }: { onEdit: (target: EditorTarget) => void }) {
   const board = useBoard();
+  const { timelineColumns } = usePreferences();
   const [zoom, setZoom] = useState<Zoom>('week');
   const [search, setSearch] = useState('');
   const [wide, setWide] = useState(false);
@@ -282,7 +361,12 @@ export function Timeline({ onEdit }: { onEdit: (target: EditorTarget) => void })
   }
 
   return (
-    <section ref={cardRef} className={`timeline-card ${wide || narrow ? 'is-wide' : ''}`} aria-label="Timeline">
+    <section
+      ref={cardRef}
+      className={`timeline-card ${wide || narrow ? 'is-wide' : ''}`}
+      aria-label="Timeline"
+      style={{ '--work-width': `${timelineColumns.work}px`, '--status-width': `${timelineColumns.status}px`, '--assignee-width': `${timelineColumns.assignee}px` } as CSSProperties}
+    >
       <div className="board-tools">
         <label className="board-search">
           <Icon name="search" size={15} />
@@ -317,9 +401,9 @@ export function Timeline({ onEdit }: { onEdit: (target: EditorTarget) => void })
           <div className="timeline-grid">
             <div className="timeline-row timeline-head">
               <div className="timeline-meta">
-                <span className="timeline-cell-work">Work</span>
-                <span className="timeline-cell-status">Status</span>
-                <span className="timeline-cell-assignee">Assignee</span>
+                <span className="timeline-cell-work">Work<ColumnResizer column="work" label="Work" /></span>
+                <span className="timeline-cell-status">Status<ColumnResizer column="status" label="Status" /></span>
+                <span className="timeline-cell-assignee">Assignee<ColumnResizer column="assignee" label="Assignee" /></span>
               </div>
               <div className="timeline-lane">
                 <div className="timeline-months">{months.map(month => <span key={month.key} style={{ left: month.left, width: month.width }}>{month.label}</span>)}</div>

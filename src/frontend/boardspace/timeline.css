@@ -2,8 +2,13 @@
    Boardspace Timeline
    ========================= */
 
+/* The Work, Status and Assignee columns take their widths from the card (set from the saved */
+/* preference, and live while a column's edge is dragged). */
 .timeline-card {
-  --meta-width: 600px;
+  --work-width: 296px;
+  --status-width: 136px;
+  --assignee-width: 168px;
+  --meta-width: calc(var(--work-width) + var(--status-width) + var(--assignee-width));
   display: flex;
   flex-direction: column;
   min-width: 0;
@@ -11,7 +16,7 @@
 
 /* "More room for the timeline" hides the Status and Assignee columns. */
 .timeline-card.is-wide {
-  --meta-width: 320px;
+  --meta-width: var(--work-width);
 }
 
 .timeline-card.is-wide .timeline-cell-status,
@@ -116,7 +121,7 @@
   display: flex;
   flex-shrink: 0;
   align-items: center;
-  width: 136px;
+  width: var(--status-width);
   padding: 0 8px;
 }
 
@@ -125,7 +130,7 @@
   flex-shrink: 0;
   align-items: center;
   gap: 8px;
-  width: 168px;
+  width: var(--assignee-width);
   min-width: 0;
   padding: 0 8px;
 }
@@ -171,6 +176,48 @@
 
 .timeline-head .timeline-cell-work {
   padding-left: 12px;
+}
+
+/* Each heading holds the edge that resizes its column, along the column's right side. */
+.timeline-head .timeline-meta > span {
+  position: relative;
+  align-self: stretch;
+  display: flex;
+  align-items: flex-end;
+}
+
+.timeline-resizer {
+  position: absolute;
+  top: 0;
+  right: -4px;
+  bottom: -8px;
+  z-index: 1;
+  width: 8px;
+  cursor: col-resize;
+  touch-action: none;
+}
+
+/* A line shows where the edge is while it is hovered, focused or dragged. */
+.timeline-resizer::before {
+  content: "";
+  position: absolute;
+  top: 8px;
+  bottom: 0;
+  left: 3px;
+  width: 2px;
+  border-radius: 1px;
+  background: transparent;
+  transition: background .12s ease;
+}
+
+.timeline-resizer:hover::before,
+.timeline-resizer:focus-visible::before,
+.timeline-resizer.is-dragging::before {
+  background: var(--accent);
+}
+
+.timeline-resizer:focus-visible {
+  outline: none;
 }
 
 .timeline-months span,
@@ -487,7 +534,8 @@
   .timeline-cell-assignee,
   .timeline-handle,
   .timeline-add,
-  .timeline-count {
+  .timeline-count,
+  .timeline-resizer {
     display: none;
   }
 }
