@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type DragEvent, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type DragEvent, type KeyboardEvent, type ReactNode } from 'react';
 import { Icon, type IconName } from '../components/Icon';
 import { placeLabel } from '../notespace/PageBar';
 import { getNote, noteIcon, useCategories, useNotes } from '../notespace/store';
@@ -61,6 +61,32 @@ export function WindowBar({ group, onSelect, onClose, onNew, leading }: WindowBa
   const phone = useMediaQuery('(max-width: 700px)');
   const gathered = phone && group.tabs.length > 2;
 
+  /* The keyboard, as for tabs elsewhere: Tab reaches the tab strip once (on the open tab), ← and */
+  /* → move between tabs (round at the ends), Home and End go to the first and last, Enter or */
+  /* Space opens the tab with focus, and Delete closes it. Moving does not open each tab passed. */
+  function handleTabKeys(event: KeyboardEvent<HTMLDivElement>) {
+    const target = (event.target as Element).closest<HTMLElement>('[role="tab"]');
+    if (!target) return;
+    const tabsHere = [...event.currentTarget.querySelectorAll<HTMLElement>('[role="tab"]')];
+    const at = tabsHere.indexOf(target);
+    let next = -1;
+    if (event.key === 'ArrowRight') next = (at + 1) % tabsHere.length;
+    else if (event.key === 'ArrowLeft') next = (at - 1 + tabsHere.length) % tabsHere.length;
+    else if (event.key === 'Home') next = 0;
+    else if (event.key === 'End') next = tabsHere.length - 1;
+    else if (event.key === 'Delete') {
+      event.preventDefault();
+      const id = target.closest<HTMLElement>('[data-tab-id]')?.dataset.tabId;
+      const neighbour = tabsHere[at + 1] ?? tabsHere[at - 1];
+      if (id) onClose(id);
+      requestAnimationFrame(() => (neighbour?.isConnected ? neighbour : document.querySelector<HTMLElement>('.window-tab.is-active [role="tab"]'))?.focus());
+      return;
+    }
+    if (next < 0) return;
+    event.preventDefault();
+    tabsHere[next].focus();
+  }
+
   function tabElement(tab: NoteTab) {
     const place = currentPlace(tab);
     const label = placeLabel(place);
@@ -74,11 +100,11 @@ export function WindowBar({ group, onSelect, onClose, onNew, leading }: WindowBa
         draggable
         onDragStart={event => startTabDrag(event, group.id, tab.id)}
       >
-        <button type="button" role="tab" className="window-tab-main" aria-selected={selected} onClick={() => onSelect(tab.id)}>
+        <button type="button" role="tab" className="window-tab-main" aria-selected={selected} tabIndex={selected ? 0 : -1} onClick={() => onSelect(tab.id)}>
           <Icon name={placeIcon(place)} size={14} />
           <span>{label}</span>
         </button>
-        <button type="button" className="window-tab-close" aria-label={`Close ${label}`} onClick={() => onClose(tab.id)}>
+        <button type="button" className="window-tab-close" aria-label={`Close ${label}`} tabIndex={selected ? 0 : -1} onClick={() => onClose(tab.id)}>
           <Icon name="x" size={13} />
         </button>
       </div>
@@ -89,7 +115,7 @@ export function WindowBar({ group, onSelect, onClose, onNew, leading }: WindowBa
     <div className="window-bar">
       {leading}
       {!group.stacked && (
-        <div className={`window-tabs ${gathered ? 'is-gathered' : ''}`} role="tablist" aria-label="Open tabs">
+        <div className={`window-tabs ${gathered ? 'is-gathered' : ''}`} role="tablist" aria-label="Open tabs" onKeyDown={handleTabKeys}>
           {gathered ? (
             <>
               {group.tabs.filter(tab => tab.id === group.active).map(tabElement)}

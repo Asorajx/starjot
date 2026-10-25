@@ -48,6 +48,9 @@ export class EditorSession {
   /* A caret position to restore the next time the editor renders the document. */
   pendingCaret: number | null = null;
 
+  /* Where the caret and the scroll were, kept while the tab is not shown (see sessions.ts). */
+  view: { caret: number | null; scroll: number } = { caret: null, scroll: 0 };
+
   private history: History;
   private typing = new TypingSteps();
   private adapter: EditorAdapter | null = null;
@@ -114,29 +117,36 @@ export class EditorSession {
   /* edits. Checking waits for a short pause in typing. Returns a function that stops watching. */
   watch() {
     let timer: number | undefined;
-    const changed = () => {
-      const note = getNote(this.noteId);
-      return Boolean(note) && (note?.content !== this.history.currentContent() || note?.drawing !== this.history.currentDrawing()
-        || note?.drawingLayers !== this.history.currentLayers());
-    };
     const check = () => {
-      if (!changed()) return;
+      if (!this.changedElsewhere()) return;
       window.clearTimeout(timer);
-      timer = window.setTimeout(() => {
-        const note = getNote(this.noteId);
-        if (!note || !changed()) return;
-        this.history.checkpoint();
-        this.history.record(note.content, null, note.comments, note.drawing, note.drawingLayers);
-        this.pendingCaret = null;
-        this.typing.reset();
-        this.update({ revision: this.snapshot.revision + 1 });
-      }, 300);
+      timer = window.setTimeout(() => this.catchUp(), 300);
     };
     const stop = subscribe(check);
     return () => {
       stop();
       window.clearTimeout(timer);
     };
+  }
+
+  /* Whether the note was changed outside this editor since its last undo step. */
+  private changedElsewhere() {
+    const note = getNote(this.noteId);
+    return Boolean(note) && (note?.content !== this.history.currentContent() || note?.drawing !== this.history.currentDrawing()
+      || note?.drawingLayers !== this.history.currentLayers());
+  }
+
+  /* Take in a change made elsewhere (another pane, or while this tab was not shown) as one more */
+  /* undo step, and show it. */
+  catchUp() {
+    const note = getNote(this.noteId);
+    if (!note || !this.changedElsewhere()) return;
+    this.history.checkpoint();
+    this.history.record(note.content, null, note.comments, note.drawing, note.drawingLayers);
+    this.pendingCaret = null;
+    this.view.caret = null;
+    this.typing.reset();
+    this.update({ revision: this.snapshot.revision + 1 });
   }
 
   /* Called from the native beforeinput event, before the browser changes the text. */

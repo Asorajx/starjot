@@ -7,7 +7,7 @@ import { FindBar } from './find/FindBar';
 import { takeFindForNote } from './find/pendingFind';
 import { Icon } from '../../components/Icon';
 import {
-  deleteNote, flushSave, getNote, markOpened, updateNote,
+  deleteNote, flushSave, markOpened, updateNote,
   updatedLabel, useCategories, useNote
 } from '../store';
 import type { NoteMode } from '../../../shared/types/note';
@@ -35,7 +35,9 @@ import { PageBar, SaveStatus, type PageHistory } from '../PageBar';
 import { NoteColorStrip } from '../NoteColors';
 import { NoteHeader } from './NoteHeader';
 import { pageGeometry, pageStep, usePages } from './layout/pagination';
-import { EditorSession, useSessionValue } from './session';
+import { useSessionValue } from './session';
+import { sessionFor } from './sessions';
+import { getOffset } from './text/caret';
 import { StructuredEditor } from './text/StructuredEditor';
 import { zoomed } from '../../lib/geometry';
 import { CanvasEditor } from '../canvas/CanvasEditor';
@@ -52,6 +54,9 @@ const SMALL_TEXT_SCALE = 0.875;
 
 type NoteEditorProps = {
   noteId: string;
+
+  /* The tab showing the note, whose editing session is kept while another tab is shown. */
+  tabId: string;
 
   /* Where the page bar's back and forward arrows lead. */
   history: PageHistory;
@@ -110,7 +115,7 @@ export function NoteEditor(props: NoteEditorProps) {
   return kind === 'canvas' ? <CanvasEditor {...props} /> : <DocumentEditor {...props} />;
 }
 
-function DocumentEditor({ noteId, history, view, active, onClose, onOpenNote, onOpenNoteInNewTab, onGoToNote, onOpenCategory, onOpenHome, onOpenNewPage, onOpenSettings, onOpenWorkItem }: NoteEditorProps) {
+function DocumentEditor({ noteId, tabId, history, view, active, onClose, onOpenNote, onOpenNoteInNewTab, onGoToNote, onOpenCategory, onOpenHome, onOpenNewPage, onOpenSettings, onOpenWorkItem }: NoteEditorProps) {
   const note = useNote(noteId);
 
   /* Re-render when categories are renamed, so the breadcrumb stays current. */
@@ -144,13 +149,34 @@ function DocumentEditor({ noteId, history, view, active, onClose, onOpenNote, on
 
   const [activeLayer, setChosenLayer] = useActiveLayer(note);
 
-  /* One editing session per open note: undo history, Sticky state and editor actions. */
-  const session = useMemo(() => new EditorSession(noteId, getNote(noteId)?.content ?? ''), [noteId]);
+  /* One editing session per note in a tab: undo history, Sticky state and editor actions. It is */
+  /* kept while another tab is shown (see sessions.ts), so undo still works on coming back. */
+  const session = useMemo(() => sessionFor(tabId, noteId), [tabId, noteId]);
   const sticky = useSessionValue(session, snapshot => snapshot.sticky);
   const revision = useSessionValue(session, snapshot => snapshot.revision);
 
   /* Show edits made to this note in another pane. */
   useEffect(() => session.watch(), [session]);
+
+  /* Remember the scroll and the caret while the note is shown, and put the scroll back on coming */
+  /* back to the tab (the caret comes back through the session, see sessionFor). */
+  useEffect(() => {
+    const scroller = session.scroller();
+    const { scroll } = session.view;
+    if (scroller && scroll) requestAnimationFrame(() => { scroller.scrollTop = scroll; });
+    const keepScroll = () => { session.view.scroll = scroller?.scrollTop ?? 0; };
+    const keepCaret = () => {
+      const body = session.body();
+      const selection = window.getSelection();
+      if (body && selection?.anchorNode && body.contains(selection.anchorNode)) session.view.caret = getOffset(body);
+    };
+    scroller?.addEventListener('scroll', keepScroll, { passive: true });
+    document.addEventListener('selectionchange', keepCaret);
+    return () => {
+      scroller?.removeEventListener('scroll', keepScroll);
+      document.removeEventListener('selectionchange', keepCaret);
+    };
+  }, [session]);
 
   /* A paginated note is laid out on page-sized sheets; frameRef is the column the sheets are drawn in. */
   const frameRef = useRef<HTMLDivElement>(null);

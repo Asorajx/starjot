@@ -196,14 +196,34 @@ export function reopenTab(workspace: Workspace, closed: ClosedTab): Workspace {
 }
 
 
+/* Reopen the most recently closed tab. One showing a note deleted since steps back (or on) to a */
+/* place that still exists; one with nothing left, or already open again, is skipped. A closed */
+/* tab is only taken off the list once it is open: with no room for it (a full stack) it stays, */
+/* and `blocked` says so. */
+export function reopenLastClosed(workspace: Workspace, closed: ClosedTab[], exists: (place: Place) => boolean) {
+  let remaining = closed;
+  while (remaining.length) {
+    const last = remaining[remaining.length - 1];
+    const tab = exists(currentPlace(last.tab)) ? last.tab : step(last.tab, -1, exists) ?? step(last.tab, 1, exists);
+    const alreadyOpen = workspace.groups.some(group => group.tabs.some(open => open.id === last.tab.id));
+    const next = tab && !alreadyOpen ? reopenTab(workspace, { ...last, tab }) : workspace;
+    if (tab && !alreadyOpen && next === workspace) return { workspace, closed: remaining, blocked: true };
+    remaining = remaining.slice(0, -1);
+    if (next !== workspace) return { workspace: next, closed: remaining, blocked: false };
+  }
+  return { workspace, closed: remaining, blocked: false };
+}
+
 /* Move a tab (dragged by its tab or strip) into a group, before another tab or at the end. Moving */
 /* a group's last tab out closes that group, so dragging the tabs of a split window into one group */
 /* unsplits it. A full stack takes no more tabs, and a stack left with one tab becomes a normal group. */
+/* A drop before a tab that is no longer in the group (it closed during the drag) changes nothing. */
 export function moveTab(workspace: Workspace, fromId: string, tabId: string, toId: string, beforeId: string | null = null): Workspace {
   const from = workspace.groups.find(group => group.id === fromId);
   const to = workspace.groups.find(group => group.id === toId);
   const tab = from?.tabs.find(item => item.id === tabId);
   if (!from || !to || !tab || tabId === beforeId || (from !== to && !canAddTab(to))) return workspace;
+  if (beforeId && !to.tabs.some(item => item.id === beforeId)) return workspace;
 
   const rest = from.tabs.filter(item => item.id !== tabId);
   let groups = workspace.groups;
@@ -217,7 +237,7 @@ export function moveTab(workspace: Workspace, fromId: string, tabId: string, toI
 
   const target = groups.find(group => group.id === toId) as TabGroup;
   const others = target.tabs.filter(item => item.id !== tabId);
-  const index = beforeId ? Math.max(0, others.findIndex(item => item.id === beforeId)) : others.length;
+  const index = beforeId ? others.findIndex(item => item.id === beforeId) : others.length;
   const tabs = [...others.slice(0, index), tab, ...others.slice(index)];
   return selectTab({ ...workspace, groups: groups.map(group => (group.id === toId ? { ...target, tabs } : group)) }, toId, tabId);
 }

@@ -12,6 +12,7 @@ import { SearchWindow } from '../search/SearchWindow';
 import { ReminderWatcher } from './Reminders';
 import { Breadcrumb } from '../components/Breadcrumb';
 import { Toaster } from '../components/Toaster';
+import { showToast } from '../lib/toasts';
 import { findWhenOpened } from '../notespace/editor/find/pendingFind';
 import type { ViewControls } from '../notespace/editor/EditorPanels';
 import { NoteEditor } from '../notespace/editor/NoteEditor';
@@ -24,7 +25,7 @@ import type { BoardTab } from '../../shared/types/board';
 import type { NoteKind } from '../../shared/types/note';
 import {
   activeTab, addTab, canAddTab, canStack, closeTab, currentPlace, cycleTab, focusedGroup, focusGroup, goTo, isOpenInStack, isSplit, moveTab, newTab,
-  newWorkspace, reopenTab, samePlace, selectTab, splitWorkspace, stackGroup, step, stepPlace, unsplit, updateTab, type ClosedTab, type NoteTab,
+  newWorkspace, reopenLastClosed, samePlace, selectTab, splitWorkspace, stackGroup, step, stepPlace, STACK_LIMIT, unsplit, updateTab, type ClosedTab, type NoteTab,
   type Place, type TabGroup, type Workspace
 } from './noteTabs';
 import { DocumentTitle, StackSpine, TAB_DRAG_TYPE, TabSwitcher, WindowBar } from './WindowBar';
@@ -293,18 +294,18 @@ export function App() {
     changeTabs(current => closeTab(current, groupId, tabId));
   }
 
-  /* The last closed tab comes back where it was. One showing a note deleted since steps back to */
-  /* a place that still exists, and a tab with nothing left is skipped. */
+  /* The last closed tab comes back where it was (see reopenLastClosed). With no room for it, it */
+  /* stays on the list for next time and a message says why. */
   function reopenClosedTab() {
-    while (closedTabs.current.length) {
-      const closed = closedTabs.current[closedTabs.current.length - 1];
-      closedTabs.current = closedTabs.current.slice(0, -1);
-      const tab = placeExists(currentPlace(closed.tab)) ? closed.tab : step(closed.tab, -1, placeExists) ?? step(closed.tab, 1, placeExists);
-      if (!tab) continue;
-      setScreenId('notes');
-      changeTabs(current => reopenTab(current, { ...closed, tab }));
+    const result = reopenLastClosed(tabs, closedTabs.current, placeExists);
+    closedTabs.current = result.closed;
+    if (result.blocked) {
+      showToast({ kind: 'error', title: 'No room to reopen the tab', description: `A stack holds ${STACK_LIMIT} tabs. Close one, then try again.` });
       return;
     }
+    if (result.workspace === tabs) return;
+    setScreenId('notes');
+    changeTabs(() => result.workspace);
   }
 
   /* Tab ids, the most recently shown first, for Ctrl + Q's switcher (see moveSwitcher). */
@@ -629,6 +630,7 @@ export function App() {
         <NoteEditor
           key={shown.id}
           noteId={shown.id}
+          tabId={tab.id}
           history={history}
           view={view}
           active={tabGroup.id === tabs.focus && tab.id === tabGroup.active}

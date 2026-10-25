@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  activeTab, addTab, closeTab, currentPlace, cycleTab, focusedGroup, goTo, isOpenInStack, moveTab, newTab, newWorkspace, reopenTab, selectTab,
+  activeTab, addTab, closeTab, currentPlace, cycleTab, focusedGroup, goTo, isOpenInStack, moveTab, newTab, newWorkspace, reopenLastClosed, reopenTab, selectTab,
   splitWorkspace, stackGroup, step, stepPlace, unsplit, type Place, type Workspace
 } from '../../../src/frontend/app/noteTabs';
 
@@ -124,6 +124,14 @@ describe('split windows', () => {
     expect(places(moved)).toEqual([[note('c'), note('a'), note('b')]]);
   });
 
+  it('leaves the tabs as they are when dropped before a tab that is no longer there', () => {
+    let workspace = newWorkspace(note('a'));
+    const group = workspace.groups[0].id;
+    workspace = addTab(workspace, group, newTab(note('b')));
+    const b = workspace.groups[0].tabs[1];
+    expect(moveTab(workspace, group, b.id, group, 'closed-meanwhile')).toBe(workspace);
+  });
+
   it('puts every tab back into one tab strip when unsplit, keeping the focused tab active', () => {
     let workspace = splitWorkspace(newWorkspace(note('a')), 'right');
     workspace = addTab(workspace, workspace.groups[1].id, newTab(note('b')));
@@ -143,6 +151,35 @@ describe('stacked tabs', () => {
     for (let count = 0; count < 5; count += 1) workspace = stackGroup(workspace);
     expect(group().tabs).toHaveLength(5);
     expect(addTab(workspace, group().id, newTab(home))).toBe(workspace);
+  });
+
+  it('keeps a closed tab for later when a full stack has no room to reopen it', () => {
+    let workspace = stackGroup(newWorkspace(note('a')));
+    for (let count = 0; count < 3; count += 1) workspace = stackGroup(workspace);
+    const group = focusedGroup(workspace);
+    const closing = group.tabs[1];
+    const closed = [{ tab: closing, groupId: group.id, index: 1 }];
+    workspace = closeTab(workspace, group.id, closing.id);
+    workspace = addTab(workspace, group.id, newTab(note('b')));
+    workspace = addTab(workspace, group.id, newTab(note('c')));
+    expect(focusedGroup(workspace).tabs).toHaveLength(5);
+
+    const blocked = reopenLastClosed(workspace, closed, () => true);
+    expect(blocked).toEqual({ workspace, closed, blocked: true });
+
+    const roomy = closeTab(workspace, group.id, focusedGroup(workspace).tabs[4].id);
+    const reopened = reopenLastClosed(roomy, closed, () => true);
+    expect(reopened.blocked).toBe(false);
+    expect(reopened.closed).toEqual([]);
+    expect(focusedGroup(reopened.workspace).tabs.some(tab => tab.id === closing.id)).toBe(true);
+  });
+
+  it('skips closed tabs whose notes are all gone, and ones already open again', () => {
+    const workspace = newWorkspace(note('a'));
+    const open = focusedGroup(workspace).tabs[0];
+    const gone = newTab(note('deleted'));
+    const result = reopenLastClosed(workspace, [{ tab: open, groupId: 'x', index: 0 }, { tab: gone, groupId: 'x', index: 0 }], place => place.kind !== 'note' || place.id !== 'deleted');
+    expect(result).toEqual({ workspace, closed: [], blocked: false });
   });
 
   it('opens the active tab with one neighbour, sliding along when a folded tab is opened', () => {
