@@ -64,13 +64,6 @@ function BoardspaceTabs({ tab, onTabChange }: BoardspaceProps) {
 /* board/ and timeline/), inside the project frame with its name, Create and More. */
 const VIEWS = { summary: ProjectSummary, list: WorkList, board: WorkBoard, timeline: Timeline };
 
-const INTROS = {
-  summary: 'The project at a glance: progress, due dates and who is doing what.',
-  list: 'Every piece of work in the project, to sort and filter.',
-  board: 'Features and tasks as cards, moved across a column for each status.',
-  timeline: 'Plan sprints and see epics, features and tasks across the calendar.'
-};
-
 export function Boardspace(props: BoardspaceProps) {
   /* A view that no longer exists (a page left open across an update) shows the summary. */
   const tab = VIEWS[props.tab] ? props.tab : 'summary';
@@ -78,10 +71,7 @@ export function Boardspace(props: BoardspaceProps) {
   return (
     <div className="content-pad board-page">
       <div className="page-intro board-intro">
-        <div>
-          <h1>Boardspace</h1>
-          <p>{INTROS[tab]}</p>
-        </div>
+        <h1>Boardspace</h1>
       </div>
 
       <div className="board-panel">

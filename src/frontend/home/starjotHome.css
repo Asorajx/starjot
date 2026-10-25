@@ -22,12 +22,6 @@
   letter-spacing: -.6px;
 }
 
-.starjot-home-subtitle {
-  margin: 0;
-  color: #68788f;
-  font-size: 14px;
-}
-
 /* The quick note and "Where you left off" sit side by side, and stack when there is no room. */
 .starjot-home-grid {
   display: grid;

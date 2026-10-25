@@ -248,11 +248,12 @@ function Segmented<T extends string>({ label, options, value, onChange }: {
   );
 }
 
-function Heading({ title, subtitle }: { title: string; subtitle: string }) {
+/* A section's title, with a line under it only where it tells something the settings do not. */
+function Heading({ title, subtitle }: { title: string; subtitle?: string }) {
   return (
     <>
-      <h3 className="settings-section-title">{title}</h3>
-      <p className="settings-panel-subtitle">{subtitle}</p>
+      <h3 className={`settings-section-title ${subtitle ? '' : 'is-alone'}`}>{title}</h3>
+      {subtitle && <p className="settings-panel-subtitle">{subtitle}</p>}
     </>
   );
 }
@@ -275,7 +276,7 @@ function SettingsSectionContent({ section }: { section: SettingsSection }) {
     ];
     return (
       <>
-        <Heading title="General" subtitle="Everyday preferences for Starjot." />
+        <Heading title="General" />
         <Group title="Starting up">
           <Row title="Start screen" description="Where Starjot opens. A link to a page, a bookmark or a refresh still opens that page.">
             <Dropdown
@@ -299,7 +300,7 @@ function SettingsSectionContent({ section }: { section: SettingsSection }) {
   if (section === 'appearance') {
     return (
       <>
-        <Heading title="Appearance" subtitle="The little details that make Starjot feel like yours." />
+        <Heading title="Appearance" />
         <Group title="Theme">
           <Row title="Theme" description="Light, dark, or System to follow your computer. The moon or sun at the bottom of the sidebar switches between light and dark too.">
             <Segmented
@@ -375,7 +376,7 @@ function SettingsSectionContent({ section }: { section: SettingsSection }) {
   if (section === 'sidebar') {
     return (
       <>
-        <Heading title="Sidebar" subtitle="What the sidebar lists under each space." />
+        <Heading title="Sidebar" />
         {spaces.notes && (
           <Group title="Notespace">
             <Row title="Starred" description="List your starred notes in the sidebar.">
@@ -422,7 +423,7 @@ function SettingsSectionContent({ section }: { section: SettingsSection }) {
   if (section === 'notes') {
     return (
       <>
-        <Heading title="Notes" subtitle="How notes start and how the note screen behaves." />
+        <Heading title="Notes" />
         <Group title="New notes">
           <Row title="View" description="Continuous is one flowing document; Block shows each line as a block you can drag and move. Notes already made keep their own view.">
             <Segmented
@@ -493,7 +494,7 @@ function SettingsSectionContent({ section }: { section: SettingsSection }) {
   if (section === 'typing') {
     return (
       <>
-        <Heading title="Typing" subtitle="What can be typed into a note's text to format it as you write." />
+        <Heading title="Typing" />
         <Group title="Typing shortcuts">
           <Row title="Typing shortcuts" description="Turn the shortcuts below on or off. Turned off, notes keep exactly what you type. Type / for the command menu either way.">
             <Switch label="Typing shortcuts" on={typingShortcuts} onChange={on => set({ typingShortcuts: on })} />
@@ -516,7 +517,7 @@ function SettingsSectionContent({ section }: { section: SettingsSection }) {
   if (section === 'drawing') {
     return (
       <>
-        <Heading title="Drawing" subtitle="Drawing over notes, and how drawings behave when they are anchored into the text." />
+        <Heading title="Drawing" />
         <Group title="Drawing">
           <Row title="Drawing" description="The pencil in the note bar, for drawing over notes. Turned off, it is hidden; drawings already in notes still show.">
             <Switch label="Drawing" on={drawing.enabled} onChange={on => set({ drawing: { ...drawing, enabled: on } })} />
@@ -562,7 +563,7 @@ function SettingsSectionContent({ section }: { section: SettingsSection }) {
   if (section === 'storage') {
     return (
       <>
-        <Heading title="Storage" subtitle="Where your notes are kept." />
+        <Heading title="Storage" />
         <Group title="Local storage">
           <Row title="Storage location" description="Notes, categories and preferences are saved in this browser, and images in its database."><span className="fake-text">This browser</span></Row>
           <Row title="Offline content" description="Everything is on this device, so Starjot works without an internet connection."><span className="fake-text">Available</span></Row>
@@ -577,7 +578,7 @@ function SettingsSectionContent({ section }: { section: SettingsSection }) {
 
   return (
     <>
-      <Heading title="About" subtitle="A little about Starjot." />
+      <Heading title="About" />
       <div className="about-card">
         <BrandMark size={52} />
         <div><h3>Starjot</h3><p>A calmer place to think and get things done.</p></div>

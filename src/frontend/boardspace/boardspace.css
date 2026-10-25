@@ -10,7 +10,7 @@
 }
 
 .board-intro {
-  margin-bottom: 32px;
+  margin-bottom: 24px;
 }
 
 /* The tabs, the project's bar and the view sit straight on the page, lined up with its edge: */
@@ -1560,7 +1560,7 @@
     padding: 12px 0;
   }
 
-  /* The intro sentence is left out on phones, so the work starts higher up the screen. */
+  /* The work starts higher up the screen on phones. */
   .board-intro {
     margin-bottom: 16px;
   }
@@ -1571,10 +1571,6 @@
     border-radius: 0;
     background: transparent;
     box-shadow: none;
-  }
-
-  .board-intro p {
-    display: none;
   }
 
   /* Create shows its + alone, so the project's name has room. */

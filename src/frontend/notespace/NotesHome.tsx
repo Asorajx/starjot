@@ -163,7 +163,7 @@ export function NotesHome({ filter, onFilterChange, onOpen, onOpenInNewTab, onOp
   const [showAllStarred, setShowAllStarred] = useState(false);
 
   /* Re-render when categories are renamed, so each row shows the current name. */
-  const categories = useCategories();
+  useCategories();
 
   const starred = starredNotes(notes);
   const starredShown = showAllStarred ? starred : starred.slice(0, STARRED_COUNT);
@@ -172,12 +172,7 @@ export function NotesHome({ filter, onFilterChange, onOpen, onOpenInNewTab, onOp
   return (
     <div className="content-pad notes-home" {...importer.dropProps}>
       <header className="page-intro">
-        <div>
-          <h1>Notespace</h1>
-          <p>
-            {notes.length} {notes.length === 1 ? 'note' : 'notes'} in {categories.length} {categories.length === 1 ? 'category' : 'categories'}
-          </p>
-        </div>
+        <h1>Notespace</h1>
         <div className="notes-home-actions">
           <button
             className="btn btn-secondary"

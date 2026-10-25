@@ -94,6 +94,11 @@
   letter-spacing: -.7px;
 }
 
+/* A title without a line under it keeps the same space above the first group. */
+.settings-section-title.is-alone {
+  margin-bottom: 24px;
+}
+
 .settings-panel-subtitle {
   margin: 0 0 32px;
   color: #5b6b82;

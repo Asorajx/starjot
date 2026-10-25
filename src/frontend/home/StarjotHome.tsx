@@ -107,7 +107,6 @@ export function StarjotHome({ onOpenNote, onOpenNotespace, onOpenBoardspace, onO
           {now.toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' })} · {now.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}
         </p>
         <h1>{greeting(now)}</h1>
-        <p className="starjot-home-subtitle">{spaces.notes ? 'Pick up where you left off, or jot something down.' : 'Here is where your board stands.'}</p>
       </header>
 
       {spaces.notes && <section className="home-section" aria-labelledby="home-notespace">
