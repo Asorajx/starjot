@@ -14,9 +14,26 @@
   --shadow-window: 0 16px 40px rgba(0, 0, 0, .4);
 }
 
-/* The top bar of Boardspace and Settings matches the note bar, so every screen has the same */
-/* bar above the same page (the generator would put it one step lower, close to the page). */
-[data-theme="dark"] .topbar {
+/* One continuous surface: the open tab, the bar under it and the page (a note's canvas too) */
+/* share the page colour. Around it, the frame is one step up: the tab strip with the other */
+/* tabs, the sidebar, the top bar of Boardspace and Settings, and the phone's bottom bar. */
+[data-theme="dark"] .window-tab.is-active,
+[data-theme="dark"] .window-tab.is-active.is-note,
+[data-theme="dark"] .page-bar,
+[data-theme="dark"] .editor-page-bar,
+[data-theme="dark"] .editor-canvas,
+[data-theme="dark"] .canvas-view {
+  background-color: var(--dark-page);
+}
+
+[data-theme="dark"] .window-bar,
+[data-theme="dark"] .sidebar,
+[data-theme="dark"] .topbar,
+[data-theme="dark"] .mobile-nav {
+  background: var(--dark-surface-1);
+}
+
+[data-theme="dark"] .window-tab:hover:not(.is-active) {
   background: var(--dark-surface-2);
 }
 
