@@ -1,4 +1,5 @@
 import type { BoardProject, Sprint, WorkItem, WorkStatus, WorkType } from '../../shared/types/board';
+import { addDays, daysBetween, isoDay, parseDay, today } from './dates';
 
 
 /* =========================
@@ -101,6 +102,27 @@ export function shownSprintOf(project: BoardProject, item: WorkItem | undefined)
 
 export function sprintOrder(a: Sprint, b: Sprint) {
   return a.order - b.order || a.start.localeCompare(b.start) || a.name.localeCompare(b.name);
+}
+
+/* The sprint new work goes into from Create: the one today falls in, or else the next one to */
+/* start, or else the last one (all sprints are over). None when there are no sprints. */
+export function sprintForNewWork(project: BoardProject, day = today()) {
+  const sprints = [...project.sprints].sort(sprintOrder);
+  const current = sprints.find(sprint => sprint.start <= day && day <= sprint.end);
+  const next = [...sprints].sort((a, b) => a.start.localeCompare(b.start)).find(sprint => sprint.start > day);
+  return (current ?? next ?? sprints.at(-1))?.id ?? '';
+}
+
+/* Dates for work moved into a sprint. Dates that share at least a day with the sprint stay as */
+/* they are; dates wholly outside it move to start with the sprint, keeping their length but */
+/* never running past the sprint's end. */
+export function datesInSprint(dates: { start: string; end: string }, sprint: Sprint) {
+  const start = parseDay(dates.start);
+  const end = parseDay(dates.end);
+  const sprintStart = parseDay(sprint.start);
+  if (!start || !end || !sprintStart || (dates.start <= sprint.end && dates.end >= sprint.start)) return dates;
+  const moved = isoDay(addDays(sprintStart, Math.max(0, daysBetween(start, end))));
+  return { start: sprint.start, end: moved > sprint.end ? sprint.end : moved };
 }
 
 export function itemOrder(a: WorkItem, b: WorkItem) {

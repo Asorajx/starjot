@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { boardColumns, currentSprint, isOverdue } from '../../../src/frontend/boardspace/board/boardColumns';
+import { datesInSprint, sprintForNewWork } from '../../../src/frontend/boardspace/workItems';
 import { NOBODY } from '../../../src/frontend/boardspace/list/listRows';
 import type { BoardProject, WorkItem } from '../../../src/shared/types/board';
 
@@ -54,5 +55,32 @@ describe('work board', () => {
     expect(isOverdue(item('x', { end: '2026-10-09' }), '2026-10-10')).toBe(true);
     expect(isOverdue(item('x', { end: '2026-10-09', status: 'done' }), '2026-10-10')).toBe(false);
     expect(isOverdue(item('x', { end: '2026-10-10' }), '2026-10-10')).toBe(false);
+  });
+});
+
+
+/* =========================
+   Sprints for New Work
+   ========================= */
+
+describe('sprints for new and moved work', () => {
+  it('puts new work in the sprint under way, else the next to start, else the last', () => {
+    expect(sprintForNewWork(PROJECT, '2026-10-20')).toBe('s2');
+    expect(sprintForNewWork(PROJECT, '2026-10-17')).toBe('s2');
+    expect(sprintForNewWork(PROJECT, '2026-10-01')).toBe('s1');
+    expect(sprintForNewWork(PROJECT, '2026-12-01')).toBe('s2');
+    expect(sprintForNewWork({ ...PROJECT, sprints: [] }, '2026-10-20')).toBe('');
+  });
+
+  it('moves dates wholly outside a sprint to its start, keeping their length within the sprint', () => {
+    const sprint2 = PROJECT.sprints[1];
+    expect(datesInSprint({ start: '2026-11-02', end: '2026-11-05' }, sprint2)).toEqual({ start: '2026-10-19', end: '2026-10-22' });
+    expect(datesInSprint({ start: '2026-09-01', end: '2026-09-30' }, sprint2)).toEqual({ start: '2026-10-19', end: '2026-10-30' });
+  });
+
+  it('leaves dates that share a day with the sprint as they are', () => {
+    const sprint2 = PROJECT.sprints[1];
+    expect(datesInSprint({ start: '2026-10-28', end: '2026-11-04' }, sprint2)).toEqual({ start: '2026-10-28', end: '2026-11-04' });
+    expect(datesInSprint({ start: '2026-10-19', end: '2026-10-19' }, sprint2)).toEqual({ start: '2026-10-19', end: '2026-10-19' });
   });
 });

@@ -8,7 +8,7 @@ import { MembersDialog } from './MembersDialog';
 import { onWorkRequest, takeWorkRequest } from './openWork';
 import { WorkEditor, type EditorTarget } from './WorkEditor';
 import { MenuButton, TYPE_ICONS, type MenuItem } from './workParts';
-import { WORK_TYPES } from './workItems';
+import { sprintForNewWork, WORK_TYPES } from './workItems';
 
 type ProjectFrameProps = {
   /* The view inside the frame (the list or the timeline), given a way to open the editor. */
@@ -74,10 +74,10 @@ export function ProjectFrame({ children, onOpenNote }: ProjectFrameProps) {
     }
   }
 
-  /* New work goes into the last sprint (by order), where it is most likely wanted. */
-  const lastSprint = [...board.sprints].sort((a, b) => a.order - b.order).at(-1)?.id ?? '';
+  /* New work goes into the sprint under way (the one the Board opens on), or the next one. */
+  const newWorkSprint = sprintForNewWork(board);
   const createItems: MenuItem[] = [
-    ...(['epic', 'feature', 'task'] as WorkType[]).map(type => ({ key: type, label: WORK_TYPES[type].label, hint: WORK_TYPES[type].hint, icon: TYPE_ICONS[type], run: () => setEditing({ kind: 'item', type, sprintId: lastSprint }) })),
+    ...(['epic', 'feature', 'task'] as WorkType[]).map(type => ({ key: type, label: WORK_TYPES[type].label, hint: WORK_TYPES[type].hint, icon: TYPE_ICONS[type], run: () => setEditing({ kind: 'item', type, sprintId: newWorkSprint }) })),
     { key: 'sprint', label: 'Sprint', hint: 'A planning period', icon: 'calendar-days', divider: true, run: () => setEditing({ kind: 'sprint' }) }
   ];
   /* Members, Import and Export share one menu, so the bar holds just the name and two buttons. */

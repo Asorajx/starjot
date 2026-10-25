@@ -8,7 +8,7 @@ import { usePreferences } from '../app/preferences';
 import type { WorkStatus, WorkType } from '../../shared/types/board';
 import { addDays, isoDay, parseDay, weekStart } from './dates';
 import { deleteItem, deleteSprint, NAME_LENGTH, saveItem, saveSprint, useBoard } from './board';
-import { BAR_COLORS, canHoldWork, epicCompletion, familyOf, shownSprintOf, WORK_STATUSES, WORK_TYPES } from './workItems';
+import { BAR_COLORS, canHoldWork, datesInSprint, epicCompletion, familyOf, shownSprintOf, WORK_STATUSES, WORK_TYPES } from './workItems';
 import { WorkNotes } from './WorkNotes';
 
 
@@ -208,7 +208,10 @@ export function WorkEditor({ target, onClose, onManageMembers, onOpenNote }: Wor
                     label="Sprint"
                     value={fields.sprintId}
                     options={[{ value: '', label: 'Backlog' }, ...board.sprints.map(entry => ({ value: entry.id, label: entry.name }))]}
-                    onChange={sprintId => set({ sprintId })}
+                    onChange={sprintId => {
+                      const chosen = board.sprints.find(entry => entry.id === sprintId);
+                      set({ sprintId, ...(chosen ? datesInSprint(fields, chosen) : {}) });
+                    }}
                   />
                 </div>
                 <div className="board-field">
