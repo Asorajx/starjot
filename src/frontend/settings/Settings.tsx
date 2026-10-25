@@ -315,7 +315,7 @@ function Heading({ title, subtitle }: { title: string; subtitle?: string }) {
    ========================= */
 
 function SettingsSectionContent({ section }: { section: SettingsSection }) {
-  const { theme, accent, density, startScreen, spaces, sidebar, newNotes, openNotesIn, openNewSubNotes, noteColorsInLists, contentsScroll, hideHeaderWhileTyping, tips, spellcheck, typingShortcuts, drawing } = usePreferences();
+  const { theme, accent, density, startScreen, onStartup, spaces, sidebar, newNotes, openNotesIn, openNewSubNotes, noteColorsInLists, contentsScroll, hideHeaderWhileTyping, tips, spellcheck, typingShortcuts, drawing } = usePreferences();
   const categories = useCategories();
   const set = (changes: Partial<Preferences>) => updatePreferences(changes);
 
@@ -329,7 +329,16 @@ function SettingsSectionContent({ section }: { section: SettingsSection }) {
       <>
         <Heading title="General" />
         <Group title="Starting up">
-          <Row title="Start screen" description="Where Starjot opens. A link to a page, a bookmark or a refresh still opens that page.">
+          <Row title="When Starjot opens" description="Continue with the tabs, splits and stacks you had last time, or start fresh on the Start screen. A link to a page, a bookmark or a refresh still opens that page.">
+            <Dropdown
+              label="When Starjot opens"
+              value={onStartup}
+              options={[{ value: 'continue', label: 'Continue where you left off' }, { value: 'fresh', label: 'Open the Start screen' }]}
+              alignEnd
+              onChange={value => set({ onStartup: value })}
+            />
+          </Row>
+          <Row title="Start screen" description="Where Starjot opens the first time, or every time when starting fresh.">
             <Dropdown
               label="Start screen"
               value={startOptions.some(option => option.value === startScreen) ? startScreen : 'start'}

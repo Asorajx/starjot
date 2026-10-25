@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  activeTab, addTab, closeTab, currentPlace, cycleTab, focusedGroup, goTo, isOpenInStack, moveTab, newTab, newWorkspace, reopenLastClosed, reopenTab, selectTab,
+  activeTab, addTab, closeTab, currentPlace, cycleTab, focusedGroup, goTo, isOpenInStack, moveTab, newTab, newWorkspace, reopenLastClosed, reopenTab, restoreWorkspace, continueIdsAfter, selectTab, updateTab,
   splitWorkspace, stackGroup, step, stepPlace, unsplit, type Place, type Workspace
 } from '../../../src/frontend/app/noteTabs';
 
@@ -253,5 +253,46 @@ describe('switching tabs with Ctrl + Tab', () => {
   it('changes nothing with one tab', () => {
     const workspace = newWorkspace(home);
     expect(cycleTab(workspace, 1)).toBe(workspace);
+  });
+});
+
+
+/* =========================
+   Saved Layout
+   ========================= */
+
+describe('restoring the saved layout', () => {
+  const exists = (place: Place) => place.kind !== 'note' || place.id !== 'deleted';
+  const roundTrip = (workspace: Workspace) => JSON.parse(JSON.stringify(workspace));
+
+  it('brings back groups, tabs, histories, the active tabs and the focus as they were', () => {
+    let workspace = splitWorkspace(newWorkspace(note('a')), 'down');
+    const right = workspace.groups[1].id;
+    workspace = addTab(workspace, right, newTab(note('b')));
+    workspace = updateTab(workspace, right, goTo(focusedGroup(workspace).tabs[1], note('c')));
+    expect(restoreWorkspace(roundTrip(workspace), exists)).toEqual(workspace);
+  });
+
+  it('drops pages that are gone, and tabs with nothing left, choosing another active tab', () => {
+    let workspace = newWorkspace(note('a'));
+    const group = workspace.groups[0].id;
+    const gone = newTab(note('deleted'));
+    workspace = addTab(workspace, group, gone);
+    workspace = updateTab(workspace, group, goTo(activeTab(workspace.groups[0]), note('deleted')));
+    const restored = restoreWorkspace(roundTrip(workspace), exists) as Workspace;
+    expect(places(restored)).toEqual([[note('a')]]);
+    expect(restored.groups[0].active).toBe(restored.groups[0].tabs[0].id);
+  });
+
+  it('gives up on anything that is not a layout, so the app opens fresh', () => {
+    expect(restoreWorkspace(null, exists)).toBeNull();
+    expect(restoreWorkspace({ groups: 'no' }, exists)).toBeNull();
+    expect(restoreWorkspace({ groups: [{ id: 'g', tabs: [{ id: 't', history: [{ kind: 'note', id: 'deleted' }], index: 0 }] }] }, exists)).toBeNull();
+  });
+
+  it('numbers new tabs after the restored ones, so ids never repeat', () => {
+    const saved = { groups: [{ id: 'group900', tabs: [{ id: 'tab950', history: [home], index: 0 }], active: 'tab950' }], focus: 'group900' };
+    continueIdsAfter(restoreWorkspace(saved, exists) as Workspace);
+    expect(Number(newTab(home).id.replace('tab', ''))).toBeGreaterThan(950);
   });
 });

@@ -90,6 +90,72 @@ export function newWorkspace(place: Place): Workspace {
   return { groups: [group], direction: 'right', focus: group.id };
 }
 
+
+/* =========================
+   Saved Layout
+   ========================= */
+
+function readPlace(raw: unknown): Place | null {
+  const record = raw as { kind?: unknown; id?: unknown } | null;
+  if (!record || typeof record !== 'object') return null;
+  if (record.kind === 'start' || record.kind === 'home') return { kind: record.kind };
+  if ((record.kind === 'note' || record.kind === 'category') && typeof record.id === 'string' && record.id) return { kind: record.kind, id: record.id };
+  return null;
+}
+
+/* A tab from a saved layout: its history keeps the places that still exist (a deleted note's */
+/* entry drops out), showing the same place as before or the nearest one left. Null when nothing */
+/* it showed is left. */
+function readTab(raw: unknown, exists: (place: Place) => boolean): NoteTab | null {
+  const record = raw as { id?: unknown; history?: unknown; index?: unknown } | null;
+  if (!record || typeof record.id !== 'string' || !Array.isArray(record.history)) return null;
+  const shown = Number.isInteger(record.index) ? Number(record.index) : record.history.length - 1;
+  const kept: Place[] = [];
+  let index = -1;
+  record.history.slice(0, HISTORY_LIMIT).forEach((entry, at) => {
+    const place = readPlace(entry);
+    if (!place || !exists(place)) return;
+    kept.push(place);
+    if (at <= shown) index = kept.length - 1;
+  });
+  if (!kept.length) return null;
+  return { id: record.id, history: kept, index: Math.max(0, index) };
+}
+
+/* The layout saved last time, checked: tabs whose pages are all gone are left out, as are */
+/* groups left empty, and the active tabs and focus fall back to ones that remain. Null when */
+/* nothing usable is left, so the app opens as on a first visit. */
+export function restoreWorkspace(raw: unknown, exists: (place: Place) => boolean): Workspace | null {
+  const record = raw as { groups?: unknown; direction?: unknown; focus?: unknown } | null;
+  if (!record || !Array.isArray(record.groups)) return null;
+  const seen = new Set<string>();
+  const groups: TabGroup[] = [];
+  for (const rawGroup of record.groups.slice(0, GROUP_LIMIT)) {
+    const group = rawGroup as { id?: unknown; tabs?: unknown; active?: unknown; stacked?: unknown; stackStart?: unknown } | null;
+    if (!group || typeof group.id !== 'string' || seen.has(group.id) || !Array.isArray(group.tabs)) continue;
+    const tabs = group.tabs
+      .map(tab => readTab(tab, exists))
+      .filter((tab): tab is NoteTab => tab !== null && !seen.has(tab.id) && Boolean(seen.add(tab.id)))
+      .slice(0, group.stacked === true ? STACK_LIMIT : undefined);
+    if (!tabs.length) continue;
+    seen.add(group.id);
+    const stacked = group.stacked === true && tabs.length > 1;
+    const active = tabs.some(tab => tab.id === group.active) ? String(group.active) : tabs[0].id;
+    const restored: TabGroup = { id: group.id, tabs, active, stacked, stackStart: 0 };
+    groups.push(withActive({ ...restored, stackStart: clampStart(restored, Number(group.stackStart) || 0) }, active));
+  }
+  if (!groups.length) return null;
+  const focus = groups.some(group => group.id === record.focus) ? String(record.focus) : groups[0].id;
+  return { groups, direction: record.direction === 'down' ? 'down' : 'right', focus };
+}
+
+/* New tabs and groups are numbered after the restored ones, so no two ever share an id. */
+export function continueIdsAfter(workspace: Workspace) {
+  const numbers = workspace.groups.flatMap(group => [group.id, ...group.tabs.map(tab => tab.id)])
+    .map(id => Number(id.match(/(\d+)$/)?.[1] ?? 0));
+  idCount = Math.max(idCount, ...numbers);
+}
+
 export function activeTab(group: TabGroup) {
   return group.tabs.find(tab => tab.id === group.active) ?? group.tabs[0];
 }

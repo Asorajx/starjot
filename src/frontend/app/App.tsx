@@ -25,12 +25,13 @@ import type { BoardTab } from '../../shared/types/board';
 import type { NoteKind } from '../../shared/types/note';
 import {
   activeTab, addTab, canAddTab, canStack, closeTab, currentPlace, cycleTab, focusedGroup, focusGroup, goTo, isOpenInStack, isSplit, moveTab, newTab,
-  newWorkspace, reopenLastClosed, samePlace, selectTab, splitWorkspace, stackGroup, step, stepPlace, STACK_LIMIT, unsplit, updateTab, type ClosedTab, type NoteTab,
+  continueIdsAfter, newWorkspace, reopenLastClosed, restoreWorkspace, samePlace, selectTab, splitWorkspace, stackGroup, step, stepPlace, STACK_LIMIT, unsplit, updateTab, type ClosedTab, type NoteTab,
   type Place, type TabGroup, type Workspace
 } from './noteTabs';
 import { DocumentTitle, StackSpine, TAB_DRAG_TYPE, TabSwitcher, WindowBar } from './WindowBar';
 import { screenLabel, type ScreenId } from './screens';
 import { addressOf, parseAddress } from './address';
+import { readWorkspace, writeWorkspace } from '../../backend/storage/workspaceStorage';
 
 
 /* =========================
@@ -148,25 +149,61 @@ function placeAllowed(place: Place, spaces: Spaces) {
   return placeExists(place) && (place.kind === 'start' || spaces.notes);
 }
 
-/* What Starjot shows when it opens: the page its address names (a refresh or a bookmark), or else */
+/* The layout saved last time (see workspaceStorage.ts): the tabs, the space shown and */
+/* Boardspace's view. */
+type SavedLayout = { workspace?: unknown; screen?: unknown; view?: unknown };
+const BOARD_VIEWS: BoardTab[] = ['summary', 'list', 'board', 'timeline'];
+
+/* What Starjot shows when it opens: the page its address names (a refresh or a bookmark); else, */
+/* when continuing where it was left (Settings → General), the space shown last time; or else */
 /* the start screen chosen in Settings. A space that is turned off is never opened. */
-function openingPage(): { screen: ScreenId; place: Place; view: BoardTab } {
+function openingPage(saved: SavedLayout | null): { screen: ScreenId; place: Place; view: BoardTab; addressed: boolean } {
   const { spaces, startScreen } = getPreferences();
   const address = parseAddress(window.location.hash);
-  if (address?.kind === 'board' && spaces.boardspace) return { screen: 'boardspace', place: { kind: 'start' }, view: address.view };
-  if (address?.kind === 'place' && placeAllowed(address.place, spaces)) return { screen: 'notes', place: address.place, view: 'summary' };
-  if (startScreen === 'boardspace' && spaces.boardspace) return { screen: 'boardspace', place: { kind: 'start' }, view: 'summary' };
-  return { screen: 'notes', place: startScreen === 'notes' && spaces.notes ? { kind: 'home' } : { kind: 'start' }, view: 'summary' };
+  const view = BOARD_VIEWS.find(item => item === saved?.view) ?? 'summary';
+  if (address?.kind === 'board' && spaces.boardspace) return { screen: 'boardspace', place: { kind: 'start' }, view: address.view, addressed: true };
+  if (address?.kind === 'place' && placeAllowed(address.place, spaces)) return { screen: 'notes', place: address.place, view, addressed: true };
+  if (saved?.screen === 'boardspace' && spaces.boardspace) return { screen: 'boardspace', place: { kind: 'start' }, view, addressed: false };
+  if (saved?.screen === 'notes') return { screen: 'notes', place: { kind: 'start' }, view, addressed: false };
+  if (startScreen === 'boardspace' && spaces.boardspace) return { screen: 'boardspace', place: { kind: 'start' }, view: 'summary', addressed: false };
+  return { screen: 'notes', place: startScreen === 'notes' && spaces.notes ? { kind: 'home' } : { kind: 'start' }, view: 'summary', addressed: false };
+}
+
+/* The tabs Starjot opens with: last time's, when continuing (with a page an address names shown */
+/* in the focused group: on a tab already showing it, or in its open tab), or a fresh tab. */
+function openingTabs(saved: SavedLayout | null, opening: ReturnType<typeof openingPage>): Workspace {
+  const { spaces } = getPreferences();
+  const restored = saved ? restoreWorkspace(saved.workspace, place => placeAllowed(place, spaces)) : null;
+  if (!restored) return newWorkspace(opening.place);
+  continueIdsAfter(restored);
+  if (!opening.addressed || opening.screen !== 'notes') return restored;
+  const shown = focusedGroup(restored);
+  const showing = shown.tabs.find(tab => samePlace(currentPlace(tab), opening.place));
+  if (showing) return selectTab(restored, shown.id, showing.id);
+  return updateTab(restored, shown.id, goTo(activeTab(shown), opening.place));
+}
+
+/* Last time's layout, when Settings says to continue where Starjot was left. */
+function savedLayout(): SavedLayout | null {
+  if (getPreferences().onStartup !== 'continue') return null;
+  const saved = readWorkspace();
+  return saved && typeof saved === 'object' ? saved as SavedLayout : null;
 }
 
 /* Only navigation lives here; note content belongs to the Notespace store. */
 export function App() {
-  const [opening] = useState(openingPage);
+  const [saved] = useState(savedLayout);
+  const [opening] = useState(() => openingPage(saved));
   const [screenId, setScreenId] = useState<ScreenId>(opening.screen);
 
   /* The tab groups (one, or two after a split), each with its tabs and their histories. */
-  const [tabs, setTabs] = useState<Workspace>(() => newWorkspace(opening.place));
+  const [tabs, setTabs] = useState<Workspace>(() => openingTabs(saved, opening));
   const [workTab, setWorkTab] = useState<BoardTab>(opening.view);
+
+  /* The layout is saved as it changes, so Starjot can open where it was left. */
+  useEffect(() => {
+    writeWorkspace({ version: 1, workspace: tabs, screen: screenId, view: workTab });
+  }, [tabs, screenId, workTab]);
   /* Settings is a panel over the app: open or not, the section shown, and a group to highlight. */
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [settingsSection, setSettingsSection] = useState<SettingsSection>('general');

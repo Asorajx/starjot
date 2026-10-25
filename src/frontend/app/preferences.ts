@@ -71,6 +71,9 @@ export type Preferences = {
   accent: Accent;
   density: Density;
   startScreen: StartScreen;
+
+  /* Whether Starjot opens with last time's tabs, splits and stacks, or fresh on the Start screen. */
+  onStartup: 'continue' | 'fresh';
   spaces: Spaces;
   sidebar: SidebarLists;
   newNotes: NewNotes;
@@ -222,7 +225,7 @@ function loadTimelineColumns(saved: unknown): TimelineColumns {
 /* Light mode is the default; once a theme is chosen in Settings it is remembered between visits. */
 function load(): Preferences {
   const defaults: Preferences = {
-    theme: 'system', accent: 'blue', density: 'comfortable', startScreen: 'start', spaces: loadSpaces(null), sidebar: loadSidebar(null), newNotes: loadNewNotes(null), openNotesIn: 'current', openNewSubNotes: true, zoom: 1, sidebarCollapsed: false, contentsScroll: 'smooth', notesSort: 'edited', notesView: 'list', timelineColumns: loadTimelineColumns(null), noteColorsInLists: true, hideHeaderWhileTyping: true, tips: true, spellcheck: true, typingShortcuts: true, shortcuts: {}, drawing: loadDrawing(null),
+    theme: 'system', accent: 'blue', density: 'comfortable', startScreen: 'start', onStartup: 'continue', spaces: loadSpaces(null), sidebar: loadSidebar(null), newNotes: loadNewNotes(null), openNotesIn: 'current', openNewSubNotes: true, zoom: 1, sidebarCollapsed: false, contentsScroll: 'smooth', notesSort: 'edited', notesView: 'list', timelineColumns: loadTimelineColumns(null), noteColorsInLists: true, hideHeaderWhileTyping: true, tips: true, spellcheck: true, typingShortcuts: true, shortcuts: {}, drawing: loadDrawing(null),
     exportSettings: normalizeExportSettings(null),
     recentColors: []
   };
@@ -232,6 +235,7 @@ function load(): Preferences {
     accent: ACCENTS.find(accent => accent === saved.accent) ?? defaults.accent,
     density: saved.density === 'compact' ? 'compact' : defaults.density,
     startScreen: saved.startScreen === 'notes' || saved.startScreen === 'boardspace' ? saved.startScreen : defaults.startScreen,
+    onStartup: saved.onStartup === 'fresh' ? 'fresh' : 'continue',
     spaces: loadSpaces(saved.spaces),
     sidebar: loadSidebar(saved.sidebar),
     newNotes: loadNewNotes(saved.newNotes),
