@@ -159,11 +159,16 @@ function DocumentEditor({ noteId, tabId, history, view, active, onClose, onOpenN
   useEffect(() => session.watch(), [session]);
 
   /* Remember the scroll and the caret while the note is shown, and put the scroll back on coming */
-  /* back to the tab (the caret comes back through the session, see sessionFor). */
-  useEffect(() => {
+  /* back to the tab (the caret comes back through the session, see sessionFor). The scroll is set */
+  /* before the first paint, so the note never flashes at its top, and once more a frame later */
+  /* for pages laid out after that. */
+  useLayoutEffect(() => {
     const scroller = session.scroller();
     const { scroll } = session.view;
-    if (scroller && scroll) requestAnimationFrame(() => { scroller.scrollTop = scroll; });
+    if (scroller && scroll) {
+      scroller.scrollTop = scroll;
+      requestAnimationFrame(() => { scroller.scrollTop = scroll; });
+    }
     const keepScroll = () => { session.view.scroll = scroller?.scrollTop ?? 0; };
     const keepCaret = () => {
       const body = session.body();

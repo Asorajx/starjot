@@ -698,6 +698,13 @@ p {
   white-space: nowrap;
 }
 
+/* The focus ring sits inside the tab, so the tab strip (which hides overflow) never clips it. */
+.window-tab .window-tab-main:focus-visible,
+.window-tab .window-tab-close:focus-visible {
+  outline-offset: -2px;
+  border-radius: 4px;
+}
+
 .window-tab-main .icon {
   flex-shrink: 0;
 }
