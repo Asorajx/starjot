@@ -7,6 +7,12 @@
   background: var(--bg);
 }
 
+/* The top bar of Boardspace and Settings matches the note bar, so every screen has the same */
+/* bar above the same page (the generator would put it one step lower, close to the page). */
+[data-theme="dark"] .topbar {
+  background: var(--dark-surface-2);
+}
+
 /* Sticky brackets brighter than the dark accent line, so they read like the light theme's. */
 [data-theme="dark"] .sticky-group::before,
 [data-theme="dark"] .sticky-group::after {

@@ -64,8 +64,12 @@
   min-width: 0;
 }
 
+/* The grid sits in an outlined box on the page, like the List's table. */
 .timeline-scroll {
   position: relative;
+  margin-top: 16px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
   height: clamp(420px, calc(100dvh - 300px), 1000px);
   overflow: auto;
   overscroll-behavior: contain;

@@ -125,6 +125,12 @@
   border-bottom: 1px solid var(--line);
 }
 
+/* The toolbar needs no line under it: the view below starts with its own box or columns. */
+.board-tools {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
 /* The project's bar stays one row: a long name shrinks instead of pushing the buttons down. */
 .project-top {
   flex-wrap: nowrap;
@@ -863,9 +869,16 @@
    Work List
    ========================= */
 
+/* The table sits in one filled box, like Notespace's list of notes (it does not clip, so the */
+/* sticky headings keep working). */
 .work-list-body {
   position: relative;
   min-height: 320px;
+  margin-top: 16px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--paper);
+  box-shadow: var(--shadow);
 }
 
 /* A narrow list drops the sprint and dates; a slim one the assignee too (see WorkList). */
@@ -1257,6 +1270,7 @@
   margin-bottom: 12px;
 }
 
+/* Tiles and panels are cards on the page, filled like Notespace's tiles and Home's cards. */
 .summary-tile {
   display: flex;
   flex-direction: column;
@@ -1264,6 +1278,7 @@
   padding: 16px;
   border: 1px solid var(--line);
   border-radius: 4px;
+  background: var(--paper);
 }
 
 .summary-tile-label {
@@ -1303,6 +1318,7 @@
   padding: 16px;
   border: 1px solid var(--line);
   border-radius: 4px;
+  background: var(--paper);
 }
 
 .summary-panel h3 {
@@ -1547,6 +1563,14 @@
   /* The intro sentence is left out on phones, so the work starts higher up the screen. */
   .board-intro {
     margin-bottom: 16px;
+  }
+
+  /* The List's table runs edge to edge on phones, like the list of notes. */
+  .work-list-body {
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
   }
 
   .board-intro p {

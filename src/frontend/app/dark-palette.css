@@ -10,10 +10,10 @@
 :root[data-theme="dark"] {
   /* The page, then what sits on it: cards and panels, raised parts (menus, hovered rows), chosen */
   /* items and fields, and the strongest fill. */
-  --dark-page: #121212;
-  --dark-surface-1: #1b1b1b;
-  --dark-surface-2: #232323;
-  --dark-surface-3: #2c2c2c;
+  --dark-page: #191919;
+  --dark-surface-1: #202020;
+  --dark-surface-2: #282828;
+  --dark-surface-3: #2f2f2f;
   --dark-surface-4: #363636;
 
   /* Text: strong (headings in notes), primary (about 87% white), secondary (about 62%), and only */
@@ -24,7 +24,7 @@
   --dark-text-3: #6e6e6e;
 
   /* Lines: dividers, the borders of controls, and strong borders. */
-  --dark-line-1: #2a2a2a;
-  --dark-line-2: #3a3a3a;
-  --dark-line-3: #4d4d4d;
+  --dark-line-1: #303030;
+  --dark-line-2: #404040;
+  --dark-line-3: #535353;
 }
