@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type KeyboardEvent } from 'react';
 import { useEscape } from '../lib/useDismiss';
 import { usePresence } from '../lib/usePresence';
+import { isTypeaheadKey, nextByLetter } from '../lib/typeahead';
 import { Icon, type IconName } from './Icon';
 
 export type DropdownOption<T extends string> = {
@@ -133,12 +134,9 @@ export function Dropdown<T extends string>({ value, options, onChange, label, pr
       setActive(event.key === 'Home' ? 0 : options.length - 1);
     } else if (event.key === 'Tab') {
       setOpen(false);
-    } else if (event.key.length === 1 && /\S/.test(event.key) && !event.ctrlKey && !event.metaKey && !event.altKey) {
-      const letter = event.key.toLowerCase();
-      const from = open ? active : chosen;
-      const order = [...options.keys()].map(step => (from + 1 + step) % options.length);
-      const found = order.find(index => options[index].label.toLowerCase().startsWith(letter));
-      if (found === undefined) return;
+    } else if (isTypeaheadKey(event)) {
+      const found = nextByLetter(options.map(option => option.label), open ? active : chosen, event.key);
+      if (found < 0) return;
       event.preventDefault();
       if (open) setActive(found);
       else onChange(options[found].value);

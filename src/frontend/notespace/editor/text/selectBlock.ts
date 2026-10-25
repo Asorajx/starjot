@@ -1,3 +1,6 @@
+import { elementOf } from '../../../lib/nodes';
+
+
 /* =========================
    Selecting a Block
    ========================= */
@@ -22,7 +25,7 @@ export function selectBlockText(root: Element | null): 'block' | 'note' | null {
   const selection = window.getSelection();
   const range = selection?.rangeCount ? selection.getRangeAt(0) : null;
   const common = range?.commonAncestorContainer;
-  const container = (common instanceof Element ? common : common?.parentElement)?.closest(CONTAINERS) ?? null;
+  const container = elementOf(common)?.closest(CONTAINERS) ?? null;
   if (!selection || !range || !container || !root?.contains(container)) return null;
   if (covers(range, container)) return 'note';
   const whole = document.createRange();

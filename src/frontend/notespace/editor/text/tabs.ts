@@ -1,6 +1,7 @@
 import { escapeHtml } from '../../../lib/html';
 import { iconMarkup } from '../../../components/Icon';
 import { caretAtEdge, caretElement, closestAtCaret, emptyParagraph, isEmptyContent, placeCaret } from './dom';
+import { elementOf } from '../../../lib/nodes';
 
 
 /* =========================
@@ -141,7 +142,7 @@ export function renameTab(block: Element, index: number, title: string) {
 /* the outermost in. Returns true when a hidden tab was shown. */
 export function showTabOf(node: Node | null) {
   let changed = false;
-  let panel = (node instanceof Element ? node : node?.parentElement)?.closest('.tab-panel') ?? null;
+  let panel = elementOf(node)?.closest('.tab-panel') ?? null;
   while (panel) {
     const block = panel.parentElement;
     if (block && !panel.classList.contains('is-active')) {
@@ -158,7 +159,7 @@ export function showTabOf(node: Node | null) {
 /* the whole block (deleting a whole block is fine, and can be undone). */
 export function breaksTabBlock(range: Range, root: Element) {
   if (range.collapsed) return false;
-  const panelOf = (node: Node) => (node instanceof Element ? node : node.parentElement)?.closest('.tab-panel') ?? null;
+  const panelOf = (node: Node) => elementOf(node)?.closest('.tab-panel') ?? null;
   const startPanel = panelOf(range.startContainer);
   const endPanel = panelOf(range.endContainer);
   return Array.from(root.querySelectorAll('.tab-block')).some(block => {

@@ -1,3 +1,6 @@
+import { isTypeaheadKey, nextByLetter } from '../lib/typeahead';
+
+
 /* =========================
    Menu Keys
    ========================= */
@@ -27,12 +30,7 @@ export function startMenuKeys() {
     else if (event.key === 'ArrowUp') next = at <= 0 ? items.length - 1 : at - 1;
     else if (event.key === 'Home') next = 0;
     else if (event.key === 'End') next = items.length - 1;
-    else if (event.key.length === 1 && /\S/.test(event.key)) {
-      const letter = event.key.toLowerCase();
-      const order = [...items.slice(at + 1), ...items.slice(0, at + 1)];
-      const found = order.find(item => (item.textContent ?? '').trim().toLowerCase().startsWith(letter));
-      next = found ? items.indexOf(found) : -1;
-    }
+    else if (isTypeaheadKey(event)) next = nextByLetter(items.map(item => item.textContent ?? ''), at, event.key);
     if (next < 0) return;
     event.preventDefault();
     items[next].focus();

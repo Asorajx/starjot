@@ -1,6 +1,7 @@
 import type { IconName } from '../../../components/Icon';
 import { highlight } from '../code/code';
 import { buildLine, joinAdjacentLists, placeBesideListItem, withBreak } from '../text/lines';
+import { elementOf } from '../../../lib/nodes';
 
 
 /* =========================
@@ -94,10 +95,6 @@ export function linesInRange(range: Range, root: Element): HTMLElement[] | null 
   };
   Array.from(root.children).forEach(visit);
   return fixed || !lines.length ? null : lines;
-}
-
-function elementOf(node: Node) {
-  return node instanceof Element ? node : node.parentElement;
 }
 
 /* A line inside a list or a quote leaves it for something else: the list or quote is split */

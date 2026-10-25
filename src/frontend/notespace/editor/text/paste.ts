@@ -4,6 +4,7 @@ import { highlight } from '../code/code';
 import { isEmptyContent } from './dom';
 import { getNote, noteTitle } from '../../store';
 import { copiedPageLink, createLink, normalizeAddress, pageIdFromAddress, trimAddress, type LinkTarget } from '../links/links';
+import { elementOf } from '../../../lib/nodes';
 
 /* Code fence languages written in Markdown, and the code block language each one becomes. */
 const FENCE_LANGUAGES: Record<string, string> = {
@@ -325,7 +326,7 @@ export function insertPasted(root: HTMLElement, blocks: HTMLElement[]) {
   if (!selection?.rangeCount || !blocks.length) return null;
   const range = selection.getRangeAt(0);
   range.collapse(true);
-  const start = range.startContainer instanceof Element ? range.startContainer : range.startContainer.parentElement;
+  const start = elementOf(range.startContainer);
   const found = start?.closest(LINE);
   const current = found && found !== root && root.contains(found) ? found as HTMLElement : null;
   const caret = document.createRange();
@@ -404,6 +405,6 @@ export function insertPasted(root: HTMLElement, blocks: HTMLElement[]) {
 
   selection.removeAllRanges();
   selection.addRange(caret);
-  const holder = caret.startContainer instanceof Element ? caret.startContainer : caret.startContainer.parentElement;
+  const holder = elementOf(caret.startContainer);
   return { line: (holder?.closest(LINE) ?? holder ?? root) as HTMLElement, added: true };
 }

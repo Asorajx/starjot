@@ -6,6 +6,7 @@ import { COLOR_NAMES, applyColor, colorAt, type ColorClass, type ColorKind, type
 import type { EditorSession } from '../session';
 import { useEscape } from '../../../lib/useDismiss';
 import { changeLinesType, LINE_TYPES, linesInRange, typeOfLine, type LineType } from './lineTypes';
+import { elementOf } from '../../../lib/nodes';
 
 type SelectionToolbarProps = {
   session: EditorSession;
@@ -110,7 +111,7 @@ const KINDS: [string, string][] = [
 const LINES = 'p, h1, h2, h3, h4, h5, h6, li, pre, td, th';
 
 function kindOf(node: Node, root: Element) {
-  const element = node instanceof Element ? node : node.parentElement;
+  const element = elementOf(node);
   const found = KINDS.find(([selector]) => {
     const match = element?.closest(selector);
     return Boolean(match && root.contains(match));
@@ -323,13 +324,13 @@ export function SelectionToolbar({ session, locked }: SelectionToolbarProps) {
   const lineKinds = new Set(lines?.map(typeOfLine));
   const lineKind = lineKinds.size === 1 ? [...lineKinds][0] : null;
   const linkNode = savedRange.current?.commonAncestorContainer;
-  const inLink = Boolean((linkNode instanceof Element ? linkNode : linkNode?.parentElement)?.closest('a[href]'));
+  const inLink = Boolean(elementOf(linkNode)?.closest('a[href]'));
 
   /* Put the remembered selection back, so a command applies to the text that was selected. */
   function restoreSelection() {
     const range = savedRange.current;
     if (!range) return;
-    const host = (range.startContainer instanceof Element ? range.startContainer : range.startContainer.parentElement)
+    const host = elementOf(range.startContainer)
       ?.closest<HTMLElement>('[contenteditable="true"]');
     host?.focus({ preventScroll: true });
     window.getSelection()?.removeAllRanges();
@@ -416,7 +417,7 @@ export function SelectionToolbar({ session, locked }: SelectionToolbarProps) {
   /* The link button removes a link when the selection is already inside one. */
   function startLink() {
     const node = savedRange.current?.commonAncestorContainer;
-    const element = node instanceof Element ? node : node?.parentElement;
+    const element = elementOf(node);
     if (element?.closest('a[href]')) {
       session.checkpoint();
       document.execCommand('unlink');

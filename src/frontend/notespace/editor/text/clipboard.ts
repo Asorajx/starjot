@@ -3,6 +3,7 @@ import { markdownOf } from '../../export/exportMarkdown';
 import { LINE_TAGS } from './dom';
 import { pastedMarkdown } from './paste';
 import { copiedTables, NOTE_TABLES, selectedCells, tableSlice, tableText } from '../tables/tableClipboard';
+import { elementOf } from '../../../lib/nodes';
 
 /* A clipboard type only Starjot reads: the copied text as Markdown, so pasting it into a note */
 /* brings back its headings, lists, quotes, code and formatting. Other apps get plain text. */
@@ -27,7 +28,7 @@ function blockMarker(index: number) {
 
 /* The line (paragraph, heading, list item…) a node is in, inside the editable root. */
 function lineOf(node: Node, root: Element) {
-  const element = node instanceof Element ? node : node.parentElement;
+  const element = elementOf(node);
   let line = element;
   while (line && line !== root && !LINE_TAGS.has(line.tagName) && line.tagName !== 'LI') line = line.parentElement;
   return line && line !== root ? line : null;
@@ -56,7 +57,7 @@ export function selectionHtml(range: Range, root: Element) {
   /* browser would copy only what is inside it. The same goes for toggles around that one. (A */
   /* toggle that is itself the whole line selected was wrapped above already.) */
   const common = range.commonAncestorContainer;
-  let toggle = (common instanceof Element ? common : common.parentElement)?.closest('.toggle-block') ?? null;
+  let toggle = elementOf(common)?.closest('.toggle-block') ?? null;
   if (wholeLine && toggle === start) toggle = toggle.parentElement?.closest('.toggle-block') ?? null;
   while (toggle && root.contains(toggle) && range.toString().trim() === toggle.textContent?.trim()) {
     const wrapper = toggle.cloneNode(false) as Element;

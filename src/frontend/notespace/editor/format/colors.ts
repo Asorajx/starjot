@@ -1,3 +1,6 @@
+import { elementOf } from '../../../lib/nodes';
+
+
 /* =========================
    Text Colours
    ========================= */
@@ -26,7 +29,7 @@ function colorOf(element: Element, kind: ColorKind) {
 
 /* The colours of a kind used at the start of a range (to show which swatch is chosen). */
 export function colorAt(range: Range, kind: ColorKind) {
-  let element: Element | null = range.startContainer instanceof Element ? range.startContainer : range.startContainer.parentElement;
+  let element: Element | null = elementOf(range.startContainer);
   while (element && !element.hasAttribute('data-note-editable')) {
     const found = colorOf(element, kind);
     if (found) return found;
@@ -39,7 +42,7 @@ export function colorAt(range: Range, kind: ColorKind) {
 /* range starts and ends. Text inside page cards, images and other fixed parts is left out. */
 function selectedText(range: Range) {
   const root = range.commonAncestorContainer;
-  const walker = document.createTreeWalker(root instanceof Element ? root : root.parentElement ?? document.body, NodeFilter.SHOW_TEXT);
+  const walker = document.createTreeWalker(elementOf(root) ?? document.body, NodeFilter.SHOW_TEXT);
   const found: Text[] = [];
   while (walker.nextNode()) {
     const text = walker.currentNode as Text;
@@ -88,7 +91,7 @@ function tidy(root: Element) {
 /* Colour spans the selection only partly covers are split, so the text outside the selection */
 /* keeps its colour. Returns the range of the recoloured text, or null when nothing was selected. */
 export function applyColor(range: Range, kind: ColorKind, name: ColorName | null) {
-  const root = (range.commonAncestorContainer instanceof Element ? range.commonAncestorContainer : range.commonAncestorContainer.parentElement)
+  const root = elementOf(range.commonAncestorContainer)
     ?.closest('[data-note-editable]');
   const pieces = selectedText(range);
   if (!root || !pieces.length) return null;

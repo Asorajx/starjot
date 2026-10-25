@@ -4,6 +4,7 @@ import { hydrateImages } from '../images/images';
 import { hydrateTabs } from './tabs';
 import { hydrateReminders } from '../../reminders';
 import { escapeHtml } from '../../../lib/html';
+import { elementOf } from '../../../lib/nodes';
 
 
 /* =========================
@@ -105,7 +106,7 @@ export function deleteKeepingPages(range: Range, root: Element, text = '') {
   if (!blocks.length) return false;
 
   /* Remember where the selection starts and which lines it starts and ends in, before deleting. */
-  const lineOf = (node: Node) => (node instanceof Element ? node : node.parentElement)?.closest<HTMLElement>('p, h1, h2, h3, h4, h5, h6, li, pre');
+  const lineOf = (node: Node) => elementOf(node)?.closest<HTMLElement>('p, h1, h2, h3, h4, h5, h6, li, pre');
   const startNode = range.startContainer;
   const startOffset = range.startOffset;
   const startLine = lineOf(startNode);

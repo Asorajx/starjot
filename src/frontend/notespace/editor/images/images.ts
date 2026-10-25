@@ -2,6 +2,7 @@ import { IMAGE_ID, imageUrl, saveImage } from '../../imageStore';
 import type { DrawingStroke } from '../../../../shared/types/note';
 import { decodeStrokes, encodeStrokes, inDrawingOrder, strokeMarkup } from '../drawing/drawing';
 import type { EditorSession } from '../session';
+import { elementOf } from '../../../lib/nodes';
 
 /* Where an image sits on its line. left: in the text, so words can come before and after it. */
 /* wrap-left: at the left edge, with the text running beside it. center: on a line of its own. */
@@ -264,7 +265,7 @@ export async function insertImageFiles(session: EditorSession, files: File[], po
   if (!body || !range || !body.contains(range.startContainer)) return;
 
   /* A selection over several lines (or blocks) is not deleted; the images go where it starts. */
-  const start = range.startContainer instanceof Element ? range.startContainer : range.startContainer.parentElement;
+  const start = elementOf(range.startContainer);
   const line = start?.closest<HTMLElement>('p, li, h1, h2, h3, h4, h5, h6, td, th, blockquote, .block-content') ?? body;
   if (!line.contains(range.endContainer)) range.collapse(true);
 

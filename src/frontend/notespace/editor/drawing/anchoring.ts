@@ -6,6 +6,7 @@ import {
 } from '../images/images';
 import type { EditorSession } from '../session';
 import { zoomed } from '../../../lib/geometry';
+import { elementOf } from '../../../lib/nodes';
 
 /* What happens to strokes on the selection box's edge (see DrawingPreferences). */
 export type SelectEdge = 'whole' | 'cut';
@@ -117,7 +118,7 @@ function placeAt(body: HTMLElement, x: number, y: number, blockers: (HTMLElement
   if (!range) return null;
   range.collapse(true);
 
-  const start = range.startContainer instanceof Element ? range.startContainer : range.startContainer.parentElement;
+  const start = elementOf(range.startContainer);
   const outside = start?.closest('a, code, pre, [contenteditable="false"]');
   if (outside && body.contains(outside)) range.setStartBefore(outside.closest('pre') ?? outside);
   range.collapse(true);
@@ -143,7 +144,7 @@ function insertDrawing(body: HTMLElement, layer: HTMLElement, block: HTMLElement
 
   /* In front of the text, a drawing in the gap between two lines (an underline) belongs to the */
   /* line above it. */
-  const found = (range.startContainer instanceof Element ? range.startContainer : range.startContainer.parentElement)?.closest(LINES);
+  const found = elementOf(range.startContainer)?.closest(LINES);
   if (front && found && middle < found.getBoundingClientRect().top) {
     const lines = Array.from(body.querySelectorAll<HTMLElement>(LINES)).filter(line => !line.querySelector(LINES));
     const above = lines[lines.indexOf(found as HTMLElement) - 1];
@@ -166,7 +167,7 @@ function insertDrawing(body: HTMLElement, layer: HTMLElement, block: HTMLElement
   }
   if (!snap && !front) {
     const align = anchorAlign(box, column, snap);
-    const line = (range.startContainer instanceof Element ? range.startContainer : range.startContainer.parentElement)?.closest(LINES);
+    const line = elementOf(range.startContainer)?.closest(LINES);
     const lineTop = range.getClientRects()[0]?.top ?? line?.getBoundingClientRect().top ?? rect.top;
     const side = align === 'right' ? column - (box.x + box.width) : box.x;
     const x = Math.round(Math.max(0, side));

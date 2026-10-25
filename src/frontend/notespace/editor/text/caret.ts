@@ -1,3 +1,4 @@
+import { elementOf } from '../../../lib/nodes';
 /* Only text typed by the user is counted, never editor labels or controls. */
 const EDITABLE = '[data-note-editable]';
 
@@ -18,7 +19,7 @@ function textUnits(root: Element) {
   const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT | NodeFilter.SHOW_ELEMENT, {
     acceptNode(node) {
       if (node instanceof Element && node.tagName !== 'BR') return NodeFilter.FILTER_SKIP;
-      const parent = node instanceof Element ? node : node.parentElement;
+      const parent = elementOf(node);
       return parent?.closest(EDITABLE) && !parent.closest(HIDDEN) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_SKIP;
     }
   });
@@ -117,7 +118,7 @@ export function setRange(root: Element | null, start: number, end = start) {
   if (!root) return;
   const from = pointAt(root, start);
   const to = end === start ? from : pointAt(root, end);
-  const startElement = from.node instanceof Element ? from.node : from.node.parentElement;
+  const startElement = elementOf(from.node);
 
   /* Focus first, because focusing an editor can reset its selection. */
   startElement?.closest<HTMLElement>('[contenteditable="true"]')?.focus({ preventScroll: true });

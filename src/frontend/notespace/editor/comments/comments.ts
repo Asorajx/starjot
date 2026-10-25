@@ -1,3 +1,6 @@
+import { elementOf } from '../../../lib/nodes';
+
+
 /* =========================
    Comment Marks
    ========================= */
@@ -12,7 +15,7 @@ export function newCommentId() {
 /* A selection can cross several lines, so each piece of selected text gets its own span. */
 export function markRange(range: Range, id: string) {
   const root = range.commonAncestorContainer;
-  const walker = document.createTreeWalker(root instanceof Element ? root : root.parentElement ?? document.body, NodeFilter.SHOW_TEXT);
+  const walker = document.createTreeWalker(elementOf(root) ?? document.body, NodeFilter.SHOW_TEXT);
   const pieces: Text[] = [];
   while (walker.nextNode()) {
     const text = walker.currentNode as Text;

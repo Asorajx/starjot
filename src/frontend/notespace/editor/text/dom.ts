@@ -1,4 +1,5 @@
 import { getRange, setRange } from './caret';
+import { elementOf } from '../../../lib/nodes';
 
 /* Elements that form their own line in a document; anything else is inline text. */
 export const LINE_TAGS = new Set(['P', 'DIV', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'UL', 'OL', 'BLOCKQUOTE', 'PRE', 'HR', 'TABLE']);
@@ -11,7 +12,7 @@ export const LINE_TAGS = new Set(['P', 'DIV', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6'
 /* The element that contains the caret (text nodes are replaced by their parent). */
 export function caretElement() {
   const node = window.getSelection()?.focusNode ?? null;
-  return node instanceof Element ? node : node?.parentElement ?? null;
+  return elementOf(node);
 }
 
 export function closestAtCaret<T extends Element = HTMLElement>(selector: string) {

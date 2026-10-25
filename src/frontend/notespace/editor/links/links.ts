@@ -1,6 +1,7 @@
 import { safeHref } from '../../sanitize';
 import { getNote, noteTitle } from '../../store';
 import { escapeHtml } from '../../../lib/html';
+import { elementOf } from '../../../lib/nodes';
 
 /* Where a link leads: a web or email address, or another page in Notespace. */
 export type LinkTarget = { kind: 'url'; href: string } | { kind: 'page'; id: string };
@@ -184,7 +185,7 @@ export function textWithAddresses(text: string) {
 /* or right after the link. */
 function linkEndingAt(range: Range) {
   const { startContainer: node, startOffset: offset } = range;
-  const element = node instanceof Element ? node : node.parentElement;
+  const element = elementOf(node);
   const inside = element?.closest('a');
   if (inside) {
     const rest = document.createRange();
@@ -197,7 +198,7 @@ function linkEndingAt(range: Range) {
     ? (offset === 0 ? node.previousSibling : null)
     : node.childNodes[offset - 1] ?? null;
   while (before && !(before instanceof HTMLAnchorElement) && before.lastChild) before = before.lastChild;
-  const last = before instanceof Element ? before : before?.parentElement;
+  const last = elementOf(before);
   return before ? last?.closest('a') ?? null : null;
 }
 

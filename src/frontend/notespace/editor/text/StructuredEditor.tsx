@@ -25,6 +25,7 @@ import { deleteSelection, insertPasted } from './paste';
 import { pastedLines, writeSelection } from './clipboard';
 import { clearSelectedCells, pasteIntoTable } from '../tables/tableClipboard';
 import type { EditorSession } from '../session';
+import { elementOf } from '../../../lib/nodes';
 
 type StructuredEditorProps = {
   session: EditorSession;
@@ -92,7 +93,7 @@ export const StructuredEditor = memo(function StructuredEditor({ session, conten
   }
 
   function blockIdOf(node: Node | null) {
-    const element = node instanceof Element ? node : node?.parentElement;
+    const element = elementOf(node);
     return element?.closest<HTMLElement>('[data-block-id]')?.dataset.blockId ?? null;
   }
 

@@ -19,6 +19,7 @@ import { selectBlockText } from './selectBlock';
 import { LinkPreviewCard } from '../links/LinkPreview';
 import { copyPageLink } from '../links/links';
 import type { EditorSession } from '../session';
+import { elementOf } from '../../../lib/nodes';
 
 type BlockWidgetsProps = {
   session: EditorSession;
@@ -329,7 +330,7 @@ export function BlockWidgets({ session, locked, onOpenNote, onOpenNoteInNewTab, 
       }
 
       const replaces = event.inputType.startsWith('delete') || event.inputType === 'insertText' || event.inputType === 'insertReplacementText';
-      const blockOf = (node: Node) => (node instanceof Element ? node : node.parentElement)?.closest('.block-content');
+      const blockOf = (node: Node) => elementOf(node)?.closest('.block-content');
       if (!replaces || range.collapsed || blockOf(range.startContainer) !== blockOf(range.endContainer) || !pageBlocksIn(range, note).length) return;
       event.preventDefault();
       session.checkpoint();
@@ -373,7 +374,7 @@ export function BlockWidgets({ session, locked, onOpenNote, onOpenNoteInNewTab, 
     /* so nothing is ever typed out of sight. */
     function handleSelectionChange() {
       const node = window.getSelection()?.focusNode ?? null;
-      const element = node instanceof Element ? node : node?.parentElement;
+      const element = elementOf(node);
       if (element?.closest('.tab-panel:not(.is-active)') && body()?.contains(element)) showTabOf(element);
     }
 

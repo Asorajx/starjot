@@ -2,6 +2,7 @@ import { emptyParagraph, placeCaret } from './dom';
 import { getPreferences } from '../../../app/preferences';
 import { createChecklist } from './checklist';
 import { convertLine } from './lines';
+import { elementOf } from '../../../lib/nodes';
 
 
 /* =========================
@@ -73,7 +74,7 @@ function replacementFor(marker: Marker): { element: HTMLElement; focus: HTMLElem
 function currentLine(editable: HTMLElement, selection: Selection) {
   const node = selection.anchorNode;
   if (!node || !editable.contains(node)) return null;
-  const element = node instanceof Element ? node : node.parentElement;
+  const element = elementOf(node);
   if (!element || element.closest('pre, code')) return null;
 
   /* Sticky group wrappers are not lines, so a marker never replaces a whole group. */

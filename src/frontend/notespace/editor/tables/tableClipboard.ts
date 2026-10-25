@@ -1,5 +1,6 @@
 import { cleanHtml } from '../../sanitize';
 import { addColumn, addRow, cellRange, columnElements, tableGrid, type CellRange } from './tables';
+import { elementOf } from '../../../lib/nodes';
 
 /* A clipboard type only Starjot reads: the copied tables as note HTML, so pasting them keeps */
 /* their header rows, column widths, row heights, merged cells and text formatting. */
@@ -7,7 +8,7 @@ export const NOTE_TABLES = 'text/x-starjot-tables';
 
 /* The cell a node is in, if any. */
 export function cellAt(node: Node | null | undefined) {
-  const element = node instanceof Element ? node : node?.parentElement;
+  const element = elementOf(node);
   return element?.closest<HTMLTableCellElement>('td, th') ?? null;
 }
 
