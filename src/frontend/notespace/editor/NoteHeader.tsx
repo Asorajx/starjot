@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState, type ClipboardEvent, type KeyboardEvent } from 'react';
+import { useLayoutEffect, useMemo, useRef, useState, type ClipboardEvent, type KeyboardEvent } from 'react';
 import { Dropdown } from '../../components/Dropdown';
 import { EmojiPicker } from '../../components/EmojiPicker';
 import { Icon } from '../../components/Icon';
@@ -15,6 +15,7 @@ import { opensNewTab, type OpenById } from '../../lib/clicks';
 import { useBoard } from '../../boardspace/board';
 import { WorkTypeIcon } from '../../boardspace/workParts';
 import type { WorkItem } from '../../../shared/types/board';
+import { notesLinkingTo } from '../backlinks';
 
 type NoteHeaderProps = {
   note: Note;
@@ -142,6 +143,9 @@ export function NoteHeader({ note, locked, onOpenNote, onOpenWorkItem }: NoteHea
   /* The work items this note is linked to (links are made from the work item, in Boardspace). */
   const work = spaces.boardspace && onOpenWorkItem ? board.items.filter(item => item.notes?.includes(note.id)) : [];
   const pageCount = countPages(notes, note.id);
+
+  /* The notes whose text links to or mentions this one. */
+  const linkedFrom = useMemo(() => notesLinkingTo(notes, note.id), [notes, note.id]);
   const [picking, setPicking] = useState(false);
 
   /* Text fields save after a short pause, like typing in the note itself. */
@@ -261,6 +265,20 @@ export function NoteHeader({ note, locked, onOpenNote, onOpenWorkItem }: NoteHea
                   <button key={item.id} type="button" className="note-work-item" onClick={() => onOpenWorkItem?.(item)}>
                     <WorkTypeIcon type={item.type} />
                     {item.name}
+                  </button>
+                ))}
+              </dd>
+            </>
+          )}
+
+          {linkedFrom.length > 0 && (
+            <>
+              <dt>Linked from</dt>
+              <dd className="note-work note-backlinks">
+                {linkedFrom.map(source => (
+                  <button key={source.id} type="button" className="note-work-item" data-preview-page={source.id} onClick={event => onOpenNote(source.id, opensNewTab(event))}>
+                    {source.icon ? <span className="note-page-icon" aria-hidden="true">{source.icon}</span> : <Icon name={noteIcon(source)} size={14} />}
+                    {noteTitle(source)}
                   </button>
                 ))}
               </dd>
