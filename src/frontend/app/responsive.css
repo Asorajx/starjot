@@ -113,6 +113,7 @@
   }
 
   .recent-table {
+    overflow: visible;
     border: 0;
     border-top: 1px solid var(--line);
     border-radius: 0;
@@ -122,6 +123,16 @@
 
   .note-row-open {
     padding: 8px 0;
+  }
+
+  /* With the list edge to edge, a note's colour sits in the page margin beside its row, thin */
+  /* and short, rather than over the start of its title. */
+  .note-row > .note-color-strip {
+    top: 12px;
+    bottom: 12px;
+    left: -9px;
+    width: 3px;
+    border-radius: 2px;
   }
 
   .note-tile,
