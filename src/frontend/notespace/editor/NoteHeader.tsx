@@ -1,4 +1,4 @@
-import { useLayoutEffect, useMemo, useRef, useState, type ClipboardEvent, type KeyboardEvent } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ClipboardEvent, type KeyboardEvent } from 'react';
 import { Dropdown } from '../../components/Dropdown';
 import { EmojiPicker } from '../../components/EmojiPicker';
 import { Icon } from '../../components/Icon';
@@ -36,18 +36,120 @@ type RemarksFieldProps = {
   locked: boolean;
 };
 
+type DescriptionFieldProps = {
+  note: Note;
+  locked: boolean;
+  onChange: (subtitle: string) => void;
+};
+
+/* The description shows on one line, ending in "…" when it is longer (hovering then shows all of */
+/* it). Clicking it, or Enter, opens a box that grows to show everything, to read or edit; Enter, */
+/* Escape or clicking away closes it. A locked note's description can be opened to read. */
+function DescriptionField({ note, locked, onChange }: DescriptionFieldProps) {
+  const [open, setOpen] = useState(false);
+  const [cutOff, setCutOff] = useState(false);
+  const boxRef = useRef<HTMLTextAreaElement>(null);
+  const shownRef = useRef<HTMLButtonElement>(null);
+  const textRef = useRef<HTMLSpanElement>(null);
+
+  /* The open box is as tall as its text. */
+  useLayoutEffect(() => {
+    const box = boxRef.current;
+    if (!open || !box) return;
+    box.style.height = 'auto';
+    box.style.height = `${box.scrollHeight + 2}px`;
+  }, [open, note.subtitle]);
+
+  /* Whether the one line hides part of the description, so the tooltip only shows then. */
+  useLayoutEffect(() => {
+    const text = textRef.current;
+    setCutOff(Boolean(text && text.scrollWidth > text.clientWidth + 1));
+  }, [open, note.subtitle]);
+
+  function close() {
+    setOpen(false);
+    requestAnimationFrame(() => shownRef.current?.focus({ preventScroll: true }));
+  }
+
+  if (!open) {
+    return (
+      <button
+        ref={shownRef}
+        type="button"
+        className={`note-detail-field note-description ${note.subtitle ? '' : 'is-empty'}`}
+        aria-label={`Description: ${note.subtitle || 'none'}`}
+        data-tooltip={cutOff ? note.subtitle : undefined}
+        data-tooltip-wrap=""
+        data-tooltip-align="start"
+        onClick={() => setOpen(true)}
+      >
+        <span ref={textRef}>{note.subtitle || (locked ? 'No description' : 'Add a description')}</span>
+      </button>
+    );
+  }
+
+  return (
+    <textarea
+      ref={boxRef}
+      className="note-detail-field note-description-box"
+      aria-label="Description"
+      rows={1}
+      maxLength={250}
+      autoFocus
+      placeholder={locked ? 'No description' : 'Add a description'}
+      readOnly={locked}
+      value={note.subtitle}
+      onFocus={event => event.currentTarget.setSelectionRange(event.currentTarget.value.length, event.currentTarget.value.length)}
+      onChange={event => onChange(event.target.value.replace(/\n/g, ' '))}
+      onBlur={() => setOpen(false)}
+      onKeyDown={event => {
+        if (event.key !== 'Enter' && event.key !== 'Escape') return;
+        event.preventDefault();
+        event.stopPropagation();
+        close();
+      }}
+    />
+  );
+}
+
+/* Remarks taller than this many lines are folded while not being edited (see RemarksField). */
+const REMARKS_FOLDED_LINES = 3;
+
 /* Remarks are written like the note's own text: Markdown shortcuts (#, -, 1., >, ``` and ---) work, */
-/* and so do Ctrl + B / I / U. The field keeps its own undo, separate from the note's. */
+/* and so do Ctrl + B / I / U. The field keeps its own undo, separate from the note's. Long */
+/* remarks are folded to a few lines, with a fade and Show all, until clicked into (or opened to */
+/* read on a locked note). */
 function RemarksField({ note, locked }: RemarksFieldProps) {
   const ref = useRef<HTMLDivElement>(null);
   const { spellcheck } = usePreferences();
   const [empty, setEmpty] = useState(!note.remarks);
+  const [long, setLong] = useState(false);
+  const [open, setOpen] = useState(false);
+
+  /* Whether the remarks run past the folded height. */
+  function measure() {
+    const field = ref.current;
+    if (!field) return;
+    const lineHeight = parseFloat(getComputedStyle(field).lineHeight) || 20;
+    setLong(field.scrollHeight > lineHeight * REMARKS_FOLDED_LINES + 12);
+  }
 
   /* Filled once per note; after that the browser owns the text while typing, like the note itself. */
   useLayoutEffect(() => {
     if (ref.current) ref.current.innerHTML = note.remarks;
     setEmpty(!note.remarks);
+    setOpen(false);
+    measure();
   }, [note.id]);
+
+  /* A narrower window can make the remarks taller. */
+  useEffect(() => {
+    const field = ref.current;
+    if (!field) return;
+    const observer = new ResizeObserver(measure);
+    observer.observe(field);
+    return () => observer.disconnect();
+  }, []);
 
   function save() {
     const field = ref.current;
@@ -57,6 +159,21 @@ function RemarksField({ note, locked }: RemarksFieldProps) {
     updateNote(note.id, { remarks: isEmptyContent(field) ? '' : field.innerHTML }, false);
     scheduleSave();
   }
+
+  /* Show all opens the remarks: for editing, with the caret at the end; read only when locked. */
+  function showAll() {
+    setOpen(true);
+    const field = ref.current;
+    if (!field || locked) return;
+    field.focus({ preventScroll: true });
+    const range = document.createRange();
+    range.selectNodeContents(field);
+    range.collapse(false);
+    window.getSelection()?.removeAllRanges();
+    window.getSelection()?.addRange(range);
+  }
+
+  const folded = long && !open;
 
   /* A web address typed just before Space or Enter becomes a link, like in the note. */
   function handleKeyDown(event: KeyboardEvent<HTMLDivElement>) {
@@ -83,21 +200,35 @@ function RemarksField({ note, locked }: RemarksFieldProps) {
   }
 
   return (
-    <div
-      ref={ref}
-      className={`note-remarks ${empty ? 'is-empty' : ''}`}
-      data-remarks=""
-      data-placeholder={locked ? 'No remarks' : 'Add remarks'}
-      contentEditable={!locked}
-      suppressContentEditableWarning
-      role="textbox"
-      aria-multiline="true"
-      aria-label="Remarks"
-      spellCheck={spellcheck}
-      onKeyDown={handleKeyDown}
-      onInput={save}
-      onPaste={handlePaste}
-    />
+    <>
+      <div
+        ref={ref}
+        className={`note-remarks ${empty ? 'is-empty' : ''} ${folded ? 'is-folded' : ''}`}
+        style={folded ? { maxHeight: `calc(${REMARKS_FOLDED_LINES} * 1.7em + 10px)` } : undefined}
+        data-remarks=""
+        data-placeholder={locked ? 'No remarks' : 'Add remarks'}
+        contentEditable={!locked}
+        suppressContentEditableWarning
+        role="textbox"
+        aria-multiline="true"
+        aria-label="Remarks"
+        spellCheck={spellcheck}
+        onFocus={() => setOpen(true)}
+        onBlur={() => setOpen(false)}
+        onClick={() => locked && setOpen(current => !current)}
+        onKeyDown={handleKeyDown}
+        onInput={() => {
+          save();
+          measure();
+        }}
+        onPaste={handlePaste}
+      />
+      {folded && (
+        <button type="button" className="note-remarks-more" onMouseDown={event => event.preventDefault()} onClick={showAll}>
+          Show all
+        </button>
+      )}
+    </>
   );
 }
 
@@ -242,16 +373,7 @@ export function NoteHeader({ note, locked, onOpenNote, onOpenWorkItem }: NoteHea
 
           <dt>Description</dt>
           <dd>
-            <input
-              className="note-detail-field"
-              type="text"
-              aria-label="Description"
-              maxLength={250}
-              placeholder={locked ? 'No description' : 'Add a description'}
-              readOnly={locked}
-              value={note.subtitle}
-              onChange={event => changeText({ subtitle: event.target.value })}
-            />
+            <DescriptionField note={note} locked={locked} onChange={subtitle => changeText({ subtitle })} />
           </dd>
 
           <dt>Created</dt>

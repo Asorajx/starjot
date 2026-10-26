@@ -1386,6 +1386,7 @@
 }
 
 .note-details dd.note-remarks-cell {
+  flex-direction: column;
   align-items: stretch;
 }
 
@@ -1403,6 +1404,31 @@
   line-height: 1.7;
   outline: none;
   overflow-wrap: anywhere;
+}
+
+/* Long remarks fold to a few lines, fading out, until clicked into (see RemarksField). */
+.note-remarks.is-folded {
+  overflow: hidden;
+  mask-image: linear-gradient(to bottom, #000 55%, transparent);
+}
+
+.note-remarks-more {
+  align-self: flex-start;
+  min-height: 24px;
+  margin: 0 0 0 -4px;
+  padding: 0 4px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--accent-text);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.note-remarks-more:hover {
+  background: var(--accent-soft);
 }
 
 .note-remarks:hover:not([contenteditable="false"]) {
@@ -1653,6 +1679,37 @@
 
 .note-detail-dropdown:disabled {
   cursor: default;
+}
+
+/* The description on one line, ending in "…"; clicked, it opens as a box showing all of it. */
+.note-description {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  line-height: 28px;
+  text-align: left;
+  cursor: text;
+}
+
+/* The words end in "…" (on the inner span, so the button itself does not clip its tooltip). */
+.note-description span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.note-description.is-empty {
+  color: #647794;
+}
+
+.note-description-box {
+  display: block;
+  height: auto;
+  min-height: 30px;
+  padding: 4px 8px;
+  line-height: 1.5;
+  overflow: hidden;
+  resize: none;
 }
 
 .note-detail-field:hover:not(:disabled):not([readonly]) {
