@@ -20,8 +20,8 @@ describe('notes storage', () => {
 
   it('reads back the notes and deleted ids it saved', () => {
     const note = { id: 'n1', title: 'Hello' } as Note;
-    writeNotes([note], ['atlas'], []);
-    expect(readNotes()).toEqual({ status: 'ok', saved: { notes: [note], deleted: ['atlas'], trash: [] } });
+    writeNotes([note], ['atlas'], [], [{ id: 'work', name: 'Work' }]);
+    expect(readNotes()).toEqual({ status: 'ok', saved: { notes: [note], deleted: ['atlas'], trash: [], categories: [{ id: 'work', name: 'Work' }] } });
   });
 
   it('keeps saved data in an unexpected shape, or broken JSON, aside instead of treating it as empty', () => {

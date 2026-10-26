@@ -500,3 +500,60 @@ describe('trash', () => {
     expect(store.getTrash()).toHaveLength(0);
   });
 });
+
+
+/* =========================
+   Saving Safely
+   ========================= */
+
+describe('saving safely', () => {
+  it('leaves nothing behind when a note made in one step cannot be saved', async () => {
+    const store = await openApp();
+    const before = store.getNotes().length;
+    const setItem = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new DOMException('Full', 'QuotaExceededError');
+    });
+    expect(store.createSavedNote({ title: 'Lost?', content: '<p>Words</p>' })).toBeNull();
+    expect(store.getNotes()).toHaveLength(before);
+    setItem.mockRestore();
+
+    const note = store.createSavedNote({ title: 'Kept', content: '<p>Words</p>' })!;
+    expect(store.getNote(note.id)?.title).toBe('Kept');
+  });
+
+  it('loads every saved note, however many there are', async () => {
+    const notes = Array.from({ length: 1205 }, (_, index) => ({ id: `n${index}`, title: `Note ${index}`, content: '<p></p>' }));
+    localStorage.setItem('starjot-notespace-v1', JSON.stringify({ version: 1, deleted: [], notes }));
+    const store = await openApp();
+    expect(store.getNotes().filter(note => /^n\d+$/.test(note.id))).toHaveLength(1205);
+  });
+
+  it('saves categories with the notes, reading the older key for earlier saves', async () => {
+    localStorage.setItem('starjot-categories-v1', JSON.stringify([{ id: 'uni', name: 'University' }]));
+    let store = await openApp();
+    expect(store.categoryName('uni')).toBe('University');
+    store.save();
+    expect(JSON.parse(localStorage.getItem('starjot-notespace-v1')!).categories).toEqual([{ id: 'uni', name: 'University' }]);
+
+    localStorage.removeItem('starjot-categories-v1');
+    vi.resetModules();
+    store = await openApp();
+    expect(store.categoryName('uni')).toBe('University');
+  });
+
+  it('takes in notes saved by another tab, keeping a newer edit still waiting here', async () => {
+    const store = await openApp();
+    const mine = store.createNote();
+    const theirs = store.createNote();
+    const saved = JSON.parse(localStorage.getItem('starjot-notespace-v1')!);
+    saved.notes = saved.notes.map((note: { id: string; title: string; updatedAt: string }) =>
+      note.id === theirs.id ? { ...note, title: 'From the other tab', updatedAt: new Date(Date.now() + 1000).toISOString() } : { ...note, updatedAt: '2026-01-01T00:00:00.000Z' });
+    localStorage.setItem('starjot-notespace-v1', JSON.stringify(saved));
+
+    store.updateNote(mine.id, { title: 'Typed here' }, false);
+    store.scheduleSave();
+    window.dispatchEvent(new StorageEvent('storage', { key: 'starjot-notespace-v1' }));
+    expect(store.getNote(theirs.id)?.title).toBe('From the other tab');
+    expect(store.getNote(mine.id)?.title).toBe('Typed here');
+  });
+});

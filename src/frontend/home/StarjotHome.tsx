@@ -6,7 +6,8 @@ import { ReminderList } from '../app/Reminders';
 import { reminderGroups } from '../notespace/reminders';
 import { usePreferences } from '../app/preferences';
 import { editedText, newestFirst } from '../notespace/NoteList';
-import { createNote, noteIcon, noteTitle, updateNote, useNotes } from '../notespace/store';
+import { createSavedNote, noteIcon, noteTitle, useNotes } from '../notespace/store';
+import { showToast } from '../lib/toasts';
 import { useBoard } from '../boardspace/board';
 import { projectSummary } from '../boardspace/summary/summaryStats';
 import { WORK_STATUSES } from '../boardspace/workItems';
@@ -35,7 +36,8 @@ function greeting(now: Date) {
    ========================= */
 
 /* One plain box: Save (or Ctrl + Enter) makes a note without a category, titled from the first */
-/* line. The text is kept as a draft until it is saved. */
+/* line. The text is kept as a draft until it is saved, and only cleared once the note really is: */
+/* when saving fails, it stays in the box (and the draft), and a message says so. */
 function QuickNote({ onOpenNote }: { onOpenNote: OpenById }) {
   const [text, setText] = useState(readQuickNoteDraft);
   const [saved, setSaved] = useState<{ id: string; title: string } | null>(null);
@@ -50,8 +52,17 @@ function QuickNote({ onOpenNote }: { onOpenNote: OpenById }) {
     event?.preventDefault();
     const parts = quickNoteParts(text);
     if (!parts) return;
-    const note = createNote();
-    updateNote(note.id, parts);
+    const note = createSavedNote(parts);
+    if (!note) {
+      showToast({
+        kind: 'error',
+        title: 'Could not save the quick note',
+        description: "This browser's storage is full or unavailable. Your text is still in the box.",
+        stay: true,
+        action: { label: 'Copy text', run: () => void navigator.clipboard?.writeText(text).catch(() => undefined) }
+      });
+      return;
+    }
     setText('');
     writeQuickNoteDraft('');
     setSaved({ id: note.id, title: parts.title });

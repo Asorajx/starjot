@@ -3,15 +3,15 @@ import { cleanHtml, htmlToText } from './sanitize';
 import { normalizeDrawing, normalizeLayers } from './editor/drawing/drawing';
 import { DEFAULT_CATEGORIES, MAX_CATEGORIES } from '../../backend/data/defaultCategories';
 import { SAMPLE_CONTENT, SAMPLE_NOTES } from '../../backend/data/sampleNotes';
-import { readCategories, writeCategories } from '../../backend/storage/categoriesStorage';
-import { readNotes, writeNotes } from '../../backend/storage/notesStorage';
+import { readCategories } from '../../backend/storage/categoriesStorage';
+import { onNotesSavedElsewhere, readNotes, writeNotes, type StoredNotes } from '../../backend/storage/notesStorage';
 import { isEmoji } from '../../shared/emoji';
 import { getPreferences } from '../app/preferences';
 import { NOTE_COLORS, type Category, type Note, type NoteChanges, type NoteColor, type NoteComment, type NoteKind, type SaveStatus, type TrashEntry } from '../../shared/types/note';
 
 /* The frontend's note store: it checks and tidies notes, and tells React when they change. */
-/* Saving and loading are done by the backend (backend/storage/notesStorage.ts). */
-const MAX_NOTES = 1000;
+/* Saving and loading are done by the backend (backend/storage/notesStorage.ts). Every saved */
+/* note is loaded: nothing is dropped for being past a count, so nothing can be saved over. */
 
 /* Deleted notes stay in Trash this long, and are removed for good the next time Starjot opens */
 /* after that. Trash holds at most MAX_TRASH deletions (the oldest go first). */
@@ -202,30 +202,76 @@ function normalizeTrash(raw: unknown[]): TrashEntry[] {
   }).slice(0, MAX_TRASH);
 }
 
-function load(): { notes: Note[]; trash: TrashEntry[] } {
+/* The notes and Trash in a saved record, with the sample notes not deleted yet. Categories must */
+/* be in place first, because notes are matched to them. */
+function notesFrom(saved: StoredNotes) {
   const seeds = SAMPLE_NOTES.map(normalizeNote).filter((note): note is Note => note !== null);
+  const restored = saved.notes.map(normalizeNote).filter((note): note is Note => note !== null);
+  const ids = new Set(restored.map((note: Note) => note.id));
+  return {
+    notes: repairParents([...restored, ...seeds.filter(note => !ids.has(note.id) && !saved.deleted.includes(note.id))]),
+    trash: normalizeTrash(saved.trash)
+  };
+}
+
+/* Load the saved categories, notes and Trash. Categories are read from the notes record, or the */
+/* older categories key for saves from before they moved there. */
+function load() {
+  const seedsOnly = () => {
+    state = { ...state, categories: normalizeCategories(readCategories()) };
+    return { notes: SAMPLE_NOTES.map(normalizeNote).filter((note): note is Note => note !== null), trash: [] };
+  };
   try {
     const read = readNotes();
-    if (read.status === 'empty') return { notes: seeds, trash: [] };
+    if (read.status === 'empty') return seedsOnly();
     if (read.status === 'damaged') {
       writesBlocked = !read.canSave;
       if (writesBlocked) storageAvailable = false;
-      return { notes: seeds, trash: [] };
+      return seedsOnly();
     }
-    const saved = read.saved;
     readCleanly = true;
-    deletedIds = saved.deleted;
-    const restored = saved.notes.slice(0, MAX_NOTES).map(normalizeNote).filter((note): note is Note => note !== null);
-    const ids = new Set(restored.map((note: Note) => note.id));
-    return {
-      notes: repairParents([...restored, ...seeds.filter(note => !ids.has(note.id) && !deletedIds.includes(note.id))]),
-      trash: normalizeTrash(saved.trash)
-    };
+    deletedIds = read.saved.deleted;
+    state = { ...state, categories: normalizeCategories(read.saved.categories ?? readCategories()) };
+    return notesFrom(read.saved);
   } catch (error) {
     storageAvailable = false;
     console.warn('Notespace: browser storage is unavailable; notes will remain in this tab only.', error);
-    return { notes: seeds, trash: [] };
+    return seedsOnly();
   }
+}
+
+/* Another tab or window of Starjot saved: take its notes, categories and Trash in, so this tab */
+/* never saves an older copy over them (open editors show the change, see session.watch). Changes */
+/* here still waiting to be saved are kept: a note changed in both keeps the newer copy, and a */
+/* note made here stays, unless the other tab moved it to Trash. */
+function takeInSavedElsewhere() {
+  let read;
+  try {
+    read = readNotes();
+  } catch {
+    return;
+  }
+  if (read.status !== 'ok' || writesBlocked) return;
+  const waiting = saveTimer !== undefined;
+  const ours = state.notes;
+  deletedIds = read.saved.deleted;
+  state = { ...state, categories: normalizeCategories(read.saved.categories ?? readCategories()) };
+  const { notes: theirs, trash } = notesFrom(read.saved);
+  let notes = theirs;
+  if (waiting) {
+    const theirsById = new Map(theirs.map(note => [note.id, note]));
+    const trashed = new Set(trash.flatMap(entry => entry.notes.map(note => note.id)));
+    const newer = (a: Note, b: Note) => (a.updatedAt ?? '') > (b.updatedAt ?? '');
+    notes = [
+      ...theirs.map(note => {
+        const mine = ours.find(item => item.id === note.id);
+        return mine && newer(mine, note) ? mine : note;
+      }),
+      ...ours.filter(note => !theirsById.has(note.id) && !trashed.has(note.id))
+    ];
+  }
+  setState({ notes: repairParents(notes), trash });
+  if (waiting) scheduleSave();
 }
 
 
@@ -247,8 +293,7 @@ export function save() {
     return false;
   }
   try {
-    writeNotes(state.notes, deletedIds, state.trash);
-    writeCategories(state.categories);
+    writeNotes(state.notes, deletedIds, state.trash, state.categories);
     storageAvailable = true;
   } catch (error) {
     storageAvailable = false;
@@ -288,6 +333,13 @@ export function newNoteId() {
 /* layout come from Settings → Notes → New notes. An import picks its notes' ids first (see */
 /* newNoteId), so it can write every note's text before creating any of them. */
 export function createNote(category = '', parentId = '', kind: NoteKind = 'document', id = newNoteId()) {
+  const note = addNote(category, parentId, kind, id);
+  save();
+  return note;
+}
+
+/* A new note, added but not saved yet. */
+function addNote(category: string, parentId: string, kind: NoteKind, id: string) {
   const now = new Date().toISOString();
   const { mode, layout, pageSize } = getPreferences().newNotes;
   const note = normalizeNote({
@@ -297,8 +349,19 @@ export function createNote(category = '', parentId = '', kind: NoteKind = 'docum
     color: '', mode, layout, pageSize, content: ''
   }) as Note;
   setState({ notes: [note, ...state.notes] });
-  save();
   return note;
+}
+
+/* Make a note with these details and save it straight away, as one step. When saving fails */
+/* (storage full or unavailable) nothing is left behind and null is returned, so the words can */
+/* stay where they were typed rather than being reported as saved. */
+export function createSavedNote(changes: NoteChanges) {
+  const before = { notes: state.notes, saveStatus: state.saveStatus };
+  const note = addNote('', '', 'document', newNoteId());
+  updateNote(note.id, changes, false);
+  if (save()) return getNote(note.id) ?? null;
+  setState(before);
+  return null;
 }
 
 /* Update one note; pass persist = false to save later with scheduleSave(). */
@@ -671,8 +734,9 @@ export function useSaveStatus() {
   return useSyncExternalStore(subscribe, () => state.saveStatus);
 }
 
-/* Load saved categories and notes once, when this module is first imported. */
-/* Categories load first, because notes are matched to them. */
-state = { notes: [], categories: normalizeCategories(readCategories()), trash: [], saveStatus: 'saved' };
-state = { ...state, ...load() };
+/* Load saved categories and notes once, when this module is first imported, then follow saves */
+/* made in other tabs. load() sets the categories itself, so it runs before state is copied. */
+const loaded = load();
+state = { ...state, ...loaded };
 if (!storageAvailable) state.saveStatus = 'unsaved';
+onNotesSavedElsewhere(takeInSavedElsewhere);

@@ -1,5 +1,5 @@
 import { useSyncExternalStore } from 'react';
-import { markBoardDamaged, readBoard, writeBoard } from '../../backend/storage/boardStorage';
+import { markBoardDamaged, onBoardSavedElsewhere, readBoard, writeBoard } from '../../backend/storage/boardStorage';
 import { showToast } from '../lib/toasts';
 import type { BoardProject, Sprint, WorkItem, WorkStatus, WorkType } from '../../shared/types/board';
 import { parseDay } from './dates';
@@ -10,9 +10,8 @@ import { BAR_COLORS, OLD_BAR_COLORS, canHoldWork, familyOf, itemOrder, shownSpri
    Checking Saved Projects
    ========================= */
 
-/* Limits that keep a project small enough for browser storage. */
-const MAX_SPRINTS = 300;
-const MAX_ITEMS = 1500;
+/* Limits. A team takes up to MAX_MEMBERS when adding one, but a saved project is loaded whole: */
+/* dropping sprints, work items or members past a count would lose them for good at the next save. */
 const MAX_MEMBERS = 200;
 const MAX_NOTE_LINKS = 50;
 export const NAME_LENGTH = 140;
@@ -42,7 +41,7 @@ export function cleanProject(raw: unknown): BoardProject {
   project.title = text(record.title, TITLE_LENGTH) || 'Untitled project';
 
   const sprintIds = new Set<string>();
-  (record.sprints as Record<string, unknown>[]).slice(0, MAX_SPRINTS).forEach((sprint, index) => {
+  (record.sprints as Record<string, unknown>[]).forEach((sprint, index) => {
     const start = String(sprint?.start ?? '');
     const end = String(sprint?.end ?? '');
     if (!sprint || !text(sprint.name) || !parseDay(start) || !parseDay(end) || start > end) return;
@@ -53,7 +52,7 @@ export function cleanProject(raw: unknown): BoardProject {
   });
 
   const itemIds = new Set<string>();
-  (record.items as Record<string, unknown>[]).slice(0, MAX_ITEMS).forEach((item, index) => {
+  (record.items as Record<string, unknown>[]).forEach((item, index) => {
     const start = String(item?.start ?? '');
     const end = String(item?.end ?? '');
     if (!item || !text(item.name) || !parseDay(start) || !parseDay(end) || start > end) return;
@@ -87,8 +86,7 @@ export function cleanProject(raw: unknown): BoardProject {
       if (!name || seen.has(key)) return false;
       seen.add(key);
       return true;
-    })
-    .slice(0, MAX_MEMBERS);
+    });
 
   /* A parent that is missing, of the wrong kind, or inside the item itself is dropped. */
   const byId = new Map(project.items.map(item => [item.id, item]));
@@ -110,7 +108,7 @@ export function cleanProject(raw: unknown): BoardProject {
   for (const key of ['collapsedSprints', 'collapsedItems', 'collapsedCards'] as const) {
     const folded = record[key];
     if (folded && typeof folded === 'object') {
-      Object.entries(folded as Record<string, unknown>).slice(0, MAX_ITEMS + MAX_SPRINTS).forEach(([id, value]) => {
+      Object.entries(folded as Record<string, unknown>).forEach(([id, value]) => {
         if (value === true) project[key][id] = true;
       });
     }
@@ -154,6 +152,19 @@ function subscribe(listener: () => void) {
   listeners.add(listener);
   return () => { listeners.delete(listener); };
 }
+
+/* Another tab or window of Starjot saved the project (every change here is saved at once, so */
+/* there is nothing waiting): show its version, so this tab never saves an older one over it. */
+onBoardSavedElsewhere(() => {
+  try {
+    const saved = readBoard();
+    if (!saved) return;
+    project = cleanProject(saved);
+    listeners.forEach(listener => listener());
+  } catch {
+    /* Not a project: leave this tab as it is. */
+  }
+});
 
 export function getBoard() {
   return project;

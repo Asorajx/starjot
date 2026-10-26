@@ -89,6 +89,15 @@ describe('work items', () => {
    ========================= */
 
 describe('project store', () => {
+  it('keeps every sprint and work item of a large saved project', async () => {
+    const { cleanProject } = await openBoard();
+    const sprints = Array.from({ length: 320 }, (_, index) => ({ id: `s${index}`, name: `Sprint ${index}`, start: '2026-10-05', end: '2026-10-09' }));
+    const items = Array.from({ length: 1600 }, (_, index) => ({ id: `i${index}`, name: `Item ${index}`, type: 'task', start: '2026-10-05', end: '2026-10-06' }));
+    const cleaned = cleanProject({ title: 'Big', members: [], sprints, items });
+    expect(cleaned.sprints).toHaveLength(320);
+    expect(cleaned.items).toHaveLength(1600);
+  });
+
   it('repairs saved projects: bad dates, unknown kinds, loops and duplicate members', async () => {
     const { cleanProject } = await openBoard();
     const cleaned = cleanProject({

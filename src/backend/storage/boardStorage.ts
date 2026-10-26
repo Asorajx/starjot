@@ -38,6 +38,13 @@ export function markBoardDamaged(raw = '') {
   if (text) blocked = !keepDamagedCopy(STORAGE_KEY, 'Boardspace', text);
 }
 
+/* Call changed when another tab or window of Starjot saves the project. */
+export function onBoardSavedElsewhere(changed: () => void) {
+  window.addEventListener('storage', event => {
+    if (event.key === STORAGE_KEY) changed();
+  });
+}
+
 /* Returns false when saving failed (for example in private browsing). */
 export function writeBoard(project: unknown) {
   if (blocked) return false;
