@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type DragEvent, type KeyboardEvent, type ReactNode } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type DragEvent, type KeyboardEvent, type ReactNode } from 'react';
 import { Icon, type IconName } from '../components/Icon';
 import { placeLabel } from '../notespace/PageBar';
 import { getNote, noteIcon, useCategories, useNotes } from '../notespace/store';
@@ -60,6 +60,33 @@ export function WindowBar({ group, onSelect, onClose, onNew, leading }: WindowBa
   const full = !canAddTab(group);
   const phone = useMediaQuery('(max-width: 700px)');
   const gathered = phone && group.tabs.length > 2;
+  const stripRef = useRef<HTMLDivElement>(null);
+
+  /* When there are more tabs than fit, the mouse wheel scrolls the strip sideways (as in a */
+  /* browser), so every tab can be reached without the keyboard. */
+  useEffect(() => {
+    const strip = stripRef.current;
+    if (!strip) return;
+    const scroll = (event: WheelEvent) => {
+      if (strip.scrollWidth <= strip.clientWidth) return;
+      event.preventDefault();
+      strip.scrollLeft += Math.abs(event.deltaX) > Math.abs(event.deltaY) ? event.deltaX : event.deltaY;
+    };
+    strip.addEventListener('wheel', scroll, { passive: false });
+    return () => strip.removeEventListener('wheel', scroll);
+  }, [group.stacked]);
+
+  /* The open tab is always scrolled into view, also when opened from elsewhere (Ctrl + Tab, the */
+  /* switcher, a link). */
+  useLayoutEffect(() => {
+    const strip = stripRef.current;
+    const tab = strip?.querySelector('.window-tab.is-active');
+    if (!strip || !tab) return;
+    const shown = strip.getBoundingClientRect();
+    const box = tab.getBoundingClientRect();
+    if (box.left < shown.left) strip.scrollLeft -= shown.left - box.left;
+    else if (box.right > shown.right) strip.scrollLeft += box.right - shown.right;
+  }, [group.active, group.tabs.length, group.stacked]);
 
   /* The keyboard, as for tabs elsewhere: Tab reaches the tab strip once (on the open tab), ← and */
   /* → move between tabs (round at the ends), Home and End go to the first and last, Enter or */
@@ -115,7 +142,7 @@ export function WindowBar({ group, onSelect, onClose, onNew, leading }: WindowBa
     <div className="window-bar">
       {leading}
       {!group.stacked && (
-        <div className={`window-tabs ${gathered ? 'is-gathered' : ''}`} role="tablist" aria-label="Open tabs" onKeyDown={handleTabKeys}>
+        <div ref={stripRef} className={`window-tabs ${gathered ? 'is-gathered' : ''}`} role="tablist" aria-label="Open tabs" onKeyDown={handleTabKeys}>
           {gathered ? (
             <>
               {group.tabs.filter(tab => tab.id === group.active).map(tabElement)}
