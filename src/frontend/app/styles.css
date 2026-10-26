@@ -949,6 +949,14 @@ p {
   bottom: calc(100% + 4px);
 }
 
+/* Touch screens have no real hover: a tapped button counts as hovered until the next tap, which */
+/* left its tooltip stuck on screen. There, tooltips show for keyboard focus only. */
+@media (hover: none) {
+  :root [data-tooltip]:hover:not(:focus-visible)::after {
+    content: none;
+  }
+}
+
 /* Moved back inside the window by app/fitTooltips.ts: sideways by --tooltip-shift, wrapped when */
 /* wider than the window, or turned above or below its button. */
 [data-tooltip][style*="--tooltip-shift"]::after {

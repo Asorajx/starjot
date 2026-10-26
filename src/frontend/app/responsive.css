@@ -224,9 +224,14 @@
 
   /* The row stops short of the close button. The line below the row is drawn on the content */
   /* instead, so it still runs the full width. */
+  /* Nothing is clipped here, and the row sits above the content, so the section menu opens over */
+  /* the page. */
   .settings-nav {
+    position: relative;
+    z-index: 2;
     display: flex;
     align-items: center;
+    overflow: visible;
     margin-right: 56px;
     padding: 8px;
     border-right: 0;
