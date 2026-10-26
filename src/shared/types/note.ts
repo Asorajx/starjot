@@ -132,6 +132,18 @@ export type NoteChanges = Partial<Pick<Note,
   | 'detailsHidden'
   | 'pagesHidden' | 'comments' | 'remarks' | 'drawing' | 'drawingLayers'>>;
 
+/* One deletion in Trash: the note deleted (first) and the sub-notes deleted with it, kept until */
+/* restored, deleted for good, or 30 days have passed. `moved` lists the sub-notes that stayed */
+/* (locked, or not chosen) and moved up a level, with the note they sat in, so restoring puts them */
+/* back; `card` is the note's card in its parent's text and where it sat (its top-level block). */
+export type TrashEntry = {
+  id: string;
+  deletedAt: string;
+  notes: Note[];
+  moved: { id: string; parentId: string }[];
+  card: { html: string; index: number } | null;
+};
+
 /* A user-defined group of notes, such as "Work". Notes refer to it by id, so renaming is safe. */
 export type Category = {
   id: string;

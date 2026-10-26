@@ -7,7 +7,7 @@ import { startFittingTooltips } from './app/fitTooltips';
 import { startMenuKeys } from './app/menuKeys';
 import { removeUnusedImages } from './notespace/imageStore';
 import { imageIdsIn } from './notespace/editor/images/images';
-import { getNotes, notesReadCleanly } from './notespace/store';
+import { getNotes, getTrash, notesReadCleanly } from './notespace/store';
 import { damagedOnLoad } from '../backend/storage/damagedCopies';
 import { getBoard } from './boardspace/board';
 import { showToast } from './lib/toasts';
@@ -55,10 +55,13 @@ startMenuKeys();
 /* New lines typed in a note become paragraphs, so each line maps cleanly to one block. */
 document.execCommand('defaultParagraphSeparator', false, 'p');
 
-/* Images no note uses any more (deleted from notes, or in deleted notes) are removed from the */
-/* image store when the app opens. Never when the saved notes could not be read: every image */
-/* would look unused. */
-if (notesReadCleanly()) removeUnusedImages(new Set(getNotes().flatMap(note => imageIdsIn(note.content))));
+/* Images no note uses any more (deleted from notes, or in notes deleted for good) are removed */
+/* from the image store when the app opens; notes in Trash keep theirs. Never when the saved */
+/* notes could not be read: every image would look unused. */
+if (notesReadCleanly()) {
+  const kept = [...getNotes(), ...getTrash().flatMap(entry => entry.notes)];
+  removeUnusedImages(new Set(kept.flatMap(note => imageIdsIn(note.content))));
+}
 
 /* Saved data that could not be read was kept aside (or left untouched) while loading; say so */
 /* once. Loading the board here makes sure its saved project has been checked too. */

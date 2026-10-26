@@ -12,6 +12,7 @@ import { SearchWindow } from '../search/SearchWindow';
 import { ReminderWatcher } from './Reminders';
 import { Breadcrumb } from '../components/Breadcrumb';
 import { Toaster } from '../components/Toaster';
+import { TrashPopup } from '../notespace/TrashPopup';
 import { showToast } from '../lib/toasts';
 import { findWhenOpened } from '../notespace/editor/find/pendingFind';
 import type { ViewControls } from '../notespace/editor/EditorPanels';
@@ -916,6 +917,7 @@ export function App() {
           onOpenBoardView={openBoardView}
         />
       )}
+      <TrashPopup />
       <Toaster />
       {spaces.notes && <ReminderWatcher onOpenNote={openNote} />}
     </div>

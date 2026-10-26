@@ -420,3 +420,83 @@ describe('drawings', () => {
     expect(store.getNote('atlas')?.drawing).toEqual([]);
   });
 });
+
+
+/* =========================
+   Trash
+   ========================= */
+
+describe('trash', () => {
+  it('moves a deleted note to Trash and restores it where it was, with its card back in place', async () => {
+    const store = await openApp();
+    const top = store.createNote();
+    const child = store.createSubpage(top.id)!;
+    store.updateNote(top.id, { content: `<p>Intro</p><span class="page-block" data-page="${child.id}" data-size="small" data-width="100"></span><p>End</p>` });
+    const before = store.getNote(top.id)!.content;
+
+    const entry = store.deleteNote(child.id)!;
+    expect(store.getNote(child.id)).toBeUndefined();
+    expect(store.getNote(top.id)?.content).not.toContain(child.id);
+    expect(store.getTrash()[0].notes[0].id).toBe(child.id);
+
+    expect(store.restoreFromTrash(entry)).toBe(child.id);
+    expect(store.getNote(child.id)?.parentId).toBe(top.id);
+    expect(store.getNote(top.id)?.content).toBe(before);
+    expect(store.getTrash()).toHaveLength(0);
+  });
+
+  it('restores sub-notes deleted together, and puts back the ones that moved up', async () => {
+    const store = await openApp();
+    const top = store.createNote();
+    const going = store.createSubpage(top.id)!;
+    const kept = store.createSubpage(top.id)!;
+    store.updateNote(kept.id, { locked: true });
+
+    const entry = store.deleteNote(top.id, true)!;
+    expect(store.getNote(kept.id)?.parentId).toBe('');
+    store.restoreFromTrash(entry);
+    expect(store.getNote(going.id)?.parentId).toBe(top.id);
+    expect(store.getNote(kept.id)?.parentId).toBe(top.id);
+  });
+
+  it('restores a note to the top level when the note it sat in is gone', async () => {
+    const store = await openApp();
+    const top = store.createNote();
+    const child = store.createSubpage(top.id)!;
+    const entry = store.deleteNote(child.id)!;
+    store.deleteNote(top.id);
+    store.restoreFromTrash(entry);
+    expect(store.getNote(child.id)?.parentId).toBe('');
+  });
+
+  it('keeps Trash after reopening, brings back deleted samples, and forgets deletions after 30 days', async () => {
+    let store = await openApp();
+    const entry = store.deleteNote('atlas')!;
+    vi.resetModules();
+    store = await openApp();
+    expect(store.getTrash().map(item => item.id)).toEqual([entry]);
+    store.restoreFromTrash(entry);
+    vi.resetModules();
+    store = await openApp();
+    expect(store.getNote('atlas')).toBeDefined();
+
+    store.deleteNote('atlas');
+    const saved = JSON.parse(localStorage.getItem('starjot-notespace-v1')!);
+    saved.trash[0].deletedAt = new Date(Date.now() - 31 * 24 * 60 * 60 * 1000).toISOString();
+    localStorage.setItem('starjot-notespace-v1', JSON.stringify(saved));
+    vi.resetModules();
+    store = await openApp();
+    expect(store.getTrash()).toHaveLength(0);
+    expect(store.getNote('atlas')).toBeUndefined();
+  });
+
+  it('deletes for good one deletion, or everything in Trash', async () => {
+    const store = await openApp();
+    const first = store.deleteNote(store.createNote().id)!;
+    store.deleteNote(store.createNote().id);
+    store.deleteForever(first);
+    expect(store.getTrash()).toHaveLength(1);
+    store.emptyTrash();
+    expect(store.getTrash()).toHaveLength(0);
+  });
+});

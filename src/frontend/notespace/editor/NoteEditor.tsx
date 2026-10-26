@@ -3,11 +3,12 @@ import { changeZoom, usePreferences } from '../../app/preferences';
 import { isShortcut } from '../../app/shortcuts';
 import type { OpenById } from '../../lib/clicks';
 import { DeleteNoteDialog } from '../DeleteNoteDialog';
+import { asksBeforeDeleting, moveToTrash } from '../trash';
 import { FindBar } from './find/FindBar';
 import { takeFindForNote } from './find/pendingFind';
 import { Icon } from '../../components/Icon';
 import {
-  deleteNote, flushSave, markOpened, updateNote,
+  flushSave, markOpened, updateNote,
   updatedLabel, useCategories, useNote
 } from '../store';
 import type { NoteMode } from '../../../shared/types/note';
@@ -348,7 +349,7 @@ function DocumentEditor({ noteId, tabId, history, view, active, onClose, onOpenN
 
   function removeNote(withSubNotes: boolean) {
     setConfirmDelete(false);
-    deleteNote(noteId, withSubNotes);
+    moveToTrash(noteId, withSubNotes);
     onClose();
   }
 
@@ -482,7 +483,11 @@ function DocumentEditor({ noteId, tabId, history, view, active, onClose, onOpenN
           onPageChange={changes => updateNote(note.id, changes)}
           onCopyLink={() => copyPageLink(note.id)}
           onExport={() => { setPanel(null); setExporting(true); }}
-          onDelete={() => { setPanel(null); setConfirmDelete(true); }}
+          onDelete={() => {
+            setPanel(null);
+            if (asksBeforeDeleting(noteId)) setConfirmDelete(true);
+            else removeNote(false);
+          }}
           phoneActions={(
             <>
               <button type="button" className="option-tile" onClick={() => togglePanel('toc')}>

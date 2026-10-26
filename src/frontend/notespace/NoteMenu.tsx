@@ -4,7 +4,8 @@ import { Icon } from '../components/Icon';
 import { useDismiss } from '../lib/useDismiss';
 import { TitleEditor } from '../components/TitleEditor';
 import { NoteColorPicker } from './NoteColors';
-import { deleteNote, getNote, noteTitle, setPinned, updateNote } from './store';
+import { getNote, noteTitle, setPinned, updateNote } from './store';
+import { asksBeforeDeleting, moveToTrash } from './trash';
 
 
 /* =========================
@@ -51,7 +52,7 @@ export function useNoteMenu({ onOpen, onOpenInNewTab }: NoteMenuActions): NoteMe
   }
 
   function confirmDelete(withSubNotes: boolean) {
-    if (deleting) deleteNote(deleting, withSubNotes);
+    if (deleting) moveToTrash(deleting, withSubNotes);
     setDeleting(null);
   }
 
@@ -100,7 +101,7 @@ export function useNoteMenu({ onOpen, onOpenInNewTab }: NoteMenuActions): NoteMe
             disabled={note.locked}
             data-tooltip={note.locked ? 'Unlock the note to delete it.' : undefined}
             data-tooltip-align="start"
-            onClick={() => run(setDeleting)}
+            onClick={() => run(id => (asksBeforeDeleting(id) ? setDeleting(id) : moveToTrash(id)))}
           >
             <Icon name="trash" size={14} /> Delete note
           </button>

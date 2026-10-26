@@ -7,11 +7,17 @@ import { readCategories, writeCategories } from '../../backend/storage/categorie
 import { readNotes, writeNotes } from '../../backend/storage/notesStorage';
 import { isEmoji } from '../../shared/emoji';
 import { getPreferences } from '../app/preferences';
-import { NOTE_COLORS, type Category, type Note, type NoteChanges, type NoteColor, type NoteComment, type NoteKind, type SaveStatus } from '../../shared/types/note';
+import { NOTE_COLORS, type Category, type Note, type NoteChanges, type NoteColor, type NoteComment, type NoteKind, type SaveStatus, type TrashEntry } from '../../shared/types/note';
 
 /* The frontend's note store: it checks and tidies notes, and tells React when they change. */
 /* Saving and loading are done by the backend (backend/storage/notesStorage.ts). */
 const MAX_NOTES = 1000;
+
+/* Deleted notes stay in Trash this long, and are removed for good the next time Starjot opens */
+/* after that. Trash holds at most MAX_TRASH deletions (the oldest go first). */
+export const TRASH_DAYS = 30;
+const TRASH_MS = TRASH_DAYS * 24 * 60 * 60 * 1000;
+const MAX_TRASH = 500;
 const SAVE_DELAY = 350;
 
 const CATEGORY_NAME_LENGTH = 24;
@@ -35,10 +41,11 @@ const OLD_CATEGORY_NAMES: Record<string, string> = {
 type StoreState = {
   notes: Note[];
   categories: Category[];
+  trash: TrashEntry[];
   saveStatus: SaveStatus;
 };
 
-let state: StoreState = { notes: [], categories: [], saveStatus: 'saved' };
+let state: StoreState = { notes: [], categories: [], trash: [], saveStatus: 'saved' };
 
 /* Ids of deleted sample notes, so they are not added back the next time the app opens. */
 let deletedIds: string[] = [];
@@ -165,26 +172,59 @@ function repairParents(notes: Note[]) {
   });
 }
 
-function load(): Note[] {
+const SAFE_ID = /^[a-zA-Z0-9_-]+$/;
+
+/* Saved Trash, checked like notes. Deletions older than TRASH_DAYS are left out, so the next */
+/* save removes them for good. */
+function normalizeTrash(raw: unknown[]): TrashEntry[] {
+  const now = Date.now();
+  return raw.flatMap(item => {
+    const record = (item ?? {}) as Record<string, unknown>;
+    const deletedAt = typeof record.deletedAt === 'string' ? record.deletedAt : '';
+    const time = Date.parse(deletedAt);
+    if (!SAFE_ID.test(String(record.id ?? '')) || Number.isNaN(time) || now - time > TRASH_MS) return [];
+    const notes = (Array.isArray(record.notes) ? record.notes : []).map(normalizeNote).filter((note): note is Note => note !== null);
+    if (!notes.length) return [];
+    const moved = (Array.isArray(record.moved) ? record.moved : []).flatMap(rawMove => {
+      const move = (rawMove ?? {}) as Record<string, unknown>;
+      const id = String(move.id ?? '');
+      const parentId = String(move.parentId ?? '');
+      return SAFE_ID.test(id) && SAFE_ID.test(parentId) ? [{ id, parentId }] : [];
+    });
+    const card = (record.card ?? null) as Record<string, unknown> | null;
+    return [{
+      id: String(record.id),
+      deletedAt,
+      notes,
+      moved,
+      card: card && typeof card.html === 'string' && Number.isInteger(card.index) ? { html: cleanHtml(card.html), index: Number(card.index) } : null
+    }];
+  }).slice(0, MAX_TRASH);
+}
+
+function load(): { notes: Note[]; trash: TrashEntry[] } {
   const seeds = SAMPLE_NOTES.map(normalizeNote).filter((note): note is Note => note !== null);
   try {
     const read = readNotes();
-    if (read.status === 'empty') return seeds;
+    if (read.status === 'empty') return { notes: seeds, trash: [] };
     if (read.status === 'damaged') {
       writesBlocked = !read.canSave;
       if (writesBlocked) storageAvailable = false;
-      return seeds;
+      return { notes: seeds, trash: [] };
     }
     const saved = read.saved;
     readCleanly = true;
     deletedIds = saved.deleted;
     const restored = saved.notes.slice(0, MAX_NOTES).map(normalizeNote).filter((note): note is Note => note !== null);
     const ids = new Set(restored.map((note: Note) => note.id));
-    return repairParents([...restored, ...seeds.filter(note => !ids.has(note.id) && !deletedIds.includes(note.id))]);
+    return {
+      notes: repairParents([...restored, ...seeds.filter(note => !ids.has(note.id) && !deletedIds.includes(note.id))]),
+      trash: normalizeTrash(saved.trash)
+    };
   } catch (error) {
     storageAvailable = false;
     console.warn('Notespace: browser storage is unavailable; notes will remain in this tab only.', error);
-    return seeds;
+    return { notes: seeds, trash: [] };
   }
 }
 
@@ -207,7 +247,7 @@ export function save() {
     return false;
   }
   try {
-    writeNotes(state.notes, deletedIds);
+    writeNotes(state.notes, deletedIds, state.trash);
     writeCategories(state.categories);
     storageAvailable = true;
   } catch (error) {
@@ -353,29 +393,117 @@ export function markOpened(id: string) {
   scheduleSave();
 }
 
-/* Remove a note permanently from this browser. Its sub-pages are kept and move up one level. */
-/* Delete a note. Its sub-notes move up one level, unless withSubNotes is true: then they are */
-/* deleted too, except locked ones, which are kept (moving up) as a locked note cannot be deleted. */
-export function deleteNote(id: string, withSubNotes = false) {
-  if (withSubNotes) childrenOf(id).filter(child => !child.locked).forEach(child => deleteNote(child.id, true));
-  const removed = getNote(id);
-  if (SAMPLE_NOTES.some(note => note.id === id)) deletedIds = [...deletedIds, id];
 
-  /* The page's card is also taken out of the page it sat in, so no "Note not found" card is left. */
-  const withoutCard = (html: string) => {
+/* =========================
+   Trash
+   ========================= */
+
+/* Move a note to Trash. Its sub-notes move up one level, unless withSubNotes is true: then they */
+/* go to Trash with it, except locked ones (a locked note cannot be deleted), which are kept and */
+/* move up. Returns the Trash entry's id (for restoring), or null when there is no such note. */
+export function deleteNote(id: string, withSubNotes = false) {
+  const removed = getNote(id);
+  if (!removed) return null;
+  const going = new Set([id]);
+  const addSubNotes = (parentId: string) => childrenOf(parentId).filter(child => !child.locked).forEach(child => {
+    going.add(child.id);
+    addSubNotes(child.id);
+  });
+  if (withSubNotes) addSubNotes(id);
+  const moved = state.notes.filter(note => !going.has(note.id) && going.has(note.parentId)).map(note => ({ id: note.id, parentId: note.parentId }));
+  const movedIds = new Set(moved.map(move => move.id));
+
+  /* The note's card is also taken out of the note it sat in, so no "Note not found" card is left. */
+  /* Where it was is kept, to put it back on restoring. */
+  const parent = getNote(removed.parentId);
+  let card: TrashEntry['card'] = null;
+  let parentContent = parent?.content ?? '';
+  if (parent) {
     const template = document.createElement('template');
-    template.innerHTML = html;
+    template.innerHTML = parent.content;
     const cards = template.content.querySelectorAll(`.page-block[data-page="${CSS.escape(id)}"]`);
-    cards.forEach(card => card.remove());
-    return cards.length ? template.innerHTML : html;
+    if (cards.length) {
+      let top: Element = cards[0];
+      while (top.parentNode && top.parentNode !== template.content) top = top.parentNode as Element;
+      card = { html: cards[0].outerHTML, index: Array.from(template.content.children).indexOf(top) };
+      cards.forEach(item => item.remove());
+      parentContent = template.innerHTML;
+    }
+  }
+
+  const entry: TrashEntry = {
+    id: `trash_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`,
+    deletedAt: new Date().toISOString(),
+    notes: [removed, ...state.notes.filter(note => going.has(note.id) && note.id !== id)],
+    moved,
+    card
   };
+  deletedIds = [...deletedIds, ...[...going].filter(gone => SAMPLE_NOTES.some(note => note.id === gone) && !deletedIds.includes(gone))];
   setState({
     notes: state.notes
-      .filter(note => note.id !== id)
-      .map(note => (note.parentId === id ? { ...note, parentId: removed?.parentId ?? '' } : note))
-      .map(note => (note.id === removed?.parentId ? { ...note, content: withoutCard(note.content) } : note))
+      .filter(note => !going.has(note.id))
+      .map(note => (movedIds.has(note.id) ? { ...note, parentId: removed.parentId } : note))
+      .map(note => (card && note.id === removed.parentId ? { ...note, content: parentContent } : note)),
+    trash: [entry, ...state.trash].slice(0, MAX_TRASH)
   });
   save();
+  return entry.id;
+}
+
+/* Bring a deletion back from Trash, as it was: into the note it sat in (or the top level, when */
+/* that note is gone), with its card back in that note's text, and with the sub-notes that moved */
+/* up when it was deleted back inside it (unless they have been moved since). Returns the note's */
+/* id, or null when the deletion is no longer in Trash. */
+export function restoreFromTrash(entryId: string) {
+  const entry = state.trash.find(item => item.id === entryId);
+  if (!entry) return null;
+  const [main] = entry.notes;
+  const existing = new Set(state.notes.map(note => note.id));
+  const parent = getNote(main.parentId);
+  const back = entry.notes
+    .filter(note => !existing.has(note.id))
+    .map(note => (note.id === main.id && !parent ? { ...note, parentId: '' } : note));
+  const backIds = new Set(back.map(note => note.id));
+  const movedFrom = new Map(entry.moved.map(move => [move.id, move.parentId]));
+
+  const withCard = (html: string) => {
+    if (!entry.card) return html;
+    const template = document.createElement('template');
+    template.innerHTML = html;
+    if (template.content.querySelector(`.page-block[data-page="${CSS.escape(main.id)}"]`)) return html;
+    const holder = document.createElement('template');
+    holder.innerHTML = entry.card.html;
+    const cardBlock = holder.content.firstElementChild;
+    if (!cardBlock) return html;
+    template.content.insertBefore(cardBlock, template.content.children[entry.card.index] ?? null);
+    return template.innerHTML;
+  };
+
+  const notes = [...back, ...state.notes.map(note => {
+    const from = movedFrom.get(note.id);
+    if (from && backIds.has(from) && note.parentId === main.parentId) return { ...note, parentId: from };
+    if (parent && note.id === parent.id) return { ...note, content: withCard(note.content) };
+    return note;
+  })];
+  deletedIds = deletedIds.filter(id => !backIds.has(id));
+  setState({ notes: repairParents(notes), trash: state.trash.filter(item => item.id !== entryId) });
+  save();
+  return main.id;
+}
+
+/* Delete one deletion in Trash permanently. Its pictures are removed the next time Starjot opens. */
+export function deleteForever(entryId: string) {
+  setState({ trash: state.trash.filter(item => item.id !== entryId) });
+  save();
+}
+
+export function emptyTrash() {
+  setState({ trash: [] });
+  save();
+}
+
+export function getTrash() {
+  return state.trash;
 }
 
 
@@ -535,12 +663,16 @@ export function useCategories() {
   return useSyncExternalStore(subscribe, () => state.categories);
 }
 
+export function useTrash() {
+  return useSyncExternalStore(subscribe, () => state.trash);
+}
+
 export function useSaveStatus() {
   return useSyncExternalStore(subscribe, () => state.saveStatus);
 }
 
 /* Load saved categories and notes once, when this module is first imported. */
 /* Categories load first, because notes are matched to them. */
-state = { notes: [], categories: normalizeCategories(readCategories()), saveStatus: 'saved' };
-state = { ...state, notes: load() };
+state = { notes: [], categories: normalizeCategories(readCategories()), trash: [], saveStatus: 'saved' };
+state = { ...state, ...load() };
 if (!storageAvailable) state.saveStatus = 'unsaved';

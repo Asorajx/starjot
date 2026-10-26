@@ -9,7 +9,8 @@ import {
   checkCombo, comboOf, FIXED_SHORTCUTS, isChanged, keyLabel, keyParts, keysOf, resetAllShortcuts, resetShortcut, setShortcut, SHORTCUTS, swapShortcuts,
   type ShortcutGroup, type ShortcutId
 } from '../app/shortcuts';
-import { useCategories } from '../notespace/store';
+import { TRASH_DAYS, useCategories, useTrash } from '../notespace/store';
+import { openTrash } from '../notespace/trash';
 import { useMediaQuery } from '../lib/useMediaQuery';
 import { Switch } from '../components/Switch';
 import { useEscape } from '../lib/useDismiss';
@@ -249,6 +250,17 @@ function Segmented<T extends string>({ label, options, value, onChange }: {
         </button>
       ))}
     </div>
+  );
+}
+
+/* Trash, from Settings too: the sidebar's Trash button is not there on a phone. */
+function TrashRow() {
+  const trash = useTrash();
+  const count = trash.length ? `${trash.length} ${trash.length === 1 ? 'deletion' : 'deletions'} in Trash.` : 'Trash is empty.';
+  return (
+    <Row title="Trash" description={`Deleted notes, kept for ${TRASH_DAYS} days so they can be restored. ${count}`}>
+      <button type="button" className="btn btn-secondary btn-sm" onClick={() => openTrash()}><Icon name="trash" size={14} /> Open Trash</button>
+    </Row>
   );
 }
 
@@ -631,6 +643,7 @@ function SettingsSectionContent({ section }: { section: SettingsSection }) {
         <Group title="Local storage">
           <Row title="Storage location" description="Notes, categories and preferences are saved in this browser, and images in its database."><span className="fake-text">This browser</span></Row>
           <Row title="Offline content" description="Everything is on this device, so Starjot works without an internet connection."><span className="fake-text">Available</span></Row>
+          {spaces.notes && <TrashRow />}
         </Group>
         <DamagedCopies />
         <Group title="Attachments">

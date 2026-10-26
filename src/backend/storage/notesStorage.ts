@@ -1,4 +1,4 @@
-import type { Note } from '../../shared/types/note';
+import type { Note, TrashEntry } from '../../shared/types/note';
 import { keepDamagedCopy } from './damagedCopies';
 
 
@@ -11,10 +11,12 @@ import { keepDamagedCopy } from './damagedCopies';
 /* replace this file without changing any screens. */
 const STORAGE_KEY = 'starjot-notespace-v1';
 
-/* What is saved: every note, plus the ids of deleted sample notes so they are not re-added. */
+/* What is saved: every note, the ids of deleted sample notes so they are not re-added, and the */
+/* notes in Trash (saved together, so moving a note to Trash is one write). */
 export type StoredNotes = {
   notes: unknown[];
   deleted: string[];
+  trash: unknown[];
 };
 
 /* What reading found: nothing saved yet, the saved notes, or saved data that could not be read. */
@@ -29,7 +31,7 @@ export type NotesRead =
 export function readNotes(): NotesRead {
   const saved = localStorage.getItem(STORAGE_KEY);
   if (!saved) return { status: 'empty' };
-  let parsed: { notes?: unknown; deleted?: unknown } | null = null;
+  let parsed: { notes?: unknown; deleted?: unknown; trash?: unknown } | null = null;
   try {
     parsed = JSON.parse(saved);
   } catch {
@@ -40,11 +42,15 @@ export function readNotes(): NotesRead {
   }
   return {
     status: 'ok',
-    saved: { notes: parsed.notes, deleted: Array.isArray(parsed.deleted) ? parsed.deleted.map(String) : [] }
+    saved: {
+      notes: parsed.notes,
+      deleted: Array.isArray(parsed.deleted) ? parsed.deleted.map(String) : [],
+      trash: Array.isArray(parsed.trash) ? parsed.trash : []
+    }
   };
 }
 
 /* Throws when storage is full or unavailable. */
-export function writeNotes(notes: Note[], deleted: string[]) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify({ version: 1, notes, deleted }));
+export function writeNotes(notes: Note[], deleted: string[], trash: TrashEntry[]) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({ version: 1, notes, deleted, trash }));
 }

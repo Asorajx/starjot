@@ -182,6 +182,17 @@
   gap: 8px;
 }
 
+.notes-home-trash {
+  display: none;
+}
+
+@media (max-width: 700px) {
+  .notes-home-trash {
+    display: inline-flex;
+    padding: 0 10px;
+  }
+}
+
 /* New note opens a menu under it, lined up with its right edge: a document or a canvas. The */
 /* menu sits under its button rather than at a fixed place, like other page menus. */
 .new-note-menu {
@@ -762,5 +773,166 @@
     position: absolute;
     inset: -8px 0;
     content: "";
+  }
+}
+
+
+/* =========================
+   Trash
+   ========================= */
+
+/* The Trash popup (TrashPopup.tsx): above the sidebar's Trash button, or in the middle of the */
+/* screen when opened from Settings. The list scrolls; the search and the footer stay. Nothing */
+/* is clipped, so the In menu can reach past the popup's edge. It has the menus' light shadow, */
+/* sits above Settings (which can open it) and below dialogs (which it opens). */
+.trash-popup {
+  position: fixed;
+  z-index: 95;
+  display: flex;
+  flex-direction: column;
+  width: min(420px, calc(100vw - 16px));
+  max-height: min(480px, calc(100dvh - 16px));
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--paper);
+  box-shadow: var(--shadow-float);
+  transform-origin: bottom left;
+  animation: menu-in .14s cubic-bezier(.2, .8, .2, 1);
+}
+
+/* Centred with margins rather than a transform, so its dropdown's menu is placed on the screen */
+/* and not inside the popup. */
+.trash-popup.is-centered {
+  inset: 0;
+  height: fit-content;
+  margin: auto;
+  transform-origin: center;
+}
+
+.trash-search {
+  flex-shrink: 0;
+  height: 36px;
+  margin: 12px 12px 0;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--ink);
+  font: inherit;
+  font-size: 14px;
+}
+
+.trash-filters {
+  display: flex;
+  flex-shrink: 0;
+  gap: 8px;
+  padding: 8px 12px;
+}
+
+.trash-list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  margin: 0;
+  padding: 0 4px 4px;
+  list-style: none;
+}
+
+.trash-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+  padding: 4px 8px;
+  border-radius: 6px;
+}
+
+.trash-row:hover {
+  background: #f3f6fc;
+}
+
+.trash-icon {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 20px;
+  color: #66778f;
+  font-size: 16px;
+}
+
+.trash-text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.trash-text strong,
+.trash-text small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.trash-text strong {
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.trash-text small {
+  color: #66778f;
+  font-size: 12px;
+}
+
+.trash-action {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: #66778f;
+  cursor: pointer;
+}
+
+.trash-action:hover {
+  background: var(--accent-faint);
+  color: var(--accent-text);
+}
+
+.trash-empty {
+  margin: 16px 20px 24px;
+  color: #66778f;
+  font-size: 14px;
+  line-height: 1.6;
+  text-align: center;
+}
+
+.trash-footer {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 8px 8px 16px;
+  border-top: 1px solid var(--line);
+  border-radius: 0 0 8px 8px;
+  background: var(--bg);
+  color: #66778f;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.trash-footer .btn {
+  flex-shrink: 0;
+}
+
+@media (pointer: coarse) {
+  .trash-action {
+    width: 44px;
+    height: 44px;
   }
 }

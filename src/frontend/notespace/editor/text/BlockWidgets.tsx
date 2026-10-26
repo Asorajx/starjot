@@ -2,7 +2,8 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { DeleteNoteDialog } from '../../DeleteNoteDialog';
 import { Icon } from '../../../components/Icon';
 import { opensNewTab, type OpenById } from '../../../lib/clicks';
-import { deleteNote, getNote, noteTitle, separatePage, updateNote, useNotes } from '../../store';
+import { getNote, noteTitle, separatePage, updateNote, useNotes } from '../../store';
+import { asksBeforeDeleting, moveToTrash } from '../../trash';
 import { showToast } from '../../../lib/toasts';
 import { fullReminderLabel, hydrateReminders } from '../../reminders';
 import { DateTimePicker } from '../../../components/DateTimePicker';
@@ -475,10 +476,16 @@ export function BlockWidgets({ session, locked, onOpenNote, onOpenNoteInNewTab, 
     separatePage(id);
   }
 
+  /* Moving a sub-note to Trash also takes its card out of this note's text (in the store, so */
+  /* restoring can put it back where it was); the editor then shows that at once. */
+  function trashSubNote(id: string, withSubNotes: boolean) {
+    moveToTrash(id, withSubNotes);
+    session.catchUpHere();
+  }
+
   function confirmDelete(withSubNotes: boolean) {
     if (!deleting) return;
-    removeFromText(deleting);
-    deleteNote(deleting, withSubNotes);
+    trashSubNote(deleting, withSubNotes);
     setDeleting(null);
   }
 
@@ -588,8 +595,9 @@ export function BlockWidgets({ session, locked, onOpenNote, onOpenNoteInNewTab, 
                 className="page-menu-item is-danger"
                 onClick={() => {
                   setPageMenu(null);
-                  if (menuNote) setDeleting(pageMenu.id);
-                  else removeFromText(pageMenu.id);
+                  if (!menuNote) removeFromText(pageMenu.id);
+                  else if (asksBeforeDeleting(pageMenu.id)) setDeleting(pageMenu.id);
+                  else trashSubNote(pageMenu.id, false);
                 }}
               >
                 <Icon name="trash" size={14} /> {menuNote ? 'Delete sub-note' : 'Remove from note'}

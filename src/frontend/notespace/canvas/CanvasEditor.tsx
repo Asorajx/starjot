@@ -5,11 +5,12 @@ import { Icon } from '../../components/Icon';
 import { opensNewTab, type OpenById } from '../../lib/clicks';
 import { useDismiss } from '../../lib/useDismiss';
 import { DeleteNoteDialog } from '../DeleteNoteDialog';
+import { asksBeforeDeleting, moveToTrash } from '../trash';
 import { NoteColorStrip } from '../NoteColors';
 import { PageBar, SaveStatus, type PageHistory } from '../PageBar';
 import { safeHref } from '../sanitize';
 import {
-  deleteNote, flushSave, getNote, markOpened, scheduleSave, UNTITLED_NOTE, updateNote, useCategories, useNote
+  flushSave, getNote, markOpened, scheduleSave, UNTITLED_NOTE, updateNote, useCategories, useNote
 } from '../store';
 import { DrawingLayer } from '../editor/drawing/DrawingLayer';
 import { DrawingTools, type CanvasTool } from '../editor/drawing/DrawingTools';
@@ -577,7 +578,7 @@ export function CanvasEditor({ noteId, history, active, onClose, onOpenNote, onO
 
   function removeNote(withSubNotes: boolean) {
     setConfirmDelete(false);
-    deleteNote(noteId, withSubNotes);
+    moveToTrash(noteId, withSubNotes);
     onClose();
   }
 
@@ -644,7 +645,11 @@ export function CanvasEditor({ noteId, history, active, onClose, onOpenNote, onO
             setSelectedBox(null);
             setExporting(true);
           }}
-          onDelete={() => { setSettingsOpen(false); setConfirmDelete(true); }}
+          onDelete={() => {
+            setSettingsOpen(false);
+            if (asksBeforeDeleting(noteId)) setConfirmDelete(true);
+            else removeNote(false);
+          }}
         />
       </PageBar>
 

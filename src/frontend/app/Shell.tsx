@@ -9,6 +9,7 @@ import { enabledScreens, screenLabel, type ScreenId } from './screens';
 import { noteIcon, noteTitle, useCategories, useNotes } from '../notespace/store';
 import { sortNotes, starredNotes } from '../notespace/NoteList';
 import { useNoteMenu } from '../notespace/NoteMenu';
+import { toggleTrash, useTrashPopup } from '../notespace/trash';
 import { BOARD_TABS, BOARD_ICONS } from '../boardspace/data';
 import { shownTheme, updatePreferences, usePreferences } from './preferences';
 import type { Note } from '../../shared/types/note';
@@ -233,14 +234,15 @@ function BoardspaceLists({ boardView, onOpenBoardView }: Pick<SidebarProps, 'boa
    Sidebar
    ========================= */
 
-/* Top to bottom: Search, the space icons, the space's lists, and a row of small buttons (Settings */
-/* and the theme switch). The space whose lists are shown is named inside its icon, so it needs no */
+/* Top to bottom: Search, the space icons, the space's lists, and a row of small buttons (Settings, */
+/* Trash and the theme switch). The space whose lists are shown is named inside its icon, so it needs no */
 /* heading. Docked, it sits beside the page at full height, with the window controls across its */
 /* top. Otherwise it floats over the page as a popup below the note bar, opened by hovering the */
 /* sidebar button or the left edge of the window, or by the keyboard moving into it. */
 export function Sidebar({ screen, space, openNoteId, openCategoryId, boardView, docked, controls, settingsOpen, onNavigate, onOpenNote, onOpenCategory, onOpenBoardView, onSearch, onSettings, onMouseEnter, onMouseLeave }: SidebarProps) {
   const { spaces: enabled } = usePreferences();
   const dark = shownTheme() === 'dark';
+  const trashOpen = useTrashPopup().open;
   const spaces = enabledScreens(enabled);
 
   /* Starjot Home sits in the tabs, so it counts as Notespace; with Notespace turned off, the */
@@ -307,6 +309,21 @@ export function Sidebar({ screen, space, openNoteId, openCategoryId, boardView, 
         >
           <Icon name="settings" size={18} />
         </button>
+
+        {/* Deleted notes, in a popup above the button (see TrashPopup). */}
+        {enabled.notes && (
+          <button
+            type="button"
+            className={`sidebar-icon trash-button ${trashOpen ? 'is-active' : ''}`}
+            aria-label="Trash"
+            aria-expanded={trashOpen}
+            data-tooltip="Trash"
+            data-tooltip-side="above"
+            onClick={event => toggleTrash(event.currentTarget.getBoundingClientRect())}
+          >
+            <Icon name="trash" size={18} />
+          </button>
+        )}
 
         {/* Switches between light and dark mode; the choice is remembered, like the one in Settings. */}
         {/* It sits on the right, apart from Settings, so the two icons are not read as a pair. */}
