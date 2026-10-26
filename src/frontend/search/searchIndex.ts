@@ -111,7 +111,8 @@ function titleRank(folded: string, query: string, words: string[]) {
   return 3;
 }
 
-function inScope(entry: SearchEntry, scope: string) {
+/* Whether an entry is in what the "In" filter chose. */
+export function inScope(entry: SearchEntry, scope: string) {
   if (scope === 'all') return true;
   if (scope === 'notes') return entry.kind !== 'task';
   if (scope === 'boardspace') return entry.kind === 'task';

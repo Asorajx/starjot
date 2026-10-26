@@ -14,7 +14,7 @@ import { epicCompletion, shownSprintOf, WORK_STATUSES, WORK_TYPES } from '../boa
 import { TYPE_ICONS } from '../boardspace/workParts';
 import type { Note, NoteKind } from '../../shared/types/note';
 import type { BoardProject, BoardTab, WorkItem } from '../../shared/types/board';
-import { dayGroup, search, type SearchEntry, type SearchResult, type Snippet } from './searchIndex';
+import { dayGroup, inScope, search, type SearchEntry, type SearchResult, type Snippet } from './searchIndex';
 
 type SearchWindowProps = {
 
@@ -113,8 +113,9 @@ function resultCount(total: number, shown: number) {
 
 /* Before anything is typed: starred notes, then the most recent notes by day (when they were */
 /* last opened, or last edited for notes never opened here), each note once (nothing while */
-/* Notespace is turned off). After: notes, categories, then Boardspace items, each best first, */
-/* with how many matched in all (`total`, null before anything is typed). */
+/* Notespace is turned off); with an "In" filter chosen, everything in it instead (its notes by */
+/* day, or Boardspace's items). After: notes, categories, then Boardspace items, each best */
+/* first. `total` is how many matched in all (null for the unfiltered list before typing). */
 function useGroups(entries: SearchEntry[], query: string, titleOnly: boolean, scope: string, withNotes: boolean): { groups: Group[]; total: number | null } {
   const allNotes = useNotes();
   const notes = withNotes ? allNotes : [];
@@ -125,19 +126,32 @@ function useGroups(entries: SearchEntry[], query: string, titleOnly: boolean, sc
         const entry = byId.get(note.id);
         return entry ? [{ entry, snippet: null, findTerm: '' }] : [];
       };
-      const starred = starredNotes(notes).slice(0, STARRED_COUNT);
       const lastSeen = (note: Note) => note.openedAt ?? note.updatedAt ?? '';
+      const byDay = (groups: Group[], shown: Note[]) => {
+        for (const note of shown) {
+          const label = dayGroup(lastSeen(note));
+          if (groups[groups.length - 1]?.label !== label) groups.push({ label, results: [] });
+          groups[groups.length - 1].results.push(...resultFor(note));
+        }
+        return groups;
+      };
+
+      if (scope !== 'all') {
+        const inside = notes
+          .filter(note => byId.get(note.id) && inScope(byId.get(note.id) as SearchEntry, scope))
+          .sort((a, b) => lastSeen(b).localeCompare(lastSeen(a)));
+        const tasks = entries.filter(entry => entry.kind === 'task' && inScope(entry, scope)).map(entry => ({ entry, snippet: null, findTerm: '' }));
+        const groups = byDay([], inside.slice(0, RESULT_COUNT));
+        if (tasks.length) groups.push({ label: 'Boardspace', results: tasks.slice(0, RESULT_COUNT) });
+        return { groups, total: inside.length + tasks.length };
+      }
+
+      const starred = starredNotes(notes).slice(0, STARRED_COUNT);
       const recent = notes
         .filter(note => !note.pinned)
         .sort((a, b) => lastSeen(b).localeCompare(lastSeen(a)))
         .slice(0, RECENT_COUNT);
-      const groups: Group[] = starred.length ? [{ label: 'Starred', results: starred.flatMap(resultFor) }] : [];
-      for (const note of recent) {
-        const label = dayGroup(lastSeen(note));
-        if (groups[groups.length - 1]?.label !== label) groups.push({ label, results: [] });
-        groups[groups.length - 1].results.push(...resultFor(note));
-      }
-      return { groups, total: null };
+      return { groups: byDay(starred.length ? [{ label: 'Starred', results: starred.flatMap(resultFor) }] : [], recent), total: null };
     }
     const results = search(entries, query, { titleOnly, scope });
     const groups = [
@@ -402,7 +416,7 @@ export function SearchWindow({ initialQuery, inNewTab, onClose, onOpenNote, onOp
         <div className={`search-body ${showPreview ? 'has-preview' : ''}`}>
           <div className="search-results" id="search-results" role="listbox" aria-label="Results" ref={listRef}>
             {!flat.length && (
-              <p className="search-empty">{query.trim() ? `Nothing matches “${query.trim()}”.` : spaces.notes ? 'Notes you write will show here.' : 'Type to search Boardspace.'}</p>
+              <p className="search-empty">{query.trim() ? `Nothing matches “${query.trim()}”.` : scope !== 'all' ? 'Nothing is in here yet.' : spaces.notes ? 'Notes you write will show here.' : 'Type to search Boardspace.'}</p>
             )}
             {groups.map(group => (
               <div key={group.label} role="group" aria-label={group.label}>
