@@ -14,6 +14,41 @@ const tasksLabel = (completion: Completion) => (completion.total ? `${completion
 
 
 /* =========================
+   Getting Started
+   ========================= */
+
+/* Before the project has any work, the Summary shows the three steps of using Boardspace instead */
+/* of empty numbers: plan a sprint (ticked once there is one), add work, and move it along. */
+function GettingStarted({ hasSprint, onEdit }: { hasSprint: boolean; onEdit: (target: EditorTarget) => void }) {
+  return (
+    <div className="board-start">
+      <h3>Get started</h3>
+      <p>Plan the project in three steps. Its progress, due dates and team then show here.</p>
+      <ol className="board-start-steps">
+        <li className={hasSprint ? 'is-done' : ''}>
+          <span className="board-start-number" aria-hidden="true">{hasSprint ? <Icon name="check" size={14} /> : 1}</span>
+          <strong>Plan a sprint</strong>
+          <span>A stretch of time, often two weeks, to finish some work in.{hasSprint ? ' Done.' : ''}</span>
+          {!hasSprint && <button type="button" className="btn btn-secondary btn-sm" onClick={() => onEdit({ kind: 'sprint' })}><Icon name="plus" size={14} /> Add a sprint</button>}
+        </li>
+        <li>
+          <span className="board-start-number" aria-hidden="true">2</span>
+          <strong>Add work</strong>
+          <span>Tasks are the work itself. Group them under features, and features under epics.</span>
+          <button type="button" className="btn btn-primary btn-sm" onClick={() => onEdit({ kind: 'item', type: 'task' })}><Icon name="plus" size={14} /> Add a task</button>
+        </li>
+        <li>
+          <span className="board-start-number" aria-hidden="true">3</span>
+          <strong>Move it along</strong>
+          <span>On the Board, drag a card from To do towards Done (or press Alt + ← / → on its name) as the work moves.</span>
+        </li>
+      </ol>
+    </div>
+  );
+}
+
+
+/* =========================
    Project Summary
    ========================= */
 
@@ -29,12 +64,7 @@ export function ProjectSummary({ onEdit }: { onEdit: (target: EditorTarget) => v
   if (!board.items.length) {
     return (
       <section className="project-summary" aria-label="Summary">
-        <div className="work-list-empty">
-          <Icon name="layout-dashboard" size={28} />
-          <h3>No work yet.</h3>
-          <p>Once the project has work, its progress, due dates and team show here.</p>
-          <button type="button" className="btn btn-primary" onClick={() => onEdit({ kind: 'item', type: 'task' })}><Icon name="plus" size={16} /> Add a task</button>
-        </div>
+        <GettingStarted hasSprint={board.sprints.length > 0} onEdit={onEdit} />
       </section>
     );
   }

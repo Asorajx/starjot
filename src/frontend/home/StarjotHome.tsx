@@ -22,6 +22,9 @@ type StarjotHomeProps = {
   onOpenBoardView: (view: BoardTab) => void;
 };
 
+/* How many recently edited notes Home lists after "Where you left off". */
+const RECENT_COUNT = 4;
+
 /* After midnight it is still "evening" until 5 am. */
 function greeting(now: Date) {
   const hour = now.getHours();
@@ -100,13 +103,15 @@ function QuickNote({ onOpenNote }: { onOpenNote: OpenById }) {
    ========================= */
 
 /* The app's own home: a greeting, then one section per space turned on, so notes and boards are */
-/* never mixed. Notespace has a quick note, "Where you left off" and reminders still to come today; */
+/* never mixed. Notespace has a quick note, "Where you left off", the next few recently edited */
+/* notes (one click away) and reminders still to come today; */
 /* Boardspace has how many items each column holds. */
 export function StarjotHome({ onOpenNote, onOpenNotespace, onOpenBoardspace, onOpenBoardView }: StarjotHomeProps) {
   const now = useNow(30000);
   const { spaces } = usePreferences();
   const notes = useNotes();
-  const lastEdited = newestFirst(notes)[0];
+  const [lastEdited, ...older] = newestFirst(notes);
+  const recent = older.slice(0, RECENT_COUNT);
   const reminders = reminderGroups(notes, now);
   const board = useBoard();
   const work = projectSummary(board);
@@ -147,6 +152,23 @@ export function StarjotHome({ onOpenNote, onOpenNotespace, onOpenBoardspace, onO
             </div>
           )}
         </div>
+
+        {recent.length > 0 && (
+          <div className="home-recent">
+            <span className="home-card-label">Recent</span>
+            <ul>
+              {recent.map(note => (
+                <li key={note.id}>
+                  <button type="button" className="home-recent-note" data-preview-page={note.id} onClick={event => onOpenNote(note.id, opensNewTab(event))}>
+                    {note.icon ? <span className="note-tile-icon" aria-hidden="true">{note.icon}</span> : <Icon name={noteIcon(note)} size={15} />}
+                    <strong>{noteTitle(note)}</strong>
+                    <span>{editedText(note)}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         {/* Reminders still to come today, when there are any (ones that came due are in the inbox). */}
         {reminders.today.length > 0 && (

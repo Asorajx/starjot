@@ -34,19 +34,25 @@ function countPages(notes: Note[], parentId: string): number {
 type RemarksFieldProps = {
   note: Note;
   locked: boolean;
+
+  /* Put the caret in it straight away (when it was just added with Add remarks). */
+  autoFocus?: boolean;
 };
 
 type DescriptionFieldProps = {
   note: Note;
   locked: boolean;
   onChange: (subtitle: string) => void;
+
+  /* Open the box to type in straight away (when it was just added with Add description). */
+  startOpen?: boolean;
 };
 
 /* The description shows on one line, ending in "…" when it is longer (hovering then shows all of */
 /* it). Clicking it, or Enter, opens a box that grows to show everything, to read or edit; Enter, */
 /* Escape or clicking away closes it. A locked note's description can be opened to read. */
-function DescriptionField({ note, locked, onChange }: DescriptionFieldProps) {
-  const [open, setOpen] = useState(false);
+function DescriptionField({ note, locked, onChange, startOpen = false }: DescriptionFieldProps) {
+  const [open, setOpen] = useState(startOpen);
   const [cutOff, setCutOff] = useState(false);
   const boxRef = useRef<HTMLTextAreaElement>(null);
   const shownRef = useRef<HTMLButtonElement>(null);
@@ -119,7 +125,7 @@ const REMARKS_FOLDED_LINES = 3;
 /* and so do Ctrl + B / I / U. The field keeps its own undo, separate from the note's. Long */
 /* remarks are folded to a few lines, with a fade and Show all, until clicked into (or opened to */
 /* read on a locked note). */
-function RemarksField({ note, locked }: RemarksFieldProps) {
+function RemarksField({ note, locked, autoFocus = false }: RemarksFieldProps) {
   const ref = useRef<HTMLDivElement>(null);
   const { spellcheck } = usePreferences();
   const [empty, setEmpty] = useState(!note.remarks);
@@ -140,6 +146,7 @@ function RemarksField({ note, locked }: RemarksFieldProps) {
     setEmpty(!note.remarks);
     setOpen(false);
     measure();
+    if (autoFocus) ref.current?.focus();
   }, [note.id]);
 
   /* A narrower window can make the remarks taller. */
@@ -279,6 +286,14 @@ export function NoteHeader({ note, locked, onOpenNote, onOpenWorkItem }: NoteHea
   const linkedFrom = useMemo(() => notesLinkingTo(notes, note.id), [notes, note.id]);
   const [picking, setPicking] = useState(false);
 
+  /* An empty description or remarks has no row, so the note's text starts closer to its title: */
+  /* Add description and Add remarks (beside Add icon) bring the row in, ready to type, and it */
+  /* stays while this note is open. A locked note only shows the ones that have something. */
+  const [adding, setAdding] = useState<{ description: boolean; remarks: boolean }>({ description: false, remarks: false });
+  useEffect(() => setAdding({ description: false, remarks: false }), [note.id]);
+  const showDescription = Boolean(note.subtitle) || adding.description;
+  const showRemarks = Boolean(note.remarks) || adding.remarks;
+
   /* Text fields save after a short pause, like typing in the note itself. */
   const changeText = (changes: Partial<Pick<Note, 'title' | 'subtitle'>>) => {
     updateNote(note.id, changes, false);
@@ -319,6 +334,18 @@ export function NoteHeader({ note, locked, onOpenNote, onOpenWorkItem }: NoteHea
         {!note.icon && !locked && (
           <button type="button" className="note-header-action" onClick={() => setPicking(true)}>
             <Icon name="sparkles" size={14} /> Add icon
+          </button>
+        )}
+
+        {!note.detailsHidden && !locked && !showDescription && (
+          <button type="button" className="note-header-action" onClick={() => setAdding(current => ({ ...current, description: true }))}>
+            <Icon name="type" size={14} /> Add description
+          </button>
+        )}
+
+        {!note.detailsHidden && !locked && !showRemarks && (
+          <button type="button" className="note-header-action" onClick={() => setAdding(current => ({ ...current, remarks: true }))}>
+            <Icon name="message-square" size={14} /> Add remarks
           </button>
         )}
 
@@ -371,10 +398,14 @@ export function NoteHeader({ note, locked, onOpenNote, onOpenWorkItem }: NoteHea
             />
           </dd>
 
-          <dt>Description</dt>
-          <dd>
-            <DescriptionField note={note} locked={locked} onChange={subtitle => changeText({ subtitle })} />
-          </dd>
+          {showDescription && (
+            <>
+              <dt>Description</dt>
+              <dd>
+                <DescriptionField note={note} locked={locked} startOpen={adding.description && !note.subtitle} onChange={subtitle => changeText({ subtitle })} />
+              </dd>
+            </>
+          )}
 
           <dt>Created</dt>
           <dd>{formatDate(note.createdAt)}</dd>
@@ -407,8 +438,12 @@ export function NoteHeader({ note, locked, onOpenNote, onOpenWorkItem }: NoteHea
             </>
           )}
 
-          <dt className="note-remarks-label">Remarks</dt>
-          <dd className="note-remarks-cell"><RemarksField note={note} locked={locked} /></dd>
+          {showRemarks && (
+            <>
+              <dt className="note-remarks-label">Remarks</dt>
+              <dd className="note-remarks-cell"><RemarksField note={note} locked={locked} autoFocus={adding.remarks && !note.remarks} /></dd>
+            </>
+          )}
 
           {/* The Pages row only shows when the note has sub-pages. The list can be folded on its own, */}
           {/* so the other details stay visible. */}
