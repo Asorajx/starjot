@@ -1,4 +1,4 @@
-import { categoryNamed, createNote, getNote, UNTITLED_NOTE, updateNote } from '../store';
+import { categoryNamed, createNote, getNote, newNoteId, UNTITLED_NOTE, updateNote } from '../store';
 import { readHtml } from './importHtml';
 import { readMarkdown } from './importMarkdown';
 import { readPdf } from './pdf/importPdf';
@@ -51,24 +51,29 @@ const READERS: Record<string, (file: File) => Promise<ImportedNote[]>> = {
 export const IMPORT_ACCEPT = Object.keys(READERS).map(extension => `.${extension}`).join(',');
 
 /* Make new notes from what a file holds: the first is the main note and the others become its */
-/* sub-notes. Nothing already in Starjot is changed. Returns the main note's id. */
+/* sub-notes. Nothing already in Starjot is changed. Every note's text is written first (with the */
+/* ids the notes will have), and the notes are only created once all of it is ready, so a file */
+/* that fails partway leaves no notes behind. Returns the main note's id. */
 async function createNotes(imported: ImportedNote[]) {
-  const [main, ...others] = imported;
-  const mainNote = createNote(categoryNamed(main.category ?? ''));
-  const ids = new Map([[main.key, mainNote.id]]);
-  others.forEach(note => ids.set(note.key, createNote(categoryNamed(note.category ?? '') || mainNote.category, mainNote.id).id));
+  const ids = new Map(imported.map(note => [note.key, newNoteId()]));
 
   /* A link to a note the file does not hold still works when that note is in this browser. */
   const idOf: IdOf = key => ids.get(key) ?? (getNote(key) ? key : undefined);
-  for (const note of imported) {
+  const contents: string[] = [];
+  for (const note of imported) contents.push(fitContent(await note.content(idOf)));
+
+  const [main, ...others] = imported;
+  const mainNote = createNote(categoryNamed(main.category ?? ''), '', 'document', ids.get(main.key));
+  others.forEach(note => createNote(categoryNamed(note.category ?? '') || mainNote.category, mainNote.id, 'document', ids.get(note.key)));
+  imported.forEach((note, index) => {
     updateNote(ids.get(note.key) as string, {
       title: note.title.slice(0, 160) || UNTITLED_NOTE,
       icon: note.icon ?? '',
       subtitle: note.description ?? '',
       remarks: note.remarks ?? '',
-      content: fitContent(await note.content(idOf))
+      content: contents[index]
     });
-  }
+  });
   return mainNote.id;
 }
 

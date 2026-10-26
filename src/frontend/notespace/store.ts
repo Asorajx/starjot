@@ -238,14 +238,20 @@ export function getNote(id: string) {
   return state.notes.find(note => note.id === id);
 }
 
+/* A new, unused note id. */
+export function newNoteId() {
+  return `note_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+}
+
 /* A new note can start in a category, for example the one being filtered on the home page. */
 /* A sub-page is created inside a parent note and starts in the parent's category. Its view and */
-/* layout come from Settings → Notes → New notes. */
-export function createNote(category = '', parentId = '', kind: NoteKind = 'document') {
+/* layout come from Settings → Notes → New notes. An import picks its notes' ids first (see */
+/* newNoteId), so it can write every note's text before creating any of them. */
+export function createNote(category = '', parentId = '', kind: NoteKind = 'document', id = newNoteId()) {
   const now = new Date().toISOString();
   const { mode, layout, pageSize } = getPreferences().newNotes;
   const note = normalizeNote({
-    id: `note_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`,
+    id,
     kind, title: UNTITLED_NOTE, subtitle: '', preview: '', category, parentId,
     updatedAt: now, createdAt: now, openedAt: now, pinned: false, icon: '',
     color: '', mode, layout, pageSize, content: ''
