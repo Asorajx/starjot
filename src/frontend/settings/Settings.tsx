@@ -315,7 +315,7 @@ function Heading({ title, subtitle }: { title: string; subtitle?: string }) {
    ========================= */
 
 function SettingsSectionContent({ section }: { section: SettingsSection }) {
-  const { theme, accent, density, startScreen, onStartup, spaces, sidebar, newNotes, openNotesIn, openNewSubNotes, noteColorsInLists, contentsScroll, hideHeaderWhileTyping, tips, spellcheck, typingShortcuts, drawing } = usePreferences();
+  const { theme, accent, density, startScreen, onStartup, spaces, sidebar, newNotes, openNotesIn, focusNewTabs, openNewSubNotes, noteColorsInLists, contentsScroll, hideHeaderWhileTyping, tips, spellcheck, typingShortcuts, drawing } = usePreferences();
   const categories = useCategories();
   const set = (changes: Partial<Preferences>) => updatePreferences(changes);
 
@@ -521,6 +521,9 @@ function SettingsSectionContent({ section }: { section: SettingsSection }) {
               alignEnd
               onChange={value => set({ openNotesIn: value })}
             />
+          </Row>
+          <Row title="Switch to new tabs" description="Show a note as soon as it opens in a new tab. When off, it opens in the background and you stay on this tab. New notes are always shown.">
+            <Switch label="Switch to new tabs" on={focusNewTabs} onChange={on => set({ focusNewTabs: on })} />
           </Row>
           <Row title="Open new sub-notes" description="Open a sub-note as soon as you add it. When off, you name it on its card and keep writing.">
             <Switch label="Open new sub-notes" on={openNewSubNotes} onChange={on => set({ openNewSubNotes: on })} />

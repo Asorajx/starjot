@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
-  activeTab, addTab, closeTab, currentPlace, cycleTab, focusedGroup, goTo, isOpenInStack, moveTab, newTab, newWorkspace, reopenLastClosed, reopenTab, restoreWorkspace, continueIdsAfter, selectTab, updateTab,
-  splitWorkspace, stackGroup, step, stepPlace, unsplit, type Place, type Workspace
+  activeTab, addBackgroundTab, addTab, closeTab, currentPlace, cycleTab, focusedGroup, goTo, isOpenInStack, moveTab, newTab, newWorkspace, reopenLastClosed, reopenTab, restoreWorkspace, continueIdsAfter, selectTab, updateTab,
+  splitWithTab, splitWorkspace, stackGroup, step, stepPlace, unsplit, type Place, type Workspace
 } from '../../../src/frontend/app/noteTabs';
 
 const home: Place = { kind: 'home' };
@@ -64,6 +64,17 @@ describe('tab history', () => {
 const places = (workspace: Workspace) => workspace.groups.map(group => group.tabs.map(currentPlace));
 
 describe('closing tabs', () => {
+  it('opens a tab in the background after the active one, keeping several in order', () => {
+    let workspace = newWorkspace(note('a'));
+    const group = workspace.groups[0];
+    const first = newTab(note('b'));
+    const second = newTab(note('c'));
+    workspace = addBackgroundTab(workspace, group.id, first, group.active);
+    workspace = addBackgroundTab(workspace, group.id, second, first.id);
+    expect(places(workspace)).toEqual([[note('a'), note('b'), note('c')]]);
+    expect(currentPlace(activeTab(workspace.groups[0]))).toEqual(note('a'));
+  });
+
   it('activates the tab beside the closed active tab', () => {
     let workspace = newWorkspace(home);
     const group = workspace.groups[0].id;
@@ -83,6 +94,27 @@ describe('closing tabs', () => {
 });
 
 describe('split windows', () => {
+  it('splits towards the edge a tab is dropped on, moving the tab into the new group', () => {
+    let workspace = newWorkspace(note('a'));
+    const b = newTab(note('b'));
+    workspace = addTab(workspace, workspace.groups[0].id, b);
+    const left = splitWithTab(workspace, workspace.groups[0].id, b.id, 'left');
+    expect(places(left)).toEqual([[note('b')], [note('a')]]);
+    expect(left.direction).toBe('right');
+    expect(left.focus).toBe(left.groups[0].id);
+    expect(left.groups[0].tabs[0]).toBe(b);
+    const below = splitWithTab(workspace, workspace.groups[0].id, b.id, 'bottom');
+    expect(places(below)).toEqual([[note('a')], [note('b')]]);
+    expect(below.direction).toBe('down');
+  });
+
+  it('keeps the only tab of a group, opening its page again beside it, and splits no further', () => {
+    const workspace = newWorkspace(note('a'));
+    const split = splitWithTab(workspace, workspace.groups[0].id, workspace.groups[0].tabs[0].id, 'right');
+    expect(places(split)).toEqual([[note('a')], [note('a')]]);
+    expect(splitWithTab(split, split.groups[0].id, split.groups[0].tabs[0].id, 'left')).toBe(split);
+  });
+
   it('adds a second tab group with its own tab, showing the same note', () => {
     const workspace = splitWorkspace(newWorkspace(note('a')), 'right');
     expect(places(workspace)).toEqual([[note('a')], [note('a')]]);

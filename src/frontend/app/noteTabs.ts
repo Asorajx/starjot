@@ -225,6 +225,16 @@ export function addTab(workspace: Workspace, groupId: string, tab: NoteTab, afte
   return selectTab(changeGroup(workspace, groupId, () => ({ ...group, tabs })), groupId, tab.id);
 }
 
+/* Add a tab without showing it (a note opened in the background), after the tab afterId (or */
+/* the active tab when it is gone), so several opened in a row keep their order, as in a browser. */
+export function addBackgroundTab(workspace: Workspace, groupId: string, tab: NoteTab, afterId: string): Workspace {
+  const group = workspace.groups.find(item => item.id === groupId);
+  if (!group || !canAddTab(group)) return workspace;
+  const after = group.tabs.findIndex(item => item.id === afterId);
+  const index = (after >= 0 ? after : group.tabs.indexOf(activeTab(group))) + 1;
+  return changeGroup(workspace, groupId, () => ({ ...group, tabs: [...group.tabs.slice(0, index), tab, ...group.tabs.slice(index)] }));
+}
+
 /* Close a tab. The tab beside it becomes active if the closed one was. A group left without tabs */
 /* closes too, unless it is the only one, which then shows Starjot Home. A stack with one tab */
 /* left becomes a normal group. */
@@ -291,14 +301,11 @@ export function moveTab(workspace: Workspace, fromId: string, tabId: string, toI
   if (!from || !to || !tab || tabId === beforeId || (from !== to && !canAddTab(to))) return workspace;
   if (beforeId && !to.tabs.some(item => item.id === beforeId)) return workspace;
 
-  const rest = from.tabs.filter(item => item.id !== tabId);
   let groups = workspace.groups;
-  if (from !== to && !rest.length) {
+  if (from !== to && from.tabs.length < 2) {
     groups = groups.filter(group => group.id !== fromId);
   } else if (from !== to) {
-    const shrunk = { ...from, tabs: rest, stacked: from.stacked && rest.length > 1 };
-    const left = withActive({ ...shrunk, stackStart: clampStart(shrunk, from.stackStart) }, from.active === tabId ? rest[0].id : from.active);
-    groups = groups.map(group => (group.id === fromId ? left : group));
+    groups = groups.map(group => (group.id === fromId ? withoutTab(from, tabId) : group));
   }
 
   const target = groups.find(group => group.id === toId) as TabGroup;
@@ -306,6 +313,15 @@ export function moveTab(workspace: Workspace, fromId: string, tabId: string, toI
   const index = beforeId ? others.findIndex(item => item.id === beforeId) : others.length;
   const tabs = [...others.slice(0, index), tab, ...others.slice(index)];
   return selectTab({ ...workspace, groups: groups.map(group => (group.id === toId ? { ...target, tabs } : group)) }, toId, tabId);
+}
+
+
+/* A group after one of its tabs (not its last) moves out: the first tab becomes active if the */
+/* moved one was, and a stack of one becomes a normal group. */
+function withoutTab(group: TabGroup, tabId: string) {
+  const rest = group.tabs.filter(item => item.id !== tabId);
+  const shrunk = { ...group, tabs: rest, stacked: group.stacked && rest.length > 1 };
+  return withActive({ ...shrunk, stackStart: clampStart(shrunk, group.stackStart) }, group.active === tabId ? rest[0].id : group.active);
 }
 
 
@@ -325,6 +341,30 @@ export function splitWorkspace(workspace: Workspace, direction: 'right' | 'down'
   const group = newGroup([newTab(currentPlace(activeTab(from)))]);
   const index = workspace.groups.indexOf(from) + 1;
   return { groups: [...workspace.groups.slice(0, index), group, ...workspace.groups.slice(index)], direction, focus: group.id };
+}
+
+export type SplitSide = 'left' | 'right' | 'top' | 'bottom';
+
+export function canSplit(workspace: Workspace) {
+  return workspace.groups.length < GROUP_LIMIT;
+}
+
+/* A tab dropped on an edge of a page splits the window there: the tab moves into a new group on */
+/* that side, which takes the focus. A group's only tab stays, and a new tab with its page opens */
+/* beside it instead (as Split right does). */
+export function splitWithTab(workspace: Workspace, fromId: string, tabId: string, side: SplitSide): Workspace {
+  const from = workspace.groups.find(group => group.id === fromId);
+  const tab = from?.tabs.find(item => item.id === tabId);
+  if (!canSplit(workspace) || !from || !tab) return workspace;
+  const moving = from.tabs.length > 1;
+  const group = newGroup([moving ? tab : newTab(currentPlace(tab))]);
+  const groups = workspace.groups.map(item => (item.id === fromId && moving ? withoutTab(from, tabId) : item));
+  const index = groups.findIndex(item => item.id === fromId) + (side === 'left' || side === 'top' ? 0 : 1);
+  return {
+    groups: [...groups.slice(0, index), group, ...groups.slice(index)],
+    direction: side === 'left' || side === 'right' ? 'right' : 'down',
+    focus: group.id
+  };
 }
 
 /* Stack the focused group's tabs, adding a tab with the same place after the active one, so two */

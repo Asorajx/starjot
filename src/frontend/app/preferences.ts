@@ -79,6 +79,10 @@ export type Preferences = {
   newNotes: NewNotes;
   openNotesIn: OpenNotesIn;
 
+  /* Show a note opened in a new tab (Ctrl + click, Open in new tab, Open notes in) straight */
+  /* away; when off (the default), it opens in the background. New notes are always shown. */
+  focusNewTabs: boolean;
+
   /* Open a sub-note as soon as it is made; when off, it stays in the parent with its name */
   /* ready to type. */
   openNewSubNotes: boolean;
@@ -225,7 +229,7 @@ function loadTimelineColumns(saved: unknown): TimelineColumns {
 /* Light mode is the default; once a theme is chosen in Settings it is remembered between visits. */
 function load(): Preferences {
   const defaults: Preferences = {
-    theme: 'system', accent: 'blue', density: 'comfortable', startScreen: 'start', onStartup: 'continue', spaces: loadSpaces(null), sidebar: loadSidebar(null), newNotes: loadNewNotes(null), openNotesIn: 'current', openNewSubNotes: true, zoom: 1, sidebarCollapsed: false, contentsScroll: 'smooth', notesSort: 'edited', notesView: 'list', timelineColumns: loadTimelineColumns(null), noteColorsInLists: true, hideHeaderWhileTyping: true, tips: true, spellcheck: true, typingShortcuts: true, shortcuts: {}, drawing: loadDrawing(null),
+    theme: 'system', accent: 'blue', density: 'comfortable', startScreen: 'start', onStartup: 'continue', spaces: loadSpaces(null), sidebar: loadSidebar(null), newNotes: loadNewNotes(null), openNotesIn: 'current', focusNewTabs: false, openNewSubNotes: true, zoom: 1, sidebarCollapsed: false, contentsScroll: 'smooth', notesSort: 'edited', notesView: 'list', timelineColumns: loadTimelineColumns(null), noteColorsInLists: true, hideHeaderWhileTyping: true, tips: true, spellcheck: true, typingShortcuts: true, shortcuts: {}, drawing: loadDrawing(null),
     exportSettings: normalizeExportSettings(null),
     recentColors: []
   };
@@ -240,6 +244,7 @@ function load(): Preferences {
     sidebar: loadSidebar(saved.sidebar),
     newNotes: loadNewNotes(saved.newNotes),
     openNotesIn: saved.openNotesIn === 'new-notes' || saved.openNotesIn === 'always' ? saved.openNotesIn : defaults.openNotesIn,
+    focusNewTabs: saved.focusNewTabs === true,
     openNewSubNotes: saved.openNewSubNotes !== false,
     zoom: typeof saved.zoom === 'number' ? clampZoom(saved.zoom) : defaults.zoom,
     sidebarCollapsed: saved.sidebarCollapsed === true,

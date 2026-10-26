@@ -24,8 +24,8 @@ import { openWorkItem } from '../boardspace/openWork';
 import type { BoardTab } from '../../shared/types/board';
 import type { NoteKind } from '../../shared/types/note';
 import {
-  activeTab, addTab, canAddTab, canStack, closeTab, currentPlace, cycleTab, focusedGroup, focusGroup, goTo, isOpenInStack, isSplit, moveTab, newTab,
-  continueIdsAfter, newWorkspace, reopenLastClosed, restoreWorkspace, samePlace, selectTab, splitWorkspace, stackGroup, step, stepPlace, STACK_LIMIT, unsplit, updateTab, type ClosedTab, type NoteTab,
+  activeTab, addBackgroundTab, addTab, canAddTab, canSplit, canStack, closeTab, currentPlace, cycleTab, focusedGroup, focusGroup, goTo, isOpenInStack, isSplit, moveTab, newTab,
+  continueIdsAfter, newWorkspace, reopenLastClosed, restoreWorkspace, samePlace, selectTab, splitWithTab, splitWorkspace, stackGroup, step, stepPlace, STACK_LIMIT, unsplit, updateTab, type ClosedTab, type NoteTab, type SplitSide,
   type Place, type TabGroup, type Workspace
 } from './noteTabs';
 import { DocumentTitle, StackSpine, TAB_DRAG_TYPE, TabSwitcher, WindowBar } from './WindowBar';
@@ -55,6 +55,10 @@ type TabGroupFrameProps = {
   /* A note was dropped on this group's tab bar: it opens in a new tab, before the tab it was */
   /* dropped on, or at the end. */
   onDropNote: (noteId: string, beforeTabId: string | null) => void;
+
+  /* Whether there is room for another group, and a tab dropped on an edge of this group's page. */
+  canSplit: boolean;
+  onSplitTab: (fromGroupId: string, tabId: string, side: SplitSide) => void;
   children: ReactNode;
 };
 
@@ -68,14 +72,29 @@ function markDropBefore(tab: HTMLElement | null) {
   tab?.classList.add('is-drop-before');
 }
 
+/* The edge of a page a tab is dragged nearest to, which a drop splits towards, or null in its */
+/* middle (where a drop just moves the tab into this group, as on its tab bar). */
+function splitSideAt(event: DragEvent, page: Element) {
+  const box = page.getBoundingClientRect();
+  const x = (event.clientX - box.left) / box.width;
+  const y = (event.clientY - box.top) / box.height;
+  if (x > 0.3 && x < 0.7 && y > 0.3 && y < 0.7) return null;
+  const edges: [SplitSide, number][] = [['left', x], ['right', 1 - x], ['top', y], ['bottom', 1 - y]];
+  return edges.reduce((nearest, edge) => (edge[1] < nearest[1] ? edge : nearest))[0];
+}
+
 /* The element around one tab group. It measures its own width (CSS cannot do this here: a CSS */
 /* container would also move the note's floating toolbars), and marks itself narrow when needed. */
 /* It also takes tabs dragged from either group. Drops are caught before they reach the note, so */
 /* the editor never treats a dragged tab as text. */
-function TabGroupFrame({ group, focused, onFocus, onDropTab, onDropNote, children }: TabGroupFrameProps) {
+function TabGroupFrame({ group, focused, onFocus, onDropTab, onDropNote, canSplit, onSplitTab, children }: TabGroupFrameProps) {
   const ref = useRef<HTMLElement>(null);
   const [narrow, setNarrow] = useState(false);
   const [dropping, setDropping] = useState(false);
+
+  /* While a tab is dragged over an edge of the page: that side, and where the new group would */
+  /* go (shaded), relative to this frame. */
+  const [split, setSplit] = useState<{ side: SplitSide; box: { left: number; top: number; width: number; height: number } } | null>(null);
   useLayoutEffect(() => {
     const element = ref.current;
     if (!element) return;
@@ -90,6 +109,12 @@ function TabGroupFrame({ group, focused, onFocus, onDropTab, onDropNote, childre
   const isNoteDrop = (event: DragEvent) => event.dataTransfer.types.includes(NOTE_DRAG_TYPE)
     && Boolean((event.target as Element).closest?.('.window-bar, .stack-spine'));
 
+  /* The page area under a dragged tab, when a drop there can split the window. */
+  const splitPage = (event: DragEvent) => {
+    if (!canSplit || !isTabDrag(event) || (event.target as Element).closest?.('.window-bar, .stack-spine')) return null;
+    return (event.target as Element).closest?.('.tab-group-body') ?? null;
+  };
+
   function handleDragOver(event: DragEvent) {
     const note = isNoteDrop(event);
     if (!isTabDrag(event) && !note) return;
@@ -97,12 +122,31 @@ function TabGroupFrame({ group, focused, onFocus, onDropTab, onDropNote, childre
     event.stopPropagation();
     event.dataTransfer.dropEffect = note ? 'copy' : 'move';
     if (note) markDropBefore(dropBefore(event));
-    setDropping(true);
+    const page = splitPage(event);
+    const side = page ? splitSideAt(event, page) : null;
+    if (page && side && ref.current) {
+      const frame = ref.current.getBoundingClientRect();
+      const area = page.getBoundingClientRect();
+      const across = side === 'left' || side === 'right';
+      setSplit({
+        side,
+        box: {
+          left: area.left - frame.left + (side === 'right' ? area.width / 2 : 0),
+          top: area.top - frame.top + (side === 'bottom' ? area.height / 2 : 0),
+          width: across ? area.width / 2 : area.width,
+          height: across ? area.height : area.height / 2
+        }
+      });
+    } else {
+      setSplit(null);
+    }
+    setDropping(!side);
   }
 
   function handleDragLeave(event: DragEvent) {
     if (ref.current?.contains(event.relatedTarget as Node | null)) return;
     setDropping(false);
+    setSplit(null);
     markDropBefore(null);
   }
 
@@ -119,7 +163,14 @@ function TabGroupFrame({ group, focused, onFocus, onDropTab, onDropNote, childre
     event.preventDefault();
     event.stopPropagation();
     setDropping(false);
+    setSplit(null);
     const { groupId, tabId } = JSON.parse(event.dataTransfer.getData(TAB_DRAG_TYPE)) as { groupId: string; tabId: string };
+    const page = splitPage(event);
+    const side = page ? splitSideAt(event, page) : null;
+    if (side) {
+      onSplitTab(groupId, tabId, side);
+      return;
+    }
     const before = (event.target as Element).closest?.<HTMLElement>('[data-tab-id]')?.dataset.tabId ?? null;
     onDropTab(groupId, tabId, before);
   }
@@ -135,6 +186,7 @@ function TabGroupFrame({ group, focused, onFocus, onDropTab, onDropNote, childre
       onDropCapture={handleDrop}
     >
       {children}
+      {split && <div className={`tab-split-preview is-${split.side}`} style={split.box} aria-hidden="true" />}
     </section>
   );
 }
@@ -277,16 +329,34 @@ export function App() {
     requestAnimationFrame(() => document.querySelector(`[data-tab="${tabId}"]`)?.scrollTo(0, 0));
   }
 
-  /* Ctrl + click opens a place in a new tab beside the active one (see opensNewTab). A full stack */
-  /* has no room for another tab, so the place opens in the active tab instead. */
-  function openInNewTab(next: Place) {
+  /* The last tab opened in the background, and the tab it was opened from: the next one opened */
+  /* from that tab goes after it, so they keep their order. */
+  const backgroundRun = useRef({ from: '', last: '' });
+
+  /* Add a tab beside the active one: shown, or in the background (see focusNewTabs). */
+  function addNewTab(groupId: string, tab: NoteTab, show: boolean) {
+    if (show) {
+      setScreenId('notes');
+      changeTabs(current => addTab(current, groupId, tab, true));
+      return;
+    }
+    const from = activeTab(tabs.groups.find(item => item.id === groupId) ?? group).id;
+    const after = backgroundRun.current.from === from ? backgroundRun.current.last : from;
+    backgroundRun.current = { from, last: tab.id };
+    changeTabs(current => addBackgroundTab(current, groupId, tab, after));
+  }
+
+  /* Ctrl + click opens a place in a new tab beside the active one (see opensNewTab), in the */
+  /* background unless Settings → Notes → Switch to new tabs is on; show makes it the active tab */
+  /* (for a note just made). A full stack has no room for another tab, so the place opens in the */
+  /* active tab instead. */
+  function openInNewTab(next: Place, show = getPreferences().focusNewTabs) {
     if (!canAddTab(group)) {
       go(next);
       return activeTab(group).id;
     }
-    setScreenId('notes');
     const tab = newTab(next);
-    changeTabs(current => addTab(current, group.id, tab, true));
+    addNewTab(group.id, tab, show);
     return tab.id;
   }
 
@@ -311,7 +381,7 @@ export function App() {
     const viewed = shown.kind === 'category' ? shown.id : '';
     const note = createNote(category ?? (viewed || filtered), '', kind);
     if (opensInNewTab(false, true)) {
-      focusTitle(openInNewTab({ kind: 'note', id: note.id }));
+      focusTitle(openInNewTab({ kind: 'note', id: note.id }, true));
       return;
     }
     go({ kind: 'note', id: note.id }, groupId, tab.id);
@@ -503,18 +573,18 @@ export function App() {
     setSearchState({ query, tabGroup });
   }
 
-  /* Opens a place from search: in a new tab of the group whose + opened search, in a new tab of */
-  /* the focused group (Ctrl + Enter), or here. A group with no room for a tab opens it here. */
-  function openFromSearch(place: Place, inNewTab: boolean) {
+  /* Opens a place from search: in a new tab of the group whose + opened search (shown), in a new */
+  /* tab of the focused group (Ctrl + Enter; shown when just made, else as focusNewTabs says), or */
+  /* here. A group with no room for a tab opens it here. */
+  function openFromSearch(place: Place, inNewTab: boolean, created = false) {
     const groupId = searchState?.tabGroup ?? (inNewTab ? group.id : null);
     const target = groupId ? tabs.groups.find(item => item.id === groupId) : null;
     if (!target || !canAddTab(target)) {
       go(place);
       return null;
     }
-    setScreenId('notes');
     const tab = newTab(place);
-    changeTabs(current => addTab(current, target.id, tab, true));
+    addNewTab(target.id, tab, Boolean(searchState?.tabGroup) || created || getPreferences().focusNewTabs);
     return tab;
   }
 
@@ -532,7 +602,7 @@ export function App() {
     flushSave();
     const note = createNote(category, '', kind);
     if (title) updateNote(note.id, { title });
-    const tab = openFromSearch({ kind: 'note', id: note.id }, opensInNewTab(inNewTab, true));
+    const tab = openFromSearch({ kind: 'note', id: note.id }, opensInNewTab(inNewTab, true), true);
     if (!title) focusTitle(tab?.id ?? activeTab(group).id);
   }
 
@@ -654,7 +724,7 @@ export function App() {
     /* names it in the parent note instead. */
     const openNewPage = (id: string) => {
       if (opensInNewTab(false, true)) {
-        focusTitle(openInNewTab({ kind: 'note', id }));
+        focusTitle(openInNewTab({ kind: 'note', id }, true));
         return;
       }
       goHere({ kind: 'note', id });
@@ -733,6 +803,8 @@ export function App() {
             focused={tabGroup.id === tabs.focus}
             onFocus={() => focusOn(tabGroup.id)}
             onDropTab={(fromId, tabId, beforeId) => changeTabs(current => moveTab(current, fromId, tabId, tabGroup.id, beforeId))}
+            canSplit={canSplit(tabs)}
+            onSplitTab={(fromId, tabId, side) => changeTabs(current => splitWithTab(current, fromId, tabId, side))}
             onDropNote={(noteId, beforeId) => {
               if (!getNote(noteId) || !canAddTab(tabGroup)) return;
               const added = newTab({ kind: 'note', id: noteId });

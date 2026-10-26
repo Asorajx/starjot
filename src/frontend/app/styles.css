@@ -474,6 +474,7 @@ p {
 }
 
 .tab-group {
+  position: relative;
   display: flex;
   flex: 1;
   flex-direction: column;
@@ -496,6 +497,19 @@ p {
 
 .tab-group.is-drop-target > .window-bar {
   background: var(--accent-soft);
+}
+
+/* A tab dragged near an edge of a page shades the half the new group would take (see */
+/* splitSideAt in App.tsx). */
+.tab-split-preview {
+  position: absolute;
+  z-index: 30;
+  border: 2px solid var(--accent);
+  border-radius: 6px;
+  background: var(--accent-soft);
+  opacity: 0.85;
+  pointer-events: none;
+  transition: left 120ms ease, top 120ms ease, width 120ms ease, height 120ms ease;
 }
 
 /* Renaming in place (TitleEditor): the field sits exactly over the title, in its font, so only a */
