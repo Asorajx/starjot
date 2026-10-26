@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useEscape } from '../../lib/useDismiss';
+import { useFocusTrap } from '../../lib/useFocusTrap';
 import { Choice, Row } from '../export/ExportDialog';
 import type { Note } from '../../../shared/types/note';
 import type { CanvasBox } from './boxes';
@@ -37,6 +38,8 @@ export function CanvasExportDialog({ note, boxes, measure, onClose }: CanvasExpo
 
   useEffect(() => exportRef.current?.focus(), []);
   useEscape(true, onClose);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(dialogRef, null);
 
   function choose(next: CanvasExportFormat) {
     lastFormat = next;
@@ -61,7 +64,7 @@ export function CanvasExportDialog({ note, boxes, measure, onClose }: CanvasExpo
 
   return (
     <div className="dialog-backdrop" onMouseDown={event => { if (event.target === event.currentTarget) onClose(); }}>
-      <div className="dialog export-dialog" role="dialog" aria-modal="true" aria-label="Export canvas">
+      <div ref={dialogRef} className="dialog export-dialog" role="dialog" aria-modal="true" aria-label="Export canvas">
         <Row label="Export format">
           <Choice label="Export format" value={format} options={CANVAS_EXPORT_FORMATS} onChange={choose} />
         </Row>

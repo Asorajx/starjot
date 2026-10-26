@@ -28,7 +28,7 @@
   border: 1px solid #dbe4f2;
   border-radius: 4px;
   background: #fff;
-  color: #5d6f8a;
+  color: #5b6d87;
   font: inherit;
   font-size: 12px;
   font-weight: 650;
@@ -50,7 +50,7 @@
 
 /* Token colours used by the syntax highlighter in code.ts. */
 .tok-comment {
-  color: #657790;
+  color: #5d6d84;
   font-style: italic;
 }
 

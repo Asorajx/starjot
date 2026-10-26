@@ -57,7 +57,7 @@
   border: 1px solid #dfe7f3;
   border-radius: 4px;
   background: #ffffff;
-  color: #66778f;
+  color: #5e6d84;
   cursor: pointer;
 }
 
@@ -283,7 +283,7 @@
 
 .table-menu-item:disabled,
 .page-menu-item:disabled {
-  color: #667892;
+  color: #5d6d85;
   cursor: default;
 }
 

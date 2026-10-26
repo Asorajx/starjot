@@ -20,7 +20,7 @@
   padding: 12px 8px;
   margin-bottom: 8px;
   border-left: 2px solid transparent;
-  color: #66788c;
+  color: #5d6d7f;
 }
 
 .outline-item:hover {
@@ -49,7 +49,7 @@
   align-items: center;
   gap: 12px;
   font-size: 12px;
-  color: #67788c;
+  color: #5e6d7f;
   margin-bottom: 24px;
 }
 
@@ -63,7 +63,7 @@
 }
 
 .meta-dot {
-  color: #647797;
+  color: #5b6c89;
 }
 
 .article-rule {
@@ -100,7 +100,7 @@
 .block-content p {
   font-size: 13px;
   line-height: 1.96;
-  color: #65738a;
+  color: #5f6c82;
   margin: 0 0 16px;
 }
 
@@ -108,7 +108,7 @@
 .block-content ul {
   padding-left: 24px;
   margin: 0 0 16px;
-  color: #66758c;
+  color: #5f6d82;
   font-size: 13px;
   line-height: 1.9;
 }
@@ -152,7 +152,7 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  color: #647794;
+  color: #5c6d88;
   font-size: 12px;
   font-weight: 800;
   letter-spacing: 1.1px;
@@ -240,7 +240,7 @@
 }
 
 .option-tile:disabled {
-  color: #667892;
+  color: #5d6d85;
   cursor: default;
 }
 
@@ -284,7 +284,7 @@
 
 .option-tile em {
   margin-left: auto;
-  color: #627896;
+  color: #596d89;
   font-size: 12px;
   font-style: normal;
 }
@@ -316,7 +316,7 @@
   position: absolute;
   left: 0;
   top: 8px;
-  color: #637895;
+  color: #5a6d88;
 }
 
 
@@ -417,7 +417,7 @@
 }
 
 .note-title-input::placeholder {
-  color: #5c789f;
+  color: #546d91;
 }
 
 .note-editable {
@@ -430,6 +430,12 @@
 
 .note-editable:focus {
   outline: none;
+}
+
+/* Reached with the keyboard (Tab), the text shows a thin accent bar down its left edge, so it is */
+/* clear where typing goes; clicking into it shows nothing but the caret (see keyboardMark.ts). */
+[data-keyboard] .note-editable:focus {
+  box-shadow: -12px 0 0 -10px var(--accent);
 }
 
 .note-editable h2,
@@ -504,7 +510,7 @@
   border: 0;
   border-radius: 4px;
   background: transparent;
-  color: #667891;
+  color: #5d6d84;
 }
 
 .page-bar-button:hover:not(:disabled),
@@ -541,7 +547,7 @@
 }
 
 .save-status.is-saving {
-  color: #6a778a;
+  color: #606c7e;
 }
 
 .save-status.is-saving svg {
@@ -612,7 +618,7 @@
   border: 0;
   border-radius: 4px;
   background: transparent;
-  color: #647894;
+  color: #5b6d87;
 }
 
 .flyout-close:hover {
@@ -656,13 +662,13 @@
 
 /* A heading inside a tab block: the tab's name comes first, quieter than the heading. */
 .outline-tab {
-  color: #69778d;
+  color: #606c80;
   font-weight: 500;
 }
 
 .toc-empty {
   margin: 8px 4px;
-  color: #647891;
+  color: #5b6d84;
   font-size: 12px;
   line-height: 1.7;
 }
@@ -673,7 +679,7 @@
   margin-top: 24px;
   padding-top: 16px;
   border-top: 1px solid #edf1f7;
-  color: #617795;
+  color: #596d89;
   font-size: 12px;
   line-height: 1.6;
 }
@@ -828,7 +834,7 @@
   bottom: 40px;
   left: 0;
   right: 0;
-  color: #69778d;
+  color: #606c80;
   font-size: 12px;
   text-align: center;
 }
@@ -884,7 +890,7 @@
   align-items: center;
   min-width: 0;
   max-width: min(48vw, 510px);
-  color: #66778f;
+  color: #5e6d84;
   font-size: 14px;
 }
 
@@ -1026,7 +1032,7 @@
 .editor-breadcrumb-separator {
   display: inline-flex;
   flex-shrink: 0;
-  color: #627798;
+  color: #596c8a;
 }
 
 .editor-crumb-current {
@@ -1068,7 +1074,7 @@
 .block-content ol {
   padding-left: 24px;
   margin: 0 0 16px;
-  color: #65738a;
+  color: #5f6c82;
   font-size: 13px;
   line-height: 1.9;
 }
@@ -1348,7 +1354,7 @@
   border: 0;
   border-radius: 4px;
   background: transparent;
-  color: #66778f;
+  color: #5e6d84;
   font: inherit;
   font-size: 12px;
   font-weight: 600;
@@ -1371,7 +1377,7 @@
 }
 
 .note-details dt {
-  color: #66778f;
+  color: #5e6d84;
   font-weight: 600;
 }
 
@@ -1449,7 +1455,7 @@
   position: absolute;
   top: 4px;
   left: 8px;
-  color: #69778d;
+  color: #606c80;
   pointer-events: none;
 }
 
@@ -1502,7 +1508,7 @@
   gap: 4px;
   height: 26px;
   padding: 0 8px;
-  color: #66778f;
+  color: #5e6d84;
   font-size: 12px;
   font-weight: 600;
 }
@@ -1618,7 +1624,7 @@
 
 .note-page-list .note-page-list .note-page-link::before {
   content: "↳";
-  color: #69778d;
+  color: #606c80;
 }
 
 .note-page-icon {
@@ -1703,7 +1709,7 @@
 }
 
 .note-description.is-empty {
-  color: #647794;
+  color: #5c6d88;
 }
 
 .note-description-box {
@@ -1731,7 +1737,7 @@
 }
 
 .note-detail-field::placeholder {
-  color: #647794;
+  color: #5c6d88;
 }
 
 /* The View buttons' long tooltips hang under the whole row (the row is their anchor, not the */

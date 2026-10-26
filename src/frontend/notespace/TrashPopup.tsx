@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { Dropdown, type DropdownOption } from '../components/Dropdown';
 import { Icon } from '../components/Icon';
 import { useDismiss } from '../lib/useDismiss';
+import { useFocusTrap } from '../lib/useFocusTrap';
 import { ancestorsOf, categoryName, deleteForever, emptyTrash, getNote, noteIcon, noteTitle, TRASH_DAYS, useCategories, useNotes, useTrash } from './store';
 import { closeTrash, restore, useTrashPopup } from './trash';
 import type { TrashEntry } from '../../shared/types/note';
@@ -47,6 +48,10 @@ function TrashWindow({ from }: { from: DOMRect | null }) {
   const [emptying, setEmptying] = useState(false);
   useDismiss(!deleting && !emptying, '.trash-popup, .trash-button', closeTrash);
 
+  /* Like a dialog, the keyboard stays in it (also over Settings, which can open it). */
+  const popupRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(popupRef, null);
+
   const words = query.trim().toLowerCase();
   const inScope = (entry: TrashEntry) => scope === 'all' || entry.notes[0].category === (scope === 'none' ? '' : scope);
   const shown = trash.filter(entry => inScope(entry) && (!words || `${noteTitle(entry.notes[0])} ${pathOf(entry)}`.toLowerCase().includes(words)));
@@ -61,7 +66,7 @@ function TrashWindow({ from }: { from: DOMRect | null }) {
 
   return (
     <>
-      <div className={`trash-popup ${from ? '' : 'is-centered'}`} style={place} role="dialog" aria-label="Trash">
+      <div ref={popupRef} className={`trash-popup ${from ? '' : 'is-centered'}`} style={place} role="dialog" aria-label="Trash">
         <input
           className="trash-search"
           type="search"

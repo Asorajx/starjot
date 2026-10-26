@@ -4,6 +4,7 @@ import { Icon, type IconName } from '../components/Icon';
 import { opensNewTab } from '../lib/clicks';
 import { usePreferences, type Spaces } from '../app/preferences';
 import { useEscape } from '../lib/useDismiss';
+import { useFocusTrap } from '../lib/useFocusTrap';
 import { cleanHtml, htmlToText } from '../notespace/sanitize';
 import { starredNotes } from '../notespace/NoteList';
 import { ancestorsOf, categoryName, getNote, noteIcon, noteTitle, useCategories, useNotes } from '../notespace/store';
@@ -305,14 +306,15 @@ export function SearchWindow({ initialQuery, inNewTab, onClose, onOpenNote, onOp
 
   useEscape(true, onClose);
 
-  /* Focus the box as the window opens, with the cursor after any text already typed, and give */
-  /* focus back to where it was when the window closes. */
+  /* The keyboard stays in the window, and goes back where it was when the window closes. */
+  const windowRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(windowRef, null);
+
+  /* Focus the box as the window opens, with the cursor after any text already typed. */
   useEffect(() => {
-    const before = document.activeElement as HTMLElement | null;
     const input = inputRef.current;
     input?.focus();
     input?.setSelectionRange(input.value.length, input.value.length);
-    return () => before?.focus?.();
   }, []);
 
   useEffect(() => setSelected(0), [query, titleOnly, scope]);
@@ -360,7 +362,7 @@ export function SearchWindow({ initialQuery, inNewTab, onClose, onOpenNote, onOp
 
   return (
     <div className="search-backdrop" onMouseDown={event => event.target === event.currentTarget && onClose()}>
-      <div className="search-window" role="dialog" aria-modal="true" aria-label={inNewTab ? 'Open in a new tab' : 'Search'}>
+      <div ref={windowRef} className="search-window" role="dialog" aria-modal="true" aria-label={inNewTab ? 'Open in a new tab' : 'Search'}>
         <div className="search-head">
           <Icon name="search" size={20} />
           <input

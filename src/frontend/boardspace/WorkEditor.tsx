@@ -4,6 +4,7 @@ import { DateField } from '../components/DateField';
 import { Dropdown } from '../components/Dropdown';
 import { Icon } from '../components/Icon';
 import { useEscape } from '../lib/useDismiss';
+import { useFocusTrap } from '../lib/useFocusTrap';
 import { usePreferences } from '../app/preferences';
 import type { WorkStatus, WorkType } from '../../shared/types/board';
 import { addDays, isoDay, parseDay, weekStart } from './dates';
@@ -44,6 +45,8 @@ export function WorkEditor({ target, onClose, onManageMembers, onOpenNote }: Wor
   const board = useBoard();
   const { spaces } = usePreferences();
   const nameRef = useRef<HTMLInputElement>(null);
+  const drawerRef = useRef<HTMLElement>(null);
+  useFocusTrap(drawerRef, null);
   const [error, setError] = useState('');
   const [confirming, setConfirming] = useState(false);
 
@@ -138,7 +141,7 @@ export function WorkEditor({ target, onClose, onManageMembers, onOpenNote }: Wor
 
   return (
     <div className="board-drawer-backdrop" onMouseDown={event => { if (event.target === event.currentTarget) onClose(); }}>
-      <aside className="board-drawer" role="dialog" aria-modal="true" aria-labelledby="board-drawer-title">
+      <aside ref={drawerRef} className="board-drawer" role="dialog" aria-modal="true" aria-labelledby="board-drawer-title">
         <header className="board-drawer-head">
           <div>
             <span className="board-drawer-overline">{target.kind === 'sprint' ? 'SPRINT' : 'WORK ITEM'}</span>

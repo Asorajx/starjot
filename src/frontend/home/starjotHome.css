@@ -10,7 +10,7 @@
 
 .starjot-home-time {
   margin: 0 0 4px;
-  color: #68788f;
+  color: #5f6d82;
   font-size: 12px;
   font-weight: 600;
 }
@@ -73,12 +73,12 @@
 }
 
 .quick-note-text::placeholder {
-  color: #66778f;
+  color: #5e6d84;
 }
 
 .quick-note-status {
   min-width: 0;
-  color: #66778f;
+  color: #5e6d84;
   font-size: 12px;
 }
 

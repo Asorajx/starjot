@@ -3,6 +3,7 @@ import { Avatar } from '../components/Avatar';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { Icon } from '../components/Icon';
 import { useEscape } from '../lib/useDismiss';
+import { useFocusTrap } from '../lib/useFocusTrap';
 import { addMember, MEMBER_LENGTH, removeMember, useBoard } from './board';
 import { initialsOf } from './workItems';
 
@@ -21,6 +22,8 @@ export function MembersDialog({ onClose }: { onClose: () => void }) {
   const inputRef = useRef<HTMLInputElement>(null);
   useEffect(() => inputRef.current?.focus(), []);
   useEscape(!removing, onClose);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(dialogRef, null);
 
   function add(event: FormEvent) {
     event.preventDefault();
@@ -39,7 +42,7 @@ export function MembersDialog({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="dialog-backdrop" onMouseDown={event => { if (event.target === event.currentTarget) onClose(); }}>
-      <div className="dialog members-dialog" role="dialog" aria-modal="true" aria-labelledby="members-title">
+      <div ref={dialogRef} className="dialog members-dialog" role="dialog" aria-modal="true" aria-labelledby="members-title">
         <div className="members-head">
           <div>
             <h2 id="members-title">Team members</h2>

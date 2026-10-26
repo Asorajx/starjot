@@ -6,8 +6,8 @@
   --bg: #f7f9fc;
   --paper: #fff;
   --ink: #202c43;
-  --muted: #66748a;
-  --muted-deep: #66748a;
+  --muted: #606d82;
+  --muted-deep: #606d82;
   --line: #e9edf3;
 
   /* The accent colour variables (--accent and its shades) are in app/accents.css. */
@@ -98,7 +98,7 @@ p {
 }
 
 .startup-placeholder p {
-  color: #66748a;
+  color: #606d82;
   font-size: 14px;
 }
 
@@ -172,7 +172,7 @@ p {
   border: 1px solid var(--line);
   border-radius: 4px;
   background: #f7f9fc;
-  color: #647794;
+  color: #5c6d88;
 }
 
 /* The focus outline goes around the whole box, not just the text inside it. */
@@ -208,7 +208,7 @@ p {
 }
 
 .sidebar-search input::placeholder {
-  color: #657890;
+  color: #5c6d83;
 }
 
 /* The spaces, one icon each. */
@@ -230,7 +230,7 @@ p {
   border: 0;
   border-radius: 4px;
   background: transparent;
-  color: #63738a;
+  color: #5e6d83;
   cursor: pointer;
 }
 
@@ -274,7 +274,7 @@ p {
 .sidebar-section-label {
   margin: 0;
   padding: 0 8px 8px;
-  color: #69778d;
+  color: #606c80;
   font-size: 12px;
   font-weight: 800;
   letter-spacing: 1.1px;
@@ -337,7 +337,7 @@ p {
 
 .sidebar-link svg {
   flex-shrink: 0;
-  color: #66778f;
+  color: #5e6d84;
 }
 
 .sidebar-link:hover {
@@ -371,7 +371,7 @@ p {
 .sidebar-empty {
   margin: 0;
   padding: 0 12px;
-  color: #66778e;
+  color: #5e6d83;
   font-size: 14px;
   line-height: 1.6;
 }
@@ -595,7 +595,7 @@ p {
   gap: 4px;
   padding: 8px 0;
   background: #edf0f5;
-  color: #66748a;
+  color: #606d82;
 }
 
 .stack-spine.is-active {
@@ -675,7 +675,7 @@ p {
   min-width: 72px;
   height: 32px;
   border-radius: 4px 4px 0 0;
-  color: #66748a;
+  color: #606d82;
 }
 
 .window-tab:hover {
@@ -736,7 +736,7 @@ p {
   border: 0;
   border-radius: 4px;
   background: none;
-  color: #6a778a;
+  color: #606c7e;
   opacity: 0;
 }
 
@@ -853,7 +853,7 @@ p {
   border: 0;
   border-radius: 4px;
   background: none;
-  color: #66748a;
+  color: #606d82;
 }
 
 .window-new-tab:hover {
@@ -1043,7 +1043,7 @@ p {
 .page-intro p {
   font-size: 14px;
   line-height: 1.65;
-  color: #6a788b;
+  color: #606d7e;
   margin: 0;
   max-width: 630px;
 }
@@ -1219,7 +1219,7 @@ p {
   border: 0;
   border-radius: 4px;
   background: none;
-  color: #66748a;
+  color: #606d82;
   cursor: pointer;
 }
 
@@ -1458,7 +1458,7 @@ p {
 
 /* The description wraps, so a longer message (such as how to recover data) is read in full. */
 .toast-text small {
-  color: #66778f;
+  color: #5e6d84;
   font-size: 12px;
   line-height: 1.45;
   overflow-wrap: anywhere;
@@ -1475,7 +1475,7 @@ p {
   border: 0;
   border-radius: 4px;
   background: transparent;
-  color: #66778f;
+  color: #5e6d84;
   cursor: pointer;
 }
 
@@ -1492,7 +1492,7 @@ p {
 
 .reminder-list-title {
   margin: 4px 8px;
-  color: #66778f;
+  color: #5e6d84;
   font-size: 12px;
   font-weight: 700;
   letter-spacing: .6px;
@@ -1522,7 +1522,7 @@ p {
 }
 
 .reminder-row > svg {
-  color: #66778f;
+  color: #5e6d84;
 }
 
 .reminder-row.is-due > svg,
@@ -1539,7 +1539,7 @@ p {
 
 .reminder-row-text small {
   overflow: hidden;
-  color: #66778f;
+  color: #5e6d84;
   font-size: 12px;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1553,14 +1553,14 @@ p {
 }
 
 .reminder-row-time {
-  color: #66778f;
+  color: #5e6d84;
   font-size: 12px;
   white-space: nowrap;
 }
 
 .reminder-empty {
   margin: 8px;
-  color: #66778e;
+  color: #5e6d83;
   font-size: 12px;
 }
 
@@ -1643,7 +1643,7 @@ p {
   border: 0;
   border-radius: 4px;
   background: transparent;
-  color: #66778f;
+  color: #5e6d84;
   cursor: pointer;
 }
 
@@ -1674,7 +1674,7 @@ p {
 
 .inbox-filter-title {
   padding: 4px 8px;
-  color: #66778f;
+  color: #5e6d84;
   font-size: 12px;
   font-weight: 700;
 }
@@ -1724,7 +1724,7 @@ p {
 }
 
 .inbox-row-open > svg {
-  color: #66778f;
+  color: #5e6d84;
 }
 
 .inbox-row-text {
@@ -1755,7 +1755,7 @@ p {
 
 .inbox-row-context {
   overflow: hidden;
-  color: #66778f;
+  color: #5e6d84;
   font-size: 12px;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1775,7 +1775,7 @@ p {
 }
 
 .inbox-row-time {
-  color: #66778f;
+  color: #5e6d84;
   font-size: 12px;
   white-space: nowrap;
 }

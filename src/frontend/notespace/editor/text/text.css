@@ -110,7 +110,7 @@
   border: 0;
   border-radius: 4px;
   background: transparent;
-  color: #647891;
+  color: #5b6d84;
   font-size: 14px;
   line-height: 1;
   font-family: inherit;
@@ -277,7 +277,7 @@
 
 .slash-menu-label {
   margin: 4px 8px 4px;
-  color: #66778f;
+  color: #5e6d84;
   font-size: 12px;
   font-weight: 700;
   letter-spacing: .04em;
@@ -316,7 +316,7 @@
   border: 1px solid #e2e8f1;
   border-radius: 4px;
   background: #ffffff;
-  color: #65738a;
+  color: #5f6c82;
   font-size: 14px;
 }
 
@@ -330,13 +330,13 @@
 
 /* The Markdown shortcut that does the same thing. */
 .slash-menu-item kbd {
-  color: #69778d;
+  color: #606c80;
   font: 11px ui-monospace, SFMono-Regular, Consolas, monospace;
 }
 
 .slash-menu-empty {
   margin: 8px;
-  color: #66778f;
+  color: #5e6d84;
   font-size: 12px;
 }
 
@@ -393,7 +393,7 @@
   place-items: center;
   width: 24px;
   height: 24px;
-  color: #65738a;
+  color: #5f6c82;
   font-size: 18px;
   line-height: 1;
 }
@@ -421,7 +421,7 @@
 .page-block-text small {
   display: -webkit-box;
   overflow: hidden;
-  color: #68778e;
+  color: #5f6c81;
   font-size: 12px;
   line-height: 1.6;
   -webkit-box-orient: vertical;
@@ -430,7 +430,7 @@
 
 .page-block-meta {
   overflow: hidden;
-  color: #69778d;
+  color: #606c80;
   font-size: 11px;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -512,7 +512,7 @@
 }
 
 .page-block.is-missing strong {
-  color: #66778f;
+  color: #5e6d84;
   text-decoration: none;
 }
 
@@ -547,7 +547,7 @@
   border: 1px solid transparent;
   border-radius: 4px;
   background: transparent;
-  color: #66778f;
+  color: #5e6d84;
   font: inherit;
   font-size: 11px;
   font-weight: 700;
@@ -586,7 +586,7 @@
 }
 
 .page-mention.is-missing {
-  color: #66778f;
+  color: #5e6d84;
   text-decoration-style: dashed;
 }
 
@@ -638,7 +638,7 @@
 /* A web address under its site's name, cut short with an ellipsis when long. */
 .page-preview-address {
   overflow: hidden;
-  color: #65738a;
+  color: #5f6c82;
   font-size: 12px;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -650,14 +650,14 @@
 }
 
 .page-preview-meta {
-  color: #69778d;
+  color: #606c80;
   font-size: 12px;
 }
 
 .page-preview-text {
   display: -webkit-box;
   overflow: hidden;
-  color: #65738a;
+  color: #5f6c82;
   font-size: 14px;
   line-height: 1.6;
   -webkit-box-orient: vertical;
@@ -712,7 +712,7 @@
 }
 
 .link-tools-form label > span {
-  color: #667891;
+  color: #5d6d84;
   font-size: 12px;
   font-weight: 700;
 }
@@ -725,7 +725,7 @@
   display: flex;
   align-items: center;
   gap: 4px;
-  color: #65738a;
+  color: #5f6c82;
   font-size: 12px;
 }
 
@@ -861,7 +861,7 @@ ul.checklist > li.is-checked::after {
 }
 
 ul.checklist > li.is-checked {
-  color: #69778d;
+  color: #606c80;
   text-decoration: line-through;
 }
 
@@ -894,7 +894,7 @@ ul.checklist > li.is-checked {
 }
 
 .reminder-chip[data-done="true"] {
-  color: #66778f;
+  color: #5e6d84;
   font-weight: 500;
 }
 
@@ -1035,7 +1035,7 @@ ul.checklist > li.is-checked {
   width: 24px;
   height: 24px;
   margin-right: 4px;
-  color: #66778f;
+  color: #5e6d84;
   visibility: hidden;
 }
 
@@ -1052,7 +1052,7 @@ ul.checklist > li.is-checked {
   width: 28px;
   height: 28px;
   margin-bottom: 2px;
-  color: #66778f;
+  color: #5e6d84;
 }
 
 .is-locked .tab-strip-remove,

@@ -1,5 +1,6 @@
 import { useEffect, useRef, type ReactNode } from 'react';
 import { useEscape } from '../lib/useDismiss';
+import { useFocusTrap } from '../lib/useFocusTrap';
 
 type ConfirmDialogProps = {
   title: string;
@@ -19,10 +20,13 @@ type ConfirmDialogProps = {
    ========================= */
 
 /* A centred question with Cancel and confirm buttons, shown over a dimmed page. */
-/* Cancel is focused first, so pressing Enter by accident never confirms a removal. */
+/* Cancel is focused first, so pressing Enter by accident never confirms a removal. The keyboard */
+/* stays inside until it closes, then goes back to the button that opened it. */
 export function ConfirmDialog({ title, children, confirmLabel, danger = false, notice = false, onConfirm, onCancel }: ConfirmDialogProps) {
   const cancelRef = useRef<HTMLButtonElement>(null);
   const confirmRef = useRef<HTMLButtonElement>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(dialogRef, null);
 
   useEffect(() => (notice ? confirmRef : cancelRef).current?.focus(), [notice]);
 
@@ -31,7 +35,7 @@ export function ConfirmDialog({ title, children, confirmLabel, danger = false, n
 
   return (
     <div className="dialog-backdrop" onMouseDown={event => { if (event.target === event.currentTarget) onCancel(); }}>
-      <div className="dialog" role="alertdialog" aria-modal="true" aria-labelledby="dialog-title">
+      <div ref={dialogRef} className="dialog" role="alertdialog" aria-modal="true" aria-labelledby="dialog-title">
         <h2 id="dialog-title">{title}</h2>
         <div className="dialog-body">{children}</div>
         <div className="dialog-actions">

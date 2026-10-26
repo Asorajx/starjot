@@ -9,6 +9,7 @@ import { DETAIL_PARTS, EXPORT_FORMATS, PAGE_FORMATS, SCALE_MAX, SCALE_MIN, type 
 import { exportText } from './exportText';
 import { Switch } from '../../components/Switch';
 import { useEscape } from '../../lib/useDismiss';
+import { useFocusTrap } from '../../lib/useFocusTrap';
 
 type ExportDialogProps = {
   noteId: string;
@@ -105,6 +106,8 @@ export function ExportDialog({ noteId, measure, onClose }: ExportDialogProps) {
   /* pull the focus out of the scale box while typing). Escape closes the window. */
   useEffect(() => exportRef.current?.focus(), []);
   useEscape(true, onClose);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(dialogRef, null);
 
   async function run() {
     const chosen: ExportSettings = { ...settings, content: text ? 'text' : settings.content, subpages: settings.subpages && hasSubpages };
@@ -127,7 +130,7 @@ export function ExportDialog({ noteId, measure, onClose }: ExportDialogProps) {
 
   return (
     <div className="dialog-backdrop" onMouseDown={event => { if (event.target === event.currentTarget) onClose(); }}>
-      <div className="dialog export-dialog" role="dialog" aria-modal="true" aria-label="Export">
+      <div ref={dialogRef} className="dialog export-dialog" role="dialog" aria-modal="true" aria-label="Export">
         <Row label="Export format">
           <Choice label="Export format" value={settings.format} options={EXPORT_FORMATS} onChange={format => change({ format })} />
         </Row>

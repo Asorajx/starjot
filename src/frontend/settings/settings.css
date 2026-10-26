@@ -112,7 +112,7 @@
 .settings-group-title {
   font-size: 12px;
   text-transform: uppercase;
-  color: #60789c;
+  color: #576d8e;
   letter-spacing: 1px;
   font-weight: 820;
   margin-bottom: 12px;
@@ -221,7 +221,7 @@
   border: 0;
   border-radius: 4px;
   background: transparent;
-  color: #67778e;
+  color: #5f6d83;
   font: inherit;
   font-size: 12px;
   font-weight: 650;
@@ -320,7 +320,7 @@
 }
 
 .future-chip {
-  color: #637799;
+  color: #5a6c8b;
   background: #f2f5f9;
   border-radius: 4px;
   padding: 4px 8px;
@@ -349,7 +349,7 @@
 
 .fake-text {
   font-size: 12px;
-  color: #67788f;
+  color: #5e6d82;
 }
 
 .about-card {
@@ -370,7 +370,7 @@
 
 .about-card p {
   margin: 0;
-  color: #5e789a;
+  color: #566d8c;
   font-size: 12px;
 }
 

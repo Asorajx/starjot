@@ -20,7 +20,7 @@
 
 /* Text colours and background colours (highlights) chosen from the selection toolbar. */
 .text-gray {
-  color: #777673;
+  color: #6c6b69;
 }
 
 .text-brown {
@@ -44,7 +44,7 @@
 }
 
 .text-purple {
-  color: #8f63af;
+  color: #845ba1;
 }
 
 .text-pink {
@@ -108,7 +108,7 @@
 }
 
 .color-palette-heading {
-  color: #667891;
+  color: #5d6d84;
   font-size: 12px;
   font-weight: 700;
 }
@@ -176,7 +176,7 @@
 /* What kind of text is selected, on top of the buttons. */
 .selection-kind {
   padding: 4px;
-  color: #667891;
+  color: #5d6d84;
   font-size: 12px;
   font-weight: 700;
   letter-spacing: .2px;

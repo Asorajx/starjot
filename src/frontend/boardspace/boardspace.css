@@ -36,7 +36,7 @@
   gap: 8px;
   border: 0;
   background: transparent;
-  color: #67788c;
+  color: #5e6d7f;
   border-bottom: 2px solid transparent;
   padding: 4px 4px 0;
   white-space: nowrap;
@@ -61,7 +61,7 @@
 /* A count beside a heading (the board's columns). */
 .tab-count {
   background: #f0f3f8;
-  color: #647893;
+  color: #5b6d86;
   border-radius: 4px;
   padding: 4px 8px;
   font-size: 12px;
@@ -176,7 +176,7 @@
   padding: 0 8px;
   border: 1px solid var(--line);
   border-radius: 4px;
-  color: #5d6f88;
+  color: #5b6d85;
 }
 
 .board-search:focus-within {
@@ -195,7 +195,7 @@
 }
 
 .board-counts {
-  color: #5d6f88;
+  color: #5b6d85;
   font-size: 12px;
 }
 
@@ -209,7 +209,7 @@
   border: 0;
   border-radius: 4px;
   background: transparent;
-  color: #5d6f88;
+  color: #5b6d85;
   cursor: pointer;
 }
 
@@ -351,7 +351,7 @@
 /* Unassigned work shows a grey dash. */
 .work-avatar.is-nobody {
   background: #eef1f6;
-  color: #5d6f88;
+  color: #5b6d85;
 }
 
 .work-assignee {
@@ -429,7 +429,7 @@
 }
 
 .board-menu-text small {
-  color: #5d6f88;
+  color: #5b6d85;
   font-size: 12px;
   font-weight: 500;
 }
@@ -448,7 +448,7 @@
 .board-menu-heading {
   display: block;
   padding: 8px 8px 4px;
-  color: #5d6f88;
+  color: #5b6d85;
   font-size: 12px;
   font-weight: 700;
   text-transform: uppercase;
@@ -551,7 +551,7 @@
 }
 
 .board-field-hint {
-  color: #5d6f88;
+  color: #5b6d85;
   font-size: 12px;
 }
 
@@ -606,7 +606,7 @@
   flex-shrink: 0;
   place-items: center;
   width: 20px;
-  color: #5d6f88;
+  color: #5b6d85;
   font-size: 14px;
 }
 
@@ -667,7 +667,7 @@
   border: 0;
   border-radius: 4px;
   background: transparent;
-  color: #5d6f88;
+  color: #5b6d85;
   cursor: pointer;
 }
 
@@ -697,7 +697,7 @@
   flex-shrink: 0;
   align-items: center;
   gap: 4px;
-  color: #5d6f88;
+  color: #5b6d85;
   font-size: 12px;
 }
 
@@ -809,7 +809,7 @@
 
 .members-head p {
   margin: 4px 0 0;
-  color: #5d6f88;
+  color: #5b6d85;
   font-size: 14px;
 }
 
@@ -854,13 +854,13 @@
 }
 
 .members-count {
-  color: #5d6f88;
+  color: #5b6d85;
   font-size: 12px;
 }
 
 .members-empty {
   margin: 16px 0 0;
-  color: #5d6f88;
+  color: #5b6d85;
   font-size: 14px;
 }
 
@@ -1014,7 +1014,7 @@
 .work-list-parent {
   display: block;
   overflow: hidden;
-  color: #5d6f88;
+  color: #5b6d85;
   font-size: 12px;
   text-overflow: ellipsis;
 }
@@ -1027,7 +1027,7 @@
 }
 
 .work-list-muted {
-  color: #5d6f88;
+  color: #5b6d85;
 }
 
 .work-list-empty {
@@ -1117,7 +1117,7 @@
 .board-column-empty {
   margin: 0;
   padding: 16px 8px;
-  color: #5d6f88;
+  color: #5b6d85;
   font-size: 12px;
   text-align: center;
 }
@@ -1198,7 +1198,7 @@
   border: 0;
   border-radius: 4px;
   background: transparent;
-  color: #5d6f88;
+  color: #5b6d85;
   cursor: pointer;
 }
 
@@ -1215,7 +1215,7 @@
 /* What the card sits inside, on one line (the editor shows it in full). */
 .board-card-parent {
   overflow: hidden;
-  color: #5d6f88;
+  color: #5b6d85;
   font-size: 12px;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1225,7 +1225,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  color: #5d6f88;
+  color: #5b6d85;
   font-size: 12px;
 }
 
@@ -1303,7 +1303,7 @@
 
 .summary-tile small,
 .summary-muted {
-  color: #5d6f88;
+  color: #5b6d85;
   font-size: 12px;
 }
 
@@ -1333,7 +1333,7 @@
 
 .summary-none {
   margin: 0;
-  color: #5d6f88;
+  color: #5b6d85;
   font-size: 14px;
 }
 
@@ -1505,7 +1505,7 @@
 
 .summary-due-date {
   flex-shrink: 0;
-  color: #5d6f88;
+  color: #5b6d85;
   font-size: 12px;
 }
 

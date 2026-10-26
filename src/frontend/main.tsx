@@ -4,6 +4,7 @@ import { applyTheme } from './app/preferences';
 import { startFluidHover } from './app/fluidHover';
 import { startWarmTooltips } from './app/warmTooltips';
 import { startFittingTooltips } from './app/fitTooltips';
+import { startKeyboardMark } from './app/keyboardMark';
 import { startMenuKeys } from './app/menuKeys';
 import { removeUnusedImages } from './notespace/imageStore';
 import { imageIdsIn } from './notespace/editor/images/images';
@@ -50,6 +51,7 @@ applyTheme();
 startFluidHover();
 startWarmTooltips();
 startFittingTooltips();
+startKeyboardMark();
 startMenuKeys();
 
 /* New lines typed in a note become paragraphs, so each line maps cleanly to one block. */

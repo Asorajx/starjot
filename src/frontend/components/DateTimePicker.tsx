@@ -32,6 +32,11 @@ function monthDays(month: Date) {
   return Array.from({ length: count }, (_, index) => new Date(start.getFullYear(), start.getMonth(), start.getDate() + index));
 }
 
+const WEEKDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+
+/* A day as text (2026-10-26), to find its button again. */
+const dayKey = (day: Date) => `${day.getFullYear()}-${day.getMonth() + 1}-${day.getDate()}`;
+
 /* "9:15 AM" for minutes after midnight, as the computer writes times. */
 function timeLabel(minutes: number) {
   return new Date(2000, 0, 1, Math.floor(minutes / 60), minutes % 60).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
@@ -39,7 +44,9 @@ function timeLabel(minutes: number) {
 
 /* A date and time in the app's own style, in place of the browser's: a month calendar (← → ↑ ↓ */
 /* move the day, Page Up and Page Down the month) and a time, every 15 minutes (a time between */
-/* those, already chosen, is kept in the list). Each change is passed on straight away. */
+/* those, already chosen, is kept in the list). Each change is passed on straight away. The */
+/* calendar is a grid of week rows. Tab always reaches one day of the month shown: the chosen */
+/* day, or else today, or else the 1st, so another month never leaves no day to reach. */
 export function DateTimePicker({ value, onChange, dateOnly = false }: DateTimePickerProps) {
   const [month, setMonth] = useState(() => new Date(value.getFullYear(), value.getMonth(), 1));
   const today = new Date();
@@ -55,14 +62,22 @@ export function DateTimePicker({ value, onChange, dateOnly = false }: DateTimePi
     setMonth(new Date(next.getFullYear(), next.getMonth(), 1));
   }
 
+  const days = monthDays(month);
+  const inMonth = (day: Date) => day.getMonth() === month.getMonth();
+  const reachable = days.find(day => sameDay(day, value) && inMonth(day))
+    ?? days.find(day => sameDay(day, today) && inMonth(day))
+    ?? days.find(inMonth);
+
+  /* The keys move from the day with focus (the one Tab reached), not only from the chosen one. */
   function handleGridKeyDown(event: KeyboardEvent<HTMLDivElement>) {
+    const from = days.find(day => dayKey(day) === (event.target as HTMLElement).dataset.day) ?? value;
     const moves: Record<string, () => Date> = {
-      ArrowLeft: () => new Date(value.getFullYear(), value.getMonth(), value.getDate() - 1),
-      ArrowRight: () => new Date(value.getFullYear(), value.getMonth(), value.getDate() + 1),
-      ArrowUp: () => new Date(value.getFullYear(), value.getMonth(), value.getDate() - 7),
-      ArrowDown: () => new Date(value.getFullYear(), value.getMonth(), value.getDate() + 7),
-      PageUp: () => new Date(value.getFullYear(), value.getMonth() - 1, value.getDate()),
-      PageDown: () => new Date(value.getFullYear(), value.getMonth() + 1, value.getDate())
+      ArrowLeft: () => new Date(from.getFullYear(), from.getMonth(), from.getDate() - 1),
+      ArrowRight: () => new Date(from.getFullYear(), from.getMonth(), from.getDate() + 1),
+      ArrowUp: () => new Date(from.getFullYear(), from.getMonth(), from.getDate() - 7),
+      ArrowDown: () => new Date(from.getFullYear(), from.getMonth(), from.getDate() + 7),
+      PageUp: () => new Date(from.getFullYear(), from.getMonth() - 1, from.getDate()),
+      PageDown: () => new Date(from.getFullYear(), from.getMonth() + 1, from.getDate())
     };
     const move = moves[event.key];
     if (!move) return;
@@ -86,24 +101,31 @@ export function DateTimePicker({ value, onChange, dateOnly = false }: DateTimePi
         </button>
       </div>
       <div className="date-picker-grid" role="grid" aria-label="Day" onKeyDown={handleGridKeyDown}>
-        {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((day, index) => <span key={index} className="date-picker-weekday" aria-hidden="true">{day}</span>)}
-        {monthDays(month).map(day => {
-          const chosen = sameDay(day, value);
-          return (
-            <button
-              key={day.toDateString()}
-              type="button"
-              role="gridcell"
-              aria-selected={chosen}
-              aria-label={day.toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
-              tabIndex={chosen ? 0 : -1}
-              className={`date-picker-day ${chosen ? 'is-chosen' : ''} ${sameDay(day, today) ? 'is-today' : ''} ${day.getMonth() !== month.getMonth() ? 'is-outside' : ''}`}
-              onClick={() => pickDay(day)}
-            >
-              {day.getDate()}
-            </button>
-          );
-        })}
+        <div className="date-picker-row" role="row">
+          {WEEKDAYS.map(day => <span key={day} className="date-picker-weekday" role="columnheader" aria-label={day}>{day[0]}</span>)}
+        </div>
+        {Array.from({ length: days.length / 7 }, (_, week) => (
+          <div key={week} className="date-picker-row" role="row">
+            {days.slice(week * 7, week * 7 + 7).map(day => {
+              const chosen = sameDay(day, value);
+              return (
+                <button
+                  key={day.toDateString()}
+                  type="button"
+                  role="gridcell"
+                  data-day={dayKey(day)}
+                  aria-selected={chosen}
+                  aria-label={day.toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+                  tabIndex={reachable && sameDay(day, reachable) ? 0 : -1}
+                  className={`date-picker-day ${chosen ? 'is-chosen' : ''} ${sameDay(day, today) ? 'is-today' : ''} ${inMonth(day) ? '' : 'is-outside'}`}
+                  onClick={() => pickDay(day)}
+                >
+                  {day.getDate()}
+                </button>
+              );
+            })}
+          </div>
+        ))}
       </div>
       {!dateOnly && (
         <div className="date-picker-time">

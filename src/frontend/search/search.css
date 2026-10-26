@@ -31,7 +31,7 @@
   align-items: center;
   gap: 12px;
   padding: 12px 16px;
-  color: #63738a;
+  color: #5e6d83;
 }
 
 /* The box itself has no outline: the whole window shows that search has the keyboard. */
@@ -57,7 +57,7 @@
 }
 
 .search-input::placeholder {
-  color: #66778f;
+  color: #5e6d84;
 }
 
 .search-preview-toggle[aria-pressed="true"] {
@@ -76,7 +76,7 @@
 /* How many results matched, at the end of the filters. */
 .search-count {
   margin-left: auto;
-  color: #5d6f88;
+  color: #5b6d85;
   font-size: 12px;
 }
 
@@ -121,7 +121,7 @@
 
 .search-group-label {
   padding: 16px 12px 8px;
-  color: #66778e;
+  color: #5e6d83;
   font-size: 12px;
   font-weight: 650;
 }
@@ -146,7 +146,7 @@
   place-items: center;
   width: 20px;
   height: 20px;
-  color: #66778f;
+  color: #5e6d84;
   font-size: 16px;
   line-height: 1;
 }
@@ -198,7 +198,7 @@
 .search-empty {
   margin: 0;
   padding: 24px 12px;
-  color: #66778e;
+  color: #5e6d83;
   font-size: 14px;
 }
 
@@ -224,7 +224,7 @@
 
 .search-preview-icon {
   display: block;
-  color: #66778f;
+  color: #5e6d84;
   font-size: 32px;
   line-height: 1;
 }
@@ -237,12 +237,12 @@
 
 .search-preview-subtitle {
   margin: 0 0 16px;
-  color: #66778e;
+  color: #5e6d83;
   font-size: 14px;
 }
 
 .search-preview-empty {
-  color: #66778e;
+  color: #5e6d83;
   font-size: 14px;
 }
 
@@ -291,7 +291,7 @@
 }
 
 .search-preview-facts dt {
-  color: #66778e;
+  color: #5e6d83;
 }
 
 .search-preview-facts dd {

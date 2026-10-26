@@ -25,7 +25,7 @@
   height: 38px;
   border-bottom: 1px solid #eef0f5;
   background: #fafbfd;
-  color: #69778b;
+  color: #606c7e;
   font-size: 12px;
   font-weight: 760;
   letter-spacing: .85px;
@@ -94,7 +94,7 @@
   overflow: hidden;
   border-radius: 4px;
   background: #f1f4f9;
-  color: #68778e;
+  color: #5f6c81;
   font-size: 12px;
   font-weight: 600;
   line-height: 18px;
@@ -114,7 +114,7 @@
   padding: 0 4px;
   border: 1px solid var(--line);
   border-radius: 4px;
-  color: #5d6f88;
+  color: #5b6d85;
   font-size: 12px;
   font-weight: 600;
   line-height: 18px;
@@ -146,7 +146,7 @@
 
 .recent-text small {
   font-size: 12px;
-  color: #69778d;
+  color: #606c80;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -154,12 +154,12 @@
 
 .recent-category {
   font-size: 12px;
-  color: #66778e;
+  color: #5e6d83;
 }
 
 .recent-time {
   font-size: 12px;
-  color: #67788e;
+  color: #5e6d81;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -167,7 +167,7 @@
 }
 
 .recent-time svg {
-  color: #637898;
+  color: #5a6d8a;
 }
 
 
@@ -220,7 +220,7 @@
 }
 
 .new-note-choice small {
-  color: #5d6f88;
+  color: #5b6d85;
   font-size: 12px;
   font-weight: 500;
 }
@@ -254,7 +254,7 @@
 }
 
 .home-section-heading h2 svg {
-  color: #66778f;
+  color: #5e6d84;
 }
 
 .home-hint {
@@ -262,7 +262,7 @@
   padding: 16px;
   border: 1px dashed var(--line);
   border-radius: 4px;
-  color: #66778e;
+  color: #5e6d83;
   font-size: 12px;
 }
 
@@ -331,7 +331,7 @@
 
 .note-tile-title svg {
   flex-shrink: 0;
-  color: #66778f;
+  color: #5e6d84;
 }
 
 .note-tile-title strong {
@@ -349,7 +349,7 @@
 .note-tile-text {
   display: -webkit-box;
   overflow: hidden;
-  color: #68788f;
+  color: #5f6d82;
   font-size: 12px;
   line-height: 1.6;
   -webkit-box-orient: vertical;
@@ -358,7 +358,7 @@
 
 .note-tile-meta {
   margin-top: auto;
-  color: #66778f;
+  color: #5e6d84;
   font-size: 12px;
 }
 
@@ -370,7 +370,7 @@
 }
 
 .category-page h1 svg {
-  color: #66778f;
+  color: #5e6d84;
 }
 
 
@@ -384,7 +384,7 @@
   align-items: center;
   gap: 8px;
   margin-left: auto;
-  color: #66778f;
+  color: #5e6d84;
   font-size: 14px;
   font-weight: 600;
 }
@@ -434,7 +434,7 @@
   border: 0;
   border-radius: 4px;
   background: transparent;
-  color: #607798;
+  color: #586d8c;
   cursor: pointer;
 }
 
@@ -533,7 +533,7 @@
 }
 
 .category-count {
-  color: #66778e;
+  color: #5e6d83;
   font-weight: 600;
 }
 
@@ -549,7 +549,7 @@
   border: 1px solid #c9d7ee;
   border-radius: 4px;
   background: var(--paper);
-  color: #66778f;
+  color: #5e6d84;
 }
 
 /* The whole chip shows that its name is being edited; the input itself has no focus ring, which */
@@ -583,7 +583,7 @@
   height: 100%;
   border: 0;
   background: transparent;
-  color: #68788d;
+  color: #5f6d80;
   cursor: pointer;
 }
 
@@ -602,7 +602,7 @@
 .notes-empty-list {
   margin: 0;
   padding: 32px 24px;
-  color: #66778e;
+  color: #5e6d83;
   font-size: 14px;
 }
 
@@ -628,7 +628,7 @@
   border: 0;
   border-radius: 4px;
   background: transparent;
-  color: #66778f;
+  color: #5e6d84;
   cursor: pointer;
 }
 
@@ -736,7 +736,7 @@
 .note-color-swatch.is-none {
   border: 1px solid var(--line);
   background: var(--paper);
-  color: #66778f;
+  color: #5e6d84;
 }
 
 .note-color-swatch[aria-checked="true"] {
@@ -750,7 +750,7 @@
   margin-top: 4px;
   padding: 8px;
   border-top: 1px solid var(--line);
-  color: #66778f;
+  color: #5e6d84;
   font-size: 12px;
   font-weight: 600;
 }
@@ -856,7 +856,7 @@
   flex-shrink: 0;
   place-items: center;
   width: 20px;
-  color: #66778f;
+  color: #5e6d84;
   font-size: 16px;
 }
 
@@ -881,7 +881,7 @@
 }
 
 .trash-text small {
-  color: #66778f;
+  color: #5e6d84;
   font-size: 12px;
 }
 
@@ -894,7 +894,7 @@
   border: 0;
   border-radius: 4px;
   background: transparent;
-  color: #66778f;
+  color: #5e6d84;
   cursor: pointer;
 }
 
@@ -905,7 +905,7 @@
 
 .trash-empty {
   margin: 16px 20px 24px;
-  color: #66778f;
+  color: #5e6d84;
   font-size: 14px;
   line-height: 1.6;
   text-align: center;
@@ -921,7 +921,7 @@
   border-top: 1px solid var(--line);
   border-radius: 0 0 8px 8px;
   background: var(--bg);
-  color: #66778f;
+  color: #5e6d84;
   font-size: 12px;
   line-height: 1.5;
 }

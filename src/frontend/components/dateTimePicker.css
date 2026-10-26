@@ -31,7 +31,7 @@
   border: 0;
   border-radius: 4px;
   background: transparent;
-  color: #66778f;
+  color: #5e6d84;
   cursor: pointer;
 }
 
@@ -41,6 +41,11 @@
 }
 
 /* Seven columns: the weekday letters, then the days. Days from the months either side are quieter. */
+/* Week rows are only for screen readers: their days sit straight in the 7-column grid. */
+.date-picker-row {
+  display: contents;
+}
+
 .date-picker-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
@@ -48,7 +53,7 @@
 }
 
 .date-picker-weekday {
-  color: #66778f;
+  color: #5e6d84;
   font-size: 12px;
   font-weight: 600;
   line-height: 20px;
@@ -97,7 +102,7 @@
   gap: 8px;
   padding-top: 8px;
   border-top: 1px solid var(--line);
-  color: #66778f;
+  color: #5e6d84;
 }
 
 .date-picker-time .dropdown {

@@ -54,12 +54,12 @@
 }
 
 .export-select:disabled {
-  color: #66778f;
+  color: #5e6d84;
   cursor: default;
 }
 
 .export-select .icon {
-  color: #667891;
+  color: #5d6d84;
 }
 
 .export-number {
@@ -117,6 +117,6 @@
 /* Why Export cannot be used yet (an empty canvas). */
 .export-note {
   margin: 8px 0 0;
-  color: #5d6f88;
+  color: #5b6d85;
   font-size: 12px;
 }
