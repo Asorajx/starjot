@@ -75,7 +75,7 @@ function LockedMark({ note }: { note: Note }) {
 }
 
 /* The star that adds or removes a note from Starred without opening it (not counted as an edit). */
-function StarButton({ note, className = '' }: { note: Note; className?: string }) {
+export function StarButton({ note, className = '' }: { note: Note; className?: string }) {
   return (
     <button
       type="button"

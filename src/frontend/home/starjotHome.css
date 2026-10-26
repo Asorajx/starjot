@@ -2,84 +2,137 @@
    Starjot Home
    ========================= */
 
-/* The greeting sits on the page itself; the sections below hold the cards. Section headings */
-/* reuse .home-section and .home-section-heading from the Notespace home (notespace/home.css). */
-.starjot-home-intro {
-  margin-bottom: 48px;
+/* The greeting with a small star; the date sits on the right on wide screens. */
+.starjot-home {
+  max-width: 1180px;
 }
 
-.starjot-home-time {
-  margin: 0 0 4px;
-  color: #5f6d82;
-  font-size: 12px;
-  font-weight: 600;
+.starjot-home-intro {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
 }
 
 .starjot-home-intro h1 {
-  margin: 0 0 8px;
+  margin: 0;
   color: var(--ink);
-  font-size: 32px;
-  letter-spacing: -.6px;
+  font-size: 30px;
+  letter-spacing: -.8px;
 }
 
-/* The quick note and "Where you left off" sit side by side, and stack when there is no room. */
-.starjot-home-grid {
+.home-star {
+  display: inline-block;
+  color: #d9a94a;
+  font-size: 20px;
+  transform: rotate(12deg) translateY(-4px);
+}
+
+.starjot-home-date {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 8px;
+  margin: 4px 0 0;
+  padding: 6px 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--paper);
+  color: #5e6d84;
+  font-size: 13px;
+}
+
+.home-date-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--status-done);
+}
+
+/* Continue working on the left, about 1.7 times as wide as Today and Your spaces on the right; */
+/* one column on narrower screens. */
+.starjot-home-layout {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 16px;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+  gap: 28px;
+  margin-top: 24px;
 }
 
-.home-card-label {
+@media (min-width: 1000px) {
+  .starjot-home-layout {
+    grid-template-columns: minmax(0, 1.7fr) minmax(280px, 1fr);
+  }
+}
+
+.home-side {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  min-width: 0;
+}
+
+/* A section's heading, with a switch or link at the other end of its row. */
+.home-section-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.starjot-home h2 {
+  margin: 0;
+  color: var(--ink);
+  font-size: 16px;
+  letter-spacing: -.2px;
+}
+
+.home-spaces h2 {
+  margin-bottom: 12px;
+}
+
+.home-label {
   color: var(--accent-text);
   font-size: 12px;
   font-weight: 700;
 }
 
-.home-card-footer {
-  display: flex;
+/* A quiet link at the end of a row or under a list. */
+.home-link {
+  display: inline-flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-top: auto;
-}
-
-
-/* =========================
-   Quick Note
-   ========================= */
-
-.quick-note {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 16px;
-  border: 1px solid var(--line);
-  border-radius: 4px;
-  background: var(--paper);
-}
-
-.quick-note-text {
-  width: 100%;
-  min-height: 112px;
-  padding: 8px 12px;
-  border: 1px solid var(--line);
-  border-radius: 4px;
-  background: var(--paper);
-  color: var(--ink);
+  gap: 6px;
+  min-height: 30px;
+  padding: 0 8px;
+  margin: 0 -8px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--accent-text);
   font: inherit;
+  font-size: 13px;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.home-link:hover {
+  background: var(--accent-soft);
+}
+
+.home-continue > .home-link {
+  margin-top: 8px;
+}
+
+.home-empty {
+  margin: 0;
+  padding: 24px 16px;
+  border: 1px dashed var(--line);
+  border-radius: 12px;
+  color: #5e6d84;
   font-size: 14px;
-  line-height: 1.6;
-  resize: vertical;
-}
-
-.quick-note-text::placeholder {
-  color: #5e6d84;
-}
-
-.quick-note-status {
-  min-width: 0;
-  color: #5e6d84;
-  font-size: 12px;
+  text-align: center;
 }
 
 /* A button that reads as a link inside a sentence. */
@@ -94,171 +147,292 @@
   cursor: pointer;
 }
 
-/* "Where you left off" sits in a tinted box so it reads as a shortcut. */
-.home-resume {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 16px;
-  border: 1px solid var(--accent-tint);
-  border-radius: 4px;
-  background: var(--accent-soft);
-}
-
 
 /* =========================
-   Boardspace Summary
+   Quick Capture
    ========================= */
 
-/* One tile per column; each opens that column of the board. */
-.board-summary {
+/* One line to jot into, with its icon tile and shortcut; in use it opens to a few lines and */
+/* Add note (see QuickCapture). The bar shows the focus, not the box inside it. */
+.quick-capture {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--paper);
+  cursor: text;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.quick-capture.is-open {
+  align-items: flex-start;
+}
+
+.quick-capture:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.quick-capture-icon {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-  gap: 12px;
-}
-
-.board-summary-item {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding: 16px;
-  border: 1px solid var(--line);
-  border-radius: 4px;
-  background: var(--paper);
-  color: #56657b;
-  font: inherit;
-  font-size: 14px;
-  font-weight: 650;
-  text-align: left;
-  cursor: pointer;
-}
-
-.board-summary-item:hover {
-  border-color: #c9d7ee;
-  background: var(--accent-soft);
-}
-
-/* Shown instead of the tiles while the project has no work. */
-.board-summary-empty {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 16px;
-  border: 1px solid var(--line);
-  border-radius: 4px;
-  background: var(--paper);
-}
-
-.board-summary-empty p {
-  margin: 0;
-  color: #56657b;
-  font-size: 14px;
-}
-
-.board-summary-label {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.board-summary-alert {
-  color: var(--status-blocked);
-}
-
-.board-summary-count {
-  color: var(--ink);
-  font-size: 24px;
-  font-weight: 750;
-  line-height: 1.2;
-}
-
-/* Reminders due now or later today, under the quick note. */
-.home-reminders {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-top: 16px;
-  padding: 16px;
-  border: 1px solid var(--line);
-  border-radius: 4px;
-}
-
-/* A space's heading opens the space: it lights up when pointed at, and its arrow nudges along. */
-.home-section-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  min-height: 32px;
-  margin: 0 -8px;
-  padding: 4px 8px;
-  border: 0;
-  border-radius: 4px;
-  background: transparent;
-  color: inherit;
-  font: inherit;
-  cursor: pointer;
-}
-
-.home-section-link:hover {
+  flex-shrink: 0;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 11px;
   background: var(--accent-soft);
   color: var(--accent-text);
 }
 
-.home-section-link:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
+.quick-capture-main {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
 }
 
-.home-section-heading .home-section-link:hover svg {
-  color: inherit;
+.quick-capture-main label {
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 650;
+  cursor: text;
 }
 
-.home-section-chevron {
-  transition: transform 150ms ease-out;
+.quick-capture-text {
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 14px;
+  line-height: 1.6;
+  resize: none;
 }
 
-.home-section-link:hover .home-section-chevron {
-  transform: translateX(2px);
+.quick-capture .quick-capture-text:focus-visible {
+  outline: none;
 }
 
-@media (pointer: coarse) {
-  .home-section-link {
-    min-height: 44px;
-  }
+.quick-capture-text::placeholder {
+  color: #5e6d84;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .home-section-chevron {
-    transition: none;
-  }
+/* Closed, it stays one line: a long placeholder is cut off rather than scrolling. */
+.quick-capture:not(.is-open) .quick-capture-text {
+  height: 22px;
+  overflow: hidden;
+  white-space: nowrap;
 }
 
-/* The next few recently edited notes, under the quick note and "Where you left off": one row each, */
-/* the title then when it was edited. */
-.home-recent {
+.quick-capture-status {
+  color: #5e6d84;
+  font-size: 12px;
+}
+
+.quick-capture-key {
+  flex-shrink: 0;
+  padding: 4px 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--bg);
+  color: #5e6d84;
+  font: inherit;
+  font-size: 12px;
+}
+
+.quick-capture-add {
+  flex-shrink: 0;
+  margin-top: 4px;
+}
+
+
+/* =========================
+   Continue Working
+   ========================= */
+
+/* Recent / Starred, as two joined buttons. */
+.home-switch {
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--paper);
+}
+
+.home-switch button {
+  min-height: 26px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: #5e6d84;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.home-switch button[aria-pressed="true"] {
+  background: var(--accent-soft);
+  color: var(--accent-text);
+}
+
+.home-cards {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  margin-top: 16px;
-}
-
-.home-recent ul {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 4px 16px;
+  gap: 10px;
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.home-recent-note {
+/* A note card: its square, then the button that opens it (title, first words, category and */
+/* time), then its star. The whole card lifts a little when pointed at or focused. */
+.home-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 10px 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--paper);
+  transition: border-color 160ms ease, transform 160ms ease;
+}
+
+.home-card:hover,
+.home-card:focus-within {
+  border-color: var(--accent-line);
+  transform: translateY(-1px);
+}
+
+.home-note-tile {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 10px;
+  background: var(--accent-soft);
+  color: var(--accent-text);
+}
+
+/* A note with a colour shows it on its square (the colour classes set currentColor). */
+.home-note-tile[class*="text-"] {
+  background: color-mix(in srgb, currentColor 18%, transparent);
+}
+
+.home-note-emoji {
+  font-size: 22px;
+  line-height: 1;
+}
+
+.home-card-open {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.home-card-open:focus-visible {
+  outline: none;
+}
+
+.home-card:has(.home-card-open:focus-visible) {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.home-card-open strong,
+.home-card-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.home-card-open strong {
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 650;
+}
+
+.home-card-text {
+  color: #5e6d84;
+  font-size: 13px;
+}
+
+.home-card-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+  color: #5e6d84;
+  font-size: 12px;
+}
+
+.home-card-tag {
+  padding: 1px 8px;
+  border-radius: 6px;
+  background: var(--accent-soft);
+  color: var(--accent-text);
+  font-size: 11px;
+  font-weight: 650;
+}
+
+.home-card-star {
+  flex-shrink: 0;
+  align-self: flex-start;
+}
+
+
+/* =========================
+   Today
+   ========================= */
+
+.home-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--paper);
+}
+
+.home-today-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.home-due {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.home-due-item {
   display: flex;
   align-items: center;
   gap: 8px;
   width: 100%;
-  min-height: 36px;
+  min-height: 34px;
+  margin: 0 -8px;
   padding: 0 8px;
   border: 0;
   border-radius: 6px;
@@ -268,13 +442,14 @@
   font-size: 14px;
   text-align: left;
   cursor: pointer;
+  box-sizing: content-box;
 }
 
-.home-recent-note:hover {
+.home-due-item:hover {
   background: #eef3fb;
 }
 
-.home-recent-note strong {
+.home-due-item strong {
   overflow: hidden;
   min-width: 0;
   color: var(--ink);
@@ -283,14 +458,192 @@
   white-space: nowrap;
 }
 
-.home-recent-note span:last-child {
+.home-due-item > span:last-child {
   flex-shrink: 0;
   margin-left: auto;
   font-size: 12px;
 }
 
+.home-due-item .is-late {
+  color: #c0392b;
+  font-weight: 650;
+}
+
+.home-due-more {
+  align-self: flex-start;
+  font-size: 13px;
+}
+
+/* Nothing due: a plain check and a calm line. */
+.home-caught-up {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.home-caught-up-icon {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  color: var(--status-done);
+}
+
+.home-caught-up > span:last-child {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.home-caught-up strong {
+  color: var(--ink);
+  font-size: 15px;
+}
+
+.home-caught-up > span:last-child > span {
+  color: #5e6d84;
+  font-size: 13px;
+}
+
+
+/* =========================
+   Your Spaces
+   ========================= */
+
+.home-spaces {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* A space's tile: its picture or icon, its name and numbers, and an arrow that nudges along. */
+.home-space {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--paper);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 160ms ease;
+}
+
+.home-space:hover {
+  border-color: var(--accent-line);
+}
+
+.home-space-icon {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: var(--accent-soft);
+  color: var(--accent-text);
+}
+
+/* The project's statuses as small bars, tallest for the status with most work. */
+.home-board-picture {
+  display: flex;
+  flex-shrink: 0;
+  align-items: flex-end;
+  gap: 5px;
+  width: 92px;
+  height: 64px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--bg);
+}
+
+.home-board-bar {
+  flex: 1;
+  border-radius: 3px 3px 1px 1px;
+}
+
+.home-space-text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.home-space-text strong {
+  color: var(--ink);
+  font-size: 15px;
+}
+
+.home-space-text > span {
+  color: #5e6d84;
+  font-size: 13px;
+}
+
+.home-space-text .home-space-detail {
+  overflow: hidden;
+  color: var(--accent-text);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.home-space-arrow {
+  flex-shrink: 0;
+  color: #5e6d84;
+  transition: transform 150ms ease-out;
+}
+
+.home-space:hover .home-space-arrow {
+  transform: translateX(2px);
+}
+
+
+/* =========================
+   Narrow Screens and Motion
+   ========================= */
+
 @media (max-width: 700px) {
-  .home-recent ul {
-    grid-template-columns: 1fr;
+  .starjot-home-intro h1 {
+    font-size: 26px;
+  }
+
+  .starjot-home-date,
+  .quick-capture-key {
+    display: none;
+  }
+
+  .quick-capture {
+    padding: 10px 12px;
+  }
+
+  .home-note-tile {
+    width: 42px;
+    height: 42px;
+  }
+}
+
+@media (pointer: coarse) {
+  .home-link,
+  .home-switch button,
+  .home-due-item {
+    min-height: 44px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .quick-capture,
+  .home-card,
+  .home-space,
+  .home-space-arrow {
+    transition: none;
+  }
+
+  .home-card:hover,
+  .home-card:focus-within {
+    transform: none;
   }
 }

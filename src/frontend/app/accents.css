@@ -12,28 +12,30 @@
 /* (otherwise Slate matches Blue and Sage turns mint). Each accent's values keep */
 /* white text on the accent, and accent text on white and on the soft tint, readable (4.5:1; */
 /* tests/frontend/app/accents.test.ts checks this). The dark theme converts every block. The */
-/* swatches in Settings (.accent-swatch) take their colours from the same blocks. */
+/* swatches in Settings (.accent-swatch) take their colours from the same blocks. Blue, the */
+/* default, is #4e66d8 (links and chosen items #2b44b8; #9fb0ff in dark mode, set in */
+/* dark-overrides.css); Indigo sits further towards violet so the two stay apart. */
 :root,
 .accent-swatch[data-accent="blue"] {
-  --accent: #3570e6;
-  --accent-deep: #2d64d8;
-  --accent-text: #2d64d8;
-  --accent-ink: #123c88;
-  --accent-line: #a5c3fa;
-  --accent-tint: #cbddfe;
-  --accent-soft: #e9f1ff;
-  --accent-faint: #f7faff;
+  --accent: #4e66d8;
+  --accent-deep: #4156c7;
+  --accent-text: #2b44b8;
+  --accent-ink: #293788;
+  --accent-line: #aec0fa;
+  --accent-tint: #d0dbfe;
+  --accent-soft: #ebf0ff;
+  --accent-faint: #f8faff;
 }
 
 :root[data-accent="indigo"],
 .accent-swatch[data-accent="indigo"] {
-  --accent: #5650d8;
-  --accent-deep: #4741c4;
-  --accent-text: #4741c4;
-  --accent-ink: #252170;
-  --accent-line: #b6bdf9;
-  --accent-tint: #d4daff;
-  --accent-soft: #ecefff;
+  --accent: #5f4dd6;
+  --accent-deep: #523dc2;
+  --accent-text: #523dc2;
+  --accent-ink: #2b1f6f;
+  --accent-line: #babcf8;
+  --accent-tint: #d7d9fe;
+  --accent-soft: #edeeff;
   --accent-faint: #f8f9ff;
 }
 

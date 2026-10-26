@@ -123,11 +123,11 @@
   height: 32px;
 }
 
-/* Starjot Home and Boardspace cards */
-[data-density="compact"] .quick-note,
-[data-density="compact"] .home-resume,
-[data-density="compact"] .board-summary-item {
-  padding: 12px;
+/* Starjot Home */
+[data-density="compact"] .home-panel,
+[data-density="compact"] .home-card,
+[data-density="compact"] .home-space {
+  padding: 8px 10px;
 }
 
 /* Menus and search */

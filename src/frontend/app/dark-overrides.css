@@ -264,3 +264,10 @@
   border-color: var(--accent);
   background: var(--accent-soft);
 }
+
+/* The default blue accent's text in dark mode is a chosen soft blue (#9fb0ff) rather than the */
+/* generated one: at least 5.6:1 on every dark surface. Other accents keep the generated text. */
+:root[data-theme="dark"][data-accent="blue"],
+[data-theme="dark"] .accent-swatch[data-accent="blue"] {
+  --accent-text: #9fb0ff;
+}

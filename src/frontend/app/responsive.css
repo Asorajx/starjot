@@ -125,10 +125,7 @@
   }
 
   .note-tile,
-  .quick-note,
-  .home-resume,
-  .board-summary-item,
-  .board-summary-empty {
+  .home-panel {
     padding: 12px;
   }
 

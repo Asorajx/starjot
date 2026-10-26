@@ -37,11 +37,12 @@ export function ProjectFrame({ children, onOpenNote }: ProjectFrameProps) {
   const fileRef = useRef<HTMLInputElement>(null);
   useEffect(() => setTitle(board.title), [board.title]);
 
-  /* A work item chosen in Search opens in the editor (see openWork.ts). */
+  /* A work item chosen in Search or on Home, or a new task from Home, opens in the editor (see */
+  /* openWork.ts). */
   useEffect(() => {
     const open = () => {
-      const id = takeWorkRequest();
-      if (id) setEditing({ kind: 'item', id });
+      const target = takeWorkRequest();
+      if (target) setEditing(target);
     };
     open();
     return onWorkRequest(open);

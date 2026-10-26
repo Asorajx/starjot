@@ -1,23 +1,37 @@
+import { getBoard } from './board';
+import { sprintForNewWork } from './workItems';
+import type { EditorTarget } from './WorkEditor';
+
+
 /* =========================
    Opening Work From Elsewhere
    ========================= */
 
-/* Search opens a work item's editor, which belongs to the project frame (ProjectFrame.tsx). The */
-/* request waits here until a frame takes it: straight away when Boardspace is showing, or as */
-/* soon as it appears. */
-let pending: string | null = null;
+/* Search and Starjot Home open Boardspace's editor, which belongs to the project frame */
+/* (ProjectFrame.tsx): for a work item, or a new task. The request waits here until a frame takes */
+/* it: straight away when Boardspace is showing, or as soon as it appears. */
+let pending: EditorTarget | null = null;
 const listeners = new Set<() => void>();
 
-export function openWorkItem(id: string) {
-  pending = id;
+function request(target: EditorTarget) {
+  pending = target;
   listeners.forEach(listener => listener());
 }
 
-/* The waiting request's work item id, taken so it opens only once. */
+export function openWorkItem(id: string) {
+  request({ kind: 'item', id });
+}
+
+/* A new task, in the sprint new work goes into (as Create → Task does). */
+export function openNewTask() {
+  request({ kind: 'item', type: 'task', sprintId: sprintForNewWork(getBoard()) });
+}
+
+/* The waiting request, taken so it opens only once. */
 export function takeWorkRequest() {
-  const id = pending;
+  const target = pending;
   pending = null;
-  return id;
+  return target;
 }
 
 export function onWorkRequest(listener: () => void) {
