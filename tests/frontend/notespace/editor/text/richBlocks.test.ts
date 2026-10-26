@@ -3,7 +3,7 @@ import { convertLine, createPageBlock, insertBlock } from '../../../../../src/fr
 import { deleteKeepingPages, hydratePages, removePageBlocks, stepOverPage } from '../../../../../src/frontend/notespace/editor/text/pageBlocks';
 import { handleBlockKeys, typeOutsideComment } from '../../../../../src/frontend/notespace/editor/text/blockKeys';
 import { EditorSession } from '../../../../../src/frontend/notespace/editor/session';
-import { createNote, createSubpage, getNote, separatePage } from '../../../../../src/frontend/notespace/store';
+import { createNote, createSubpage, getNote, separatePage, updateNote } from '../../../../../src/frontend/notespace/store';
 
 /* A container for test content, added to the test page so the caret and layout helpers can work. */
 /* The note store (with its sample notes) stays loaded for the whole file, so tests compare counts */
@@ -189,6 +189,7 @@ describe('comments', () => {
     const body = holder('<p>Alpha beta</p>');
     body.className = 'note-body';
     body.dataset.noteEditable = '';
+    updateNote('weekly', { content: body.innerHTML });
     const session = new EditorSession('weekly', body.innerHTML);
     session.setBody(body);
     session.setAdapter({ commit: () => session.save(body.innerHTML), toggleSticky: () => undefined, selectAll: () => undefined, linesChanged: () => undefined });

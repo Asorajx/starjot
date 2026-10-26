@@ -117,7 +117,9 @@ export class EditorSession {
 
   /* Another pane can show the same note. When the note's content or drawing is changed there, */
   /* this editor shows the new content as well (as one more undo step), so neither pane saves over the other's */
-  /* edits. Checking waits for a short pause in typing. Returns a function that stops watching. */
+  /* edits. Showing it waits for a short pause in typing, but pressing or typing in this editor */
+  /* takes it in at once (see catchUpHere), so this pane never edits an older copy. Returns a */
+  /* function that stops watching. */
   watch() {
     let timer: number | undefined;
     const check = () => {
@@ -126,10 +128,32 @@ export class EditorSession {
       timer = window.setTimeout(() => this.catchUp(), 300);
     };
     const stop = subscribe(check);
+
+    /* A key pressed in an editor showing an older copy is not typed: the editor is drawn again */
+    /* with the newer text, the caret where it was, and the next key types into it. */
+    const pressed = (event: Event) => {
+      if (!(event.target instanceof Node) || !this.bodyElement?.contains(event.target)) return;
+      if (this.catchUpHere() && event.type === 'keydown') event.preventDefault();
+    };
+    document.addEventListener('pointerdown', pressed, true);
+    document.addEventListener('keydown', pressed, true);
     return () => {
       stop();
       window.clearTimeout(timer);
+      document.removeEventListener('pointerdown', pressed, true);
+      document.removeEventListener('keydown', pressed, true);
     };
+  }
+
+  /* Take in a change made elsewhere right away, before this editor is edited, keeping the caret */
+  /* where it is. Returns whether there was one. */
+  catchUpHere() {
+    if (!this.changedElsewhere()) return false;
+    const caret = getOffset(this.body());
+    this.catchUp();
+    this.pendingCaret = caret;
+    this.revealCaret = false;
+    return true;
   }
 
   /* Whether the note was changed outside this editor since its last undo step. */
@@ -175,8 +199,11 @@ export class EditorSession {
   /* Save new document content and add it to the undo history. */
   /* The content is cleaned first, so editor-only classes never create extra undo steps. The */
   /* note's drawing goes into the same step, so anchoring a drawing into the text (which changes */
-  /* both) is undone in one go. */
+  /* both) is undone in one go. An edit made on an older copy of the note (changed meanwhile in */
+  /* another pane, or by deleting a sub-note) is not saved over the newer one: the editor takes */
+  /* in the newer text instead. */
   save(content: string, caret: number | null = getOffset(this.body())) {
+    if (this.catchUpHere()) return;
     const clean = cleanHtml(this.frame ? this.frame(content) : content);
     const note = updateNote(this.noteId, { content: clean }, false);
     scheduleSave();
@@ -214,11 +241,14 @@ export class EditorSession {
     this.history.updateCaret(getOffset(this.body()));
   }
 
+  /* Undo and redo on an older copy first take in the newer text, and undo nothing that time. */
   undo() {
+    if (this.catchUpHere()) return;
     this.restore(this.history.undo());
   }
 
   redo() {
+    if (this.catchUpHere()) return;
     this.restore(this.history.redo());
   }
 
