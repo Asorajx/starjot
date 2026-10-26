@@ -714,10 +714,14 @@
   outline: none;
 }
 
+/* On a phone, Note settings and Contents take the full width (less a small margin), so their */
+/* buttons and colours have room. */
 @media (max-width: 700px) {
   .editor-flyout {
-    right: 9px;
+    right: 8px;
     top: calc(100% + 5px);
+    width: calc(100vw - 16px);
+    padding: 20px;
   }
 }
 

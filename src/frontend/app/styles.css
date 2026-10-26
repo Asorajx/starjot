@@ -949,6 +949,47 @@ p {
   bottom: calc(100% + 4px);
 }
 
+/* Moved back inside the window by app/fitTooltips.ts: sideways by --tooltip-shift, wrapped when */
+/* wider than the window, or turned above or below its button. */
+[data-tooltip][style*="--tooltip-shift"]::after {
+  margin-left: var(--tooltip-shift);
+  margin-right: calc(var(--tooltip-shift) * -1);
+}
+
+[data-tooltip][data-tooltip-squeeze]::after {
+  width: max-content;
+  max-width: calc(100vw - 32px);
+  white-space: normal;
+  text-align: left;
+}
+
+[data-tooltip][data-tooltip-fit="above"]::after {
+  top: auto;
+  bottom: calc(100% + 4px);
+}
+
+[data-tooltip][data-tooltip-fit="below"]::after {
+  top: calc(100% + 4px);
+  bottom: auto;
+  left: 50%;
+  right: auto;
+  transform: translateX(-50%);
+}
+
+/* The invisible copy fitTooltips.ts measures, styled like a tooltip. */
+.tooltip-measure {
+  box-sizing: content-box;
+  position: fixed;
+  top: 0;
+  left: 0;
+  padding: 4px 8px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 16px;
+  visibility: hidden;
+  pointer-events: none;
+}
+
 /* The label fades in while settling 2px towards its button (`translate`, so the positioning */
 /* `transform` above is left alone). */
 @keyframes tooltip-in {

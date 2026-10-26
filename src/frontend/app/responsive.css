@@ -197,8 +197,10 @@
     align-items: center;
   }
 
+  /* The four views share the width, so they all show without scrolling sideways. */
   .board-tabs {
-    gap: 24px;
+    justify-content: space-between;
+    gap: 8px;
   }
 
   .board-tab {
@@ -206,7 +208,7 @@
     font-size: 14px;
   }
 
-  /* On phones Settings fills the screen, with its menu as a scrolling row along the top. */
+  /* On phones Settings fills the screen, with its sections in a dropdown along the top. */
   .settings-backdrop {
     padding: 0;
   }
@@ -220,33 +222,18 @@
     border-radius: 0;
   }
 
-  /* The menu row stops short of the close button, so its items never scroll underneath it. The */
-  /* line below the row is drawn on the content instead, so it still runs the full width. */
+  /* The row stops short of the close button. The line below the row is drawn on the content */
+  /* instead, so it still runs the full width. */
   .settings-nav {
     display: flex;
-    gap: 8px;
-    overflow-x: auto;
+    align-items: center;
     margin-right: 56px;
     padding: 8px;
     border-right: 0;
   }
 
-  .settings-title,
-  .settings-nav-heading {
+  .settings-title {
     display: none;
-  }
-
-  .settings-nav-group {
-    display: contents;
-  }
-
-  .settings-nav-item {
-    width: auto;
-    height: 40px;
-    margin: 0;
-    padding: 0 12px;
-    gap: 8px;
-    white-space: nowrap;
   }
 
   .settings-content {
@@ -254,7 +241,7 @@
     border-top: 1px solid var(--line);
   }
 
-  /* The close button stays at the end of the menu row, beside the scrolling menu. */
+  /* The close button stays at the end of the row, beside the dropdown. */
   .settings-close {
     position: fixed;
     top: 8px;

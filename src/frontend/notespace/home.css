@@ -745,9 +745,22 @@
 }
 
 @media (pointer: coarse) {
-  .note-color-swatch,
   .notes-view-option {
     width: 44px;
     height: 44px;
+  }
+
+  /* Nine 44px circles were too big for one row, so the circles stay small and an invisible */
+  /* frame above and below each makes it as easy to tap (44px tall). */
+  .note-color-swatch {
+    position: relative;
+    width: 28px;
+    height: 28px;
+  }
+
+  .note-color-swatch::before {
+    position: absolute;
+    inset: -8px 0;
+    content: "";
   }
 }

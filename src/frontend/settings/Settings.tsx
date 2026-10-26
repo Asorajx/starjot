@@ -10,6 +10,7 @@ import {
   type ShortcutGroup, type ShortcutId
 } from '../app/shortcuts';
 import { useCategories } from '../notespace/store';
+import { useMediaQuery } from '../lib/useMediaQuery';
 import { Switch } from '../components/Switch';
 import { useEscape } from '../lib/useDismiss';
 import { useFocusTrap } from '../lib/useFocusTrap';
@@ -663,7 +664,8 @@ function SettingsSectionContent({ section }: { section: SettingsSection }) {
 
 /* Settings opens as a panel in the middle of the window, over whatever is open, with its menu on */
 /* the left and the chosen section on the right. Escape, the close button or a click outside */
-/* closes it; the keyboard stays inside while it is open. On phones it fills the screen. */
+/* closes it; the keyboard stays inside while it is open. On phones it fills the screen, and the */
+/* menu becomes a dropdown at the top, so nothing scrolls sideways. */
 export function Settings({ section, onSectionChange, onClose, focus = null, onFocused }: SettingsProps) {
   const { spaces } = usePreferences();
   const groups = SETTING_GROUPS.filter(group => spaces.notes || group.heading !== 'Notespace');
@@ -671,6 +673,7 @@ export function Settings({ section, onSectionChange, onClose, focus = null, onFo
   const current = tabs.find(tab => tab.id === section) ?? tabs[0];
   const windowRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLElement>(null);
+  const phone = useMediaQuery('(max-width: 700px)');
 
   useEscape(true, onClose);
   useFocusTrap(windowRef, '.settings-nav-item.active');
@@ -696,7 +699,15 @@ export function Settings({ section, onSectionChange, onClose, focus = null, onFo
       <div className="settings-window" ref={windowRef} role="dialog" aria-modal="true" aria-labelledby="settings-title">
         <nav className="settings-nav" aria-label="Settings sections">
           <h2 id="settings-title" className="settings-title">Settings</h2>
-          {groups.map(group => (
+          {phone && (
+            <Dropdown
+              label="Settings section"
+              value={current.id}
+              options={groups.flatMap(group => group.tabs.map((tab, at) => ({ value: tab.id, label: tab.label, icon: tab.icon, heading: at ? undefined : group.heading })))}
+              onChange={onSectionChange}
+            />
+          )}
+          {!phone && groups.map(group => (
             <div key={group.heading} className="settings-nav-group">
               <div className="settings-nav-heading">{group.heading}</div>
               {group.tabs.map(tab => (
