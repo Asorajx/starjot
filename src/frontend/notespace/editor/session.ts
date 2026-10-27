@@ -6,6 +6,7 @@ import { History, TypingSteps, type HistoryEntry } from './history';
 import { charBesideCaret } from './text/dom';
 import { getOffset } from './text/caret';
 import { typeAfterLink } from './links/links';
+import { typeAfterFormatted } from './text/markdown';
 import type { StickyState } from './text/blockModel';
 import type { DrawingLayerInfo, DrawingStroke } from '../../../shared/types/note';
 
@@ -187,7 +188,7 @@ export class EditorSession {
 
     /* Text typed after a link is added outside the link by hand, so the browser's input event */
     /* does not happen and the change is saved here. */
-    if (typeAfterLink(event)) this.adapter?.commit();
+    if (typeAfterLink(event) || typeAfterFormatted(event)) this.adapter?.commit();
   }
 
   /* Call before structural edits (new block, merge, Sticky, paste) so they become their own step. */

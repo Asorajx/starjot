@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { getOffset, setOffset } from '../../../../../src/frontend/notespace/editor/text/caret';
 import { updatePreferences } from '../../../../../src/frontend/app/preferences';
-import { applyMarkdownShortcut, joinTypedDashes } from '../../../../../src/frontend/notespace/editor/text/markdown';
+import { applyMarkdownShortcut, formatTypedMarkdown, joinTypedDashes, typeAfterFormatted } from '../../../../../src/frontend/notespace/editor/text/markdown';
 import { stickyStateForRange, toggleStickyRange } from '../../../../../src/frontend/notespace/editor/text/stickyDom';
 
 /* An editable note body, like the continuous editor, added to the test page. */
@@ -149,6 +149,69 @@ describe('typed dashes', () => {
     const body = editor('<p>a-b</p>');
     placeCaret(body.querySelector('p')?.firstChild as Node, 3);
     expect(joinTypedDashes(typed('b'), body)).toBe(false);
+  });
+});
+
+
+/* =========================
+   Inline Markdown
+   ========================= */
+
+describe('inline Markdown while typing', () => {
+  const typed = (data: string) => new InputEvent('input', { inputType: 'insertText', data });
+
+  /* A line holding the text, with the caret at its end, as just after typing its last character. */
+  function typedLine(text: string) {
+    const body = editor(`<p>${text}</p>`);
+    const node = body.querySelector('p')?.firstChild as Text;
+    placeCaret(node, node.length);
+    return body;
+  }
+
+  it('formats **bold**, *italic* and `code` once the closing marker is typed, dropping the markers', () => {
+    let body = typedLine('Say **hello**');
+    expect(formatTypedMarkdown(typed('*'), body)).toBe(true);
+    expect(body.innerHTML).toBe('<p>Say <strong>hello</strong></p>');
+
+    body = typedLine('an *idea*');
+    expect(formatTypedMarkdown(typed('*'), body)).toBe(true);
+    expect(body.innerHTML).toBe('<p>an <em>idea</em></p>');
+
+    body = typedLine('run `npm test`');
+    expect(formatTypedMarkdown(typed('`'), body)).toBe(true);
+    expect(body.innerHTML).toBe('<p>run <code>npm test</code></p>');
+  });
+
+  it('starts a new undo step before formatting, so Undo brings the markers back', () => {
+    const body = typedLine('**bold**');
+    let before = '';
+    formatTypedMarkdown(typed('*'), body, () => { before = body.innerHTML; });
+    expect(before).toBe('<p>**bold**</p>');
+  });
+
+  it('waits for the second closing * of **bold**, and leaves maths and words alone', () => {
+    expect(formatTypedMarkdown(typed('*'), typedLine('**bold*'))).toBe(false);
+    expect(formatTypedMarkdown(typed('*'), typedLine('2 * 3 *'))).toBe(false);
+    expect(formatTypedMarkdown(typed('*'), typedLine('a*b*'))).toBe(false);
+    expect(formatTypedMarkdown(typed('*'), typedLine('* spaced *'))).toBe(false);
+  });
+
+  it('leaves Markdown inside code as it is', () => {
+    const body = editor('<pre><code>a **b**</code></pre>');
+    const node = body.querySelector('code')?.firstChild as Text;
+    placeCaret(node, node.length);
+    expect(formatTypedMarkdown(typed('*'), body)).toBe(false);
+  });
+
+  it('types after the formatted words, not inside them', () => {
+    const body = typedLine('Say **hello**');
+    formatTypedMarkdown(typed('*'), body);
+    const next = new InputEvent('beforeinput', { inputType: 'insertText', data: 'x', cancelable: true });
+    expect(typeAfterFormatted(next)).toBe(true);
+    expect(body.innerHTML).toBe('<p>Say <strong>hello</strong>x</p>');
+
+    /* Only straight after formatting: later typing is the browser's as usual. */
+    expect(typeAfterFormatted(new InputEvent('beforeinput', { inputType: 'insertText', data: 'y', cancelable: true }))).toBe(false);
   });
 });
 

@@ -11,7 +11,7 @@ import { dividerKeys, selectDividerAtCaret } from './dividers';
 import { joinAdjacentLists } from './lines';
 import { imageFiles, insertImageFiles } from '../images/images';
 import { linkTypedAddress } from '../links/links';
-import { applyMarkdownShortcut, joinTypedDashes } from './markdown';
+import { applyMarkdownShortcut, formatTypedMarkdown, joinTypedDashes } from './markdown';
 import { deleteSelection, insertPasted } from './paste';
 import { pastedLines, writeSelection } from './clipboard';
 import { clearSelectedCells, pasteIntoTable } from '../tables/tableClipboard';
@@ -251,6 +251,7 @@ export const ContinuousEditor = memo(function ContinuousEditor({ session, conten
     if (pre) highlight(pre);
     commit();
     if (joinTypedDashes(event.nativeEvent as InputEvent, body, () => session.checkpoint())) commit();
+    if (formatTypedMarkdown(event.nativeEvent as InputEvent, body, () => session.checkpoint())) commit();
   }
 
   /* Paste plain text only, so external HTML cannot bring in styles or scripts. Markdown in the */

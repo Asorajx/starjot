@@ -47,7 +47,10 @@ const LINE_SHORTCUTS: Shortcut[] = [
 ];
 
 const ANYWHERE_SHORTCUTS: Shortcut[] = [
-  { action: 'Em dash (Undo straight after keeps the hyphens)', keys: [['-', '-']] }
+  { action: 'Em dash (Undo straight after keeps the hyphens)', keys: [['-', '-']] },
+  { action: 'Bold (Undo straight after keeps the asterisks)', keys: [['**words**']] },
+  { action: 'Italic', keys: [['*words*']] },
+  { action: 'Code in a line', keys: [['`words`']] }
 ];
 
 /* One changeable shortcut. Clicking its keys records new ones; Escape or clicking elsewhere */

@@ -173,3 +173,94 @@ export function joinTypedDashes(event: InputEvent, editable: HTMLElement, before
   selection.addRange(caret);
   return true;
 }
+
+
+/* =========================
+   Inline Markdown
+   ========================= */
+
+/* Markdown for words, formatted as soon as its closing marker is typed: **bold**, *italic* and */
+/* `code`, into the same elements pasted Markdown makes. The words inside may not start or end */
+/* with a space, and a single * must not follow a letter or digit, so 2 * 3 * 4 or a*b*c stay as */
+/* they are. The markers are gone once formatted: the words are ordinary bold, italic or code, */
+/* changed with the toolbar and Ctrl + B / I like any other. */
+const INLINE_MARKS: { tag: string; closer: string; pattern: RegExp }[] = [
+  { tag: 'strong', closer: '*', pattern: /(^|[^*])\*\*([^*\s](?:[^*]*[^*\s])?)\*\*$/ },
+  { tag: 'em', closer: '*', pattern: /(^|[^*\w])\*([^*\s](?:[^*]*[^*\s])?)\*$/ },
+  { tag: 'code', closer: '`', pattern: /(^|[^`])`([^`\n]+)`$/ }
+];
+
+/* The words formatted last, while the caret is still right after them (see typeAfterFormatted). */
+let justFormatted: HTMLElement | null = null;
+
+/* Format the Markdown that ends at the caret, if the character just typed closed some. Call after */
+/* the browser has added it and that text is saved, then save again, so one Undo brings back the */
+/* markers (beforeFormat starts that undo step, as for typed dashes). Not in code. Returns true */
+/* when it changed the text. */
+export function formatTypedMarkdown(event: InputEvent, editable: HTMLElement, beforeFormat: () => void = () => {}) {
+  if (!getPreferences().typingShortcuts) return false;
+  if (event.inputType !== 'insertText' || (event.data !== '*' && event.data !== '`')) return false;
+  const selection = window.getSelection();
+  const node = selection?.anchorNode;
+  if (!selection?.isCollapsed || !(node instanceof Text) || !editable.contains(node)) return false;
+  if (elementOf(node)?.closest('pre, code') || !currentLine(editable, selection)) return false;
+
+  const offset = selection.anchorOffset;
+  const typed = node.data.slice(0, offset);
+  for (const { tag, closer, pattern } of INLINE_MARKS) {
+    const match = event.data === closer ? typed.match(pattern) : null;
+    if (!match || match.index === undefined) continue;
+    beforeFormat();
+    const start = match.index + match[1].length;
+    node.splitText(offset);
+    node.deleteData(start, node.length - start);
+    const words = document.createElement(tag);
+    words.textContent = match[2];
+    node.after(words);
+    if (!node.length) node.remove();
+
+    const caret = document.createRange();
+    caret.setStartAfter(words);
+    selection.removeAllRanges();
+    selection.addRange(caret);
+    justFormatted = words;
+    return true;
+  }
+  return false;
+}
+
+/* Browsers add text typed right after bold, italic or code to it. Straight after Markdown was */
+/* formatted, the next typing goes after the words instead, so the formatting ends where the */
+/* closing marker was. Returns true when it handled the typing. */
+export function typeAfterFormatted(event: InputEvent) {
+  const words = justFormatted;
+  justFormatted = null;
+  const selection = window.getSelection();
+  if (!words?.isConnected || event.inputType !== 'insertText' || !event.data || !selection?.rangeCount || !selection.isCollapsed) return false;
+
+  /* Only while the caret is still just after the words, or at their very end (where browsers */
+  /* may move it): a click or arrow key elsewhere ends this. */
+  const range = selection.getRangeAt(0);
+  const justAfter = document.createRange();
+  justAfter.setStartAfter(words);
+  const atEnd = document.createRange();
+  atEnd.selectNodeContents(words);
+  atEnd.collapse(false);
+  const same = (other: Range) => range.compareBoundaryPoints(Range.START_TO_START, other) === 0;
+  const nextText = words.nextSibling?.nodeType === Node.TEXT_NODE ? words.nextSibling : null;
+  const inNextText = range.startContainer === nextText && range.startOffset === 0;
+  if (!(same(justAfter) || same(atEnd) || inNextText) || !words.parentNode) return false;
+  event.preventDefault();
+
+  const next = words.nextSibling;
+  const text = next?.nodeType === Node.TEXT_NODE ? next as Text : words.parentNode.insertBefore(document.createTextNode(''), next);
+
+  /* A space at the end of a line is only shown when it is a non-breaking space, as browsers type it. */
+  const typedText = event.data === ' ' && !text.length ? '\u00a0' : event.data;
+  text.insertData(0, typedText);
+  const caret = document.createRange();
+  caret.setStart(text, typedText.length);
+  selection.removeAllRanges();
+  selection.addRange(caret);
+  return true;
+}
