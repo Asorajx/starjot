@@ -348,6 +348,74 @@ export const StructuredEditor = memo(function StructuredEditor({ session, conten
   }
 
   /* Delete a selection that runs across blocks, joining the first and last block. */
+  /* A selection reaching outside the blocks' text (the browser's own Select all, a click beside */
+  /* the blocks, Shift + Ctrl + End) is pulled in to the text of the blocks it covers, and a caret */
+  /* outside every block goes into the nearest one, so typing and deleting always happen in a */
+  /* block. Otherwise the browser would edit the block rows themselves (deleting all of them left */
+  /* nothing to type in), or every key was refused. A caret on a block's own box (before its first */
+  /* line, as after deleting a whole-block selection) goes into that line. */
+  function keepSelectionInBlocks() {
+    const body = bodyRef.current;
+    const selection = window.getSelection();
+    const range = selection?.rangeCount ? selection.getRangeAt(0) : null;
+    if (!body || !selection || !range || !body.contains(range.commonAncestorContainer)) return;
+    const inBlock = (node: Node) => Boolean(elementOf(node)?.closest('.block-content'));
+    const box = range.startContainer instanceof Element && range.startContainer.matches('.block-content') ? range.startContainer : null;
+    if (range.collapsed && box?.firstElementChild) {
+      const atEnd = range.startOffset > 0;
+      placeCaret((atEnd ? box.lastElementChild : box.firstElementChild) ?? box, atEnd);
+      return;
+    }
+    if (inBlock(range.startContainer) && inBlock(range.endContainer)) return;
+
+    const contents = blocksRef.current.map(block => elements.current.get(block.id)).filter((element): element is HTMLDivElement => Boolean(element));
+    if (!contents.length) return;
+    const fixed = document.createRange();
+    if (range.collapsed) {
+      /* The block whose row holds the caret, or the one just before it, or the first. */
+      const row = elementOf(range.startContainer)?.closest('.editable-block');
+      const before = body.childNodes[range.startOffset - 1];
+      const element = contents.find(content => row?.contains(content))
+        ?? contents.find(content => before && (before === content || before.contains(content)))
+        ?? contents[range.startContainer === body && range.startOffset > 0 ? contents.length - 1 : 0];
+      fixed.selectNodeContents(element);
+      fixed.collapse(range.startContainer === body && range.startOffset === 0);
+    } else {
+      const touched = contents.filter(content => range.intersectsNode(content));
+      if (!touched.length) return;
+      fixed.selectNodeContents(touched[0]);
+      if (inBlock(range.startContainer)) fixed.setStart(range.startContainer, range.startOffset);
+      const last = touched[touched.length - 1];
+      if (inBlock(range.endContainer)) fixed.setEnd(range.endContainer, range.endOffset);
+      else fixed.setEnd(last, last.childNodes.length);
+    }
+    selection.removeAllRanges();
+    selection.addRange(fixed);
+  }
+
+  /* A selection covering the whole of one block's box (Ctrl + A in a note with one block, or in */
+  /* an empty one) is cleared here, leaving the block as one empty line of its kind (a heading */
+  /* stays a heading) holding any typed text: the browser's own delete removed the emptied box */
+  /* and its row with it, leaving nothing to type in. Returns whether it did. */
+  function clearWholeBlock(text = '') {
+    const selection = window.getSelection();
+    const range = selection?.rangeCount ? selection.getRangeAt(0) : null;
+    const box = range && !range.collapsed ? elementOf(range.commonAncestorContainer)?.closest<HTMLElement>('.block-content') : null;
+    if (!selection || !range || !box || !bodyRef.current?.contains(box)) return false;
+    const whole = document.createRange();
+    whole.selectNodeContents(box);
+    if (range.compareBoundaryPoints(Range.START_TO_START, whole) > 0 || range.compareBoundaryPoints(Range.END_TO_END, whole) < 0) return false;
+
+    const first = box.firstElementChild;
+    const line = document.createElement(first && /^(P|H[1-6])$/.test(first.tagName) ? first.tagName.toLowerCase() : 'p');
+    line.append(text ? document.createTextNode(text) : document.createElement('br'));
+    session.checkpoint();
+    box.replaceChildren(line);
+    placeCaret(line, Boolean(text));
+    commitTyping();
+    return true;
+  }
+
   /* Typed or pasted text replaces the selection. Returns false when the selection is inside one block. */
   function deleteAcross(text = '') {
     const current = window.getSelection();
@@ -516,13 +584,26 @@ export const StructuredEditor = memo(function StructuredEditor({ session, conten
         return;
       }
       const changesText = event.inputType.startsWith('insert') || event.inputType.startsWith('delete');
+      const replaces = event.inputType === 'insertText' || event.inputType.startsWith('delete');
+      if (replaces && clearWholeBlock(event.inputType === 'insertText' ? event.data ?? '' : '')) {
+        event.preventDefault();
+        return;
+      }
       if (changesText && deleteAcross(event.inputType === 'insertText' ? event.data ?? '' : '')) {
         event.preventDefault();
         return;
       }
 
-      /* Never let text be typed outside a block, for example between two blocks. */
-      if (changesText && !closestAtCaret('.block-content')) {
+      /* Never let text be typed outside a block (for example between two blocks), or let the */
+      /* browser edit across a block's edge, which would delete or merge the block rows. What the */
+      /* browser is about to remove (its target ranges) must lie in one block too: from the very */
+      /* start of a block, its own Backspace deletes backwards into the row and removes the block. */
+      const ends = window.getSelection()?.rangeCount ? window.getSelection()?.getRangeAt(0) : null;
+      const boxOf = (node: Node | undefined) => (node ? elementOf(node)?.closest('.block-content') ?? null : null);
+      const crosses = (start: Node | undefined, end: Node | undefined) => !boxOf(start) || boxOf(start) !== boxOf(end);
+      const targets = typeof event.getTargetRanges === 'function' ? event.getTargetRanges() : [];
+      if (changesText && (!closestAtCaret('.block-content') || crosses(ends?.startContainer, ends?.endContainer)
+        || targets.some(target => crosses(target.startContainer, target.endContainer)))) {
         event.preventDefault();
         return;
       }
@@ -657,6 +738,11 @@ export const StructuredEditor = memo(function StructuredEditor({ session, conten
       return;
     }
     if (locked) return;
+
+    /* Keys that type or delete start from a selection inside the blocks (see keepSelectionInBlocks). */
+    if (!command && !event.altKey && (event.key.length === 1 || event.key === 'Backspace' || event.key === 'Delete' || event.key === 'Enter')) {
+      keepSelectionInBlocks();
+    }
 
     /* A selected divider (see dividers.ts): Backspace or Delete removes its block, Enter adds a */
     /* block below it, and the arrow keys step past it. */
