@@ -9,6 +9,7 @@ import { drawingBottom, inDrawingOrder, strokeLayer, strokeMarkup, visibleLayers
 import { contentCopy, detailRows, exportFileName, hasRemarks, pageAnchor, pageHref, type ExportSettings } from './exportNotes';
 import { escapeHtml } from '../../lib/html';
 import { dataUrl, downloadFile } from '../../lib/files';
+import { BASE_SCALE, SMALL_TEXT_SCALE } from '../editor/noteScale';
 
 /* How the open note is laid out in the app, so loose drawings land on the same words: the width */
 /* of its text column, and how far below the drawing's starting corner its text begins. */
@@ -20,6 +21,10 @@ export type ExportLayout = {
 /* Paper sizes in CSS pixels, and the printed margin (one inch, as when printing a note). */
 const PAPER = { a4: { width: 794, height: 1123 }, letter: { width: 816, height: 1056 } };
 const PRINT_MARGIN = 96;
+
+/* A table wider than the printed column is shrunk on its own down to this much, so its text */
+/* stays readable; past that, its columns share the width and their text wraps. */
+const TABLE_MIN_ZOOM = 0.75;
 
 /* Styles for exported pages, on top of the app's own styles (which give the text its look). */
 const EXPORT_STYLES = `
@@ -170,15 +175,62 @@ export function appStyles() {
   }).join('\n');
 }
 
-/* The paper and orientation a PDF uses, and how much the column is scaled to fit it. */
-function printSetup(note: Note, settings: ExportSettings, columnWidth: number) {
+/* The paper and orientation a PDF uses, and the width of its printed column. */
+function paperFor(note: Note, settings: ExportSettings) {
   const fromNote = settings.pageFormat === 'note';
   const size = fromNote ? (note.pageSize === 'letter' ? 'letter' : 'a4') : settings.pageFormat.startsWith('letter') ? 'letter' : 'a4';
   const landscape = fromNote ? note.landscape : settings.pageFormat.endsWith('landscape');
   const paper = PAPER[size];
-  const printable = (landscape ? paper.height : paper.width) - PRINT_MARGIN * 2;
-  const zoom = Math.min(1, printable / columnWidth) * (settings.scale / 100);
-  return { page: `${size === 'a4' ? 'A4' : 'letter'} ${landscape ? 'landscape' : 'portrait'}`, zoom };
+  return { page: `${size === 'a4' ? 'A4' : 'letter'} ${landscape ? 'landscape' : 'portrait'}`, printable: (landscape ? paper.height : paper.width) - PRINT_MARGIN * 2 };
+}
+
+/* The size note text prints at: as at 100% in the app (Small text included), so a PDF reads like */
+/* the note does. */
+function textScale(note: Note) {
+  return BASE_SCALE * (note.smallText ? SMALL_TEXT_SCALE : 1);
+}
+
+/* How much the printed page is scaled: the note's text size and the Scale chosen in Export, or, */
+/* when the column is too wide for the paper at that size (a note laid out as on screen, see */
+/* printLayout), enough to fit it. */
+function printSetup(note: Note, settings: ExportSettings, columnWidth: number) {
+  const { page, printable } = paperFor(note, settings);
+  return { page, zoom: Math.min(textScale(note), printable / columnWidth) * (settings.scale / 100) };
+}
+
+/* Whether a note's loose drawing goes into the file: it is placed by where it was drawn on the */
+/* screen, so its text must keep the on-screen width for the drawing to land on the same words. */
+function keepsScreenWidth(notes: Note[], settings: ExportSettings) {
+  return settings.content === 'everything' && notes.some(note => note.drawing.length > 0);
+}
+
+/* The layout a PDF is built in. Normally the text is laid out to fill the printed column at its */
+/* normal size, so it wraps to the paper (rather than the whole screen-wide column being shrunk */
+/* to fit, which made the text small). A note with a loose drawing keeps the screen layout, so */
+/* the drawing still lines up. */
+function printLayout(notes: Note[], settings: ExportSettings, layout: ExportLayout): ExportLayout {
+  if (keepsScreenWidth(notes, settings)) return layout;
+  return { ...layout, columnWidth: Math.floor(paperFor(notes[0], settings).printable / textScale(notes[0])) };
+}
+
+/* A table wider than the printed column is shrunk on its own (never the whole page), down to */
+/* TABLE_MIN_ZOOM; one still too wide shares the column's width between its columns, so its */
+/* words wrap instead of being cut off at the page edge. */
+function fitWideTables(doc: Document, columnWidth: number) {
+  doc.querySelectorAll<HTMLTableElement>('.note-body table').forEach(table => {
+    const width = table.scrollWidth;
+    if (width <= columnWidth + 1) return;
+    const zoom = columnWidth / width;
+    if (zoom >= TABLE_MIN_ZOOM) {
+      table.style.zoom = String(Math.floor(zoom * 100) / 100);
+      return;
+    }
+    table.style.zoom = String(TABLE_MIN_ZOOM);
+    table.style.width = `${Math.floor(columnWidth / TABLE_MIN_ZOOM)}px`;
+    table.style.tableLayout = 'fixed';
+    table.querySelectorAll<HTMLTableColElement>('col').forEach(col => { col.style.width = ''; });
+    table.querySelectorAll<HTMLElement>('td, th').forEach(cell => { cell.style.overflowWrap = 'anywhere'; });
+  });
 }
 
 /* The whole exported file. */
@@ -204,10 +256,12 @@ async function buildDocument(notes: Note[], settings: ExportSettings, layout: Ex
 
 /* Lay the file out in a hidden frame, so loose drawings can be lined up with the text: the */
 /* exported title and details are not exactly as tall as the app's, so the drawing is moved by */
-/* the difference, measured on the first page. */
-async function laidOut(notes: Note[], settings: ExportSettings, layout: ExportLayout) {
+/* the difference, measured on the first page. For a PDF (printing), tables too wide for the */
+/* printed column are fitted to it. */
+async function laidOut(notes: Note[], settings: ExportSettings, layout: ExportLayout, printing = false) {
   const frame = await openFrame(await buildDocument(notes, settings, layout), layout.columnWidth + 120);
   const doc = frame.contentDocument as Document;
+  if (printing && !keepsScreenWidth(notes, settings)) fitWideTables(doc, layout.columnWidth);
 
   const page = doc.querySelector('.export-page');
   const text = page?.querySelector('.note-content');
@@ -257,7 +311,8 @@ export async function exportHtml(notes: Note[], settings: ExportSettings, layout
 }
 
 /* Open the browser's print window for the note, where it can be saved as a PDF. The page size, */
-/* orientation and scale come from the export settings. */
+/* orientation and scale come from the export settings; the text is laid out for the paper (see */
+/* printLayout). */
 export async function exportPdf(notes: Note[], settings: ExportSettings, layout: ExportLayout) {
-  printFrame(await laidOut(notes, settings, layout));
+  printFrame(await laidOut(notes, settings, printLayout(notes, settings, layout), true));
 }

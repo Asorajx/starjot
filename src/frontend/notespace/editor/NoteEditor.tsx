@@ -42,16 +42,9 @@ import { getOffset } from './text/caret';
 import { StructuredEditor } from './text/StructuredEditor';
 import { zoomed } from '../../lib/geometry';
 import { CanvasEditor } from '../canvas/CanvasEditor';
+import { BASE_SCALE, SMALL_TEXT_SCALE } from './noteScale';
 
 type Panel = 'toc' | 'settings' | null;
-
-/* A note's 100% zoom shows it at this size, so its text reads comfortably (about 16px for body */
-/* text, which is styled at 13px), on phones too: there the note fills the width to a 16px */
-/* edge, which still fits about 45 characters a line. Zoom and Small text scale from here. */
-const BASE_SCALE = 1.2;
-
-/* Small text shows a note at this share of its size. */
-const SMALL_TEXT_SCALE = 0.875;
 
 type NoteEditorProps = {
   noteId: string;
