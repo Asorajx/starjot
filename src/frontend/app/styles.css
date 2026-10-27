@@ -1,4 +1,20 @@
 /* =========================
+   Emoji
+   ========================= */
+
+/* Emoji are drawn with Twemoji (flat, the same on every system; see public/fonts/LICENSE.md), */
+/* first in the app's font list. Its ranges hold only emoji, so letters, digits, arrows and */
+/* symbols the app uses as text (→, ✓, ▪) keep the normal font, and the file only loads once an */
+/* emoji is shown. Emoji newer than the font (Unicode 15 and later) fall back to the system's. */
+@font-face {
+  font-family: "Starjot Emoji";
+  src: url("/fonts/Twemoji.Mozilla.ttf") format("truetype");
+  font-display: swap;
+  unicode-range: U+1F000-1FAFF, U+2600-27BF, U+231A-231B, U+2328, U+23CF, U+23E9-23F3, U+23F8-23FA, U+24C2, U+25B6, U+25C0, U+25FB-25FE, U+2934-2935, U+2B1B-2B1C, U+2B50, U+2B55, U+3297, U+3299, U+200D, U+20E3, U+FE0F, U+E0020-E007F;
+}
+
+
+/* =========================
    Design Variables
    ========================= */
 
@@ -35,7 +51,7 @@ body,
   margin: 0;
   min-height: 100%;
   height: 100%;
-  font-family: Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  font-family: "Starjot Emoji",Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
   color: var(--ink);
   -webkit-font-smoothing: antialiased;
 }

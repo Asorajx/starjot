@@ -1738,9 +1738,13 @@
   font-weight: inherit;
 }
 
-/* Each part of the note is its own layer (see drawing.css), so while the Category menu is open */
-/* the header is lifted above the rest of the note and its drawings, or they would cover it. */
-.editor-wrap .editor-width > .note-header:has(.dropdown-menu) {
+/* Each part of the note is its own layer (see drawing.css), so while the Category menu or the */
+/* emoji picker is open, or a note tool shows its tooltip, the header is lifted above the rest of */
+/* the note and its drawings, or they would cover it (the note text took the picker's clicks, */
+/* and the line under the header crossed the tooltips). */
+.editor-wrap .editor-width > .note-header:has(.dropdown-menu),
+.editor-wrap .editor-width > .note-header:has(.emoji-picker),
+.editor-wrap .editor-width > .note-header:has(.note-toolbar :hover, .note-toolbar :focus-visible) {
   z-index: 3;
 }
 

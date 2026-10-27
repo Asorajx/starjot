@@ -1,7 +1,7 @@
 import type { Note } from '../../../shared/types/note';
 import { noteTitle } from '../store';
 import { inDrawingOrder, joinBoxes, strokeLayer, strokeMarkup, strokesBounds, visibleLayers, type Box } from '../editor/drawing/drawing';
-import { appStyles, openFrame, printFrame } from '../export/exportHtml';
+import { appStyles, openFrame, printFrame, withEmojiFont } from '../export/exportHtml';
 import { escapeMarkdown, markdownOf } from '../export/exportMarkdown';
 import { textOf } from '../export/exportText';
 import { contentCopy, exportFileName } from '../export/exportNotes';
@@ -114,7 +114,7 @@ export async function exportCanvasPng(note: Note, boxes: PlacedBox[]) {
   holder.append(style);
   holder.insertAdjacentHTML('beforeend', scene.html);
   await inlinePictures(holder);
-  const page = new XMLSerializer().serializeToString(holder);
+  const page = await withEmojiFont(new XMLSerializer().serializeToString(holder));
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${scene.width}" height="${scene.height}"><foreignObject x="0" y="0" width="100%" height="100%">${page}</foreignObject></svg>`;
 
   const picture = new Image();

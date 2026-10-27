@@ -2,10 +2,11 @@
    Emoji Picker
    ========================= */
 
-/* Opens just below the "Add icon" button, over the note rather than pushing it down. */
+/* Opens at the top of the header, beside the note tools, over the note rather than pushing it */
+/* down; for a note with an icon, just below the icon, so the icon stays in view. */
 .emoji-picker {
   position: absolute;
-  top: 34px;
+  top: 0;
   left: 0;
   z-index: 40;
   width: 316px;
@@ -14,6 +15,10 @@
   border-radius: 4px;
   background: var(--paper);
   box-shadow: var(--shadow-float);
+}
+
+.note-icon ~ .emoji-picker {
+  top: 64px;
 }
 
 .emoji-tabs {
@@ -25,7 +30,9 @@
 
 .emoji-tab {
   flex: 1;
+  min-width: 0;
   height: 30px;
+  padding: 0;
   border: 0;
   border-radius: 4px;
   background: transparent;
@@ -49,15 +56,16 @@
   font-weight: 700;
 }
 
-/* Eight emoji per row. */
+/* Eight emoji per row, always inside the panel (an emoji never makes its column wider). */
 .emoji-grid {
   display: grid;
-  grid-template-columns: repeat(8, 1fr);
+  grid-template-columns: repeat(8, minmax(0, 1fr));
   gap: 4px;
 }
 
 .emoji-option {
   height: 34px;
+  padding: 0;
   border: 0;
   border-radius: 4px;
   background: transparent;
@@ -68,6 +76,12 @@
 .emoji-option:hover,
 .emoji-option.is-current {
   background: var(--accent-soft);
+}
+
+.emoji-empty {
+  margin: 4px 4px 8px;
+  color: #5e6d84;
+  font-size: 12px;
 }
 
 .emoji-footer {

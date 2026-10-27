@@ -169,6 +169,24 @@ async function pageMarkup(note: Note, settings: ExportSettings, included: Set<st
     + '</article>';
 }
 
+/* The emoji font (see styles.css) and whether some text holds an emoji it draws. */
+const EMOJI_FONT = /url\((["']?)[^"')]*Twemoji\.Mozilla\.ttf\1\)/g;
+const HAS_EMOJI = /\p{Extended_Pictographic}|[\u{1F1E6}-\u{1F1FF}]/u;
+
+/* A file saved on its own (an HTML export, a canvas picture) cannot reach the app's emoji font, */
+/* so one that shows emoji carries the font inside it (about 2 MB), and its emoji look as in the */
+/* app. Without emoji, or if the font cannot be read, the file is left as it is (emoji then use */
+/* the system's). The font is read from the app's own folder (BASE_URL), wherever it runs from. */
+export async function withEmojiFont(file: string) {
+  if (!HAS_EMOJI.test(file.replace(/<style[\s\S]*?<\/style>/g, ''))) return file;
+  try {
+    const font = await dataUrl(await (await fetch(`${import.meta.env.BASE_URL}fonts/Twemoji.Mozilla.ttf`)).blob());
+    return file.replace(EMOJI_FONT, `url("${font}")`);
+  } catch {
+    return file;
+  }
+}
+
 /* The app's own styles, so exported text looks as it does in the note. */
 export function appStyles() {
   return Array.from(document.styleSheets).map(sheet => {
@@ -290,6 +308,9 @@ export async function openFrame(html: string, width: number) {
   });
   const doc = frame.contentDocument as Document;
   await Promise.all(Array.from(doc.images).map(picture => picture.decode().catch(() => undefined)));
+
+  /* The emoji font loads once emoji are laid out; printing waits for it, so a PDF shows them. */
+  await doc.fonts?.ready;
   return frame;
 }
 
@@ -310,7 +331,7 @@ export function printFrame(frame: HTMLIFrameElement) {
 /* Save the note as one HTML file, with its pictures and drawings inside it. */
 export async function exportHtml(notes: Note[], settings: ExportSettings, layout: ExportLayout) {
   const frame = await laidOut(notes, settings, layout);
-  const html = `<!doctype html>\n${frame.contentDocument?.documentElement.outerHTML ?? ''}`;
+  const html = await withEmojiFont(`<!doctype html>\n${frame.contentDocument?.documentElement.outerHTML ?? ''}`);
   frame.remove();
   downloadFile(exportFileName(notes[0].title, 'html'), new Blob([html], { type: 'text/html' }));
 }
