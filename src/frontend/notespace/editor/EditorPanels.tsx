@@ -231,7 +231,7 @@ export function NoteSettings({
 
       {/* The note's colour shows in lists and previews; choosing one is not an edit. */}
       <div className="side-setting side-setting--border">
-        <strong>Colour</strong>
+        <strong>Note colour</strong>
         <NoteColorPicker noteId={note.id} color={note.color} />
       </div>
 

@@ -88,7 +88,7 @@ export function CanvasSettings({ id, note, open, onClose, onExport, onDelete }: 
       </div>
 
       <div className="side-setting side-setting--border">
-        <strong>Colour</strong>
+        <strong>Note colour</strong>
         <NoteColorPicker noteId={note.id} color={note.color} />
       </div>
 

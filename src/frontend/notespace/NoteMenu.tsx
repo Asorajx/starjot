@@ -91,7 +91,7 @@ export function useNoteMenu({ onOpen, onOpenInNewTab }: NoteMenuActions): NoteMe
             <Icon name="pencil" size={14} /> Rename
           </button>
           <div className="note-menu-colors">
-            <span>Colour</span>
+            <span>Note colour</span>
             <NoteColorPicker noteId={note.id} color={note.color} />
           </div>
           <button

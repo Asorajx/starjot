@@ -708,12 +708,14 @@
   border-radius: 4px 4px 0 0;
 }
 
-/* Swatches choosing a note's colour, in Note settings and the note menu: one row, spread across */
-/* the width, with the same space under its heading as the other Note settings. */
+/* Swatches choosing a note's colour, in Note settings and the note menu: one compact row from */
+/* the left, with the same space under its heading as the other Note settings. 22px circles 6px */
+/* apart still give each a 24px target (WCAG 2.2 target size, by spacing). */
 .note-color-picker {
   display: flex;
-  justify-content: space-between;
-  gap: 4px;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 6px;
 }
 
 .side-setting > .note-color-picker {
@@ -724,8 +726,8 @@
   display: grid;
   flex-shrink: 0;
   place-items: center;
-  width: 24px;
-  height: 24px;
+  width: 22px;
+  height: 22px;
   padding: 0;
   border: 0;
   border-radius: 50%;
@@ -739,8 +741,9 @@
   color: #5e6d84;
 }
 
+/* The chosen colour: a thin ring in its own colour, just outside it. */
 .note-color-swatch[aria-checked="true"] {
-  box-shadow: 0 0 0 2px var(--paper), 0 0 0 4px var(--accent);
+  box-shadow: 0 0 0 2px var(--paper), 0 0 0 3px currentColor;
 }
 
 .note-menu-colors {
@@ -762,16 +765,14 @@
   }
 
   /* Nine 44px circles were too big for one row, so the circles stay small and an invisible */
-  /* frame above and below each makes it as easy to tap (44px tall). */
+  /* frame around each, reaching into the gaps, makes it easier to tap (28px wide, 38px tall). */
   .note-color-swatch {
     position: relative;
-    width: 28px;
-    height: 28px;
   }
 
   .note-color-swatch::before {
     position: absolute;
-    inset: -8px 0;
+    inset: -8px -3px;
     content: "";
   }
 }
