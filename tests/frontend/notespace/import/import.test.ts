@@ -51,6 +51,26 @@ describe('importing Markdown', () => {
     expect(readMarkdown('Just text', 'My file')[0].title).toBe('My file');
   });
 
+  it('reads frontmatter as the title and description, never as note text', async () => {
+    const [note] = readMarkdown('---\ntitle: "Mosaic audit"\nversion: 2.1\ndescription: A full review\ntags:\n  - audit\n---\n\nThe findings.\n\n---\n\nMore after a divider.', 'file');
+    expect(note.title).toBe('Mosaic audit');
+    expect(note.description).toBe('A full review');
+    const html = await note.content(() => undefined);
+    expect(html).not.toContain('version');
+    expect(html).not.toContain('title:');
+    expect(html).toContain('The findings.');
+    expect(html).toContain('<hr>');
+  });
+
+  it('keeps a first # heading as the title over the frontmatter one', () => {
+    expect(readMarkdown('---\ntitle: Old name\n---\n# Real name\n\nText', 'file')[0].title).toBe('Real name');
+  });
+
+  it('keeps text between two opening dividers, which is not frontmatter', async () => {
+    const [note] = readMarkdown('---\nAn ordinary sentence.\n---\n\nAfter.', 'file');
+    expect(await note.content(() => undefined)).toContain('An ordinary sentence.');
+  });
+
   it('gives a Starjot export its details, remarks and sub-notes back', async () => {
     const exported = [
       '# 📘 Main',

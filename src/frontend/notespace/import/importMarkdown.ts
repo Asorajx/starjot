@@ -111,14 +111,44 @@ function sectionOf(markdown: string): Section {
 
 
 /* =========================
+   Frontmatter
+   ========================= */
+
+/* Metadata at the very start of a file (as Obsidian, static site tools and many exports write */
+/* it): a block opened by "---" on the first line and closed by "---" or "...". */
+const FRONTMATTER = /^---[ \t]*\n([\s\S]*?)\n(?:---|\.\.\.)[ \t]*(?:\n|$)/;
+
+/* A line that belongs in frontmatter: "key: value", a list item, an indented (nested) line, a */
+/* comment or a blank line. */
+const META_LINE = /^(\s*$|[A-Za-z][\w-]*\s*:|\s+\S|-\s|#)/;
+
+/* A file's frontmatter, read as simple "key: value" lines (keys in lower case, values without */
+/* their quotes; lists and nested values are skipped), and the text after it. Nothing in it is */
+/* shown as note text: Starjot uses the title and description, and leaves the rest out. A block */
+/* holding anything else (text between two dividers, say) is not frontmatter, and stays text. */
+export function splitFrontmatter(markdown: string) {
+  const match = markdown.match(FRONTMATTER);
+  if (!match || !match[1].split('\n').every(line => META_LINE.test(line))) return { meta: new Map<string, string>(), body: markdown };
+  const meta = new Map<string, string>();
+  match[1].split('\n').forEach(line => {
+    const pair = line.match(/^([A-Za-z][\w-]*)\s*:\s*(.*?)\s*$/);
+    if (!pair || !pair[2]) return;
+    meta.set(pair[1].toLowerCase(), pair[2].replace(/^(["'])(.*)\1$/, '$2'));
+  });
+  return { meta, body: markdown.slice(match[0].length).replace(/^\n+/, '') };
+}
+
+
+/* =========================
    Reading Markdown
    ========================= */
 
 /* The notes in a Markdown file. A file that starts with a "# Title" heading takes its title from */
-/* it. A Starjot export with sub-notes (its first part lists them) gives each sub-note back as a */
-/* sub-note; anything else becomes one note. */
+/* it, or else from its frontmatter's title (see splitFrontmatter), whose description becomes the */
+/* note's. A Starjot export with sub-notes (its first part lists them) gives each sub-note back */
+/* as a sub-note; anything else becomes one note. */
 export function readMarkdown(text: string, fallbackTitle: string): ImportedNote[] {
-  const markdown = text.replace(/^﻿/, '').replace(/\r\n?/g, '\n');
+  const { meta, body: markdown } = splitFrontmatter(text.replace(/^﻿/, '').replace(/\r\n?/g, '\n'));
   const parts = markdown.split(/\n\n---\n\n(?=# )/);
   const exported = parts.length > 1 && /^# /.test(markdown) && /^\*\*Sub-notes:\*\*/m.test(parts[0]);
   const sections = (exported ? parts : [markdown]).map(sectionOf);
@@ -128,12 +158,12 @@ export function readMarkdown(text: string, fallbackTitle: string): ImportedNote[
   const anchors = new Map(sections.map((section, index) => [headingAnchor(section.heading, taken), String(index)]));
 
   return sections.map((section, index) => {
-    const { icon, title } = splitIcon(section.heading);
+    const { icon, title } = splitIcon(section.heading || (index === 0 ? meta.get('title') ?? '' : ''));
     return {
       key: String(index),
       title: title || fallbackTitle,
       icon,
-      description: section.details.get('Description'),
+      description: section.details.get('Description') ?? (index === 0 ? meta.get('description') ?? meta.get('summary') : undefined),
       category: section.details.get('Category'),
       remarks: section.remarks ? markdownLines(section.remarks).map(line => line.outerHTML).join('') : '',
       content: idOf => noteHtml(section.body, anchors, idOf)
