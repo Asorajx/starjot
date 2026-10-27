@@ -112,9 +112,6 @@ export type Preferences = {
   /* Fade the page bar above a note while typing, until the mouse moves. */
   hideHeaderWhileTyping: boolean;
 
-  /* The note header's icon toolbar, in the margin beside the title, is open (or just its chevron). */
-  noteToolbarOpen: boolean;
-
   /* Rows of a note's details hidden in every note (Customize details shows them again). Hiding a */
   /* row never changes what the note holds. */
   hiddenDetails: DetailRow[];
@@ -240,7 +237,7 @@ function loadTimelineColumns(saved: unknown): TimelineColumns {
 /* Light mode is the default; once a theme is chosen in Settings it is remembered between visits. */
 function load(): Preferences {
   const defaults: Preferences = {
-    theme: 'system', accent: 'blue', density: 'comfortable', startScreen: 'start', onStartup: 'continue', spaces: loadSpaces(null), sidebar: loadSidebar(null), newNotes: loadNewNotes(null), openNotesIn: 'current', focusNewTabs: false, openNewSubNotes: true, zoom: 1, sidebarCollapsed: false, contentsScroll: 'smooth', notesSort: 'edited', notesView: 'list', timelineColumns: loadTimelineColumns(null), noteColorsInLists: true, hideHeaderWhileTyping: true, noteToolbarOpen: true, hiddenDetails: [], tips: true, spellcheck: true, typingShortcuts: true, shortcuts: {}, drawing: loadDrawing(null),
+    theme: 'system', accent: 'blue', density: 'comfortable', startScreen: 'start', onStartup: 'continue', spaces: loadSpaces(null), sidebar: loadSidebar(null), newNotes: loadNewNotes(null), openNotesIn: 'current', focusNewTabs: false, openNewSubNotes: true, zoom: 1, sidebarCollapsed: false, contentsScroll: 'smooth', notesSort: 'edited', notesView: 'list', timelineColumns: loadTimelineColumns(null), noteColorsInLists: true, hideHeaderWhileTyping: true, hiddenDetails: [], tips: true, spellcheck: true, typingShortcuts: true, shortcuts: {}, drawing: loadDrawing(null),
     exportSettings: normalizeExportSettings(null),
     recentColors: []
   };
@@ -265,7 +262,6 @@ function load(): Preferences {
     timelineColumns: loadTimelineColumns(saved.timelineColumns),
     noteColorsInLists: saved.noteColorsInLists !== false,
     hideHeaderWhileTyping: saved.hideHeaderWhileTyping !== false,
-    noteToolbarOpen: saved.noteToolbarOpen !== false,
     hiddenDetails: Array.isArray(saved.hiddenDetails) ? DETAIL_ROWS.filter(row => (saved.hiddenDetails as unknown[]).includes(row)) : [],
     tips: saved.tips !== false,
     spellcheck: saved.spellcheck !== false,

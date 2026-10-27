@@ -23,14 +23,16 @@
   display: none;
 }
 
-.structured-document .editable-block.is-selected {
-  background: var(--accent-faint);
+/* The block with the caret stays plain, so writing reads like one document. Blocks are only */
+/* highlighted when picked (several selected together, see .is-picked). After Tab brings focus */
+/* in from the keyboard (data-keyboard, see keyboardMark.ts), a thin bar marks the caret's block, */
+/* so keyboard users can see where they are; it never shows after a click. */
+[data-keyboard] .structured-document .editable-block.is-selected {
   box-shadow: inset 2px 0 var(--accent-line);
 }
 
-/* A divider's block is too thin for the bar and background; the divider shows its own highlight. */
-.structured-document .editable-block.is-selected:has(> .block-content > hr:only-child) {
-  background: transparent;
+/* A divider's block is too thin for the bar; the divider shows its own highlight. */
+[data-keyboard] .structured-document .editable-block.is-selected:has(> .block-content > hr:only-child) {
   box-shadow: none;
 }
 
@@ -82,15 +84,10 @@
   }
 }
 
-/* Touch screens have no hover. There a block shows its highlight and controls only while text in */
-/* it is selected (or several blocks are), not just because the caret is in it, so they stay out */
-/* of the way while typing. */
+/* Touch screens have no hover. There a block shows its controls only while text in it is */
+/* selected (or several blocks are), not just because the caret is in it, so they stay out of */
+/* the way while typing. */
 @media (hover: none) {
-  .structured-document .editable-block.is-selected:not(.has-selection) {
-    background: transparent;
-    box-shadow: none;
-  }
-
   .editable-block.has-selection .block-controls,
   .editable-block.is-picked .block-controls {
     visibility: visible;

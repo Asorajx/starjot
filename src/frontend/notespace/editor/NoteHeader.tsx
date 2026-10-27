@@ -3,6 +3,7 @@ import { Dropdown } from '../../components/Dropdown';
 import { EmojiPicker } from '../../components/EmojiPicker';
 import { Icon, type IconName } from '../../components/Icon';
 import { DETAIL_ROWS, getPreferences, updatePreferences, usePreferences, type DetailRow } from '../../app/preferences';
+import { useDismiss } from '../../lib/useDismiss';
 import { noteIcon, noteTitle, scheduleSave, UNTITLED_NOTE, updateNote, useCategories, useNotes } from '../store';
 import { isEmptyContent, placeCaret, wrapLooseLines } from './text/dom';
 import { linkTypedAddress } from './links/links';
@@ -330,12 +331,15 @@ type NoteToolbarProps = {
 };
 
 /* The note's tools, a slim column of icons in the margin left of its title (a row above it on */
-/* phones), so the title and text never move when it opens or closes. The chevron opens or */
-/* closes it (remembered for every note); then Add icon; then one icon per row of the details, */
-/* lit while its row shows (click to hide or show it); then Hide / Show details, which folds the */
-/* whole list (and does nothing while no row is on). */
+/* phones), so the title and text never move when it opens or closes. The chevron opens it like */
+/* a dropdown: a click anywhere outside it, or Escape, closes it again, so it never sits beside */
+/* the note's text (or Block mode's block controls) while writing. Under the chevron: Add icon; */
+/* then one icon per row of the details, lit while its row shows (click to hide or show it); */
+/* then Hide / Show details, which folds the whole list (and does nothing while no row is on). */
 function NoteToolbar({ note, locked, rows, canFold, onIcon, onToggle }: NoteToolbarProps) {
-  const { noteToolbarOpen: open } = usePreferences();
+  const [open, setOpen] = useState(false);
+  useEffect(() => setOpen(false), [note.id]);
+  useDismiss(open, '.note-toolbar', () => setOpen(false));
   const tool = (label: string) => ({ 'aria-label': label, 'data-tooltip': label, 'data-tooltip-side': 'right' as const });
 
   return (
@@ -346,7 +350,7 @@ function NoteToolbar({ note, locked, rows, canFold, onIcon, onToggle }: NoteTool
         aria-expanded={open}
         aria-controls={`note-tools-${note.id}`}
         {...tool(open ? 'Hide note tools' : 'Show note tools')}
-        onClick={() => updatePreferences({ noteToolbarOpen: !open })}
+        onClick={() => setOpen(current => !current)}
       >
         <Icon name={open ? 'chevron-up' : 'chevron-down'} size={16} />
       </button>
