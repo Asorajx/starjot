@@ -68,7 +68,12 @@ describe('link targets', () => {
 
 describe('copiedPageLink', () => {
   it('reads one page link copied from a note', () => {
-    expect(copiedPageLink('<a class="page-link" data-page="n1">Plan</a>', 'Plan')).toEqual({ kind: 'page', id: 'n1' });
+    expect(copiedPageLink('<a class="page-link" data-page="n1">Plan</a>', 'Plan')).toEqual({ target: { kind: 'page', id: 'n1' }, words: 'Plan' });
+  });
+
+  it('reads a copied page link whose plain text is its address', () => {
+    const address = 'http://localhost:5173/#note=n1';
+    expect(copiedPageLink(`<a class="page-link" data-page="n1" href="${address}">Plan</a>`, address)).toEqual({ target: { kind: 'page', id: 'n1' }, words: 'Plan' });
   });
 
   it('ignores other HTML, other words and unsafe page ids', () => {

@@ -44,7 +44,7 @@ export const SLASH_COMMANDS: SlashCommand[] = [
   { id: 'table', label: 'Table', hint: '', icon: 'table', keywords: 'grid rows columns spreadsheet' },
   { id: 'divider', label: 'Divider', hint: '---', icon: 'minus', keywords: 'hr line rule separator' },
   { id: 'page', label: 'Add sub-note', hint: '', icon: 'file-text', keywords: 'new note page sub-note sub-page subpage child' },
-  { id: 'link', label: 'Link to note', hint: '', icon: 'link', keywords: 'mention reference note page' },
+  { id: 'link', label: 'Add link', hint: '', icon: 'link', keywords: 'link to note mention reference note page block web url address website' },
   { id: 'reminder', label: 'Reminder', hint: '', icon: 'alarm-clock', keywords: 'remind date time due alarm alert' }
 ];
 

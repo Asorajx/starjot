@@ -2,6 +2,7 @@ import { isColorClass } from './editor/format/colors';
 import { safeImageAttributes } from './editor/images/images';
 import { TAB_TITLE_LENGTH } from './editor/text/tabs';
 import { BOX_ID, boxCoordinate, boxWidth } from './canvas/boxes';
+import { dropRepeatedLinkIds, LINK_ID } from './editor/links/blockLinks';
 
 
 /* =========================
@@ -54,6 +55,9 @@ function copyAttributes(node: Element, copy: Element) {
     const href = safeHref(node.getAttribute('href'));
     if (href) copy.setAttribute('href', href);
   }
+  /* A block's link id (see blockLinks.ts), on the block and on page links leading to it. */
+  const linkId = node.getAttribute('data-link-id') ?? '';
+  if (LINK_ID.test(linkId) && /^(P|H[1-5]|LI|BLOCKQUOTE|PRE|TABLE|A)$/.test(node.tagName)) copy.setAttribute('data-link-id', linkId);
   const page = node.getAttribute('data-page');
   if ((node.tagName === 'A' || node.tagName === 'SPAN') && page && /^[a-zA-Z0-9_-]{1,90}$/.test(page)) copy.setAttribute('data-page', page);
   const size = node.getAttribute('data-size');
@@ -146,6 +150,9 @@ export function cleanHtml(input: unknown) {
       if (node.nodeType === Node.TEXT_NODE && /^\s*$/.test(node.textContent ?? '') && node.textContent?.includes('\n')) node.remove();
     });
   });
+
+  /* A link id is on one block only (a split or copied block loses a repeated one). */
+  dropRepeatedLinkIds(safe);
 
   /* A toggle always has a title and a body, so it can be opened, closed and filled. Older edits */
   /* could delete its body. */

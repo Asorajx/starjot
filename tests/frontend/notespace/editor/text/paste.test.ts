@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { getOffset } from '../../../../../src/frontend/notespace/editor/text/caret';
-import { insertPasted, pastedMarkdown } from '../../../../../src/frontend/notespace/editor/text/paste';
+import { insertPasted, linkSelectionToPasted, pastedMarkdown } from '../../../../../src/frontend/notespace/editor/text/paste';
 
 /* The HTML a paste would insert, or null when the text is pasted as plain text. */
 function markdown(text: string, html = '') {
@@ -239,5 +239,71 @@ describe('pasting checklists', () => {
     expect(markdown('- [ ] Pack\n- [x] Book flights\n- Notes')).toBe(
       '<ul class="checklist"><li>Pack</li><li class="is-checked">Book flights</li></ul><ul><li>Notes</li></ul>'
     );
+  });
+});
+
+
+/* =========================
+   Linking Selected Words
+   ========================= */
+
+/* An editable note body with the words between "[" and "]" selected. */
+function selected(html: string) {
+  const body = document.createElement('div');
+  body.contentEditable = 'true';
+  body.innerHTML = html.replace('[', '<span id="from"></span>').replace(']', '<span id="to"></span>');
+  document.body.replaceChildren(body);
+  const range = document.createRange();
+  range.setStartAfter(body.querySelector('#from') as Element);
+  range.setEndBefore(body.querySelector('#to') as Element);
+  window.getSelection()?.removeAllRanges();
+  window.getSelection()?.addRange(range);
+  return body;
+}
+
+/* The body's HTML without the selection markers. */
+function linked(body: HTMLElement) {
+  body.querySelectorAll('#from, #to').forEach(mark => mark.remove());
+  body.normalize();
+  return body.innerHTML;
+}
+
+describe('pasting an address over selected words', () => {
+  it('links the words instead of replacing them, and keeps them selected', () => {
+    const body = selected('<p>Read [the guide] first</p>');
+    expect(linkSelectionToPasted(body, 'https://example.com/guide\n')).toBe(true);
+    expect(window.getSelection()?.toString()).toBe('the guide');
+    expect(linked(body)).toBe('<p>Read <a href="https://example.com/guide">the guide</a> first</p>');
+  });
+
+  it('links to a note or a block from its copied address, and keeps the words\' formatting', () => {
+    const body = selected('<p>See [<strong>the plan</strong>]</p>');
+    expect(linkSelectionToPasted(body, 'http://localhost:5173/#note=atlas&block=labc1234')).toBe(true);
+    expect(linked(body)).toBe('<p>See <a class="page-link" data-page="atlas" data-link-id="labc1234"><strong>the plan</strong></a></p>');
+  });
+
+  it('links to the address itself for a note this browser does not have', () => {
+    const body = selected('<p>[words]</p>');
+    expect(linkSelectionToPasted(body, 'http://localhost:5173/#note=missing-note')).toBe(true);
+    expect(linked(body)).toBe('<p><a href="http://localhost:5173/#note=missing-note">words</a></p>');
+  });
+
+  it('changes where a link leads when the words are inside it', () => {
+    const body = selected('<p><a href="https://old.example">the [guide]</a></p>');
+    expect(linkSelectionToPasted(body, 'example.com')).toBe(true);
+    expect(linked(body)).toBe('<p><a href="https://example.com">the guide</a></p>');
+  });
+
+  it('takes words out of a link they only partly cover', () => {
+    const body = selected('<p><a href="https://old.example">one [two</a> three]</p>');
+    expect(linkSelectionToPasted(body, 'https://new.example')).toBe(true);
+    expect(linked(body)).toBe('<p><a href="https://old.example">one </a><a href="https://new.example">two three</a></p>');
+  });
+
+  it('pastes as usual for text that is not one address, across lines, in code, or over spaces only', () => {
+    expect(linkSelectionToPasted(selected('<p>[words]</p>'), 'see example.com')).toBe(false);
+    expect(linkSelectionToPasted(selected('<p>[one</p><p>two]</p>'), 'https://example.com')).toBe(false);
+    expect(linkSelectionToPasted(selected('<pre><code>[x]</code></pre>'), 'https://example.com')).toBe(false);
+    expect(linkSelectionToPasted(selected('<p>[ ]</p>'), 'https://example.com')).toBe(false);
   });
 });

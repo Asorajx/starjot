@@ -12,7 +12,7 @@ import { joinAdjacentLists } from './lines';
 import { imageFiles, insertImageFiles } from '../images/images';
 import { linkTypedAddress } from '../links/links';
 import { applyMarkdownShortcut, formatTypedMarkdown, joinTypedDashes } from './markdown';
-import { deleteSelection, insertPasted } from './paste';
+import { deleteSelection, insertPasted, linkSelectionToPasted } from './paste';
 import { pastedLines, writeSelection } from './clipboard';
 import { clearSelectedCells, pasteIntoTable } from '../tables/tableClipboard';
 import { stickyStateForRange, toggleStickyRange } from './stickyDom';
@@ -270,6 +270,12 @@ export const ContinuousEditor = memo(function ContinuousEditor({ session, conten
     session.checkpoint();
     const text = event.clipboardData.getData('text/plain');
     const pre = preAtCaret(body);
+
+    /* An address pasted over selected words links them (see linkSelectionToPasted). */
+    if (!pre && linkSelectionToPasted(body, text)) {
+      commit();
+      return;
+    }
     const lines = pre ? null : pastedLines(event.clipboardData);
 
     /* In a table, copied cells go in cell by cell (see tableClipboard.ts). */

@@ -31,7 +31,8 @@ import {
 } from './noteTabs';
 import { DocumentTitle, StackSpine, TAB_DRAG_TYPE, TabSwitcher, WindowBar } from './WindowBar';
 import { screenLabel, type ScreenId } from './screens';
-import { addressOf, parseAddress } from './address';
+import { addressOf, blockInAddress, parseAddress } from './address';
+import { revealWhenShown } from '../notespace/editor/links/blockLinks';
 import { readWorkspace, writeWorkspace } from '../../backend/storage/workspaceStorage';
 
 
@@ -214,6 +215,10 @@ function openingPage(saved: SavedLayout | null): { screen: ScreenId; place: Plac
   const { spaces, startScreen } = getPreferences();
   const address = parseAddress(window.location.hash);
   const view = BOARD_VIEWS.find(item => item === saved?.view) ?? 'summary';
+
+  /* A block link opened from outside (a bookmark, another app) shows its block once open. */
+  const block = blockInAddress(window.location.hash);
+  if (block && address?.kind === 'place' && address.place.kind === 'note') revealWhenShown(address.place.id, block);
   if (address?.kind === 'board' && spaces.boardspace) return { screen: 'boardspace', place: { kind: 'start' }, view: address.view, addressed: true };
   if (address?.kind === 'place' && placeAllowed(address.place, spaces)) return { screen: 'notes', place: address.place, view, addressed: true };
   if (saved?.screen === 'boardspace' && spaces.boardspace) return { screen: 'boardspace', place: { kind: 'start' }, view, addressed: false };
@@ -507,6 +512,8 @@ export function App() {
         return;
       }
       setScreenId('notes');
+      const block = blockInAddress(window.location.hash);
+      if (block && target.place.kind === 'note') revealWhenShown(target.place.id, block);
       const tab = activeTab(group);
       changeTab(group.id, tab.id, current => {
         const back = stepPlace(current, -1, placeExists);

@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent as ReactMouseEvent } from 'react';
 import { Icon } from '../../../components/Icon';
-import { canAddSubpage, createSubpage, noteIcon, noteTitle, useNotes } from '../../store';
+import { canAddSubpage, createSubpage } from '../../store';
 import { caretIsInlineOnly, matchCommands, type SlashCommand } from './slashCommands';
 import { convertLine, createPageBlock, createPageMention, createTable, insertBlock, insertInline, lineAtCaret, type LineChange } from './lines';
 import { hydratePages, renameSubNote } from './pageBlocks';
@@ -10,6 +10,9 @@ import { DateTimePicker } from '../../../components/DateTimePicker';
 import { getPreferences } from '../../../app/preferences';
 import { closestAtCaret } from './dom';
 import type { EditorSession } from '../session';
+import { LinkPicker, type LinkKind } from '../links/LinkPicker';
+import { createLink, type LinkTarget } from '../links/links';
+import { blockWords } from '../links/blockLinks';
 
 type SlashMenuProps = {
   session: EditorSession;
@@ -24,13 +27,10 @@ type SlashMenuProps = {
 /* Where the "/" was typed: its text node and its position in that node. */
 type Anchor = { node: Text; offset: number };
 
-/* commands: choosing a block type. pages: choosing the page to link to. */
-type Mode = 'commands' | 'pages' | 'reminder';
+/* commands: choosing a block type. link: choosing what to link to (see LinkPicker). */
+type Mode = 'commands' | 'link' | 'reminder';
 
 type MenuPosition = { top: number; left: number; above: boolean };
-
-/* How many pages the "Link to note" list shows at once. */
-const PAGE_RESULTS = 8;
 
 /* The text node and offset of a collapsed caret. Browsers sometimes report the caret as a position */
 /* in the line element right after the text, so that case is turned into the end of the text. */
@@ -56,12 +56,10 @@ function caretInText() {
 /* Typing "/" at the start of a line or after a space opens a menu of blocks to add at that spot. */
 /* The text typed after "/" filters the menu; Enter or a click chooses, Escape closes it. */
 export function SlashMenu({ session, noteId, locked, onOpenNewPage }: SlashMenuProps) {
-  const notes = useNotes();
   const [position, setPosition] = useState<MenuPosition | null>(null);
   const [query, setQuery] = useState('');
   const [mode, setMode] = useState<Mode>('commands');
   const [active, setActive] = useState(0);
-  const [search, setSearch] = useState('');
 
   /* The date and time chosen in the reminder chooser's calendar. */
   const [reminderAt, setReminderAt] = useState(() => new Date());
@@ -70,15 +68,12 @@ export function SlashMenu({ session, noteId, locked, onOpenNewPage }: SlashMenuP
   const lastQuery = useRef('');
   const menu = useRef<HTMLDivElement>(null);
 
-  /* The "/" and the text after it, kept while the page search or the reminder chooser has focus. */
+  /* The "/" and the text after it, kept while Add link or the reminder chooser has focus. */
   const linkRange = useRef<Range | null>(null);
 
   const inlineOnly = useRef(false);
   const inTab = useRef(false);
   const commands = matchCommands(query, { inlineOnly: inlineOnly.current, canAddPage: canAddSubpage(noteId), inTab: inTab.current });
-  const pages = notes
-    .filter(note => note.id !== noteId && `${note.title} ${note.subtitle}`.toLowerCase().includes(search.trim().toLowerCase()))
-    .slice(0, PAGE_RESULTS);
 
   /* Refs give the native listeners below the latest values without re-adding them on every render. */
   const latest = useRef({ commands, active, mode, locked });
@@ -92,7 +87,6 @@ export function SlashMenu({ session, noteId, locked, onOpenNewPage }: SlashMenuP
     setPosition(null);
     setMode('commands');
     setQuery('');
-    setSearch('');
     setActive(0);
   }
 
@@ -217,12 +211,10 @@ export function SlashMenu({ session, noteId, locked, onOpenNewPage }: SlashMenuP
     const range = commandRange();
     if (!body || !range) return;
 
-    /* Linking asks which page first; the search box takes focus, so the spot is remembered. */
+    /* Linking asks what to link to first; its search box takes focus, so the spot is remembered. */
     if (command.id === 'link') {
       linkRange.current = range;
-      setMode('pages');
-      setSearch('');
-      setActive(0);
+      setMode('link');
       return;
     }
 
@@ -272,14 +264,23 @@ export function SlashMenu({ session, noteId, locked, onOpenNewPage }: SlashMenuP
     session.linesChanged(change.focus, change.atEnd);
   };
 
-  function linkTo(id: string) {
+  /* Put the chosen link where "/" was typed: a note as a mention (its icon and title), a block */
+  /* or a web address as a link showing the block's words or the address. */
+  function addLink(target: LinkTarget, words: string, kind: LinkKind) {
     const range = linkRange.current;
     const body = session.body();
     close();
     if (!range || !body) return;
     body.focus({ preventScroll: true });
     session.checkpoint();
-    insertInline(range, createPageMention(id));
+
+    /* A link to a block of this note takes its words once "/" and the typed filter are gone. */
+    range.deleteContents();
+    const block = target.kind === 'page' && target.block && target.id === noteId
+      ? body.querySelector(`[data-link-id="${CSS.escape(target.block)}"]:not(a)`)
+      : null;
+    const shown = block ? blockWords(block) || words : words;
+    insertInline(range, kind === 'note' && target.kind === 'page' ? createPageMention(target.id) : createLink(shown, target));
     hydratePages(body);
     session.commit();
   }
@@ -312,7 +313,7 @@ export function SlashMenu({ session, noteId, locked, onOpenNewPage }: SlashMenuP
     items[(at + (event.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length]?.focus();
   }
 
-  /* Escape in the page search returns to the note, leaving the "/" text as it was. */
+  /* Escape in Add link or the reminder chooser returns to the note, leaving the "/" text as it was. */
   function cancelLink() {
     const range = linkRange.current;
     close();
@@ -323,19 +324,6 @@ export function SlashMenu({ session, noteId, locked, onOpenNewPage }: SlashMenuP
     window.getSelection()?.addRange(range);
   }
 
-  function handleSearchKeyDown(event: ReactKeyboardEvent<HTMLInputElement>) {
-    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
-      event.preventDefault();
-      if (pages.length) setActive(index => (index + (event.key === 'ArrowDown' ? 1 : -1) + pages.length) % pages.length);
-    } else if (event.key === 'Enter') {
-      event.preventDefault();
-      if (pages[active]) linkTo(pages[active].id);
-    } else if (event.key === 'Escape') {
-      event.preventDefault();
-      cancelLink();
-    }
-  }
-
   if (!position) return null;
   const style = { top: position.top - lift, left: position.left, transform: position.above ? 'translateY(-100%)' : undefined };
 
@@ -344,7 +332,7 @@ export function SlashMenu({ session, noteId, locked, onOpenNewPage }: SlashMenuP
   const keepFocus = (event: ReactMouseEvent) => event.preventDefault();
 
   return (
-    <div ref={menu} className={`slash-menu ${mode === 'reminder' ? 'is-reminder' : ''}`} style={style} role="listbox" aria-label={mode === 'pages' ? 'Choose a note to link' : mode === 'reminder' ? 'Choose when to be reminded' : 'Add a block'}>
+    <div ref={menu} className={`slash-menu ${mode === 'reminder' ? 'is-reminder' : ''}`} style={style} role={mode === 'commands' ? 'listbox' : 'dialog'} aria-label={mode === 'link' ? 'Add a link' : mode === 'reminder' ? 'Choose when to be reminded' : 'Add a block'}>
       {mode === 'commands' && (
         <>
           <p className="slash-menu-label">{inlineOnly.current ? 'Insert' : 'Add a block'}</p>
@@ -394,40 +382,7 @@ export function SlashMenu({ session, noteId, locked, onOpenNewPage }: SlashMenuP
         </div>
       )}
 
-      {mode === 'pages' && (
-        <>
-          <input
-            className="slash-menu-search"
-            autoFocus
-            placeholder="Search notes…"
-            aria-label="Search notes"
-            value={search}
-            onChange={event => {
-              setSearch(event.target.value);
-              setActive(0);
-            }}
-            onKeyDown={handleSearchKeyDown}
-            onBlur={event => {
-              if (!event.relatedTarget?.closest('.slash-menu')) cancelLink();
-            }}
-          />
-          {pages.length ? pages.map((page, index) => (
-            <button
-              key={page.id}
-              type="button"
-              role="option"
-              aria-selected={index === active}
-              className={`slash-menu-item ${index === active ? 'is-active' : ''}`}
-              onMouseDown={keepFocus}
-              onMouseMove={() => setActive(index)}
-              onClick={() => linkTo(page.id)}
-            >
-              <span className="slash-menu-icon">{page.icon || <Icon name={noteIcon(page)} size={15} />}</span>
-              <span className="slash-menu-name">{noteTitle(page)}</span>
-            </button>
-          )) : <p className="slash-menu-empty">No notes found</p>}
-        </>
-      )}
+      {mode === 'link' && <LinkPicker session={session} kind="note" onPick={addLink} onCancel={cancelLink} cancelOnBlur />}
     </div>
   );
 }

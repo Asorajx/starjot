@@ -2,9 +2,11 @@ import { safeHref } from '../../sanitize';
 import { getNote, noteTitle } from '../../store';
 import { escapeHtml } from '../../../lib/html';
 import { elementOf } from '../../../lib/nodes';
+import { LINK_ID } from './blockLinks';
 
-/* Where a link leads: a web or email address, or another page in Notespace. */
-export type LinkTarget = { kind: 'url'; href: string } | { kind: 'page'; id: string };
+/* Where a link leads: a web or email address, or another page in Notespace, or one block in it */
+/* (block is the block's link id, see blockLinks.ts). */
+export type LinkTarget = { kind: 'url'; href: string } | { kind: 'page'; id: string; block?: string };
 
 /* An address typed without "https://", such as google.com or www.example.org/news. */
 const BARE_HOST = /^(localhost|[a-z0-9-]+(\.[a-z0-9-]+)*\.[a-z]{2,})(:\d+)?([/?#]|$)/i;
@@ -29,7 +31,10 @@ export function normalizeAddress(value: string) {
 }
 
 export function linkTarget(link: HTMLAnchorElement): LinkTarget | null {
-  if (link.classList.contains('page-link') && link.dataset.page) return { kind: 'page', id: link.dataset.page };
+  if (link.classList.contains('page-link') && link.dataset.page) {
+    const block = link.dataset.linkId;
+    return block && LINK_ID.test(block) ? { kind: 'page', id: link.dataset.page, block } : { kind: 'page', id: link.dataset.page };
+  }
   const href = safeHref(link.getAttribute('href'));
   return href ? { kind: 'url', href } : null;
 }
@@ -39,10 +44,13 @@ export function setLinkTarget(link: HTMLAnchorElement, target: LinkTarget) {
   if (target.kind === 'page') {
     link.classList.add('page-link');
     link.dataset.page = target.id;
+    if (target.block) link.dataset.linkId = target.block;
+    else link.removeAttribute('data-link-id');
     link.removeAttribute('href');
   } else {
     link.classList.remove('page-link');
     link.removeAttribute('data-page');
+    link.removeAttribute('data-link-id');
     link.setAttribute('href', target.href);
   }
   if (!link.className) link.removeAttribute('class');
@@ -64,26 +72,59 @@ export function createLink(text: string, target: LinkTarget) {
   return link;
 }
 
+/* What selected words may not be linked across: other lines, pictures and page mentions. */
+const NOT_INLINE = 'p, div, h1, h2, h3, h4, h5, h6, ul, ol, li, blockquote, pre, table, tr, td, th, hr, br, img, [contenteditable="false"]';
+
+/* Make the words selected within one line a link, keeping them selected. Selected words inside */
+/* one link change where that link leads; links only partly selected keep their other words. */
+/* Returns false, changing nothing, for nothing selected, more than one line, or code. */
+export function linkSelection(root: HTMLElement, target: LinkTarget) {
+  const selection = window.getSelection();
+  const range = selection?.rangeCount ? selection.getRangeAt(0) : null;
+  if (!selection || !range || range.collapsed || !range.toString().trim() || !root.contains(range.commonAncestorContainer)) return false;
+  const around = elementOf(range.commonAncestorContainer);
+  if (!around || around.closest('pre, code') || range.cloneContents().querySelector(NOT_INLINE)) return false;
+
+  const inside = around.closest<HTMLAnchorElement>('a');
+  if (inside && root.contains(inside)) {
+    setLinkTarget(inside, target);
+    return true;
+  }
+  const words = range.extractContents();
+  words.querySelectorAll('a').forEach(link => link.replaceWith(...Array.from(link.childNodes)));
+  const link = document.createElement('a');
+  link.append(words);
+  setLinkTarget(link, target);
+  range.insertNode(link);
+  link.normalize();
+  const linked = document.createRange();
+  linked.selectNodeContents(link);
+  selection.removeAllRanges();
+  selection.addRange(linked);
+  return true;
+}
+
 
 /* =========================
    Page Addresses
    ========================= */
 
-/* A page's own address, such as https://…/#note=note_abc. Copying a page's link copies this; */
-/* pasting it into a note makes a page link, and opening it in the browser opens the page. */
-export function pageAddress(id: string) {
-  return `${window.location.origin}${window.location.pathname}#note=${id}`;
+/* A page's own address, such as https://…/#note=note_abc, or with a block, …#note=note_abc&block=l…. */
+/* Copying a page's (or block's) link copies this; pasting it into a note makes a page link, and */
+/* opening it in the browser opens the page (at the block). */
+export function pageAddress(id: string, block?: string) {
+  return `${window.location.origin}${window.location.pathname}#note=${id}${block ? `&block=${block}` : ''}`;
 }
 
 /* Copy a link to a page: its address as plain text (opens the page in a browser, and pasted into */
 /* a note makes a page link), and the page link itself for apps that take formatted text. */
-export async function copyPageLink(id: string, words = noteTitle(getNote(id))) {
-  const address = pageAddress(id);
+export async function copyPageLink(id: string, words = noteTitle(getNote(id)), block?: string) {
+  const address = pageAddress(id, block);
   if (typeof ClipboardItem === 'undefined') {
     await navigator.clipboard.writeText(address);
     return;
   }
-  const html = `<a class="page-link" data-page="${id}" href="${address}">${escapeHtml(words)}</a>`;
+  const html = `<a class="page-link" data-page="${id}"${block ? ` data-link-id="${block}"` : ''} href="${address}">${escapeHtml(words)}</a>`;
   await navigator.clipboard.write([new ClipboardItem({
     'text/plain': new Blob([address], { type: 'text/plain' }),
     'text/html': new Blob([html], { type: 'text/html' })
@@ -93,8 +134,13 @@ export async function copyPageLink(id: string, words = noteTitle(getNote(id))) {
 /* The page id in a page address, or null for any other text. Any site's address counts, so a */
 /* link copied from another copy of Starjot still finds the page when this browser has it. */
 export function pageIdFromAddress(text: string) {
-  const match = text.trim().match(/^https?:\/\/\S*#note=([a-zA-Z0-9_-]{1,90})$/);
-  return match ? match[1] : null;
+  return pageTargetFromAddress(text)?.id ?? null;
+}
+
+/* The page, and the block when there is one, a page address leads to (see pageAddress). */
+export function pageTargetFromAddress(text: string) {
+  const match = text.trim().match(/^https?:\/\/\S*#note=([a-zA-Z0-9_-]{1,90})(?:&block=(l[a-z0-9]{6,24}))?$/);
+  return match ? { id: match[1], block: match[2] } : null;
 }
 
 
@@ -226,8 +272,8 @@ export function typeAfterLink(event: InputEvent) {
   return true;
 }
 
-/* The page a copied page link leads to (see copyLink in LinkTools), when the clipboard's HTML is */
-/* exactly one page link whose words are the plain text being pasted. */
+/* The page a copied page link leads to and its words, when the clipboard's HTML is exactly one */
+/* page link whose words, or address (see copyPageLink), are the plain text being pasted. */
 export function copiedPageLink(html: string, plain: string) {
   if (!html) return null;
 
@@ -237,6 +283,9 @@ export function copiedPageLink(html: string, plain: string) {
   const links = holder.content.querySelectorAll<HTMLAnchorElement>('a.page-link[data-page]');
   const link = links.length === 1 ? links[0] : null;
   const id = link?.dataset.page ?? '';
-  if (!link || link.textContent !== plain || !/^[a-zA-Z0-9_-]{1,90}$/.test(id)) return null;
-  return { kind: 'page', id } as const;
+  const words = link?.textContent ?? '';
+  if (!link || !words || (words !== plain && link.getAttribute('href') !== plain) || !/^[a-zA-Z0-9_-]{1,90}$/.test(id)) return null;
+  const block = link.dataset.linkId;
+  const target: LinkTarget = block && LINK_ID.test(block) ? { kind: 'page', id, block } : { kind: 'page', id };
+  return { target, words };
 }

@@ -103,7 +103,12 @@ async function pageContent(note: Note, settings: ExportSettings, included: Set<s
     if (element.classList.contains('is-missing')) element.replaceWith(...Array.from(element.childNodes));
     else asLink(element, pageHref(element.dataset.page ?? '', included));
   });
-  root.querySelectorAll<HTMLAnchorElement>('a.page-link[data-page]').forEach(link => link.setAttribute('href', pageHref(link.dataset.page ?? '', included)));
+  root.querySelectorAll<HTMLAnchorElement>('a.page-link[data-page]').forEach(link => link.setAttribute('href', pageHref(link.dataset.page ?? '', included, link.dataset.linkId)));
+
+  /* Linked blocks can be jumped to inside the file (and in a PDF), by their link id. */
+  root.querySelectorAll<HTMLElement>('[data-link-id]:not(a)').forEach(block => {
+    block.id = block.dataset.linkId ?? '';
+  });
 
   /* Pictures are loaded from the image store and kept inside the file. Each gets a new <img>, so */
   /* the app's own loading (started when the copy was drawn) cannot replace its picture. */

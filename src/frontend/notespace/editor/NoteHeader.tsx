@@ -7,7 +7,7 @@ import { noteIcon, noteTitle, scheduleSave, UNTITLED_NOTE, updateNote, useCatego
 import { isEmptyContent, placeCaret, wrapLooseLines } from './text/dom';
 import { linkTypedAddress } from './links/links';
 import { applyMarkdownShortcut } from './text/markdown';
-import { deleteSelection, insertPasted } from './text/paste';
+import { deleteSelection, insertPasted, linkSelectionToPasted } from './text/paste';
 import { pastedLines } from './text/clipboard';
 import type { Note } from '../../../shared/types/note';
 import { formatDate } from '../../lib/dates';
@@ -196,6 +196,10 @@ function RemarksField({ note, locked, autoFocus = false }: RemarksFieldProps) {
   function handlePaste(event: ClipboardEvent<HTMLDivElement>) {
     event.preventDefault();
     const field = ref.current;
+    if (field && linkSelectionToPasted(field, event.clipboardData.getData('text/plain'))) {
+      save();
+      return;
+    }
     const lines = pastedLines(event.clipboardData);
     if (field && lines) {
       deleteSelection(field);

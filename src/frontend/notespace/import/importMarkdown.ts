@@ -1,5 +1,6 @@
 import { markdownLines } from '../editor/text/paste';
-import { pageAddress } from '../editor/links/links';
+import { pageAddress, setLinkTarget, unwrapLink } from '../editor/links/links';
+import { LINK_ID, linkableBlock, linkableBlocks, linkIdOf } from '../editor/links/blockLinks';
 import { headingAnchor } from '../export/exportMarkdown';
 import { dataBlob, splitIcon, type IdOf, type ImportedNote } from './imported';
 import { storedImageBlock } from '../editor/images/images';
@@ -16,14 +17,105 @@ const MARK_START = '';
 const MARK_END = '';
 const MARKER = new RegExp(`${MARK_START}(\\d+)${MARK_END}`, 'g');
 
+/* A spot marked to link to, as Markdown files write it in HTML: <a id="…"></a> or <a name="…"></a> */
+/* (on its own line before a block, or at the start of one). Starjot's exports mark linked blocks */
+/* this way, with the block's own link id. Other HTML is not read. */
+const HTML_ANCHOR = /<a\s+(?:id|name)\s*=\s*["']([^"'\s<>]+)["']\s*(?:\/>|>\s*<\/a>)/gi;
+
+/* A link to a spot in the file, [words](#spot), is read as a link to this made-up address, then */
+/* pointed at the block once every spot is known (see linkSpots). */
+const SPOT_LINK = 'https://starjot.invalid/spot/';
+
+/* Where a spot was, marked with other private characters while the Markdown is read. */
+const SPOT_START = '';
+const SPOT_END = '';
+const SPOT = new RegExp(`${SPOT_START}([^${SPOT_END}]*)${SPOT_END}`, 'g');
+
+/* Change the Markdown outside code blocks, so code showing HTML or links stays as written. */
+function outsideCode(markdown: string, change: (line: string) => string) {
+  let inCode = false;
+  return markdown.split('\n').map(line => {
+    if (/^\s*(```|~~~)/.test(line)) {
+      inCode = !inCode;
+      return line;
+    }
+    return inCode ? line : change(line);
+  }).join('\n');
+}
+
+/* The spots marked in some Markdown (see HTML_ANCHOR), outside code. */
+export function markedSpots(markdown: string) {
+  const spots: string[] = [];
+  outsideCode(markdown, line => {
+    for (const match of line.matchAll(HTML_ANCHOR)) spots.push(match[1]);
+    return line;
+  });
+  return spots;
+}
+
+/* The block each marked spot is on: the line it starts, or, for a spot alone on its line, the */
+/* next block (whose first line it is). The spot's own empty line is removed. A spot named like a */
+/* link id (as Starjot exports it) gives the block that id, so links to it work again. */
+function placeSpots(root: HTMLElement) {
+  const spots = new Map<string, HTMLElement>();
+  const marked: Text[] = [];
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  while (walker.nextNode()) if ((walker.currentNode.textContent ?? '').includes(SPOT_START)) marked.push(walker.currentNode as Text);
+
+  for (const node of marked) {
+    const names = Array.from((node.textContent ?? '').matchAll(SPOT), match => match[1]);
+    node.textContent = (node.textContent ?? '').replace(SPOT, '');
+    let block = linkableBlock(node, root);
+    if (block && !block.textContent?.trim() && !block.querySelector('img, .image-block')) {
+      const alone = block;
+      const next = alone.nextElementSibling as HTMLElement | null;
+      block = next ? linkableBlock(next.firstChild ?? next, root) ?? linkableBlocks(next)[0] ?? null : null;
+      alone.remove();
+    }
+    if (!block) continue;
+    names.forEach(name => {
+      if (!spots.has(name)) spots.set(name, block as HTMLElement);
+      if (LINK_ID.test(name) && !block?.dataset.linkId) (block as HTMLElement).dataset.linkId = name;
+    });
+  }
+
+  /* Headings can be linked to by the anchor most Markdown viewers give them. */
+  const taken = new Set<string>();
+  root.querySelectorAll<HTMLElement>('h1, h2, h3, h4, h5').forEach(heading => {
+    const anchor = headingAnchor(heading.textContent ?? '', taken);
+    if (!spots.has(anchor)) spots.set(anchor, heading);
+  });
+  return spots;
+}
+
+/* Point each link to a spot at its block: in this note, or in another note of the file (by the */
+/* link id it was exported with). A link to a spot the file does not have keeps its words only. */
+function linkSpots(root: HTMLElement, spots: Map<string, HTMLElement>, self: string | undefined, elsewhere: (spot: string) => string | undefined) {
+  root.querySelectorAll<HTMLAnchorElement>(`a[href^="${SPOT_LINK}"]`).forEach(link => {
+    let spot = '';
+    try {
+      spot = decodeURIComponent((link.getAttribute('href') ?? '').slice(SPOT_LINK.length));
+    } catch {
+      spot = '';
+    }
+    const block = spots.get(spot);
+    const other = block ? undefined : elsewhere(spot);
+    if (block && self) setLinkTarget(link, { kind: 'page', id: self, block: linkIdOf(block) });
+    else if (other && LINK_ID.test(spot)) setLinkTarget(link, { kind: 'page', id: other, block: spot });
+    else unwrapLink(link);
+  });
+}
+
 
 /* =========================
    Text
    ========================= */
 
 /* Markdown as note HTML. Links to a heading that starts another note of the file lead to that */
-/* note. Pictures kept inside the file become images; pictures on the web become links to them. */
-async function noteHtml(markdown: string, anchors: Map<string, string>, idOf: IdOf) {
+/* note, and links to a spot in the text (a heading or a marked block) lead to that block. */
+/* Pictures kept inside the file become images; pictures on the web become links to them. */
+/* self is this note's key; elsewhere gives the key of another note holding a marked spot. */
+async function noteHtml(markdown: string, anchors: Map<string, string>, idOf: IdOf, self = '', elsewhere: Map<string, string> = new Map()) {
   const pictures: Blob[] = [];
   const text = markdown
     .replace(PICTURE, (_, words: string, address: string) => {
@@ -36,9 +128,16 @@ async function noteHtml(markdown: string, anchors: Map<string, string>, idOf: Id
       const id = idOf(anchors.get(anchor) ?? '');
       return id ? `](${pageAddress(id)})` : whole;
     });
+  const spotted = outsideCode(text, line => line
+    .replace(HTML_ANCHOR, (_, spot: string) => `${SPOT_START}${spot}${SPOT_END}`)
+    .replace(/\]\(#([^)\s]+)\)/g, (_, spot: string) => `](${SPOT_LINK}${encodeURIComponent(spot)})`));
 
   const root = document.createElement('div');
-  root.append(...markdownLines(text));
+  root.append(...markdownLines(spotted));
+  linkSpots(root, placeSpots(root), idOf(self), spot => {
+    const key = elsewhere.get(spot);
+    return key && key !== self ? idOf(key) : undefined;
+  });
 
   /* Put each picture where its marker is. */
   const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
@@ -153,9 +252,13 @@ export function readMarkdown(text: string, fallbackTitle: string): ImportedNote[
   const exported = parts.length > 1 && /^# /.test(markdown) && /^\*\*Sub-notes:\*\*/m.test(parts[0]);
   const sections = (exported ? parts : [markdown]).map(sectionOf);
 
-  /* The headings link to each other the way the export named them. */
+  /* The headings link to each other the way the export named them, and blocks by their spots. */
   const taken = new Set<string>();
   const anchors = new Map(sections.map((section, index) => [headingAnchor(section.heading, taken), String(index)]));
+  const spots = new Map<string, string>();
+  sections.forEach((section, index) => markedSpots(section.body).forEach(spot => {
+    if (!spots.has(spot)) spots.set(spot, String(index));
+  }));
 
   return sections.map((section, index) => {
     const { icon, title } = splitIcon(section.heading || (index === 0 ? meta.get('title') ?? '' : ''));
@@ -166,7 +269,7 @@ export function readMarkdown(text: string, fallbackTitle: string): ImportedNote[
       description: section.details.get('Description') ?? (index === 0 ? meta.get('description') ?? meta.get('summary') : undefined),
       category: section.details.get('Category'),
       remarks: section.remarks ? markdownLines(section.remarks).map(line => line.outerHTML).join('') : '',
-      content: idOf => noteHtml(section.body, anchors, idOf)
+      content: idOf => noteHtml(section.body, anchors, idOf, String(index), spots)
     };
   });
 }

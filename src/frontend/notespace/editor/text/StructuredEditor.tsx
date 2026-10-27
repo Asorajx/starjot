@@ -21,7 +21,7 @@ import { caretAtEdge, closestAtCaret, emptyParagraph, isEmptyContent, placeCaret
 import { imageFiles, insertImageFiles } from '../images/images';
 import { linkTypedAddress } from '../links/links';
 import { applyMarkdownShortcut, formatTypedMarkdown, joinTypedDashes } from './markdown';
-import { deleteSelection, insertPasted } from './paste';
+import { deleteSelection, insertPasted, linkSelectionToPasted } from './paste';
 import { pastedLines, writeSelection } from './clipboard';
 import { clearSelectedCells, pasteIntoTable } from '../tables/tableClipboard';
 import type { EditorSession } from '../session';
@@ -798,6 +798,12 @@ export const StructuredEditor = memo(function StructuredEditor({ session, conten
     const text = event.clipboardData.getData('text/plain');
     const start = closestAtCaret('.block-content');
     const inCode = Boolean(start && preAtCaret(start));
+
+    /* An address pasted over selected words in one block links them (see linkSelectionToPasted). */
+    if (start && !inCode && linkSelectionToPasted(start, text)) {
+      commitTyping();
+      return;
+    }
     const lines = inCode ? null : pastedLines(event.clipboardData);
 
     /* In a table, copied cells go in cell by cell (see tableClipboard.ts). */

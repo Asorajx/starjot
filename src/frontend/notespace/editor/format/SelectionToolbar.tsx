@@ -1,12 +1,17 @@
 import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent, type MouseEvent } from 'react';
 import { RECENT_COLORS, getPreferences, updatePreferences, usePreferences } from '../../../app/preferences';
 import { Icon, type IconName } from '../../../components/Icon';
-import { safeHref } from '../../sanitize';
 import { COLOR_NAMES, applyColor, colorAt, type ColorClass, type ColorKind, type ColorName } from './colors';
 import type { EditorSession } from '../session';
 import { useEscape } from '../../../lib/useDismiss';
 import { changeLinesType, LINE_TYPES, linesInRange, typeOfLine, type LineType } from './lineTypes';
 import { elementOf } from '../../../lib/nodes';
+import { showToast } from '../../../lib/toasts';
+import { getNote, noteTitle } from '../../store';
+import { copyPageLink, linkSelection, setLinkTarget, unwrapLink, type LinkTarget } from '../links/links';
+import { LinkPicker } from '../links/LinkPicker';
+import { isLinkShortcut } from '../../../app/shortcuts';
+import { blockWords, linkableBlock, linkIdOf } from '../links/blockLinks';
 
 type SelectionToolbarProps = {
   session: EditorSession;
@@ -35,6 +40,13 @@ const HOVER_CLOSE = 250;
 /* The editor's top bar covers this much of the window, so the toolbar never goes above it. */
 const TOP_LIMIT = 64;
 const GAP = 8;
+
+/* A link in the note: an address link or a page link (which has no address). */
+const LINK = 'a[href], a.page-link';
+
+/* The address a link made across several lines gets for a moment, before it is pointed at its */
+/* target (see applyLink). */
+const NEW_LINK = 'https://starjot.invalid/new-link';
 
 const FORMATS: { command: string; icon: IconName; label: string; shortcut?: string }[] = [
   { command: 'bold', icon: 'bold', label: 'Bold', shortcut: 'Ctrl + B' },
@@ -226,6 +238,8 @@ export function SelectionToolbar({ session, locked }: SelectionToolbarProps) {
   const savedRange = useRef<Range | null>(null);
   const modeRef = useRef(mode);
   modeRef.current = mode;
+  const lockedRef = useRef(locked);
+  lockedRef.current = locked;
 
   /* Bumped after a format is applied, so the buttons show the new state straight away. */
   const [, setFormatted] = useState(0);
@@ -261,13 +275,31 @@ export function SelectionToolbar({ session, locked }: SelectionToolbarProps) {
       setValue('');
     }
 
+    /* Ctrl + K with words selected in the note (not inside one link, which LinkTools edits) opens */
+    /* Add link for them, before the app's search sees the key. */
+    function handleKeyDown(event: globalThis.KeyboardEvent) {
+      if (!isLinkShortcut(event) || lockedRef.current || modeRef.current !== 'buttons') return;
+      const selection = window.getSelection();
+      const range = selection?.rangeCount ? selection.getRangeAt(0) : null;
+      const body = session.body();
+      if (!body || !range || range.collapsed || !range.toString().trim() || !body.contains(range.commonAncestorContainer)) return;
+      if (elementOf(range.commonAncestorContainer)?.closest(LINK)) return;
+      event.preventDefault();
+      event.stopPropagation();
+      update();
+      modeRef.current = 'link';
+      setMode('link');
+    }
+
     const scroller = session.scroller();
     document.addEventListener('selectionchange', update);
     document.addEventListener('mousedown', handleMouseDown);
+    window.addEventListener('keydown', handleKeyDown, true);
     scroller?.addEventListener('scroll', update);
     return () => {
       document.removeEventListener('selectionchange', update);
       document.removeEventListener('mousedown', handleMouseDown);
+      window.removeEventListener('keydown', handleKeyDown, true);
       scroller?.removeEventListener('scroll', update);
     };
   }, []);
@@ -324,7 +356,7 @@ export function SelectionToolbar({ session, locked }: SelectionToolbarProps) {
   const lineKinds = new Set(lines?.map(typeOfLine));
   const lineKind = lineKinds.size === 1 ? [...lineKinds][0] : null;
   const linkNode = savedRange.current?.commonAncestorContainer;
-  const inLink = Boolean(elementOf(linkNode)?.closest('a[href]'));
+  const inLink = Boolean(elementOf(linkNode)?.closest(LINK));
 
   /* Put the remembered selection back, so a command applies to the text that was selected. */
   function restoreSelection() {
@@ -383,6 +415,24 @@ export function SelectionToolbar({ session, locked }: SelectionToolbarProps) {
     kindRef.current?.focus();
   }
 
+  /* Copy a link to the block the selection starts in (giving it a link id the first time, which */
+  /* is saved with the note). Pasted into a note it makes a link that leads to this block. */
+  async function copyBlockLink() {
+    const body = session.body();
+    const range = window.getSelection()?.rangeCount ? window.getSelection()?.getRangeAt(0) : null;
+    const block = body && range ? linkableBlock(range.startContainer, body) : null;
+    if (!block) return;
+    const had = block.dataset.linkId;
+    const id = linkIdOf(block);
+    if (had !== id) session.commit();
+    try {
+      await copyPageLink(session.noteId, blockWords(block) || noteTitle(getNote(session.noteId)), id);
+      showToast({ kind: 'success', title: 'Link to block copied', description: 'Paste it into any note to link here.' });
+    } catch {
+      showToast({ kind: 'error', title: 'Could not copy the link' });
+    }
+  }
+
   function format(command: string) {
     session.checkpoint();
     document.execCommand(command);
@@ -417,25 +467,29 @@ export function SelectionToolbar({ session, locked }: SelectionToolbarProps) {
   /* The link button removes a link when the selection is already inside one. */
   function startLink() {
     const node = savedRange.current?.commonAncestorContainer;
-    const element = elementOf(node);
-    if (element?.closest('a[href]')) {
+    const link = elementOf(node)?.closest<HTMLAnchorElement>(LINK);
+    if (link) {
       session.checkpoint();
-      document.execCommand('unlink');
+      unwrapLink(link);
       session.commit();
+      close();
       return;
     }
     setMode('link');
   }
 
-  function applyLink() {
-    const address = /^[a-z]+:/i.test(value.trim()) ? value.trim() : `https://${value.trim()}`;
-    const href = safeHref(address);
+  /* Link the selected words to what was chosen in Add link. Words across several lines become */
+  /* one link per line, as the browser makes them. */
+  function applyLink(target: LinkTarget) {
+    const body = session.body();
     restoreSelection();
-    if (href && value.trim()) {
-      session.checkpoint();
-      document.execCommand('createLink', false, href);
-      session.commit();
+    if (!body) return;
+    session.checkpoint();
+    if (!linkSelection(body, target)) {
+      document.execCommand('createLink', false, NEW_LINK);
+      body.querySelectorAll<HTMLAnchorElement>(`a[href="${NEW_LINK}"]`).forEach(link => setLinkTarget(link, target));
     }
+    session.commit();
     close();
   }
 
@@ -472,8 +526,7 @@ export function SelectionToolbar({ session, locked }: SelectionToolbarProps) {
       close();
     } else if (event.key === 'Enter' && !event.shiftKey) {
       event.preventDefault();
-      if (mode === 'link') applyLink();
-      else applyComment();
+      applyComment();
     }
   }
 
@@ -564,6 +617,18 @@ export function SelectionToolbar({ session, locked }: SelectionToolbarProps) {
               <Icon name="link" size={15} />
             </button>
           )}
+          {!locked && (
+            <button
+              type="button"
+              className="selection-tool"
+              aria-label="Copy link to block"
+              data-tooltip="Copy link to block"
+              onMouseDown={keepSelection}
+              onClick={copyBlockLink}
+            >
+              <Icon name="copy" size={15} />
+            </button>
+          )}
         </div>
       )}
       {mode === 'buttons' && (
@@ -581,15 +646,14 @@ export function SelectionToolbar({ session, locked }: SelectionToolbarProps) {
       )}
 
       {mode === 'link' && (
-        <input
-          className="selection-input"
-          type="url"
-          autoFocus
-          placeholder="Paste a link and press Enter"
-          aria-label="Link address"
-          value={value}
-          onChange={event => setValue(event.target.value)}
-          onKeyDown={handleInputKey}
+        <LinkPicker
+          session={session}
+          kind="web"
+          onPick={applyLink}
+          onCancel={() => {
+            restoreSelection();
+            close();
+          }}
         />
       )}
 

@@ -3,8 +3,9 @@ import { deleteKeepingPages } from './pageBlocks';
 import { highlight } from '../code/code';
 import { isEmptyContent } from './dom';
 import { getNote, noteTitle } from '../../store';
-import { copiedPageLink, createLink, normalizeAddress, pageIdFromAddress, trimAddress, type LinkTarget } from '../links/links';
+import { copiedPageLink, createLink, linkSelection, normalizeAddress, pageTargetFromAddress, trimAddress, type LinkTarget } from '../links/links';
 import { elementOf } from '../../../lib/nodes';
+import { dropTakenLinkIds } from '../links/blockLinks';
 
 /* Code fence languages written in Markdown, and the code block language each one becomes. */
 const FENCE_LANGUAGES: Record<string, string> = {
@@ -65,11 +66,11 @@ function element(tag: string, children: (Node | string)[]) {
   return made;
 }
 
-/* Where an address leads: the page it names (see pageAddress) when this browser has that page, */
-/* or else the web address, or null when it is neither. */
+/* Where an address leads: the page (and block) it names (see pageAddress) when this browser has */
+/* that page, or else the web address, or null when it is neither. */
 function addressTarget(address: string): LinkTarget | null {
-  const page = pageIdFromAddress(address);
-  if (page && getNote(page)) return { kind: 'page', id: page };
+  const page = pageTargetFromAddress(address);
+  if (page && getNote(page.id)) return page.block ? { kind: 'page', id: page.id, block: page.block } : { kind: 'page', id: page.id };
   const href = normalizeAddress(address);
   return href ? { kind: 'url', href } : null;
 }
@@ -252,10 +253,10 @@ function cleaned(blocks: HTMLElement[]) {
 
 /* The note lines for pasted text, or null when it has no Markdown, so it is pasted as plain text */
 /* (unless always is true). A page link copied from a note (the clipboard's HTML) pastes as the */
-/* same page link. */
+/* same page link, with the same words. */
 export function pastedMarkdown(plain: string, html = '', always = false): HTMLElement[] | null {
   const page = copiedPageLink(html, plain);
-  if (page) return cleaned([element('p', [createLink(plain, page)])]);
+  if (page) return cleaned([element('p', [createLink(page.words, page.target)])]);
 
   const blocks = markdownLines(plain);
   const formatted = blocks.some(block => block.tagName !== 'P' || block.querySelector('*:not(br)'));
@@ -324,6 +325,7 @@ export function deleteSelection(root: HTMLElement) {
 export function insertPasted(root: HTMLElement, blocks: HTMLElement[]) {
   const selection = window.getSelection();
   if (!selection?.rangeCount || !blocks.length) return null;
+  dropTakenLinkIds(blocks, root);
   const range = selection.getRangeAt(0);
   range.collapse(true);
   const start = elementOf(range.startContainer);
@@ -407,4 +409,18 @@ export function insertPasted(root: HTMLElement, blocks: HTMLElement[]) {
   selection.addRange(caret);
   const holder = elementOf(caret.startContainer);
   return { line: (holder?.closest(LINE) ?? holder ?? root) as HTMLElement, added: true };
+}
+
+
+/* =========================
+   Linking Selected Words
+   ========================= */
+
+/* Pasting one address (a web or email address, or a note's or block's link) over words selected */
+/* within a line makes those words a link to it and keeps them, as most editors do, instead of */
+/* replacing them with the address (see linkSelection). Returns false (paste as usual) for */
+/* anything else. */
+export function linkSelectionToPasted(root: HTMLElement, plain: string) {
+  const target = addressTarget(plain.trim());
+  return Boolean(target) && linkSelection(root, target as LinkTarget);
 }

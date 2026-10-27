@@ -3,8 +3,11 @@ import { Icon } from '../../../components/Icon';
 import { getNote, noteTitle, useNotes } from '../../store';
 import { copyPageLink, linkTarget, normalizeAddress, setLinkTarget, unwrapLink, type LinkTarget } from './links';
 import { LinkPreviewCard } from './LinkPreview';
+import { revealBlock, revealWhenShown } from './blockLinks';
 import type { EditorSession } from '../session';
 import { opensNewTab } from '../../../lib/clicks';
+import { isLinkShortcut } from '../../../app/shortcuts';
+import { elementOf } from '../../../lib/nodes';
 import { useDismiss } from '../../../lib/useDismiss';
 
 type LinkToolsProps = {
@@ -70,6 +73,23 @@ export function LinkTools({ session, locked, onOpenNote, onOpenNoteInNewTab }: L
   const latest = useRef({ locked, editing, onOpenNote, onOpenNoteInNewTab });
   latest.current = { locked, editing, onOpenNote, onOpenNoteInNewTab };
 
+  /* Open the edit box for a link (from Edit, or Ctrl + K with the caret in the link). */
+  function beginEditing(found: HTMLAnchorElement) {
+    const target = linkTarget(found);
+    if (!target) return;
+    window.clearTimeout(showTimer.current);
+    window.clearTimeout(hideTimer.current);
+    setLink(found);
+    setWords(found.textContent ?? '');
+    setAddress(target.kind === 'url' ? target.href : pageTitle(target.id));
+    setPage(target.kind === 'page' ? target.id : null);
+    setError('');
+    setCopied(false);
+    setEditing(true);
+  }
+  const begin = useRef(beginEditing);
+  begin.current = beginEditing;
+
   useEffect(() => {
     const scroller = session.scroller();
     const linkAt = (target: EventTarget | null) => {
@@ -81,8 +101,20 @@ export function LinkTools({ session, locked, onOpenNote, onOpenNoteInNewTab }: L
     function open(found: HTMLAnchorElement, newTab: boolean) {
       const target = linkTarget(found);
       if (!target) return;
-      if (target.kind === 'url') window.open(target.href, '_blank', 'noopener');
-      else if (getNote(target.id)) (newTab ? latest.current.onOpenNoteInNewTab : latest.current.onOpenNote)(target.id);
+      if (target.kind === 'url') {
+        window.open(target.href, '_blank', 'noopener');
+        return;
+      }
+      if (!getNote(target.id)) return;
+
+      /* A block link shows its block: in this note straight away (even when asked for a new tab, */
+      /* which would only open this note again), in another note once it opens. */
+      if (target.block && target.id === session.noteId) {
+        revealBlock(session.body(), target.block);
+        return;
+      }
+      if (target.block) revealWhenShown(target.id, target.block);
+      (newTab ? latest.current.onOpenNoteInNewTab : latest.current.onOpenNote)(target.id);
     }
 
     function handleMouseOver(event: MouseEvent) {
@@ -131,6 +163,19 @@ export function LinkTools({ session, locked, onOpenNote, onOpenNoteInNewTab }: L
       open(found, true);
     }
 
+    /* Ctrl + K with the caret (or the selected words) inside a link in the note's text edits it, */
+    /* before the app's search sees the key. */
+    function handleKeyDown(event: globalThis.KeyboardEvent) {
+      if (!isLinkShortcut(event) || latest.current.locked) return;
+      const selection = window.getSelection();
+      const range = selection?.rangeCount ? selection.getRangeAt(0) : null;
+      const found = elementOf(range?.commonAncestorContainer)?.closest<HTMLAnchorElement>(LINK_SELECTOR);
+      if (!found || !session.body()?.contains(found)) return;
+      event.preventDefault();
+      event.stopPropagation();
+      begin.current(found);
+    }
+
     function handleScroll() {
       setScrolled(count => count + 1);
     }
@@ -140,6 +185,7 @@ export function LinkTools({ session, locked, onOpenNote, onOpenNoteInNewTab }: L
     document.addEventListener('click', handleClick);
     document.addEventListener('mousedown', handleMouseDown);
     document.addEventListener('dblclick', handleDoubleClick);
+    window.addEventListener('keydown', handleKeyDown, true);
     scroller?.addEventListener('scroll', handleScroll);
     return () => {
       document.removeEventListener('mouseover', handleMouseOver);
@@ -147,6 +193,7 @@ export function LinkTools({ session, locked, onOpenNote, onOpenNoteInNewTab }: L
       document.removeEventListener('click', handleClick);
       document.removeEventListener('mousedown', handleMouseDown);
       document.removeEventListener('dblclick', handleDoubleClick);
+      window.removeEventListener('keydown', handleKeyDown, true);
       scroller?.removeEventListener('scroll', handleScroll);
       window.clearTimeout(showTimer.current);
       window.clearTimeout(hideTimer.current);
@@ -168,12 +215,7 @@ export function LinkTools({ session, locked, onOpenNote, onOpenNoteInNewTab }: L
   }
 
   function startEditing() {
-    if (!target) return;
-    setWords(shown.textContent ?? '');
-    setAddress(target.kind === 'url' ? target.href : pageTitle(target.id));
-    setPage(target.kind === 'page' ? target.id : null);
-    setError('');
-    setEditing(true);
+    beginEditing(shown);
   }
 
   function save(event?: FormEvent) {
@@ -186,7 +228,10 @@ export function LinkTools({ session, locked, onOpenNote, onOpenNoteInNewTab }: L
     session.checkpoint();
     const text = words.trim() ? words : page ? pageTitle(page) : address.trim();
     if (text !== shown.textContent) shown.textContent = text;
-    setLinkTarget(shown, page ? { kind: 'page', id: page } : { kind: 'url', href: href as string });
+
+    /* A block link still leads to its block while it points at the same note. */
+    const block = target?.kind === 'page' && target.id === page ? target.block : undefined;
+    setLinkTarget(shown, page ? { kind: 'page', id: page, block } : { kind: 'url', href: href as string });
     session.commit();
     setEditing(false);
     setError('');
@@ -265,7 +310,12 @@ export function LinkTools({ session, locked, onOpenNote, onOpenNoteInNewTab }: L
               }}
             />
           </label>
-          {page && <span className="link-tools-chosen"><Icon name="file-text" size={13} /> Links to the page {pageTitle(page)}</span>}
+          {page && (
+            <span className="link-tools-chosen">
+              <Icon name="file-text" size={13} />
+              {target.kind === 'page' && target.id === page && target.block ? `Links to a block in ${pageTitle(page)}` : `Links to the page ${pageTitle(page)}`}
+            </span>
+          )}
           {suggestions.length > 0 && (
             <span className="link-tools-suggestions" role="listbox" aria-label="Notes">
               {suggestions.map(note => (

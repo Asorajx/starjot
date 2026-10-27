@@ -37,10 +37,10 @@ export function pageAnchor(id: string) {
   return `page-${id}`;
 }
 
-/* Where a link to a page leads in an export: its section when the page is in the same file, */
-/* or its Starjot address. */
-export function pageHref(id: string, included: Set<string>) {
-  return included.has(id) ? `#${pageAnchor(id)}` : pageAddress(id);
+/* Where a link to a page (or one block in it) leads in an export: its section (or the block, */
+/* whose id is its link id) when the page is in the same file, or its Starjot address. */
+export function pageHref(id: string, included: Set<string>, block?: string) {
+  return included.has(id) ? `#${block ?? pageAnchor(id)}` : pageAddress(id, block);
 }
 
 /* The chosen details as label and text pairs, leaving out empty ones. The created date is */

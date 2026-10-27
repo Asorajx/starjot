@@ -9,9 +9,11 @@ import { contentCopy, detailRows, exportFileName, hasRemarks, type ExportSetting
 import { dataUrl, downloadFile } from '../../lib/files';
 
 /* What converting a page needs: the pages in the file (and the headings their links jump to), */
-/* and the pictures, already loaded as data addresses (none for a text-only export). */
+/* the blocks that links in the file jump to (by link id), and the pictures, already loaded as */
+/* data addresses (none for a text-only export). */
 type Context = {
   anchors: Map<string, string>;
+  spots: Set<string>;
   pictures: Map<Element, string>;
 };
 
@@ -47,9 +49,31 @@ function pageHeading(note: Note) {
   return `${note.icon ? `${note.icon} ` : ''}${noteTitle(note)}`;
 }
 
-function pageLink(id: string, context: Context) {
+/* Where a link to a page (or one block in it) leads: its heading (or the block's spot) when the */
+/* page is in the file, or else its Starjot address. */
+function pageLink(id: string, context: Context, block?: string) {
+  if (block) return context.anchors.has(id) && context.spots.has(block) ? `#${block}` : pageAddress(id, block);
   const anchor = context.anchors.get(id);
   return anchor ? `#${anchor}` : pageAddress(id);
+}
+
+/* The spot a linked block is marked with, <a id="…"></a> (with its link id), so links in the file */
+/* can jump to it, and importing the file links to it again. '' for any other block. */
+function spotOf(element: Element, context: Context) {
+  const id = (element as HTMLElement).dataset?.linkId ?? '';
+  return context.spots.has(id) ? `<a id="${id}"></a>` : '';
+}
+
+/* The link ids of the blocks that links in these pages lead to, when the linked page is one of them. */
+function linkedSpots(notes: Note[]) {
+  const included = new Set(notes.map(note => note.id));
+  const spots = new Set<string>();
+  notes.forEach(note => [note.content, note.remarks].forEach(html => {
+    contentCopy(html).querySelectorAll<HTMLElement>('a.page-link[data-link-id]').forEach(link => {
+      if (included.has(link.dataset.page ?? '')) spots.add(link.dataset.linkId ?? '');
+    });
+  }));
+  return spots;
 }
 
 /* A run of text and inline formatting as Markdown. */
@@ -84,7 +108,7 @@ function inline(node: Node, context: Context): string {
     }
     case 'A': {
       const link = node as HTMLAnchorElement;
-      const href = link.classList.contains('page-link') && link.dataset.page ? pageLink(link.dataset.page, context) : link.getAttribute('href');
+      const href = link.classList.contains('page-link') && link.dataset.page ? pageLink(link.dataset.page, context, link.dataset.linkId) : link.getAttribute('href');
       const text = inner();
       return href ? `[${text}](${href})` : text;
     }
@@ -105,7 +129,7 @@ function list(element: Element, context: Context, indent = ''): string {
     const marker = numbered ? `${index + 1}. ` : `- ${box}`;
     const nested = Array.from(item.children).filter(child => child.tagName === 'UL' || child.tagName === 'OL');
     const text = Array.from(item.childNodes).filter(child => !nested.includes(child as Element)).map(child => inline(child, context)).join('').trim();
-    const lines = [`${indent}${marker}${escapeLineStart(text).replace(/\n/g, `\n${indent}${' '.repeat(marker.length)}`)}`];
+    const lines = [`${indent}${marker}${spotOf(item, context)}${escapeLineStart(text).replace(/\n/g, `\n${indent}${' '.repeat(marker.length)}`)}`];
     nested.forEach(child => lines.push(list(child, context, indent + ' '.repeat(marker.length))));
     return lines.join('\n');
   }).join('\n');
@@ -124,15 +148,26 @@ function table(element: Element, context: Context) {
   return [line(rows[0]), line(Array<string>(width).fill('---')), ...rows.slice(1).map(line)].join('\n');
 }
 
-/* One block of the text as Markdown, or '' for an empty one. */
+/* One block of the text as Markdown, or '' for an empty one. A linked block starts with its spot */
+/* (see spotOf): inside a heading or paragraph, or on a line of its own before other blocks. */
 function block(element: Element, context: Context): string {
+  const spot = spotOf(element, context);
   const heading = element.tagName.match(/^H([1-6])$/);
   if (heading) {
     const text = inline(element, context).trim();
-    return text ? `${'#'.repeat(Math.min(5, Number(heading[1])))} ${text}` : '';
+    return text ? `${'#'.repeat(Math.min(5, Number(heading[1])))} ${spot}${text}` : '';
   }
+  if (element.tagName === 'P') {
+    const text = inline(element, context).trim();
+    return text ? `${spot}${escapeLineStart(text)}` : '';
+  }
+  const text = unspotted(element, context);
+  return spot && text ? `${spot}\n\n${text}` : text;
+}
+
+/* A block other than a heading or paragraph as Markdown. */
+function unspotted(element: Element, context: Context): string {
   switch (element.tagName) {
-    case 'P': return escapeLineStart(inline(element, context).trim());
     case 'UL': case 'OL': return list(element, context);
     case 'HR': return '---';
     case 'TABLE': return table(element, context);
@@ -186,7 +221,7 @@ function blocks(parent: Element, context: Context): string {
 /* Some note HTML as Markdown, without pictures (used when copying from a note). Links to pages */
 /* lead to their Starjot addresses, so pasting them into a note makes page links again. */
 export function markdownOf(root: Element) {
-  return blocks(root, { anchors: new Map(), pictures: new Map() });
+  return blocks(root, { anchors: new Map(), spots: new Set(), pictures: new Map() });
 }
 
 
@@ -212,10 +247,10 @@ async function loadPictures(root: Element) {
 }
 
 /* One page as Markdown: its icon and title as a heading, its details (when asked), then its text. */
-async function pageMarkdown(note: Note, settings: ExportSettings, anchors: Map<string, string>) {
+async function pageMarkdown(note: Note, settings: ExportSettings, anchors: Map<string, string>, spots: Set<string>) {
   const root = contentCopy(note.content);
   const pictures = settings.content === 'everything' ? await loadPictures(root) : new Map<Element, string>();
-  const context = { anchors, pictures };
+  const context = { anchors, spots, pictures };
   const parts = [`# ${escapeMarkdown(pageHeading(note))}`];
 
   if (settings.details) {
@@ -233,11 +268,12 @@ async function pageMarkdown(note: Note, settings: ExportSettings, anchors: Map<s
 }
 
 /* The notes as one Markdown file, each page after a divider. Links to pages in the file jump to */
-/* their headings. */
+/* their headings, and links to blocks in the file to the blocks' spots. */
 export async function notesMarkdown(notes: Note[], settings: ExportSettings) {
   const taken = new Set<string>();
   const anchors = new Map(notes.map(note => [note.id, headingAnchor(pageHeading(note), taken)]));
-  const pages = await Promise.all(notes.map(note => pageMarkdown(note, settings, anchors)));
+  const spots = linkedSpots(notes);
+  const pages = await Promise.all(notes.map(note => pageMarkdown(note, settings, anchors, spots)));
   return `${pages.join('\n\n---\n\n')}\n`;
 }
 

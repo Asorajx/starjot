@@ -41,6 +41,7 @@ export const FIXED_SHORTCUTS: { action: string; group: ShortcutGroup; keys: stri
   { action: 'Close a window or menu, or go back', group: 'Everywhere', keys: ['Esc'] },
   { action: 'Undo and redo', group: 'In a note', keys: ['Ctrl+Z', 'Ctrl+Y'] },
   { action: 'Bold, italic and underline', group: 'In a note', keys: ['Ctrl+B', 'Ctrl+I', 'Ctrl+U'] },
+  { action: 'Add a link to the selected words, or edit the link at the caret', group: 'In a note', keys: ['Ctrl+K'] },
   { action: 'Open or close a toggle', group: 'In a note', keys: ['Ctrl+Enter'] },
   { action: 'Indent or outdent a list item', group: 'In a note', keys: ['Tab', 'Shift+Tab'] }
 ];
@@ -103,6 +104,13 @@ export function isShortcut(event: KeyboardEvent, id: ShortcutId) {
   const combo = comboOf(event);
   if (!combo || !keysOf(id).includes(combo)) return false;
   return id !== 'switcher' || !combo.startsWith('Ctrl') || (event.ctrlKey && !event.metaKey);
+}
+
+/* Ctrl + K in a note's text with words selected, or in a link, adds or edits a link instead of */
+/* searching (search still works everywhere else). It steps aside when Ctrl + K has been given to */
+/* another shortcut. */
+export function isLinkShortcut(event: KeyboardEvent) {
+  return comboOf(event) === 'Ctrl+K' && !SHORTCUTS.some(item => item.id !== 'search' && keysOf(item.id).includes('Ctrl+K'));
 }
 
 /* The modifier held while the tab switcher is open; letting go of it switches. */

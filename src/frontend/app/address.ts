@@ -28,9 +28,10 @@ export function addressOf(address: Address) {
   return `#note=${place.id}`;
 }
 
-/* The place an address names, or null when it names none (no "#", or something unknown). */
+/* The place an address names, or null when it names none (no "#", or something unknown). A */
+/* note's address may end with the block a link leads to (see blockInAddress). */
 export function parseAddress(hash: string): Address | null {
-  const [name, value = ''] = hash.replace(/^#/, '').split('=');
+  const [name, value = ''] = hash.replace(/^#/, '').replace(/&block=[a-z0-9]*$/, '').split('=');
   if (name === 'home' && !value) return { kind: 'place', place: { kind: 'start' } };
   if (name === 'notes' && !value) return { kind: 'place', place: { kind: 'home' } };
   if (name === 'category' && ID.test(value)) return { kind: 'place', place: { kind: 'category', id: value } };
@@ -38,4 +39,9 @@ export function parseAddress(hash: string): Address | null {
   if (name === 'board' && BOARD_VIEWS.includes(value as BoardTab)) return { kind: 'board', view: value as BoardTab };
   if (name === 'board' && OLD_BOARD_VIEWS.includes(value)) return { kind: 'board', view: 'board' };
   return null;
+}
+
+/* The block a note's address leads to (#note=…&block=…, see pageAddress), or null. */
+export function blockInAddress(hash: string) {
+  return hash.match(/^#?note=[a-zA-Z0-9_-]{1,90}&block=(l[a-z0-9]{6,24})$/)?.[1] ?? null;
 }

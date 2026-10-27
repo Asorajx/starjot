@@ -359,6 +359,100 @@
 
 
 /* =========================
+   Add Link
+   ========================= */
+
+/* Add link (from "/" or the selection toolbar): Note, Block or Web, a search box and a list. */
+.link-picker {
+  display: flex;
+  flex-direction: column;
+  width: 270px;
+  min-width: 0;
+}
+
+.link-picker-kinds {
+  display: flex;
+  gap: 4px;
+  margin: 4px 4px 0;
+  padding: 2px;
+  border: 1px solid #e6ecf4;
+  border-radius: 4px;
+}
+
+.link-picker-kinds button {
+  display: inline-flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-height: 28px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: #5f6d83;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.link-picker-kinds button:hover {
+  color: var(--accent-text);
+}
+
+.link-picker-kinds .is-chosen {
+  background: var(--accent-soft);
+  color: var(--accent-text);
+}
+
+.link-picker .slash-menu-search {
+  margin-top: 8px;
+}
+
+/* In Block, the note whose blocks are listed; click it to choose another note. */
+.link-picker-back {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 4px 0;
+  padding: 4px 8px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: #5e6d84;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 650;
+  text-align: left;
+  cursor: pointer;
+}
+
+.link-picker-back span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.link-picker-back:hover {
+  background: var(--accent-faint);
+  color: var(--accent-text);
+}
+
+.link-picker-list {
+  display: flex;
+  flex-direction: column;
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+.link-picker-error {
+  margin: 0 8px 4px;
+  color: #c2410c;
+  font-size: 12px;
+}
+
+
+/* =========================
    Page Blocks and Links
    ========================= */
 

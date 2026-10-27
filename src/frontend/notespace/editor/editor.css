@@ -1758,3 +1758,35 @@
   max-width: none;
   transform: none;
 }
+
+
+/* =========================
+   Linked Blocks
+   ========================= */
+
+/* A block reached through a block link glows with the accent for a moment (see blockLinks.ts). */
+.is-link-target {
+  border-radius: 4px;
+  animation: link-target 1.6s ease-out;
+}
+
+@keyframes link-target {
+  0%,
+  35% {
+    background-color: var(--accent-tint);
+    box-shadow: 0 0 0 6px var(--accent-tint);
+  }
+
+  100% {
+    background-color: transparent;
+    box-shadow: 0 0 0 6px transparent;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .is-link-target {
+    animation: none;
+    outline: 2px solid var(--accent);
+    outline-offset: 4px;
+  }
+}

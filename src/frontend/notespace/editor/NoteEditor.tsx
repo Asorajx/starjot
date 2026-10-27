@@ -6,6 +6,7 @@ import { DeleteNoteDialog } from '../DeleteNoteDialog';
 import { asksBeforeDeleting, moveToTrash } from '../trash';
 import { FindBar } from './find/FindBar';
 import { takeFindForNote } from './find/pendingFind';
+import { onRevealAsked, revealBlock, takeReveal } from './links/blockLinks';
 import { Icon } from '../../components/Icon';
 import {
   flushSave, markOpened, updateNote,
@@ -151,6 +152,26 @@ function DocumentEditor({ noteId, tabId, history, view, active, onClose, onOpenN
 
   /* Show edits made to this note in another pane. */
   useEffect(() => session.watch(), [session]);
+
+  /* A block link that opened this note shows its block once the note is drawn (after the tab's */
+  /* own scroll is put back), or at once when the note is already open; see blockLinks.ts. */
+  useEffect(() => {
+    let frame = 0;
+    const reveal = () => {
+      const linkId = takeReveal(noteId);
+      if (!linkId) return;
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        frame = requestAnimationFrame(() => revealBlock(session.body(), linkId));
+      });
+    };
+    reveal();
+    const stop = onRevealAsked(reveal);
+    return () => {
+      stop();
+      cancelAnimationFrame(frame);
+    };
+  }, [noteId, session]);
 
   /* Remember the scroll and the caret while the note is shown, and put the scroll back on coming */
   /* back to the tab (the caret comes back through the session, see sessionFor). The scroll is set */
