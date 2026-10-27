@@ -1,8 +1,8 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ClipboardEvent, type KeyboardEvent } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ClipboardEvent, type KeyboardEvent, type ReactNode } from 'react';
 import { Dropdown } from '../../components/Dropdown';
 import { EmojiPicker } from '../../components/EmojiPicker';
-import { Icon } from '../../components/Icon';
-import { usePreferences } from '../../app/preferences';
+import { Icon, type IconName } from '../../components/Icon';
+import { DETAIL_ROWS, getPreferences, updatePreferences, usePreferences, type DetailRow } from '../../app/preferences';
 import { noteIcon, noteTitle, scheduleSave, UNTITLED_NOTE, updateNote, useCategories, useNotes } from '../store';
 import { isEmptyContent, placeCaret, wrapLooseLines } from './text/dom';
 import { linkTypedAddress } from './links/links';
@@ -271,16 +271,142 @@ function PageList({ notes, parentId, onOpenNote }: PageListProps) {
 
 
 /* =========================
+   Detail Rows
+   ========================= */
+
+/* Each row of the details has its own icon in the note tools, which shows or hides it. */
+const DETAIL_TOOLS: Record<DetailRow, { label: string; icon: IconName }> = {
+  category: { label: 'Category', icon: 'folder' },
+  description: { label: 'Description', icon: 'align-left' },
+  created: { label: 'Created', icon: 'calendar-days' },
+  comments: { label: 'Comments', icon: 'message-square' },
+  work: { label: 'Work', icon: 'kanban' },
+  linkedFrom: { label: 'Linked from', icon: 'link' },
+  remarks: { label: 'Remarks', icon: 'message-circle' },
+  subNotes: { label: 'Sub-notes', icon: 'layers' }
+};
+
+/* Hide a row of the details in every note, or show it again. What the row shows is kept. */
+function setDetailShown(row: DetailRow, shown: boolean) {
+  const hidden = getPreferences().hiddenDetails.filter(item => item !== row);
+  updatePreferences({ hiddenDetails: shown ? hidden : [...hidden, row] });
+}
+
+type DetailLineProps = {
+  row: DetailRow;
+  labelClass?: string;
+  cellClass?: string;
+  children: ReactNode;
+};
+
+/* One row of the details: its label, then its value. */
+function DetailLine({ row, labelClass, cellClass, children }: DetailLineProps) {
+  return (
+    <>
+      <dt className={labelClass}>{DETAIL_TOOLS[row].label}</dt>
+      <dd className={cellClass}>{children}</dd>
+    </>
+  );
+}
+
+
+/* =========================
+   Note Toolbar
+   ========================= */
+
+/* A row's icon in the toolbar: whether its row shows in this note, and whether it can be turned */
+/* on (an empty description or remarks cannot be added on a locked note). */
+type RowTool = { row: DetailRow; visible: boolean; disabled: boolean };
+
+type NoteToolbarProps = {
+  note: Note;
+  locked: boolean;
+  rows: RowTool[];
+
+  /* Whether any row would show, so Hide / Show details has something to fold. */
+  canFold: boolean;
+  onIcon: () => void;
+  onToggle: (row: DetailRow) => void;
+};
+
+/* The note's tools, a slim column of icons in the margin left of its title (a row above it on */
+/* phones), so the title and text never move when it opens or closes. The chevron opens or */
+/* closes it (remembered for every note); then Add icon; then one icon per row of the details, */
+/* lit while its row shows (click to hide or show it); then Hide / Show details, which folds the */
+/* whole list (and does nothing while no row is on). */
+function NoteToolbar({ note, locked, rows, canFold, onIcon, onToggle }: NoteToolbarProps) {
+  const { noteToolbarOpen: open } = usePreferences();
+  const tool = (label: string) => ({ 'aria-label': label, 'data-tooltip': label, 'data-tooltip-side': 'right' as const });
+
+  return (
+    <div className="note-toolbar">
+      <button
+        type="button"
+        className="note-toolbar-toggle"
+        aria-expanded={open}
+        aria-controls={`note-tools-${note.id}`}
+        {...tool(open ? 'Hide note tools' : 'Show note tools')}
+        onClick={() => updatePreferences({ noteToolbarOpen: !open })}
+      >
+        <Icon name={open ? 'chevron-up' : 'chevron-down'} size={16} />
+      </button>
+
+      {open && (
+        <div className="note-toolbar-tools" id={`note-tools-${note.id}`} role="toolbar" aria-orientation="vertical" aria-label="Note tools">
+          {!locked && (
+            <>
+              <button type="button" className={note.icon ? 'is-on' : ''} {...tool(note.icon ? 'Change icon' : 'Add icon')} onClick={onIcon}>
+                <Icon name="smile-plus" size={16} />
+              </button>
+              <span className="note-toolbar-rule" aria-hidden="true" />
+            </>
+          )}
+          {rows.map(({ row, visible, disabled }) => {
+            const { label, icon } = DETAIL_TOOLS[row];
+            return (
+              <button
+                key={row}
+                type="button"
+                className={visible ? 'is-on' : ''}
+                aria-pressed={visible}
+                disabled={disabled}
+                {...tool(`${visible ? 'Hide' : 'Show'} ${label.toLowerCase()}`)}
+                onClick={() => onToggle(row)}
+              >
+                <Icon name={icon} size={16} />
+              </button>
+            );
+          })}
+          <span className="note-toolbar-rule" aria-hidden="true" />
+          <button
+            type="button"
+            aria-pressed={note.detailsHidden}
+            disabled={!canFold}
+            {...tool(note.detailsHidden ? 'Show details' : 'Hide details')}
+            onClick={() => updateNote(note.id, { detailsHidden: !note.detailsHidden })}
+          >
+            <Icon name={note.detailsHidden ? 'eye' : 'eye-off'} size={16} />
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+
+/* =========================
    Note Header
    ========================= */
 
 /* The top of a note: its icon, title and details (category, description, dates, comments, sub-pages). */
-/* Details can be hidden per note; they can only be edited while the note is unlocked. */
+/* Details can be folded per note, and each row shown or hidden in every note (from its icon in */
+/* the toolbar); they can only be edited while the note is unlocked. */
 export function NoteHeader({ note, locked, onOpenNote, onOpenWorkItem }: NoteHeaderProps) {
   const categories = useCategories();
   const notes = useNotes();
   const board = useBoard();
-  const { spaces } = usePreferences();
+  const { spaces, hiddenDetails } = usePreferences();
+  const headerRef = useRef<HTMLDivElement>(null);
 
   /* The work items this note is linked to (links are made from the work item, in Boardspace). */
   const work = spaces.boardspace && onOpenWorkItem ? board.items.filter(item => item.notes?.includes(note.id)) : [];
@@ -291,12 +417,29 @@ export function NoteHeader({ note, locked, onOpenNote, onOpenWorkItem }: NoteHea
   const [picking, setPicking] = useState(false);
 
   /* An empty description or remarks has no row, so the note's text starts closer to its title: */
-  /* Add description and Add remarks (beside Add icon) bring the row in, ready to type, and it */
-  /* stays while this note is open. A locked note only shows the ones that have something. */
+  /* its icon brings the row in, ready to type, and it stays while this note is open (or until */
+  /* its icon is clicked again). A locked note only shows the ones that have something. */
   const [adding, setAdding] = useState<{ description: boolean; remarks: boolean }>({ description: false, remarks: false });
   useEffect(() => setAdding({ description: false, remarks: false }), [note.id]);
-  const showDescription = Boolean(note.subtitle) || adding.description;
-  const showRemarks = Boolean(note.remarks) || adding.remarks;
+
+  /* Only comments whose words are still in the note are counted. */
+  const comments = note.comments.filter(comment => note.content.includes(`data-comment="${comment.id}"`)).length;
+
+  /* Whether this note has anything for a row: the rows for comments, work, links to it and */
+  /* sub-notes only come (with their icons) when there is something to list. */
+  const has: Record<DetailRow, boolean> = {
+    category: true,
+    description: Boolean(note.subtitle) || adding.description,
+    created: true,
+    comments: comments > 0,
+    work: work.length > 0,
+    linkedFrom: linkedFrom.length > 0,
+    remarks: Boolean(note.remarks) || adding.remarks,
+    subNotes: pageCount > 0
+  };
+  const offered = DETAIL_ROWS.filter(row => row === 'description' || row === 'remarks' || has[row]);
+  const shown = (row: DetailRow) => has[row] && !hiddenDetails.includes(row);
+  const empty = (row: DetailRow) => (row === 'description' && !note.subtitle) || (row === 'remarks' && !note.remarks);
 
   /* Text fields save after a short pause, like typing in the note itself. */
   const changeText = (changes: Partial<Pick<Note, 'title' | 'subtitle'>>) => {
@@ -304,13 +447,43 @@ export function NoteHeader({ note, locked, onOpenNote, onOpenWorkItem }: NoteHea
     scheduleSave();
   };
 
-  /* Only comments whose words are still in the note are counted. */
-  const comments = note.comments.filter(comment => note.content.includes(`data-comment="${comment.id}"`)).length;
-
   const pick = (icon: string) => {
     updateNote(note.id, { icon });
     setPicking(false);
   };
+
+  /* A row's icon hides a showing row (in every note; an empty description or remarks just goes */
+  /* away again), or shows it, unfolding the details. An empty description or remarks then opens */
+  /* ready to type. */
+  function toggleRow(row: DetailRow) {
+    if (!note.detailsHidden && shown(row)) {
+      if (empty(row)) setAdding(current => ({ ...current, [row]: false }));
+      else setDetailShown(row, false);
+      return;
+    }
+    if (hiddenDetails.includes(row)) setDetailShown(row, true);
+    if (note.detailsHidden) updateNote(note.id, { detailsHidden: false });
+    if (row !== 'description' && row !== 'remarks') return;
+    setAdding(current => ({ ...current, [row]: true }));
+    if (!empty(row)) return;
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      const header = headerRef.current;
+      if (row === 'description') {
+        header?.querySelector<HTMLButtonElement>('.note-description')?.click();
+        return;
+      }
+      const remarks = header?.querySelector<HTMLElement>('.note-remarks');
+      if (!remarks || document.activeElement === remarks) return;
+      remarks.focus({ preventScroll: true });
+      placeCaret(remarks.lastElementChild ?? remarks, true);
+    }));
+  }
+
+  const rowTools = offered.map(row => ({
+    row,
+    visible: !note.detailsHidden && shown(row),
+    disabled: locked && empty(row)
+  }));
 
   /* Enter in the title moves on to the start of the note's text, ready to write (in either */
   /* view: the first line of the note, or of its first block). */
@@ -327,43 +500,14 @@ export function NoteHeader({ note, locked, onOpenNote, onOpenWorkItem }: NoteHea
   }
 
   return (
-    <div className="note-header">
+    <div className="note-header" ref={headerRef}>
+      <NoteToolbar note={note} locked={locked} rows={rowTools} canFold={offered.some(shown)} onIcon={() => setPicking(true)} onToggle={toggleRow} />
+
       {note.icon && (
         <button type="button" className="note-icon" aria-label="Change icon" disabled={locked} onClick={() => setPicking(true)}>
           {note.icon}
         </button>
       )}
-
-      <div className="note-header-actions">
-        {!note.icon && !locked && (
-          <button type="button" className="note-header-action" onClick={() => setPicking(true)}>
-            <Icon name="sparkles" size={14} /> Add icon
-          </button>
-        )}
-
-        {!note.detailsHidden && !locked && !showDescription && (
-          <button type="button" className="note-header-action" onClick={() => setAdding(current => ({ ...current, description: true }))}>
-            <Icon name="type" size={14} /> Add description
-          </button>
-        )}
-
-        {!note.detailsHidden && !locked && !showRemarks && (
-          <button type="button" className="note-header-action" onClick={() => setAdding(current => ({ ...current, remarks: true }))}>
-            <Icon name="message-square" size={14} /> Add remarks
-          </button>
-        )}
-
-        <button type="button" className="note-header-action" aria-expanded={!note.detailsHidden} onClick={() => updateNote(note.id, { detailsHidden: !note.detailsHidden })}>
-          <Icon name={note.detailsHidden ? 'list' : 'x'} size={14} /> {note.detailsHidden ? 'Show details' : 'Hide details'}
-        </button>
-
-        {/* How many comments are on the note's text (the speech-bubble markers beside the lines). */}
-        {comments > 0 && (
-          <span className="note-comment-count" title={`${comments} ${comments === 1 ? 'comment' : 'comments'} in this note`}>
-            <Icon name="message-square" size={14} /> {comments}
-          </span>
-        )}
-      </div>
 
       {picking && (
         <EmojiPicker
@@ -387,86 +531,76 @@ export function NoteHeader({ note, locked, onOpenNote, onOpenWorkItem }: NoteHea
         onKeyDown={moveIntoText}
       />
 
-      {!note.detailsHidden && (
+      {!note.detailsHidden && offered.some(shown) && (
         <dl className="note-details">
-          <dt>Category</dt>
-          <dd>
-            <Dropdown
-              label="Category"
-              className="note-detail-field note-detail-dropdown"
-              wrapperClassName="note-detail-dropdown-wrap"
-              disabled={locked}
-              value={note.category}
-              options={[{ value: '', label: 'None' }, ...categories.map(category => ({ value: category.id, label: category.name, icon: 'folder' as const }))]}
-              onChange={category => updateNote(note.id, { category })}
-            />
-          </dd>
-
-          {showDescription && (
-            <>
-              <dt>Description</dt>
-              <dd>
-                <DescriptionField note={note} locked={locked} startOpen={adding.description && !note.subtitle} onChange={subtitle => changeText({ subtitle })} />
-              </dd>
-            </>
+          {shown('category') && (
+            <DetailLine row="category">
+              <Dropdown
+                label="Category"
+                className="note-detail-field note-detail-dropdown"
+                wrapperClassName="note-detail-dropdown-wrap"
+                disabled={locked}
+                value={note.category}
+                options={[{ value: '', label: 'None' }, ...categories.map(category => ({ value: category.id, label: category.name, icon: 'folder' as const }))]}
+                onChange={category => updateNote(note.id, { category })}
+              />
+            </DetailLine>
           )}
 
-          <dt>Created</dt>
-          <dd>{formatDate(note.createdAt)}</dd>
-
-          {work.length > 0 && (
-            <>
-              <dt>Work</dt>
-              <dd className="note-work">
-                {work.map(item => (
-                  <button key={item.id} type="button" className="note-work-item" onClick={() => onOpenWorkItem?.(item)}>
-                    <WorkTypeIcon type={item.type} />
-                    {item.name}
-                  </button>
-                ))}
-              </dd>
-            </>
+          {shown('description') && (
+            <DetailLine row="description">
+              <DescriptionField note={note} locked={locked} startOpen={adding.description && !note.subtitle} onChange={subtitle => changeText({ subtitle })} />
+            </DetailLine>
           )}
 
-          {linkedFrom.length > 0 && (
-            <>
-              <dt>Linked from</dt>
-              <dd className="note-work note-backlinks">
-                {linkedFrom.map(source => (
-                  <button key={source.id} type="button" className="note-work-item" data-preview-page={source.id} onClick={event => onOpenNote(source.id, opensNewTab(event))}>
-                    {source.icon ? <span className="note-page-icon" aria-hidden="true">{source.icon}</span> : <Icon name={noteIcon(source)} size={14} />}
-                    {noteTitle(source)}
-                  </button>
-                ))}
-              </dd>
-            </>
-          )}
+          {shown('created') && <DetailLine row="created">{formatDate(note.createdAt)}</DetailLine>}
 
-          {showRemarks && (
-            <>
-              <dt className="note-remarks-label">Remarks</dt>
-              <dd className="note-remarks-cell"><RemarksField note={note} locked={locked} autoFocus={adding.remarks && !note.remarks} /></dd>
-            </>
-          )}
+          {/* How many comments are on the note's text (the speech-bubble markers beside the lines). */}
+          {shown('comments') && <DetailLine row="comments">{comments} {comments === 1 ? 'comment' : 'comments'}</DetailLine>}
 
-          {/* The Pages row only shows when the note has sub-pages. The list can be folded on its own, */}
-          {/* so the other details stay visible. */}
-          {pageCount > 0 && (
-            <>
-              <dt className="note-pages-label">Sub-notes</dt>
-              <dd className="note-pages">
-                <button
-                  type="button"
-                  className="note-pages-toggle"
-                  aria-expanded={!note.pagesHidden}
-                  onClick={() => updateNote(note.id, { pagesHidden: !note.pagesHidden })}
-                >
-                  <Icon name="chevron-right" size={13} className={note.pagesHidden ? '' : 'is-turned'} />
-                  {pageCount} {pageCount === 1 ? 'sub-note' : 'sub-notes'}
+          {shown('work') && (
+            <DetailLine row="work" cellClass="note-work">
+              {work.map(item => (
+                <button key={item.id} type="button" className="note-work-item" onClick={() => onOpenWorkItem?.(item)}>
+                  <WorkTypeIcon type={item.type} />
+                  {item.name}
                 </button>
-                {!note.pagesHidden && <PageList notes={notes} parentId={note.id} onOpenNote={onOpenNote} />}
-              </dd>
-            </>
+              ))}
+            </DetailLine>
+          )}
+
+          {shown('linkedFrom') && (
+            <DetailLine row="linkedFrom" cellClass="note-work note-backlinks">
+              {linkedFrom.map(source => (
+                <button key={source.id} type="button" className="note-work-item" data-preview-page={source.id} onClick={event => onOpenNote(source.id, opensNewTab(event))}>
+                  {source.icon ? <span className="note-page-icon" aria-hidden="true">{source.icon}</span> : <Icon name={noteIcon(source)} size={14} />}
+                  {noteTitle(source)}
+                </button>
+              ))}
+            </DetailLine>
+          )}
+
+          {shown('remarks') && (
+            <DetailLine row="remarks" labelClass="note-remarks-label" cellClass="note-remarks-cell">
+              <RemarksField note={note} locked={locked} autoFocus={adding.remarks && !note.remarks} />
+            </DetailLine>
+          )}
+
+          {/* The Sub-notes row only shows when the note has sub-pages. The list can be folded on its */}
+          {/* own, so the other details stay visible. */}
+          {shown('subNotes') && (
+            <DetailLine row="subNotes" labelClass="note-pages-label" cellClass="note-pages">
+              <button
+                type="button"
+                className="note-pages-toggle"
+                aria-expanded={!note.pagesHidden}
+                onClick={() => updateNote(note.id, { pagesHidden: !note.pagesHidden })}
+              >
+                <Icon name="chevron-right" size={13} className={note.pagesHidden ? '' : 'is-turned'} />
+                {pageCount} {pageCount === 1 ? 'sub-note' : 'sub-notes'}
+              </button>
+              {!note.pagesHidden && <PageList notes={notes} parentId={note.id} onOpenNote={onOpenNote} />}
+            </DetailLine>
           )}
         </dl>
       )}

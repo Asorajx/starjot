@@ -271,3 +271,13 @@
 [data-theme="dark"] .accent-swatch[data-accent="blue"] {
   --accent-text: #9fb0ff;
 }
+
+/* The note tools' icons that are off are a dimmer grey on dark, so the lit ones (a row that */
+/* shows, in the accent colour) stand out; still over 4.5:1 on the page. */
+[data-theme="dark"] .note-toolbar button:not(.is-on) {
+  color: #858991;
+}
+
+[data-theme="dark"] .note-toolbar button:not(.is-on):hover:not(:disabled) {
+  color: #e2e4e7;
+}

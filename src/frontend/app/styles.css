@@ -943,6 +943,13 @@ p {
   transform: translateY(-50%);
 }
 
+/* Buttons in a toolbar at the left side of a page show their label to the right instead. */
+[data-tooltip][data-tooltip-side="right"]::after {
+  top: 50%;
+  left: calc(100% + 8px);
+  transform: translateY(-50%);
+}
+
 /* Buttons along the bottom of the window show their label above instead. */
 [data-tooltip][data-tooltip-side="above"]::after {
   top: auto;

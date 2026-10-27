@@ -1339,31 +1339,100 @@
   cursor: default;
 }
 
-.note-header-actions {
+/* The note's tools (NoteToolbar): a slim column of icons in the margin left of the title, the */
+/* chevron level with the line above it (the kind and edit time), so opening or closing it never */
+/* moves the note. No bar behind them: each icon gets its own soft background on hover. */
+.note-toolbar {
+  position: absolute;
+  top: -34px;
+  right: calc(100% + 14px);
+  z-index: 2;
   display: flex;
-  gap: 4px;
-  margin: 0 0 8px -8px;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
 }
 
-.note-header-action {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  height: 26px;
-  padding: 0 8px;
+.note-toolbar button {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
   border: 0;
   border-radius: 4px;
   background: transparent;
-  color: #5e6d84;
-  font: inherit;
-  font-size: 12px;
-  font-weight: 600;
+  color: #8792a5;
   cursor: pointer;
 }
 
-.note-header-action:hover {
+.note-toolbar button:hover:not(:disabled) {
+  background: var(--accent-faint);
+  color: #4b5b74;
+}
+
+.note-toolbar button:active:not(:disabled) {
   background: var(--accent-soft);
+}
+
+/* A row that shows (or the note's icon, once it has one) lights its icon in the accent colour. */
+.note-toolbar button.is-on {
   color: var(--accent-text);
+}
+
+.note-toolbar button.is-on:hover {
+  color: var(--accent-text);
+}
+
+.note-toolbar button:disabled {
+  opacity: .4;
+  cursor: default;
+}
+
+/* The chevron keeps its centre, and the icons under it, where they were. */
+.note-toolbar .note-toolbar-toggle {
+  margin: 2px 0;
+}
+
+.note-toolbar-tools {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.note-toolbar-rule {
+  width: 16px;
+  margin: 4px 0;
+  border-top: 1px solid #e2e8f1;
+}
+
+/* On phones there is no margin, so the tools are a row above the title instead. */
+@media (max-width: 700px) {
+  .note-toolbar {
+    position: static;
+    flex-direction: row;
+    flex-wrap: wrap;
+    margin: 0 0 8px -6px;
+  }
+
+  .note-toolbar .note-toolbar-toggle {
+    margin: 0;
+  }
+
+  .note-toolbar-tools {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .note-toolbar-rule {
+    align-self: center;
+    width: 0;
+    height: 16px;
+    margin: 0 4px;
+    border-top: 0;
+    border-left: 1px solid #e2e8f1;
+  }
 }
 
 /* Details are a two-column list: labels on the left, values on the right. */
@@ -1499,18 +1568,6 @@
   margin: 4px 0;
   border: 0;
   border-top: 1px solid #e2e8f1;
-}
-
-/* The number of comments, next to Hide details. */
-.note-comment-count {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  height: 26px;
-  padding: 0 8px;
-  color: #5e6d84;
-  font-size: 12px;
-  font-weight: 600;
 }
 
 /* The Pages row: a small fold button with the page count, then the pages side by side as small */

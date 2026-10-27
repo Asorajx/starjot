@@ -124,6 +124,19 @@ describe('start screen, spaces and sidebar', () => {
     expect(loaded.noteColorsInLists).toBe(false);
   });
 
+  it('opens the note toolbar and shows every detail row by default, and remembers changes', async () => {
+    const { noteToolbarOpen, hiddenDetails } = (await openApp()).getPreferences();
+    expect(noteToolbarOpen).toBe(true);
+    expect(hiddenDetails).toEqual([]);
+    vi.resetModules();
+
+    /* Unknown rows are dropped, and rows keep the order the details show them in. */
+    save({ noteToolbarOpen: false, hiddenDetails: ['remarks', 'nonsense', 'created'] });
+    const loaded = (await openApp()).getPreferences();
+    expect(loaded.noteToolbarOpen).toBe(false);
+    expect(loaded.hiddenDetails).toEqual(['created', 'remarks']);
+  });
+
   it('opens notes in the current tab by default, with Ctrl + click and the setting choosing a new tab', async () => {
     const app = await openApp();
     expect(app.getPreferences().openNewSubNotes).toBe(true);
