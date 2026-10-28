@@ -13,26 +13,84 @@
   pointer-events: none;
 }
 
-/* Each picker is placed over the top-right corner of its code block. */
-.dropdown.code-lang-picker {
+/* A code block's tools sit over its top-right corner, shown only while the pointer is over the */
+/* block (or the tools) or the caret is in it, and while the language menu is open. */
+.code-tools {
   position: absolute;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid #dfe7f3;
+  border-radius: 4px;
+  background: #fff;
+  box-shadow: var(--shadow-float);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .12s ease;
+}
+
+.code-tools.is-shown,
+.code-tools:focus-within,
+.code-tools:has(.dropdown-menu) {
+  opacity: 1;
   pointer-events: auto;
+}
+
+.code-tools-rule {
+  width: 0;
+  height: 16px;
+  margin: 0 2px;
+  border-left: 1px solid #e2e8f1;
+}
+
+.code-tool {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: #5b6d87;
+  cursor: pointer;
+}
+
+.code-tool:hover:not(:disabled) {
+  background: var(--accent-soft);
+  color: var(--accent-text);
+}
+
+/* Wrap shows as on (in the accent colour) while long lines wrap. */
+.code-tool.is-on {
+  color: var(--accent-text);
+}
+
+.code-tool:disabled {
+  opacity: .5;
+  cursor: default;
 }
 
 .code-lang-select {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  height: 22px;
-  padding: 0 8px;
-  border: 1px solid #dbe4f2;
+  height: 24px;
+  padding: 0 6px;
+  border: 0;
   border-radius: 4px;
-  background: #fff;
+  background: transparent;
   color: #5b6d87;
   font: inherit;
   font-size: 12px;
   font-weight: 650;
   cursor: pointer;
+}
+
+.code-lang-select:hover:not(:disabled) {
+  background: var(--accent-soft);
+  color: var(--accent-text);
 }
 
 .dropdown .code-lang-select strong {
@@ -46,6 +104,19 @@
 .code-lang-select:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 1px;
+}
+
+/* The language menu matches its small button: narrower, with shorter rows and smaller words */
+/* than other menus, so it covers less of the note. */
+.dropdown.code-lang-picker > .dropdown-menu {
+  min-width: 140px;
+  max-height: 260px;
+}
+
+.dropdown.code-lang-picker .dropdown-menu .dropdown-item {
+  min-height: 28px;
+  padding-block: 4px;
+  font-size: 13px;
 }
 
 /* Token colours used by the syntax highlighter in code.ts. */

@@ -12,7 +12,7 @@ import {
 import { isRuleOnly, mergeContents, splitAtCaret } from './blockEditing';
 import { dividerKeys, selectDividerAtCaret, selectedDivider } from './dividers';
 import { deleteKeepingPages, hydratePages, pageBlocksIn } from './pageBlocks';
-import { handleBlockKeys } from './blockKeys';
+import { handleBlockKeys, insertBreak } from './blockKeys';
 import { joinLineOfToggle } from './lines';
 import { breaksTabBlock } from './tabs';
 import { getLength, getOffset, setOffset } from './caret';
@@ -21,7 +21,7 @@ import { caretAtEdge, closestAtCaret, emptyParagraph, isEmptyContent, placeCaret
 import { imageFiles, insertImageFiles } from '../images/images';
 import { linkTypedAddress } from '../links/links';
 import { applyMarkdownShortcut, formatTypedMarkdown, joinTypedDashes } from './markdown';
-import { deleteSelection, insertPasted, linkSelectionToPasted } from './paste';
+import { deleteSelection, insertPasted, insertPlainText, linkSelectionToPasted } from './paste';
 import { pastedLines, writeSelection } from './clipboard';
 import { clearSelectedCells, pasteIntoTable } from '../tables/tableClipboard';
 import type { EditorSession } from '../session';
@@ -44,6 +44,11 @@ type DropMark = { id: string; side: 'before' | 'after' };
 type SelectionState = { activeId: string | null; picked: string[]; collapsed: boolean };
 
 const NO_SELECTION: SelectionState = { activeId: null, picked: [], collapsed: true };
+
+/* The box (.block-content) of the block a node is in, or null outside every block. */
+function blockBoxOf(node: Node | null | undefined) {
+  return node ? elementOf(node)?.closest<HTMLElement>('.block-content') ?? null : null;
+}
 
 
 /* =========================
@@ -359,14 +364,13 @@ export const StructuredEditor = memo(function StructuredEditor({ session, conten
     const selection = window.getSelection();
     const range = selection?.rangeCount ? selection.getRangeAt(0) : null;
     if (!body || !selection || !range || !body.contains(range.commonAncestorContainer)) return;
-    const inBlock = (node: Node) => Boolean(elementOf(node)?.closest('.block-content'));
-    const box = range.startContainer instanceof Element && range.startContainer.matches('.block-content') ? range.startContainer : null;
-    if (range.collapsed && box?.firstElementChild) {
+    const box = blockBoxOf(range.startContainer);
+    if (range.collapsed && box === range.startContainer && box.firstElementChild) {
       const atEnd = range.startOffset > 0;
       placeCaret((atEnd ? box.lastElementChild : box.firstElementChild) ?? box, atEnd);
       return;
     }
-    if (inBlock(range.startContainer) && inBlock(range.endContainer)) return;
+    if (box && blockBoxOf(range.endContainer)) return;
 
     const contents = blocksRef.current.map(block => elements.current.get(block.id)).filter((element): element is HTMLDivElement => Boolean(element));
     if (!contents.length) return;
@@ -384,9 +388,9 @@ export const StructuredEditor = memo(function StructuredEditor({ session, conten
       const touched = contents.filter(content => range.intersectsNode(content));
       if (!touched.length) return;
       fixed.selectNodeContents(touched[0]);
-      if (inBlock(range.startContainer)) fixed.setStart(range.startContainer, range.startOffset);
+      if (blockBoxOf(range.startContainer)) fixed.setStart(range.startContainer, range.startOffset);
       const last = touched[touched.length - 1];
-      if (inBlock(range.endContainer)) fixed.setEnd(range.endContainer, range.endOffset);
+      if (blockBoxOf(range.endContainer)) fixed.setEnd(range.endContainer, range.endOffset);
       else fixed.setEnd(last, last.childNodes.length);
     }
     selection.removeAllRanges();
@@ -400,7 +404,7 @@ export const StructuredEditor = memo(function StructuredEditor({ session, conten
   function clearWholeBlock(text = '') {
     const selection = window.getSelection();
     const range = selection?.rangeCount ? selection.getRangeAt(0) : null;
-    const box = range && !range.collapsed ? elementOf(range.commonAncestorContainer)?.closest<HTMLElement>('.block-content') : null;
+    const box = range && !range.collapsed ? blockBoxOf(range.commonAncestorContainer) : null;
     if (!selection || !range || !box || !bodyRef.current?.contains(box)) return false;
     const whole = document.createRange();
     whole.selectNodeContents(box);
@@ -482,19 +486,7 @@ export const StructuredEditor = memo(function StructuredEditor({ session, conten
 
   /* Shift + Enter adds a line break inside the same block. */
   function insertLineBreak(editable: HTMLElement) {
-    const current = window.getSelection();
-    if (!current?.rangeCount || !selectionInside(editable)) return;
-    const range = current.getRangeAt(0);
-    range.deleteContents();
-    const lineBreak = document.createElement('br');
-    range.insertNode(lineBreak);
-    range.setStartAfter(lineBreak);
-    range.collapse(true);
-
-    /* Browsers need a second <br> to show a caret after a trailing line break. */
-    if (!lineBreak.nextSibling) lineBreak.after(document.createElement('br'));
-    current.removeAllRanges();
-    current.addRange(range);
+    if (selectionInside(editable)) insertBreak();
   }
 
   /* New lines added inside one block (by a slash command, toggle or table) become blocks of their own. */
@@ -577,12 +569,6 @@ export const StructuredEditor = memo(function StructuredEditor({ session, conten
     /* Native beforeinput: React's version does not report the input type needed for undo. */
     /* Edits that would cross block boundaries are handled here instead of by the browser. */
     function handleBeforeInput(event: InputEvent) {
-      if (event.inputType === 'historyUndo' || event.inputType === 'historyRedo') {
-        event.preventDefault();
-        if (event.inputType === 'historyUndo') session.undo();
-        else session.redo();
-        return;
-      }
       const changesText = event.inputType.startsWith('insert') || event.inputType.startsWith('delete');
       const replaces = event.inputType === 'insertText' || event.inputType.startsWith('delete');
       if (replaces && clearWholeBlock(event.inputType === 'insertText' ? event.data ?? '' : '')) {
@@ -599,8 +585,7 @@ export const StructuredEditor = memo(function StructuredEditor({ session, conten
       /* browser is about to remove (its target ranges) must lie in one block too: from the very */
       /* start of a block, its own Backspace deletes backwards into the row and removes the block. */
       const ends = window.getSelection()?.rangeCount ? window.getSelection()?.getRangeAt(0) : null;
-      const boxOf = (node: Node | undefined) => (node ? elementOf(node)?.closest('.block-content') ?? null : null);
-      const crosses = (start: Node | undefined, end: Node | undefined) => !boxOf(start) || boxOf(start) !== boxOf(end);
+      const crosses = (start: Node | undefined, end: Node | undefined) => !blockBoxOf(start) || blockBoxOf(start) !== blockBoxOf(end);
       const targets = typeof event.getTargetRanges === 'function' ? event.getTargetRanges() : [];
       if (changesText && (!closestAtCaret('.block-content') || crosses(ends?.startContainer, ends?.endContainer)
         || targets.some(target => crosses(target.startContainer, target.endContainer)))) {
@@ -912,20 +897,7 @@ export const StructuredEditor = memo(function StructuredEditor({ session, conten
       commitTyping();
       return;
     }
-    const pre = preAtCaret(editable);
-    if (pre || !document.execCommand('insertText', false, text)) {
-      const range = window.getSelection()?.getRangeAt(0);
-      if (!range) return;
-      range.deleteContents();
-      const node = document.createTextNode(text);
-      range.insertNode(node);
-      range.setStartAfter(node);
-      range.collapse(true);
-      window.getSelection()?.removeAllRanges();
-      window.getSelection()?.addRange(range);
-      if (pre) highlight(pre);
-      commitTyping();
-    }
+    if (insertPlainText(text, preAtCaret(editable))) commitTyping();
   }
 
   /* Pasted Markdown lines go where the selection starts. A selection across blocks is deleted first, */

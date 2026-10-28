@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from 'react';
 import { Icon } from '../../../components/Icon';
 import { getNote, noteTitle, useNotes } from '../../store';
-import { copyPageLink, linkTarget, normalizeAddress, setLinkTarget, unwrapLink, type LinkTarget } from './links';
+import { copyPageLink, linkTarget, looksLikeAddress, normalizeAddress, setLinkTarget, unwrapLink, type LinkTarget } from './links';
 import { LinkPreviewCard } from './LinkPreview';
 import { revealBlock, revealWhenShown } from './blockLinks';
 import type { EditorSession } from '../session';
@@ -263,8 +263,7 @@ export function LinkTools({ session, locked, onOpenNote, onOpenNoteInNewTab }: L
 
   /* Pages whose title holds the typed words, while the box does not hold an address. */
   const query = address.trim().toLowerCase();
-  const looksLikeAddress = /^[a-z][a-z0-9+.-]*:|^www\.|\.[a-z]{2,}(\/|$)/i.test(address.trim());
-  const suggestions = editing && !page && query && !looksLikeAddress
+  const suggestions = editing && !page && query && !looksLikeAddress(address)
     ? notes.filter(note => noteTitle(note).toLowerCase().includes(query)).slice(0, PAGE_SUGGESTIONS)
     : [];
 

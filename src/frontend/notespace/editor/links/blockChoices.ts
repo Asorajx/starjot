@@ -4,7 +4,7 @@ import { blockWords, LINK_ID, linkableBlocks, linkIdOf } from './blockLinks';
 
 /* One block to pick in Add link → Block: its place among the note's linkable blocks, its words */
 /* and an icon for its kind. */
-export type BlockChoice = { index: number; words: string; icon: IconName };
+type BlockChoice = { index: number; words: string; icon: IconName };
 
 const BLOCK_ICONS: Record<string, IconName> = {
   H1: 'type', H2: 'type', H3: 'type', H4: 'type', H5: 'type',

@@ -12,7 +12,7 @@ import { joinAdjacentLists } from './lines';
 import { imageFiles, insertImageFiles } from '../images/images';
 import { linkTypedAddress } from '../links/links';
 import { applyMarkdownShortcut, formatTypedMarkdown, joinTypedDashes } from './markdown';
-import { deleteSelection, insertPasted, linkSelectionToPasted } from './paste';
+import { deleteSelection, insertPasted, insertPlainText, linkSelectionToPasted } from './paste';
 import { pastedLines, writeSelection } from './clipboard';
 import { clearSelectedCells, pasteIntoTable } from '../tables/tableClipboard';
 import { stickyStateForRange, toggleStickyRange } from './stickyDom';
@@ -117,12 +117,6 @@ export const ContinuousEditor = memo(function ContinuousEditor({ session, conten
     if (!body) return;
 
     function handleBeforeInput(event: InputEvent) {
-      if (event.inputType === 'historyUndo' || event.inputType === 'historyRedo') {
-        event.preventDefault();
-        if (event.inputType === 'historyUndo') session.undo();
-        else session.redo();
-        return;
-      }
       session.beforeInput(event);
     }
 
@@ -297,20 +291,7 @@ export const ContinuousEditor = memo(function ContinuousEditor({ session, conten
       return;
     }
 
-    /* Inside code, insert the text directly so its line breaks stay as code lines. */
-    if (pre || !document.execCommand('insertText', false, text)) {
-      const range = window.getSelection()?.getRangeAt(0);
-      if (!range) return;
-      range.deleteContents();
-      const node = document.createTextNode(text);
-      range.insertNode(node);
-      range.setStartAfter(node);
-      range.collapse(true);
-      window.getSelection()?.removeAllRanges();
-      window.getSelection()?.addRange(range);
-      if (pre) highlight(pre);
-      commit();
-    }
+    if (insertPlainText(text, pre)) commit();
   }
 
   /* Copying keeps the kind of each line (see clipboard.ts), so pasting into a note brings it back. */

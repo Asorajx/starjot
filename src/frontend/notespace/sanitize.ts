@@ -58,6 +58,8 @@ function copyAttributes(node: Element, copy: Element) {
   /* A block's link id (see blockLinks.ts), on the block and on page links leading to it. */
   const linkId = node.getAttribute('data-link-id') ?? '';
   if (LINK_ID.test(linkId) && /^(P|H[1-5]|LI|BLOCKQUOTE|PRE|TABLE|A)$/.test(node.tagName)) copy.setAttribute('data-link-id', linkId);
+  /* A code block whose long lines scroll instead of wrapping (see CodeBlockTools). */
+  if (node.tagName === 'PRE' && node.getAttribute('data-wrap') === 'off') copy.setAttribute('data-wrap', 'off');
   const page = node.getAttribute('data-page');
   if ((node.tagName === 'A' || node.tagName === 'SPAN') && page && /^[a-zA-Z0-9_-]{1,90}$/.test(page)) copy.setAttribute('data-page', page);
   const size = node.getAttribute('data-size');

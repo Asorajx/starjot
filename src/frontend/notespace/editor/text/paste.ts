@@ -413,6 +413,30 @@ export function insertPasted(root: HTMLElement, blocks: HTMLElement[]) {
 
 
 /* =========================
+   Pasting Plain Text
+   ========================= */
+
+/* Paste plain text at the caret through the browser's own insert, or, inside code (pre) or when */
+/* the browser cannot, directly, so line breaks stay as code lines (the code is coloured again). */
+/* Returns whether it was put in directly, when the caller saves the change itself (the browser's */
+/* insert reports its own input event). */
+export function insertPlainText(text: string, pre: HTMLElement | null) {
+  if (!pre && document.execCommand('insertText', false, text)) return false;
+  const range = window.getSelection()?.rangeCount ? window.getSelection()?.getRangeAt(0) : null;
+  if (!range) return false;
+  range.deleteContents();
+  const node = document.createTextNode(text);
+  range.insertNode(node);
+  range.setStartAfter(node);
+  range.collapse(true);
+  window.getSelection()?.removeAllRanges();
+  window.getSelection()?.addRange(range);
+  if (pre) highlight(pre);
+  return true;
+}
+
+
+/* =========================
    Linking Selected Words
    ========================= */
 

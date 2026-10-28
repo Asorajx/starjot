@@ -15,7 +15,7 @@ import {
 import type { NoteMode } from '../../../shared/types/note';
 import type { WorkItem } from '../../../shared/types/board';
 import type { SettingsSection } from '../../settings/Settings';
-import { CodeLanguagePickers } from './code/CodeLanguagePickers';
+import { CodeBlockTools } from './code/CodeBlockTools';
 import { CommentLayer } from './comments/CommentLayer';
 import { ContinuousEditor } from './text/ContinuousEditor';
 import { NoteSettings, TableOfContents, type ViewControls } from './EditorPanels';
@@ -570,7 +570,7 @@ function DocumentEditor({ noteId, tabId, history, view, active, onClose, onOpenN
               {note.mode === 'continuous'
                 ? <ContinuousEditor key={`continuous-${revision}`} session={session} content={note.content} locked={locked} />
                 : <StructuredEditor key={`blocks-${revision}`} session={session} content={note.content} locked={locked} />}
-              <CodeLanguagePickers session={session} containerRef={contentRef} locked={locked} />
+              <CodeBlockTools session={session} containerRef={contentRef} locked={locked} />
               <CommentLayer session={session} comments={note.comments} containerRef={contentRef} />
             </div>
             {!geometry && <div className="document-end"><span /> END OF DOCUMENT <span /></div>}

@@ -130,3 +130,11 @@ describe('long notes', () => {
     expect(cleaned.length).toBe(html.length);
   });
 });
+
+describe('code blocks', () => {
+  it('keeps a code block whose long lines scroll, and nothing else in that attribute', () => {
+    expect(cleanHtml('<pre data-wrap="off"><code>x</code></pre>')).toBe('<pre data-wrap="off"><code>x</code></pre>');
+    expect(cleanHtml('<pre data-wrap="on"><code>x</code></pre>')).toBe('<pre><code>x</code></pre>');
+    expect(cleanHtml('<p data-wrap="off">x</p>')).toBe('<p>x</p>');
+  });
+});

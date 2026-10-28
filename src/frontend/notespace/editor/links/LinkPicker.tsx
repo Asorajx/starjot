@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type FocusEvent, type KeyboardEvent, type MouseEvent, type ReactNode } from 'react';
 import { Icon, type IconName } from '../../../components/Icon';
 import { getNote, noteIcon, noteTitle, useNotes } from '../../store';
-import { normalizeAddress, type LinkTarget } from './links';
+import { looksLikeAddress, normalizeAddress, type LinkTarget } from './links';
 import { blockChoices, linkIdForBlock } from './blockChoices';
 import type { EditorSession } from '../session';
 
@@ -30,9 +30,6 @@ const KINDS: { id: LinkKind; label: string; icon: IconName }[] = [
 
 /* How many notes the list shows at once; a note's blocks are all listed (the list scrolls). */
 const NOTE_RESULTS = 8;
-
-/* Typed words that look like an address rather than a note's name. */
-const LOOKS_LIKE_ADDRESS = /^[a-z][a-z0-9+.-]*:|^www\.|\.[a-z]{2,}(\/|$)/i;
 
 
 /* =========================
@@ -90,7 +87,7 @@ export function LinkPicker({ session, kind: firstKind, onPick, onCancel, cancelO
   const query = search.trim().toLowerCase();
   const noteIconOf = (note: (typeof notes)[number]) => note.icon || <Icon name={noteIcon(note)} size={15} />;
   const matching = notes.filter(note => `${noteTitle(note)} ${note.subtitle}`.toLowerCase().includes(query));
-  const address = search.trim() && LOOKS_LIKE_ADDRESS.test(search.trim()) ? normalizeAddress(search) : null;
+  const address = looksLikeAddress(search) ? normalizeAddress(search) : null;
 
   let items: Item[] = [];
   if (kind === 'note') {

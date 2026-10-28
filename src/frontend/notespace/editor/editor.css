@@ -388,9 +388,12 @@
    Editable Notespace Documents
    ========================= */
 
-/* Notes use the full document width; the Contents and Note settings panels float above it. */
+/* Notes use the full document width; the Contents and Note settings panels float above it. The */
+/* page (.editor-canvas) grows to fill the pane below the page bar, so a short note's page still */
+/* reaches the bottom of the window, without scrolling. */
 .editor-wrap .editor-layout {
-  display: block;
+  display: flex;
+  flex-direction: column;
 }
 
 .note-title-input {
@@ -740,7 +743,6 @@
 /* It is a container, so the note can follow the width of its pane in a split or stacked tab. */
 .editor-wrap .editor-layout {
   container-type: inline-size;
-  min-height: calc(100dvh - 58px);
 }
 
 /* The same side padding in both modes keeps text in place when switching modes. It also leaves */
@@ -748,6 +750,7 @@
 /* It is noticeably wider than Full width's, so the two settings look different at any size. */
 /* On phones, pinching is left to the browser, which magnifies the screen without moving the text. */
 .editor-wrap .editor-canvas {
+  flex: 1 0 auto;
   padding: 28px clamp(96px, 9vw, 144px) 60px;
 }
 
@@ -1082,17 +1085,21 @@
 .note-editable pre,
 .block-content pre {
   margin: 0 0 16px;
-  padding: 48px 16px 16px;
+  padding: 20px 16px 14px;
   overflow-x: auto;
   border: 1px solid #e2eaf6;
   border-radius: 4px;
-
-  /* The lighter top band holds the language picker without covering any code. */
-  background: linear-gradient(#eef2fa, #eef2fa) top / 100% 30px no-repeat, #f6f8fd;
+  background: #f6f8fd;
   color: #273c5e;
   font: 12px/1.7 ui-monospace, SFMono-Regular, Consolas, monospace;
   white-space: pre-wrap;
   tab-size: 2;
+}
+
+/* Wrap off (see CodeBlockTools): long lines stay on one line and the block scrolls sideways. */
+.note-editable pre[data-wrap="off"],
+.block-content pre[data-wrap="off"] {
+  white-space: pre;
 }
 
 .note-editable code,

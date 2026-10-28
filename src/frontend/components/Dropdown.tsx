@@ -44,6 +44,22 @@ type DropdownProps<T extends string> = {
 /* The tallest a menu grows before it scrolls (as .dropdown-menu in dropdown.css). */
 const MENU_HEIGHT = 320;
 
+/* The part of the screen a menu below an element can show in, from top to bottom: the window, */
+/* narrowed by every scrolling area it sits in (which hides whatever runs past its edges), and */
+/* below a page bar stuck over the top of that area (a note's page bar, see PageBar). */
+function visibleArea(element: Element) {
+  let top = 0;
+  let bottom = window.innerHeight;
+  for (let parent = element.parentElement; parent; parent = parent.parentElement) {
+    if (getComputedStyle(parent).overflowY === 'visible') continue;
+    const box = parent.getBoundingClientRect();
+    const bar = parent.querySelector('.page-bar');
+    top = Math.max(top, box.top, bar && getComputedStyle(bar).position === 'sticky' ? bar.getBoundingClientRect().bottom : 0);
+    bottom = Math.min(bottom, box.bottom);
+  }
+  return { top, bottom };
+}
+
 
 /* =========================
    Dropdown
@@ -76,8 +92,9 @@ export function Dropdown<T extends string>({ value, options, onChange, label, pr
     const width = menu.offsetWidth;
     const height = Math.min(menu.scrollHeight + 2, MENU_HEIGHT);
     setFlipped(!alignEnd && button.left + width > window.innerWidth - 8);
-    const below = window.innerHeight - button.bottom - 12;
-    const above = button.top - 12;
+    const area = visibleArea(wrapRef.current as Element);
+    const below = area.bottom - button.bottom - 12;
+    const above = button.top - area.top - 12;
     const up = height > below && above > below;
     setUpward(up);
     setRoom(height > (up ? above : below) ? Math.max(120, up ? above : below) : undefined);

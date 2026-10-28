@@ -47,7 +47,7 @@ html, body { margin: 0; background: #ffffff; }
 .export-root .tab-export-title { margin: 0 0 8px; font-weight: 700; }
 .export-root .tab-panel + .tab-panel { border-top: 1px solid #e2e8f1; }
 .export-root .image-block, .export-root .page-block, .export-root .page-mention { cursor: default; }
-.export-root .note-body pre { padding-top: 16px; background: #f6f8fd; }
+.export-root .note-body pre { background: #f6f8fd; white-space: pre-wrap; }
 @media print {
   .export-root { padding: 0; }
   .export-root .editor-meta { display: flex !important; }

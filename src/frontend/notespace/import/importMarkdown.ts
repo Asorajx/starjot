@@ -44,7 +44,7 @@ function outsideCode(markdown: string, change: (line: string) => string) {
 }
 
 /* The spots marked in some Markdown (see HTML_ANCHOR), outside code. */
-export function markedSpots(markdown: string) {
+function markedSpots(markdown: string) {
   const spots: string[] = [];
   outsideCode(markdown, line => {
     for (const match of line.matchAll(HTML_ANCHOR)) spots.push(match[1]);

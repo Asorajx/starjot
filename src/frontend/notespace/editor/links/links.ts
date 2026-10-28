@@ -8,6 +8,13 @@ import { LINK_ID } from './blockLinks';
 /* (block is the block's link id, see blockLinks.ts). */
 export type LinkTarget = { kind: 'url'; href: string } | { kind: 'page'; id: string; block?: string };
 
+/* Typed words that look like an address rather than a note's name (in Add link and Edit link). */
+const LOOKS_LIKE_ADDRESS = /^[a-z][a-z0-9+.-]*:|^www\.|\.[a-z]{2,}(\/|$)/i;
+
+export function looksLikeAddress(text: string) {
+  return LOOKS_LIKE_ADDRESS.test(text.trim());
+}
+
 /* An address typed without "https://", such as google.com or www.example.org/news. */
 const BARE_HOST = /^(localhost|[a-z0-9-]+(\.[a-z0-9-]+)*\.[a-z]{2,})(:\d+)?([/?#]|$)/i;
 const EMAIL = /^[^\s@/:]+@[^\s@/:]+\.[a-z]{2,}$/i;

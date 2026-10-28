@@ -94,6 +94,7 @@ const PATHS = {
   'box-select': '<path d="M5 3H3v2M9 3h2M15 3h2M19 3h2v2M3 9v2M3 15v2M21 9v2M21 15v2M3 19v2h2M9 21h2M15 21h2M19 21h2v-2"/>',
   'smile-plus': '<path d="M22 11v1a10 10 0 1 1-9-10"/><path d="M8 14s1.5 2 4 2 4-2 4-2M9 9h.01M15 9h.01M16 5h6M19 2v6"/>',
   'message-circle': '<path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/>',
+  'wrap-text': '<path d="M3 6h18M3 12h15a3 3 0 0 1 0 6h-4M3 18h7"/><path d="m16 16-2 2 2 2"/>',
   'eye': '<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/>',
   'eye-off': '<path d="M10.7 5.1A10 10 0 0 1 12 5c6.5 0 10 7 10 7a17 17 0 0 1-2.2 3.2M6.6 6.6A17 17 0 0 0 2 12s3.5 7 10 7a9.7 9.7 0 0 0 5.4-1.6M3 3l18 18M9.9 9.9a3 3 0 0 0 4.2 4.2"/>',
   'text-front': '<path d="M3 6h18M3 12h4m10 0h4M3 18h18"/><circle cx="12" cy="12" r="4"/>',

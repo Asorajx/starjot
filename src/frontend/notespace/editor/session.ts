@@ -177,8 +177,15 @@ export class EditorSession {
     this.update({ revision: this.snapshot.revision + 1 });
   }
 
-  /* Called from the native beforeinput event, before the browser changes the text. */
+  /* Called from the native beforeinput event, before the browser changes the text. The browser's */
+  /* own undo and redo (its Edit menu, or Ctrl + Z it handles itself) use the session's history. */
   beforeInput(event: InputEvent) {
+    if (event.inputType === 'historyUndo' || event.inputType === 'historyRedo') {
+      event.preventDefault();
+      if (event.inputType === 'historyUndo') this.undo();
+      else this.redo();
+      return;
+    }
     const selection = window.getSelection();
     const caret = getOffset(this.body());
     const deleted = event.inputType === 'deleteContentForward' ? charBesideCaret('after') : charBesideCaret('before');

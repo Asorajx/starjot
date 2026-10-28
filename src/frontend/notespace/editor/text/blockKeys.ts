@@ -43,7 +43,8 @@ export function lineBelowTable(table: HTMLElement) {
 /* lines: lines were added or removed, and the caret belongs in focus. */
 export type KeyResult = { kind: 'blocked' } | { kind: 'changed' } | ({ kind: 'lines' } & LineChange);
 
-function insertBreak() {
+/* A line break at the caret (replacing any selected text), staying inside the same line or block. */
+export function insertBreak() {
   const selection = window.getSelection();
   if (!selection?.rangeCount) return;
   const range = selection.getRangeAt(0);
