@@ -3,6 +3,7 @@ import { useEscape } from '../lib/useDismiss';
 import { usePresence } from '../lib/usePresence';
 import { isTypeaheadKey, nextByLetter } from '../lib/typeahead';
 import { Icon, type IconName } from './Icon';
+import { visibleArea } from '../lib/geometry';
 
 export type DropdownOption<T extends string> = {
   value: T;
@@ -43,22 +44,6 @@ type DropdownProps<T extends string> = {
 
 /* The tallest a menu grows before it scrolls (as .dropdown-menu in dropdown.css). */
 const MENU_HEIGHT = 320;
-
-/* The part of the screen a menu below an element can show in, from top to bottom: the window, */
-/* narrowed by every scrolling area it sits in (which hides whatever runs past its edges), and */
-/* below a page bar stuck over the top of that area (a note's page bar, see PageBar). */
-function visibleArea(element: Element) {
-  let top = 0;
-  let bottom = window.innerHeight;
-  for (let parent = element.parentElement; parent; parent = parent.parentElement) {
-    if (getComputedStyle(parent).overflowY === 'visible') continue;
-    const box = parent.getBoundingClientRect();
-    const bar = parent.querySelector('.page-bar');
-    top = Math.max(top, box.top, bar && getComputedStyle(bar).position === 'sticky' ? bar.getBoundingClientRect().bottom : 0);
-    bottom = Math.min(bottom, box.bottom);
-  }
-  return { top, bottom };
-}
 
 
 /* =========================

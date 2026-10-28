@@ -79,6 +79,10 @@ describe('table options', () => {
     expect(cleanHtml(html)).toBe(html);
   });
 
+  it('keeps the Repeat header option on a table', () => {
+    expect(cleanHtml('<table class="repeat-header"><tbody><tr><th>A</th></tr></tbody></table>')).toBe('<table class="repeat-header"><tbody><tr><th>A</th></tr></tbody></table>');
+  });
+
   it('keeps a table comment and the fit-content option, but not other classes', () => {
     const html = cleanHtml('<table class="fit-content wide" data-comment="cabc1" style="color:red"><tbody><tr><td>A</td></tr></tbody></table>');
     expect(html).toBe('<table class="fit-content" data-comment="cabc1"><tbody><tr><td>A</td></tr></tbody></table>');

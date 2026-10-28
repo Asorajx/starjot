@@ -25,7 +25,7 @@ function keepsClass(tag: string, name: string) {
   if (tag === 'SPAN' && ['page-block', 'page-mention', 'image-block', 'drawing-block', 'reminder-chip'].includes(name)) return true;
   if (/^(P|H[1-5])$/.test(tag) && name === 'toggle-summary') return true;
   if (tag === 'A' && name === 'page-link') return true;
-  if (tag === 'TABLE' && name === 'fit-content') return true;
+  if (tag === 'TABLE' && (name === 'fit-content' || name === 'repeat-header')) return true;
   if ((tag === 'UL' && name === 'checklist') || (tag === 'LI' && name === 'is-checked')) return true;
   if (tag === 'CODE' && /^language-[a-z]+$/.test(name)) return true;
   return tag === 'SPAN' && (/^tok-[a-z]+$/.test(name) || name === 'comment-mark' || isColorClass(name));

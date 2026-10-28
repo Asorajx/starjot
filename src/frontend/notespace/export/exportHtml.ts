@@ -3,6 +3,7 @@ import { iconMarkup } from '../../components/Icon';
 import { loadImage } from '../imageStore';
 import { childrenOf, noteTitle } from '../store';
 import { hydratePages } from '../editor/text/pageBlocks';
+import { headerIntoHead } from '../editor/tables/tables';
 import { tabPanels, tabTitle } from '../editor/text/tabs';
 import { reminderText } from '../reminders';
 import { drawingBottom, inDrawingOrder, strokeLayer, strokeMarkup, visibleLayers } from '../editor/drawing/drawing';
@@ -78,6 +79,9 @@ async function pageContent(note: Note, settings: ExportSettings, included: Set<s
   hydratePages(root);
 
   root.querySelectorAll('.toggle-block').forEach(toggle => toggle.classList.add('is-open'));
+
+  /* Repeat header row: printed (and in a PDF), the header row shows at the top of every page. */
+  root.querySelectorAll<HTMLTableElement>('table.repeat-header').forEach(headerIntoHead);
 
   /* A tab block shows its strip and the tab shown, or, with All tabs, every tab under its name. */
   if (settings.allTabs) {

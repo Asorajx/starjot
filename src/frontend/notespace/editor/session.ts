@@ -50,6 +50,9 @@ export class EditorSession {
   /* putting it back should scroll it into view (after undo, yes; coming back to a tab, no: the */
   /* tab's own scroll position is restored instead). */
   pendingCaret: number | null = null;
+
+  /* Lays a paginated note out on its pages straight away (set by usePages in pagination.ts). */
+  layOutPages: (() => void) | null = null;
   revealCaret = true;
 
   /* Where the caret and the scroll were, kept while the tab is not shown (see sessions.ts). */

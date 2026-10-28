@@ -127,6 +127,11 @@
 }
 
 /* A border that can be dragged to resize a column or row: a blue line appears while hovering or dragging. */
+/* Scroll anchoring is off while a border is dragged (see holdScroll in TableTools). */
+.main-scroll.is-sizing-table {
+  overflow-anchor: none;
+}
+
 .table-resize {
   position: fixed;
   z-index: 54;

@@ -22,7 +22,7 @@
   z-index: 0;
 }
 
-.editor-wrap .editor-width > :not(.page-sheets, .drawing-layer, style) {
+.editor-wrap .editor-width > :not(.page-sheets, .page-preview-overlays, .drawing-layer, style) {
   position: relative;
   z-index: 1;
 }

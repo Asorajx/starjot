@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { unmark } from '../../../../../src/frontend/notespace/editor/comments/comments';
 import {
-  cellRange, columnElements, hasMergedCells, hydrateTables, insertColumn, insertRow, isFitToWidth, mergeCells, MIN_COLUMN_WIDTH, MIN_ROW_HEIGHT,
-  moveColumn, moveRow, removeColumn, removeRow, resizeColumn, setColumnWidth, setFitToWidth, setHeaders, setRowHeight, tableGrid, tableHeaders,
-  unmergeCell
+  borderNear, cellRange, columnElements, hasMergedCells, headerIntoHead, hydrateTables, insertColumn, insertRow, isFitToWidth, mergeCells, MIN_COLUMN_WIDTH, MIN_ROW_HEIGHT,
+  moveColumn, moveRow, removeColumn, removeRow, repeatsHeader, resizeColumn, setColumnWidth, setFitToWidth, setHeaders, setRepeatHeader, setRowHeight,
+  tableGrid, tableHeaders, unmergeCell
 } from '../../../../../src/frontend/notespace/editor/tables/tables';
 
 /* A table built from rows of text; the first row is a header row when header is true. */
@@ -76,6 +76,39 @@ describe('table options', () => {
     expect(element.className).toBe('fit-content');
     setFitToWidth(element, true);
     expect(element.hasAttribute('class')).toBe(false);
+  });
+
+  it('switches Repeat header on each page on and off, keeping other options', () => {
+    const element = table([['A']]);
+    setFitToWidth(element, false);
+    setRepeatHeader(element, true);
+    expect(repeatsHeader(element)).toBe(true);
+    expect(element.className).toBe('fit-content repeat-header');
+    setRepeatHeader(element, false);
+    setFitToWidth(element, true);
+    expect(element.hasAttribute('class')).toBe(false);
+  });
+
+  it('moves a repeated header row into a <thead> for printing, and back', () => {
+    const element = table([['Name'], ['Row 1'], ['Row 2']]);
+    expect(headerIntoHead(element)).toBeNull();
+    setRepeatHeader(element, true);
+    const restore = headerIntoHead(element);
+    expect(element.tHead?.textContent).toBe('Name');
+    expect(element.tBodies[0].rows[0].textContent).toBe('Row 1');
+    restore?.();
+    expect(element.tHead).toBeNull();
+    expect(cells(element)).toEqual(['th:Name', 'td:Row 1', 'td:Row 2']);
+  });
+
+  it('leaves a table without a header row (or with a <thead> already) as it is', () => {
+    const plain = table([['A'], ['B']], false);
+    setRepeatHeader(plain, true);
+    expect(headerIntoHead(plain)).toBeNull();
+    const headed = table([['Name'], ['1']]);
+    setRepeatHeader(headed, true);
+    headed.createTHead();
+    expect(headerIntoHead(headed)).toBeNull();
   });
 
   it('removes a comment from a whole table without changing the table', () => {
@@ -247,5 +280,58 @@ describe('column widths and row heights', () => {
     expect(columnElements(element)[0].style.width).toBe('120px');
     expect(element.rows[0].style.height).toBe('60px');
     expect(element.style.width).toBe('200px');
+  });
+});
+
+
+/* =========================
+   Resize Borders
+   ========================= */
+
+/* Give a cell a place on screen, as a browser would after layout. */
+function placeAt(cell: Element, left: number, top: number, width: number, height: number) {
+  Object.defineProperty(cell, 'getBoundingClientRect', {
+    configurable: true,
+    value: () => ({ left, top, right: left + width, bottom: top + height, width, height })
+  });
+}
+
+/* A table from HTML rows, with each cell placed by placeAt. */
+function laidOut(rows: string, places: [number, number, number, number][]) {
+  const element = document.createElement('table');
+  element.innerHTML = `<tbody>${rows}</tbody>`;
+  const found = Array.from(element.querySelectorAll('td'));
+  found.forEach((cell, index) => placeAt(cell, ...places[index]));
+  return { element, found };
+}
+
+describe('resize borders', () => {
+  it('finds a border only beside the cell under the pointer', () => {
+    const { element, found } = laidOut('<tr><td>A</td><td>B</td></tr><tr><td>C</td><td>D</td></tr>', [[0, 0, 100, 30], [100, 0, 100, 30], [0, 30, 100, 30], [100, 30, 100, 30]]);
+    expect(borderNear(element, 100, 12, 4)).toMatchObject({ kind: 'column', index: 0, cell: found[0] });
+    expect(borderNear(element, 100, 43, 4)).toMatchObject({ kind: 'column', index: 0, cell: found[2] });
+    expect(borderNear(element, 100, 130, 4)).toBeNull();
+    expect(borderNear(element, 50, 15, 4)).toBeNull();
+  });
+
+  it('finds no row border inside a cell merged down', () => {
+    const { element, found } = laidOut('<tr><td rowspan="2">Merged</td><td>B</td></tr><tr><td>D</td></tr>', [[0, 0, 100, 60], [100, 0, 100, 30], [100, 30, 100, 30]]);
+    expect(borderNear(element, 50, 30, 4)).toBeNull();
+    expect(borderNear(element, 150, 30, 4)).toMatchObject({ kind: 'row', index: 0, cell: found[1] });
+    expect(borderNear(element, 50, 60, 4)).toMatchObject({ kind: 'row', index: 1, cell: found[0] });
+  });
+
+  it('finds no column border inside a cell merged across', () => {
+    const { element, found } = laidOut('<tr><td colspan="2">Merged</td></tr><tr><td>C</td><td>D</td></tr>', [[0, 0, 200, 30], [0, 30, 100, 30], [100, 30, 100, 30]]);
+    expect(borderNear(element, 100, 15, 4)).toBeNull();
+    expect(borderNear(element, 100, 45, 4)).toMatchObject({ kind: 'column', index: 0, cell: found[1] });
+    expect(borderNear(element, 200, 15, 4)).toMatchObject({ kind: 'column', index: 1, cell: found[0] });
+  });
+
+  it('finds a row moved onto a later page where it shows, and nothing in the gap', () => {
+    const { element, found } = laidOut('<tr><td>Before</td></tr><tr><td>After</td></tr>', [[0, 0, 100, 30], [0, 1123, 100, 30]]);
+    expect(borderNear(element, 100, 15, 4)?.cell).toBe(found[0]);
+    expect(borderNear(element, 100, 1140, 4)?.cell).toBe(found[1]);
+    expect(borderNear(element, 100, 600, 4)).toBeNull();
   });
 });

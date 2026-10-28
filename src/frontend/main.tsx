@@ -6,6 +6,7 @@ import { startWarmTooltips } from './app/warmTooltips';
 import { startFittingTooltips } from './app/fitTooltips';
 import { startKeyboardMark } from './app/keyboardMark';
 import { startMenuKeys } from './app/menuKeys';
+import { repeatHeadersWhilePrinting } from './notespace/editor/tables/tables';
 import { removeUnusedImages } from './notespace/imageStore';
 import { imageIdsIn } from './notespace/editor/images/images';
 import { getNotes, getTrash, notesReadCleanly } from './notespace/store';
@@ -53,6 +54,7 @@ startWarmTooltips();
 startFittingTooltips();
 startKeyboardMark();
 startMenuKeys();
+repeatHeadersWhilePrinting();
 
 /* New lines typed in a note become paragraphs, so each line maps cleanly to one block. */
 document.execCommand('defaultParagraphSeparator', false, 'p');

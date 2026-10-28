@@ -38,6 +38,7 @@
   .document-end,
   .link-tools,
   .page-sheets,
+  .page-preview-overlays,
   .drawing-dock,
   .drawing-surface,
   .window-bar,
@@ -77,6 +78,12 @@
 
   tr {
     break-inside: avoid;
+  }
+
+  /* A table's <thead> (its header row, with Repeat header row on) is printed again at the top of */
+  /* every page the table continues on. */
+  thead {
+    display: table-header-group;
   }
 
   .sticky-group::before,

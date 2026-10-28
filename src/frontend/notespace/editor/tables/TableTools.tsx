@@ -1,10 +1,11 @@
-import { useEffect, useRef, useState, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent } from 'react';
+import { useEffect, useRef, useState, type CSSProperties, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent } from 'react';
+import { visibleArea, zoomed } from '../../../lib/geometry';
 import { Icon, type IconName } from '../../../components/Icon';
 import { emptyParagraph, placeCaret } from '../text/dom';
 import { useSessionValue, type EditorSession } from '../session';
 import {
-  cellRange, cellsInRange, ensureColumns, hasMergedCells, insertColumn, insertRow, isFitToWidth, mergeCells, moveColumn, moveRow, removeColumn,
-  removeRow, resizeColumn, setFitToWidth, setHeaders, setRowHeight, tableGrid, tableHeaders, unmergeCell, type CellRange
+  borderNear, cellRange, cellsInRange, ensureColumns, hasMergedCells, insertColumn, insertRow, isFitToWidth, mergeCells, moveColumn, moveRow, removeColumn,
+  removeRow, repeatsHeader, resizeColumn, setFitToWidth, setHeaders, setRepeatHeader, setRowHeight, tableGrid, tableHeaders, unmergeCell, type BorderHit, type CellRange
 } from './tables';
 import { cellAt, tableSlice, tableText } from './tableClipboard';
 import { writeClipboard } from '../text/clipboard';
@@ -30,15 +31,17 @@ type Press = { part: 'row' | 'column'; table: HTMLTableElement; index: number; x
 /* Several cells chosen by selecting text across them, which can be merged into one. */
 type CellChoice = { table: HTMLTableElement; range: CellRange };
 
-/* A column or row border near the pointer, which can be dragged to resize. at is its screen position. */
-type Edge = { table: HTMLTableElement; kind: 'column' | 'row'; index: number; at: number };
+/* A cell's border near the pointer, which can be dragged to resize its column or row. */
+type Edge = BorderHit & { table: HTMLTableElement };
 
-/* A border being dragged: where the drag started, the sizes before it, and where the pointer is now. */
-type Sizing = Edge & { start: number; pointer: number; widths: number[]; height: number };
+/* A border being dragged: where the drag started, the sizes before it, where the pointer is now, */
+/* and the note's zoom (pointer distances are divided by it, as sizes are stored at 100%). */
+type Sizing = Edge & { start: number; pointer: number; widths: number[]; height: number; scale: number };
 
 /* How close (in pixels) the pointer must be to a border to grab it. */
 const EDGE_REACH = 4;
 type Box = { top: number; left: number; width: number; height: number };
+type Stretch = { top: number; bottom: number };
 
 type MenuItem = {
   label: string;
@@ -64,6 +67,112 @@ function boxOf(element: Element): Box {
   return { top, left, width, height };
 }
 
+/* A tool placed at a point on screen (a grip, a cell's button) is hidden while that point is */
+/* outside the note's visible area, such as above the page bar when the table is scrolled up, so */
+/* it never sits over the bars. */
+function inView(style: CSSProperties, of: Element): CSSProperties {
+  const area = visibleArea(of);
+  const top = Number(style.top);
+  return top < area.top || top > area.bottom - 8 ? { ...style, display: 'none' } : style;
+}
+
+/* Where a table sits on each page: one stretch, or, for a table split over pages (see */
+/* pagination.ts), one per page around the rows there, with the copy of the header row shown */
+/* above them on each later page. The rows moved onto later pages run past the table's own box, */
+/* into the space it reserves below it. */
+function pageStretches(table: HTMLTableElement): Stretch[] {
+  const { top, bottom } = table.getBoundingClientRect();
+  if (!table.classList.contains('page-table-expanded')) return [{ top, bottom }];
+  const header = table.rows[0];
+  const copied = repeatsHeader(table) && header && Array.from(header.cells).every(cell => cell.tagName === 'TH') ? header.getBoundingClientRect().height : 0;
+  const stretches: Stretch[] = [];
+  Array.from(table.rows).forEach(row => {
+    const box = row.getBoundingClientRect();
+    const last = stretches[stretches.length - 1];
+    if (last && box.top - last.bottom < 2) last.bottom = Math.max(last.bottom, box.bottom);
+    else stretches.push({ top: last ? box.top - copied : box.top, bottom: box.bottom });
+  });
+  return stretches.length ? stretches : [{ top, bottom }];
+}
+
+/* A table's screen area, taking in the rows moved onto later pages. */
+function tableArea(table: HTMLTableElement) {
+  const { top, bottom, left, right } = table.getBoundingClientRect();
+  return { top, left, right, bottom: Math.max(bottom, ...pageStretches(table).map(stretch => stretch.bottom)) };
+}
+
+/* An outline from one height to another, cut to the part of the note that can be seen, so a long */
+/* table's outline never covers the page bar or tabs. A cut edge has no border, so the outline */
+/* reads as carrying on past it. Nothing when none of it is in view. */
+function outlineStyle(from: number, to: number, left: number, width: number, area: Stretch): CSSProperties[] {
+  const top = Math.max(from, area.top);
+  const bottom = Math.min(to, area.bottom);
+  if (bottom <= top) return [];
+  return [{
+    top,
+    left,
+    width,
+    height: bottom - top,
+    ...(top > from ? { borderTopWidth: 0, borderTopLeftRadius: 0, borderTopRightRadius: 0 } : {}),
+    ...(bottom < to ? { borderBottomWidth: 0, borderBottomLeftRadius: 0, borderBottomRightRadius: 0 } : {})
+  }];
+}
+
+/* The outlines drawn over a table part, one per page the part is on, never across the gap */
+/* between pages. */
+function outlineStyles(box: Box, table: HTMLTableElement): CSSProperties[] {
+
+  /* A whole table or a column covers every page's rows, which run past the table's own box; a */
+  /* row is cut to its box. */
+  const tableBox = table.getBoundingClientRect();
+  const tall = box.top <= tableBox.top + 1 && box.top + box.height >= tableBox.bottom - 1;
+  const area = visibleArea(table);
+  return pageStretches(table).flatMap(piece => outlineStyle(
+    tall ? piece.top : Math.max(piece.top, box.top),
+    tall ? piece.bottom : Math.min(piece.bottom, box.top + box.height),
+    box.left, box.width, area
+  ));
+}
+
+/* The outlines drawn over chosen cells, one per page around the ones there, never across the gap */
+/* between pages. */
+function rangeOutlines(table: HTMLTableElement, range: CellRange): CSSProperties[] {
+  const boxes = cellsInRange(table, range).map(cell => cell.getBoundingClientRect());
+  const area = visibleArea(table);
+  return pageStretches(table).flatMap(piece => {
+    const here = boxes.filter(box => box.bottom > piece.top && box.top < piece.bottom);
+    if (!here.length) return [];
+    const left = Math.min(...here.map(box => box.left));
+    const width = Math.max(...here.map(box => box.right)) - left;
+    return outlineStyle(Math.min(...here.map(box => box.top)), Math.max(...here.map(box => box.bottom)), left, width, area);
+  });
+}
+
+/* The resize line on a border. While hovering it covers only the border of the cell under the */
+/* pointer; while dragging, the whole border: a column's down the table's rows on that page, a */
+/* row's across the table. It sits on the real border, so it stops at the smallest size even if */
+/* the pointer keeps going. While dragging it is hidden rather than removed when out of view, as */
+/* it holds the pointer until release. */
+function guideStyle(edge: Edge, dragging: boolean): CSSProperties | null {
+  if (!edge.cell.isConnected) return null;
+  const cell = edge.cell.getBoundingClientRect();
+  const area = visibleArea(edge.table);
+  let style: CSSProperties | null = null;
+  if (edge.kind === 'column') {
+    const stretch = dragging ? pageStretches(edge.table).find(piece => cell.top < piece.bottom) : null;
+    const top = Math.max(stretch?.top ?? cell.top, area.top);
+    const bottom = Math.min(stretch?.bottom ?? cell.bottom, area.bottom);
+    if (bottom > top) style = { left: cell.right - EDGE_REACH, top, width: EDGE_REACH * 2, height: bottom - top };
+  } else if (cell.bottom > area.top && cell.bottom < area.bottom) {
+    const table = edge.table.getBoundingClientRect();
+    const left = dragging ? table.left : cell.left;
+    const right = dragging ? table.right : cell.right;
+    style = { top: cell.bottom - EDGE_REACH, left, width: right - left, height: EDGE_REACH * 2 };
+  }
+  if (style || !dragging) return style;
+  return { left: cell.right, top: cell.bottom, width: 0, height: 0, visibility: 'hidden' };
+}
+
 /* The screen area of a whole table, one row, or one column. */
 function partBox(table: HTMLTableElement, part: Part, index: number): Box | null {
   const whole = boxOf(table);
@@ -79,44 +188,11 @@ function partBox(table: HTMLTableElement, part: Part, index: number): Box | null
   return cell ? { ...whole, left: boxOf(cell).left, width: boxOf(cell).width } : null;
 }
 
-/* Where a column's right border or a row's bottom border is on screen right now. */
-function borderAt(table: HTMLTableElement, kind: 'column' | 'row', index: number) {
-  if (kind === 'row') return table.rows[index]?.getBoundingClientRect().bottom ?? 0;
-  for (const [cell, place] of tableGrid(table).places) {
-    if (place.column + place.columns - 1 === index) return cell.getBoundingClientRect().right;
-  }
-  return 0;
-}
-
-/* The column or row border near the pointer. The table's left and top edges are left out, */
-/* because the row and column grips sit there. */
+/* The cell border near the pointer. Only right and bottom borders count, so the table's left and */
+/* top edges are left to the row and column grips. */
 function findEdge(table: HTMLTableElement, x: number, y: number): Edge | null {
-  const whole = table.getBoundingClientRect();
-  if (x < whole.left || x > whole.right + EDGE_REACH || y < whole.top || y > whole.bottom + EDGE_REACH) return null;
-
-  const rights = new Map<number, number>();
-  tableGrid(table).places.forEach((place, cell) => {
-    const column = place.column + place.columns - 1;
-    if (!rights.has(column)) rights.set(column, cell.getBoundingClientRect().right);
-  });
-  for (const [index, at] of rights) {
-    if (Math.abs(x - at) <= EDGE_REACH) return { table, kind: 'column', index, at };
-  }
-  const rows = Array.from(table.rows);
-  for (let index = 0; index < rows.length; index += 1) {
-    const at = rows[index].getBoundingClientRect().bottom;
-    if (Math.abs(y - at) <= EDGE_REACH) return { table, kind: 'row', index, at };
-  }
-  return null;
-}
-
-/* The screen area covered by a range of cells. */
-function rangeBox(table: HTMLTableElement, range: CellRange): Box | null {
-  const boxes = cellsInRange(table, range).map(cell => cell.getBoundingClientRect());
-  if (!boxes.length) return null;
-  const top = Math.min(...boxes.map(box => box.top));
-  const left = Math.min(...boxes.map(box => box.left));
-  return { top, left, width: Math.max(...boxes.map(box => box.right)) - left, height: Math.max(...boxes.map(box => box.bottom)) - top };
+  const hit = borderNear(table, x, y, EDGE_REACH);
+  return hit && { ...hit, table };
 }
 
 /* The cells of a table, row or column chosen with a grip, grown to include merged cells. */
@@ -167,10 +243,25 @@ export function TableTools({ session, locked }: TableToolsProps) {
   const redraw = () => setTick(tick => tick + 1);
 
   const press = useRef<Press | null>(null);
+  const anchorBack = useRef(0);
   const latest = useRef({ pick, locked, sizing, hoverTable: hover?.table ?? null });
   latest.current = { pick, locked, sizing, hoverTable: hover?.table ?? null };
   const actions = useRef({ choose, clear, removePart });
   actions.current = { choose, clear, removePart };
+
+  /* The tools are fixed to the window, so over them the browser would scroll the window, not the */
+  /* note (the pointer on a column's border stopped scrolling); the wheel scrolls the note instead. */
+  useEffect(() => {
+    function handleWheel(event: WheelEvent) {
+      const scroller = session.scroller();
+      if (!scroller || !(event.target as Element | null)?.closest?.('.table-tools')) return;
+      event.preventDefault();
+      const unit = event.deltaMode === WheelEvent.DOM_DELTA_LINE ? 16 : event.deltaMode === WheelEvent.DOM_DELTA_PAGE ? scroller.clientHeight : 1;
+      scroller.scrollBy({ top: event.deltaY * unit, left: event.deltaX * unit });
+    }
+    document.addEventListener('wheel', handleWheel, { passive: false });
+    return () => document.removeEventListener('wheel', handleWheel);
+  }, [session]);
 
   useEffect(() => {
     const body = () => session.body();
@@ -180,7 +271,10 @@ export function TableTools({ session, locked }: TableToolsProps) {
     function handleMouseMove(event: MouseEvent) {
       if (latest.current.locked || press.current || latest.current.sizing) return;
       const target = event.target as Element;
-      if (target.closest?.('.table-tools')) return;
+
+      /* Over the resize line the border is still looked for, so the line follows the pointer */
+      /* along a border into the next cell. */
+      if (target.closest?.('.table-tools:not(.table-resize)')) return;
       const cell = target.closest?.<HTMLTableCellElement>('td, th');
       const table = cell?.closest('table');
 
@@ -188,7 +282,7 @@ export function TableTools({ session, locked }: TableToolsProps) {
       const near = table ?? latest.current.hoverTable;
       const found = near?.isConnected && body()?.contains(near) ? findEdge(near, event.clientX, event.clientY) : null;
       setEdge(current => (current?.table === found?.table && current?.kind === found?.kind && current?.index === found?.index
-        && current?.at === found?.at ? current : found));
+        && current?.cell === found?.cell && current?.at === found?.at ? current : found));
 
       if (cell && table && body()?.contains(table)) {
         const place = tableGrid(table).places.get(cell);
@@ -198,7 +292,7 @@ export function TableTools({ session, locked }: TableToolsProps) {
       }
       setHover(current => {
         if (!current?.table.isConnected) return null;
-        const bounds = current.table.getBoundingClientRect();
+        const bounds = tableArea(current.table);
         const near = event.clientX > bounds.left - 40 && event.clientX < bounds.right + 8 && event.clientY > bounds.top - 24 && event.clientY < bounds.bottom + 8;
         return near ? current : null;
       });
@@ -278,6 +372,24 @@ export function TableTools({ session, locked }: TableToolsProps) {
     };
   }, []);
 
+  /* While a border is dragged, the browser's scroll anchoring is off (see holdScroll). */
+  useEffect(() => () => {
+    cancelAnimationFrame(anchorBack.current);
+    session.scroller()?.classList.remove('is-sizing-table');
+  }, [session]);
+
+  /* Laying the pages out again while a border is dragged moves rows to other pages, and the */
+  /* browser's scroll anchoring would then scroll the note to keep some line in place, sliding the */
+  /* table away under the pointer. It is turned off for the drag and the layout after it. */
+  function holdScroll(hold: boolean) {
+    const scroller = session.scroller();
+    cancelAnimationFrame(anchorBack.current);
+    if (hold) scroller?.classList.add('is-sizing-table');
+    else anchorBack.current = requestAnimationFrame(() => {
+      anchorBack.current = requestAnimationFrame(() => scroller?.classList.remove('is-sizing-table'));
+    });
+  }
+
   /* Selecting a part clears the text selection, so typing cannot change the table by accident. */
   function choose(next: Pick) {
     window.getSelection()?.removeAllRanges();
@@ -320,18 +432,22 @@ export function TableTools({ session, locked }: TableToolsProps) {
     if (!edge) return;
     event.preventDefault();
     event.currentTarget.setPointerCapture(event.pointerId);
+    holdScroll(true);
     session.checkpoint();
     const start = edge.kind === 'column' ? event.clientX : event.clientY;
     const widths = edge.kind === 'column' ? ensureColumns(edge.table) : [];
-    const height = edge.kind === 'row' ? edge.table.rows[edge.index].getBoundingClientRect().height : 0;
-    setSizing({ ...edge, start, pointer: start, widths, height });
+    const { scale } = zoomed(edge.table);
+    const height = edge.kind === 'row' ? edge.table.rows[edge.index].getBoundingClientRect().height / scale : 0;
+    setSizing({ ...edge, start, pointer: start, widths, height, scale });
   }
 
   function moveSizing(event: ReactPointerEvent<HTMLDivElement>) {
     if (!sizing) return;
     const pointer = sizing.kind === 'column' ? event.clientX : event.clientY;
-    if (sizing.kind === 'column') resizeColumn(sizing.table, sizing.index, sizing.widths, pointer - sizing.start);
-    else setRowHeight(sizing.table.rows[sizing.index], sizing.height + pointer - sizing.start);
+    const change = (pointer - sizing.start) / sizing.scale;
+    if (sizing.kind === 'column') resizeColumn(sizing.table, sizing.index, sizing.widths, change);
+    else setRowHeight(sizing.table.rows[sizing.index], sizing.height + change);
+    session.layOutPages?.();
     setSizing({ ...sizing, pointer });
   }
 
@@ -340,6 +456,7 @@ export function TableTools({ session, locked }: TableToolsProps) {
     setSizing(null);
     setEdge(null);
     session.commit();
+    holdScroll(false);
   }
 
   /* Merge the selected cells; the caret goes to the end of the merged cell. */
@@ -403,6 +520,7 @@ export function TableTools({ session, locked }: TableToolsProps) {
     return [
       { label: 'Header row', checked: headers.row, run: () => change(() => setHeaders(table, { ...headers, row: !headers.row })) },
       { label: 'Header column', checked: headers.column, run: () => change(() => setHeaders(table, { ...headers, column: !headers.column })) },
+      { label: 'Repeat header on each page', checked: headers.row && repeatsHeader(table), disabled: !headers.row, run: () => change(() => setRepeatHeader(table, !repeatsHeader(table))) },
       { label: 'Fit to width', checked: isFitToWidth(table), run: () => change(() => setFitToWidth(table, !isFitToWidth(table))) },
       { label: 'Comment', icon: 'message-square', run: () => setCommenting(true) },
       ...(structured ? [] : [
@@ -445,26 +563,23 @@ export function TableTools({ session, locked }: TableToolsProps) {
 
   if (locked) return null;
 
-  /* The Merge cells button sits under the selected cells; the Unmerge button sits inside the merged */
+  /* The Merge cells button sits under the last of the selected cells in view (on a table split */
+  /* over pages, under the outline on the last page); the Unmerge button sits inside the merged */
   /* cell's top-right corner, so it never covers the row above. */
-  const choiceBox = choice?.table.isConnected ? rangeBox(choice.table, choice.range) : null;
+  const shownChoice = choice?.table.isConnected ? choice : null;
+  const choiceOutlines = shownChoice ? rangeOutlines(shownChoice.table, shownChoice.range) : [];
+  const choiceEnd = choiceOutlines[choiceOutlines.length - 1];
   const mergedBox = mergedCell?.isConnected ? boxOf(mergedCell) : null;
   const keepSelection = (event: ReactMouseEvent) => event.preventDefault();
 
   const handle = sizing ?? (edge?.table.isConnected ? edge : null);
-  const handleBox = handle ? boxOf(handle.table) : null;
-
-  /* While dragging, the line sits on the real border rather than under the pointer, so it stops at */
-  /* the smallest size (and at a row's text) even if the pointer keeps going. */
-  const handleAt = sizing ? borderAt(sizing.table, sizing.kind, sizing.index) : handle?.at ?? 0;
+  const guide = handle ? guideStyle(handle, Boolean(sizing)) : null;
   const cellTools = (
     <>
-      {handle && handleBox && (
+      {handle && guide && (
         <div
           className={`table-tools table-resize is-${handle.kind} ${sizing ? 'is-active' : ''}`}
-          style={handle.kind === 'column'
-            ? { left: handleAt - EDGE_REACH, top: handleBox.top, width: EDGE_REACH * 2, height: handleBox.height }
-            : { top: handleAt - EDGE_REACH, left: handleBox.left, width: handleBox.width, height: EDGE_REACH * 2 }}
+          style={guide}
           aria-hidden="true"
           onPointerDown={startSizing}
           onPointerMove={moveSizing}
@@ -473,25 +588,29 @@ export function TableTools({ session, locked }: TableToolsProps) {
         />
       )}
 
-      {choiceBox && (
+      {shownChoice && (
         <>
-          <div className="table-tools table-range" style={choiceBox} />
-          <button
-            type="button"
-            className="table-tools table-cell-action"
-            style={{ top: choiceBox.top + choiceBox.height + 6, left: choiceBox.left + choiceBox.width, transform: 'translateX(-100%)' }}
-            onMouseDown={keepSelection}
-            onClick={merge}
-          >
-            <Icon name="table" size={13} /> Merge cells
-          </button>
+          {choiceOutlines.map((style, index) => (
+            <div key={index} className="table-tools table-range" style={style} />
+          ))}
+          {choiceEnd && (
+            <button
+              type="button"
+              className="table-tools table-cell-action"
+              style={inView({ top: Number(choiceEnd.top) + Number(choiceEnd.height) + 6, left: Number(choiceEnd.left) + Number(choiceEnd.width), transform: 'translateX(-100%)' }, shownChoice.table)}
+              onMouseDown={keepSelection}
+              onClick={merge}
+            >
+              <Icon name="table" size={13} /> Merge cells
+            </button>
+          )}
         </>
       )}
-      {!choiceBox && mergedBox && (
+      {!shownChoice && mergedBox && (
         <button
           type="button"
           className="table-tools table-cell-action"
-          style={{ top: mergedBox.top + 4, left: mergedBox.left + mergedBox.width - 4, transform: 'translateX(-100%)' }}
+          style={inView({ top: mergedBox.top + 4, left: mergedBox.left + mergedBox.width - 4, transform: 'translateX(-100%)' }, mergedCell as Element)}
           onMouseDown={keepSelection}
           onClick={unmerge}
         >
@@ -513,6 +632,9 @@ export function TableTools({ session, locked }: TableToolsProps) {
   const pickBox = shownPick ? partBox(shownPick.table, shownPick.part, shownPick.part === 'table' ? 0 : shownPick.index) : null;
   const dragBox = drag ? partBox(drag.table, drag.part, drag.from) : null;
   const dropBox = drag ? partBox(drag.table, drag.part, drag.to) : null;
+
+  /* On a table split over pages, the column grip sits at the top of the page being pointed at. */
+  const columnTop = rowBox ? pageStretches(table).find(stretch => rowBox.top < stretch.bottom)?.top ?? whole.top : whole.top;
 
   /* The menu opens beside the grip that was clicked, and above it near the bottom of the window. */
   let menuTop = 0;
@@ -541,7 +663,7 @@ export function TableTools({ session, locked }: TableToolsProps) {
         <button
           type="button"
           className="table-tools table-grip"
-          style={{ top: whole.top + 2, left: whole.left - 30 }}
+          style={inView({ top: whole.top + 2, left: whole.left - 30 }, table)}
           aria-label="Select table"
           onMouseDown={event => event.preventDefault()}
           onClick={() => choose({ table, part: 'table', index: 0 })}
@@ -555,7 +677,7 @@ export function TableTools({ session, locked }: TableToolsProps) {
         <button
           type="button"
           className="table-tools table-line-grip is-row"
-          style={{ top: rowBox.top + rowBox.height / 2 - 11, left: whole.left - 7 }}
+          style={inView({ top: rowBox.top + rowBox.height / 2 - 11, left: whole.left - 7 }, table)}
           aria-label="Row options (drag to move)"
           onPointerDown={event => grip(event, 'row', shownHover.row)}
           onPointerMove={movePress}
@@ -569,7 +691,7 @@ export function TableTools({ session, locked }: TableToolsProps) {
         <button
           type="button"
           className="table-tools table-line-grip is-column"
-          style={{ top: whole.top - 7, left: columnBox.left + columnBox.width / 2 - 11 }}
+          style={inView({ top: columnTop - 7, left: columnBox.left + columnBox.width / 2 - 11 }, table)}
           aria-label="Column options (drag to move)"
           onPointerDown={event => grip(event, 'column', shownHover.column)}
           onPointerMove={movePress}
@@ -580,7 +702,9 @@ export function TableTools({ session, locked }: TableToolsProps) {
       )}
 
       {/* While dragging, the row or column is outlined and a line shows where it will go. */}
-      {dragBox && <div className="table-tools table-pick" style={dragBox} />}
+      {dragBox && drag && outlineStyles(dragBox, drag.table).map((style, index) => (
+        <div key={index} className="table-tools table-pick" style={style} />
+      ))}
       {drag && dropBox && drag.to !== drag.from && (
         <div
           className={`table-tools table-drop is-${drag.part}`}
@@ -592,12 +716,14 @@ export function TableTools({ session, locked }: TableToolsProps) {
 
       {shownPick && pickBox && !drag && (
         <>
-          <div className="table-tools table-pick" style={pickBox} />
+          {outlineStyles(pickBox, shownPick.table).map((style, index) => (
+            <div key={index} className="table-tools table-pick" style={style} />
+          ))}
           <div
             className="table-tools table-menu"
             role="menu"
             aria-label={`${shownPick.part[0].toUpperCase()}${shownPick.part.slice(1)} options`}
-            style={{ top: menuAbove ? menuTop - 40 : menuTop, left: Math.max(8, menuLeft), transform: menuAbove ? 'translateY(-100%)' : undefined }}
+            style={inView({ top: menuAbove ? menuTop - 40 : menuTop, left: Math.max(8, menuLeft), transform: menuAbove ? 'translateY(-100%)' : undefined }, table)}
           >
             {/* On/off options are shown as switches at the top, with the actions below them. */}
             {!commenting && menuItems(shownPick).map((item, index, items) => (item.checked !== undefined ? (

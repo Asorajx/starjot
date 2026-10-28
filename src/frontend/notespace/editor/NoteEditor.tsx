@@ -552,6 +552,7 @@ function DocumentEditor({ noteId, tabId, history, view, active, onClose, onOpenN
                 ))}
               </div>
             )}
+            {geometry && <div className="page-preview-overlays" />}
             <DrawingLayer strokes={note.drawing} layers={note.drawingLayers} inset={geometry?.margin ?? 0} layerRef={drawingRef} />
             <div className="editor-meta">
               <span className="page-type"><Icon name="file-text" size={14} /> DOCUMENT</span>

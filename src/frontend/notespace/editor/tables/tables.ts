@@ -1,3 +1,6 @@
+import { zoomed } from '../../../lib/geometry';
+
+
 /* =========================
    Table Grid
    ========================= */
@@ -38,6 +41,32 @@ export function tableGrid(table: HTMLTableElement) {
 
 export function hasMergedCells(table: HTMLTableElement) {
   return Array.from(table.querySelectorAll<HTMLTableCellElement>('th, td')).some(cell => cell.rowSpan > 1 || cell.colSpan > 1);
+}
+
+/* A cell border near a point on screen, which can be dragged to resize: a column's right border */
+/* or a row's bottom border, numbered by the grid. Only borders that are drawn count, measured */
+/* from each cell, so the inside of a merged cell has none and a row moved onto a later page (see */
+/* pagination.ts) is found where it shows. The nearest one within reach wins. */
+export type BorderHit = { kind: 'column' | 'row'; index: number; at: number; cell: HTMLTableCellElement };
+
+export function borderNear(table: HTMLTableElement, x: number, y: number, reach: number): BorderHit | null {
+  let nearest: BorderHit | null = null;
+  let distance = Infinity;
+  tableGrid(table).places.forEach((place, cell) => {
+    const box = cell.getBoundingClientRect();
+    if (!box.width || !box.height) return;
+    const right = Math.abs(x - box.right);
+    if (right <= reach && right < distance && y >= box.top && y <= box.bottom) {
+      nearest = { kind: 'column', index: place.column + place.columns - 1, at: box.right, cell };
+      distance = right;
+    }
+    const bottom = Math.abs(y - box.bottom);
+    if (bottom <= reach && bottom < distance && x >= box.left && x <= box.right) {
+      nearest = { kind: 'row', index: place.row + place.rows - 1, at: box.bottom, cell };
+      distance = bottom;
+    }
+  });
+  return nearest;
 }
 
 /* The cells covering a grid row, each listed once even when merged. */
@@ -97,6 +126,50 @@ export function setHeaders(table: HTMLTableElement, headers: TableHeaders) {
   });
 }
 
+/* Repeat header row (off by default): a long table printed (or saved as a PDF) over several pages */
+/* shows its header row again at the top of each page. Only a table with a header row repeats it. */
+export function repeatsHeader(table: HTMLTableElement) {
+  return table.classList.contains('repeat-header');
+}
+
+export function setRepeatHeader(table: HTMLTableElement, repeat: boolean) {
+  table.classList.toggle('repeat-header', repeat);
+  if (!table.classList.length) table.removeAttribute('class');
+}
+
+/* Browsers repeat a table's rows on every printed page only when they are in a <thead>. A table */
+/* keeps its header row with the other rows (where editing expects it), so for printing the row is */
+/* moved into a <thead>: in an exported page's copy, and in the open note while the browser prints */
+/* it (see repeatHeadersWhilePrinting). Returns how to put it back, or null when nothing moved. */
+export function headerIntoHead(table: HTMLTableElement) {
+  const row = table.rows[0];
+  if (!repeatsHeader(table) || table.tHead || !row || !tableHeaders(table).row) return null;
+  const head = table.createTHead();
+  head.append(row);
+  return () => {
+    const body = table.tBodies[0];
+    if (body) body.prepend(row);
+    else table.append(row);
+    head.remove();
+  };
+}
+
+/* While the browser prints the page (Ctrl + P), tables with Repeat header row have their header */
+/* row in a <thead>; it goes back as soon as printing ends. Nothing is saved, since the editors */
+/* only save on typing and their own changes. */
+export function repeatHeadersWhilePrinting() {
+  let restore: (() => void)[] = [];
+  window.addEventListener('beforeprint', () => {
+    restore = Array.from(document.querySelectorAll<HTMLTableElement>('.note-body table.repeat-header'))
+      .map(headerIntoHead)
+      .filter((undo): undo is () => void => Boolean(undo));
+  });
+  window.addEventListener('afterprint', () => {
+    restore.forEach(undo => undo());
+    restore = [];
+  });
+}
+
 /* Fit to width (the default) stretches the table across the page; turning it off sizes columns to their text. */
 export function isFitToWidth(table: HTMLTableElement) {
   return !table.classList.contains('fit-content');
@@ -138,14 +211,16 @@ export function setRowHeight(row: HTMLTableRowElement, height: number) {
   return size;
 }
 
-/* How wide each column is on screen now. A column only covered by merged cells shares their width. */
+/* How wide each column is on screen now, at 100% zoom. A column only covered by merged cells */
+/* shares their width. */
 function measureColumns(table: HTMLTableElement) {
   const { grid, places, width } = tableGrid(table);
+  const { scale } = zoomed(table);
   return Array.from({ length: width }, (_, column) => {
     const cells = grid.map(line => line[column]).filter(Boolean);
     const single = cells.find(cell => places.get(cell)?.columns === 1);
     const cell = single ?? cells[0];
-    return cell ? cell.getBoundingClientRect().width / (single ? 1 : places.get(cell)?.columns ?? 1) : MIN_COLUMN_WIDTH;
+    return cell ? cell.getBoundingClientRect().width / scale / (single ? 1 : places.get(cell)?.columns ?? 1) : MIN_COLUMN_WIDTH;
   });
 }
 
