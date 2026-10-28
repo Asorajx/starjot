@@ -842,6 +842,13 @@
   text-align: center;
 }
 
+/* A paginated note places its lines on pages itself, and each layout briefly clears and measures */
+/* them; the browser's scroll anchoring would take that for content moving and scroll the note */
+/* (by thousands of pixels, measured after a table row was resized), so it is off. */
+.main-scroll:has(> .editor-wrap.is-paginated) {
+  overflow-anchor: none;
+}
+
 /* Screen-only pagination for long tables. The real table rows and cells remain untouched, */
 /* so the editor, undo/history, copy/paste, and the printed document use the same source DOM. */
 .page-preview-overlays {

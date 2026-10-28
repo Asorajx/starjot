@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState, type CSSProperties, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent } from 'react';
-import { visibleArea, zoomed } from '../../../lib/geometry';
+import { edgeScrollStep, visibleArea, zoomed } from '../../../lib/geometry';
 import { Icon, type IconName } from '../../../components/Icon';
 import { emptyParagraph, placeCaret } from '../text/dom';
 import { useSessionValue, type EditorSession } from '../session';
 import {
-  borderNear, cellRange, cellsInRange, ensureColumns, hasMergedCells, insertColumn, insertRow, isFitToWidth, mergeCells, moveColumn, moveRow, removeColumn,
-  removeRow, repeatsHeader, resizeColumn, setFitToWidth, setHeaders, setRepeatHeader, setRowHeight, tableGrid, tableHeaders, unmergeCell, type BorderHit, type CellRange
+  borderNear, cellRange, cellsInRange, columnResizeChange, ensureColumns, hasMergedCells, insertColumn, insertRow, isFitToWidth, measureColumns, mergeCells, moveColumn, moveRow, removeColumn,
+  removeRow, repeatsHeader, resizeColumn, rowHeightLimit, rowMinHeight, setFitToWidth, setHeaders, setRepeatHeader, setRowHeight, tableGrid, tableHeaders, unmergeCell, MIN_COLUMN_WIDTH, type BorderHit, type CellRange
 } from './tables';
 import { cellAt, tableSlice, tableText } from './tableClipboard';
 import { writeClipboard } from '../text/clipboard';
@@ -34,9 +34,22 @@ type CellChoice = { table: HTMLTableElement; range: CellRange };
 /* A cell's border near the pointer, which can be dragged to resize its column or row. */
 type Edge = BorderHit & { table: HTMLTableElement };
 
-/* A border being dragged: where the drag started, the sizes before it, where the pointer is now, */
-/* and the note's zoom (pointer distances are divided by it, as sizes are stored at 100%). */
-type Sizing = Edge & { start: number; pointer: number; widths: number[]; height: number; scale: number };
+/* A border being dragged. Only the line moves; the size is set once on release, so a row that */
+/* grows past its page's end does not move to the next page (taking its border away from the */
+/* pointer) mid-drag. Kept here: where the drag started (the pointer and the note's scroll), the */
+/* sizes before it and a row's smallest height, where the pointer is now and whether it has moved */
+/* yet, and the note's zoom (distances are divided by it, as sizes are stored at 100%). */
+type Sizing = Edge & {
+  start: number;
+  scroll: number;
+  widths: number[];
+  height: number;
+  least: number;
+  most: number;
+  pointer: number;
+  moved: boolean;
+  scale: number;
+};
 
 /* How close (in pixels) the pointer must be to a border to grab it. */
 const EDGE_REACH = 4;
@@ -149,28 +162,34 @@ function rangeOutlines(table: HTMLTableElement, range: CellRange): CSSProperties
 }
 
 /* The resize line on a border. While hovering it covers only the border of the cell under the */
-/* pointer; while dragging, the whole border: a column's down the table's rows on that page, a */
-/* row's across the table. It sits on the real border, so it stops at the smallest size even if */
-/* the pointer keeps going. While dragging it is hidden rather than removed when out of view, as */
-/* it holds the pointer until release. */
-function guideStyle(edge: Edge, dragging: boolean): CSSProperties | null {
+/* pointer. While dragging it is moved by delta (on screen) to where the border will go, and runs */
+/* the whole border: a column's down the table's rows on the page being pointed at, a row's across */
+/* the table. While dragging it is hidden rather than removed when out of view, as it holds the */
+/* pointer until release. */
+function guideStyle(edge: Edge, sizing: Sizing | null, delta: number, pointerY: number): CSSProperties | null {
   if (!edge.cell.isConnected) return null;
   const cell = edge.cell.getBoundingClientRect();
   const area = visibleArea(edge.table);
+  const table = edge.table.getBoundingClientRect();
   let style: CSSProperties | null = null;
   if (edge.kind === 'column') {
-    const stretch = dragging ? pageStretches(edge.table).find(piece => cell.top < piece.bottom) : null;
-    const top = Math.max(stretch?.top ?? cell.top, area.top);
-    const bottom = Math.min(stretch?.bottom ?? cell.bottom, area.bottom);
-    if (bottom > top) style = { left: cell.right - EDGE_REACH, top, width: EDGE_REACH * 2, height: bottom - top };
-  } else if (cell.bottom > area.top && cell.bottom < area.bottom) {
-    const table = edge.table.getBoundingClientRect();
-    const left = dragging ? table.left : cell.left;
-    const right = dragging ? table.right : cell.right;
-    style = { top: cell.bottom - EDGE_REACH, left, width: right - left, height: EDGE_REACH * 2 };
+    const stretches = sizing ? pageStretches(edge.table) : [];
+    const piece = stretches.find(item => pointerY >= item.top && pointerY <= item.bottom)
+      ?? stretches.find(item => item.bottom > area.top && item.top < area.bottom);
+    const top = Math.max(piece?.top ?? cell.top, area.top);
+    const bottom = Math.min(piece?.bottom ?? cell.bottom, area.bottom);
+    if (bottom > top) style = { left: cell.right + delta - EDGE_REACH, top, width: EDGE_REACH * 2, height: bottom - top };
+  } else {
+    const y = cell.bottom + delta;
+    if (y >= area.top && y <= area.bottom) {
+      const left = sizing ? table.left : cell.left;
+      const right = sizing ? table.right : cell.right;
+      style = { top: y - EDGE_REACH, left, width: right - left, height: EDGE_REACH * 2 };
+    }
   }
-  if (style || !dragging) return style;
-  return { left: cell.right, top: cell.bottom, width: 0, height: 0, visibility: 'hidden' };
+  if (style || !sizing) return style;
+  return { left: cell.right + (edge.kind === 'column' ? delta : 0),
+    top: cell.bottom + (edge.kind === 'row' ? delta : 0), width: 0, height: 0, visibility: 'hidden' };
 }
 
 /* The screen area of a whole table, one row, or one column. */
@@ -244,10 +263,19 @@ export function TableTools({ session, locked }: TableToolsProps) {
 
   const press = useRef<Press | null>(null);
   const anchorBack = useRef(0);
+
+  /* The border drag as of now (the state lags a render behind), the pointer's last spot, the */
+  /* note's scroll at the drag start, and the edge scrolling loop: its frame, the last frame's */
+  /* time, and the part of a pixel still to scroll. */
+  const sizingNow = useRef<Sizing | null>(null);
+  const pointerAt = useRef({ x: 0, y: 0 });
+  const edgeFrame = useRef(0);
+  const lastFrame = useRef(0);
+  const edgeCarry = useRef(0);
   const latest = useRef({ pick, locked, sizing, hoverTable: hover?.table ?? null });
   latest.current = { pick, locked, sizing, hoverTable: hover?.table ?? null };
-  const actions = useRef({ choose, clear, removePart });
-  actions.current = { choose, clear, removePart };
+  const actions = useRef({ choose, clear, removePart, endSizing });
+  actions.current = { choose, clear, removePart, endSizing };
 
   /* The tools are fixed to the window, so over them the browser would scroll the window, not the */
   /* note (the pointer on a column's border stopped scrolling); the wheel scrolls the note instead. */
@@ -372,15 +400,32 @@ export function TableTools({ session, locked }: TableToolsProps) {
     };
   }, []);
 
-  /* While a border is dragged, the browser's scroll anchoring is off (see holdScroll). */
+  /* While a border is dragged, the browser's scroll anchoring is off (see holdScroll) and the */
+  /* note scrolls at its edges (see scrollAtEdge); both stop if the editor goes mid-drag. */
   useEffect(() => () => {
     cancelAnimationFrame(anchorBack.current);
+    cancelAnimationFrame(edgeFrame.current);
+    sizingNow.current = null;
     session.scroller()?.classList.remove('is-sizing-table');
   }, [session]);
 
-  /* Laying the pages out again while a border is dragged moves rows to other pages, and the */
-  /* browser's scroll anchoring would then scroll the note to keep some line in place, sliding the */
-  /* table away under the pointer. It is turned off for the drag and the layout after it. */
+  /* Escape cancels a border drag. */
+  const dragging = Boolean(sizing);
+  useEffect(() => {
+    if (!dragging) return;
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key !== 'Escape') return;
+      event.preventDefault();
+      event.stopPropagation();
+      actions.current.endSizing(true);
+    }
+    window.addEventListener('keydown', handleKeyDown, true);
+    return () => window.removeEventListener('keydown', handleKeyDown, true);
+  }, [dragging]);
+
+  /* Setting the size on release lays the pages out again, which can move rows to other pages, and */
+  /* the browser's scroll anchoring would then scroll the note to keep some line in place. It is */
+  /* turned off for the drag and the layout after it. */
   function holdScroll(hold: boolean) {
     const scroller = session.scroller();
     cancelAnimationFrame(anchorBack.current);
@@ -426,34 +471,108 @@ export function TableTools({ session, locked }: TableToolsProps) {
     session.linesChanged(paragraph, false);
   }
 
-  /* Dragging a border: columns get stored widths (measured from the screen when the drag starts), */
-  /* rows get a stored height. The whole drag is one undo step. */
+  /* Dragging a border: the sizes it starts from are measured, but nothing changes until release. */
   function startSizing(event: ReactPointerEvent<HTMLDivElement>) {
     if (!edge) return;
     event.preventDefault();
     event.currentTarget.setPointerCapture(event.pointerId);
     holdScroll(true);
     session.checkpoint();
-    const start = edge.kind === 'column' ? event.clientX : event.clientY;
-    const widths = edge.kind === 'column' ? ensureColumns(edge.table) : [];
+    const column = edge.kind === 'column';
+    const start = column ? event.clientX : event.clientY;
+    const scroller = session.scroller();
+    const scroll = (column ? scroller?.scrollLeft : scroller?.scrollTop) ?? 0;
+    const widths = column ? measureColumns(edge.table).map(width => Math.round(Math.max(MIN_COLUMN_WIDTH, width))) : [];
     const { scale } = zoomed(edge.table);
-    const height = edge.kind === 'row' ? edge.table.rows[edge.index].getBoundingClientRect().height / scale : 0;
-    setSizing({ ...edge, start, pointer: start, widths, height, scale });
+    const row = edge.table.rows[edge.index];
+    const height = column ? 0 : row.getBoundingClientRect().height / scale;
+    const least = column ? 0 : rowMinHeight(row, scale);
+    const most = column ? Infinity : Math.max(height, least, rowHeightLimit(row, scale));
+    pointerAt.current = { x: event.clientX, y: event.clientY };
+    updateSizing({ ...edge, start, scroll, widths, height, least, most, pointer: start, moved: false, scale });
+    lastFrame.current = 0;
+    edgeCarry.current = 0;
+    cancelAnimationFrame(edgeFrame.current);
+    edgeFrame.current = requestAnimationFrame(scrollAtEdge);
   }
 
   function moveSizing(event: ReactPointerEvent<HTMLDivElement>) {
-    if (!sizing) return;
-    const pointer = sizing.kind === 'column' ? event.clientX : event.clientY;
-    const change = (pointer - sizing.start) / sizing.scale;
-    if (sizing.kind === 'column') resizeColumn(sizing.table, sizing.index, sizing.widths, change);
-    else setRowHeight(sizing.table.rows[sizing.index], sizing.height + change);
-    session.layOutPages?.();
-    setSizing({ ...sizing, pointer });
+    const current = sizingNow.current;
+    if (!current) return;
+    pointerAt.current = { x: event.clientX, y: event.clientY };
+    const pointer = current.kind === 'column' ? event.clientX : event.clientY;
+    updateSizing({ ...current, pointer, moved: current.moved || Math.abs(pointer - current.start) >= 3 });
   }
 
-  function endSizing() {
-    if (!sizing) return;
-    setSizing(null);
+  function updateSizing(next: Sizing | null) {
+    sizingNow.current = next;
+    setSizing(next);
+  }
+
+  /* How much the row or column changes (at 100% zoom) for the pointer now and the note's scroll. */
+  /* The note may have scrolled since the press (at an edge, or with the wheel), moving the border */
+  /* as much, so that is added in and the line stays at the pointer. It stops at the smallest size */
+  /* (a row's text or page), and a column stops at the content's right edge. */
+  function limitedChange(current: Sizing, scroll: number) {
+    const raw = (current.pointer - current.start + scroll - current.scroll) / current.scale;
+    return current.kind === 'row' ? Math.min(Math.max(current.least - current.height, raw), current.most - current.height)
+      : columnResizeChange(current.table, current.index, current.widths, raw);
+  }
+
+  /* While a border is dragged near an edge of the note (or past it, as the pointer stays captured), */
+  /* the note scrolls that way: up or down for a row, sideways for a column when the page is wider */
+  /* than the pane. It waits until the pointer has moved, so pressing a border near an edge does */
+  /* not start it, and stops once the line cannot go further (a size limit). Scrolls are whole */
+  /* pixels, with the rest kept for the next frame; the note's scroll listener redraws the line. */
+  function scrollAtEdge(now: number) {
+    const current = sizingNow.current;
+    const scroller = session.scroller();
+    if (!current || !scroller || !current.table.isConnected) return;
+    const elapsed = lastFrame.current ? now - lastFrame.current : 16;
+    lastFrame.current = now;
+    const row = current.kind === 'row';
+    const pointer = row ? pointerAt.current.y : pointerAt.current.x;
+    if (current.moved) {
+      const box = scroller.getBoundingClientRect();
+      const area = row ? visibleArea(current.table) : { top: box.left, bottom: box.right };
+      edgeCarry.current += edgeScrollStep(pointer, area.top, area.bottom, elapsed);
+      let step = Math.trunc(edgeCarry.current);
+      edgeCarry.current -= step;
+      if (step) {
+        const scroll = row ? scroller.scrollTop : scroller.scrollLeft;
+        if (limitedChange(current, scroll + step) === limitedChange(current, scroll)) step = 0;
+      }
+      if (step && row) scroller.scrollTop += step;
+      else if (step) scroller.scrollLeft += step;
+    }
+    edgeFrame.current = requestAnimationFrame(scrollAtEdge);
+  }
+
+  /* A drag ends on release: the size is set once, as one undo step, and the pages laid out at once */
+  /* (no frame shows the old layout). A row that no longer fits on its page then moves to the next */
+  /* one, and the note scrolls with it, so its border stays where the line was let go. Escape, a */
+  /* cancelled pointer or lost capture change nothing, so saving adds no undo step. */
+  function endSizing(cancel = false) {
+    const current = sizingNow.current;
+    if (!current) return;
+    cancelAnimationFrame(edgeFrame.current);
+    const scroller = session.scroller();
+    const scroll = (current.kind === 'column' ? scroller?.scrollLeft : scroller?.scrollTop) ?? current.scroll;
+    const delta = limitedChange(current, scroll);
+    if (!cancel && current.moved && Math.abs(delta) >= 0.5) {
+      if (current.kind === 'column') {
+        ensureColumns(current.table);
+        resizeColumn(current.table, current.index, current.widths, delta);
+        session.layOutPages?.();
+      } else {
+        const released = current.cell.getBoundingClientRect().bottom + delta * current.scale;
+        setRowHeight(current.table.rows[current.index], current.height + delta);
+        session.layOutPages?.();
+        const moved = current.cell.getBoundingClientRect().bottom - released;
+        if (scroller && Math.abs(moved) > 2) scroller.scrollTop += moved;
+      }
+    }
+    updateSizing(null);
     setEdge(null);
     session.commit();
     holdScroll(false);
@@ -573,7 +692,10 @@ export function TableTools({ session, locked }: TableToolsProps) {
   const keepSelection = (event: ReactMouseEvent) => event.preventDefault();
 
   const handle = sizing ?? (edge?.table.isConnected ? edge : null);
-  const guide = handle ? guideStyle(handle, Boolean(sizing)) : null;
+  const scroll = session.scroller();
+  const guideScroll = sizing ? ((sizing.kind === 'column' ? scroll?.scrollLeft : scroll?.scrollTop) ?? sizing.scroll) : 0;
+  const guideDelta = sizing ? limitedChange(sizing, guideScroll) * sizing.scale : 0;
+  const guide = handle ? guideStyle(handle, sizing, guideDelta, pointerAt.current.y) : null;
   const cellTools = (
     <>
       {handle && guide && (
@@ -583,8 +705,12 @@ export function TableTools({ session, locked }: TableToolsProps) {
           aria-hidden="true"
           onPointerDown={startSizing}
           onPointerMove={moveSizing}
-          onPointerUp={endSizing}
-          onPointerCancel={endSizing}
+          onPointerUp={event => {
+            moveSizing(event);
+            endSizing();
+          }}
+          onPointerCancel={() => endSizing(true)}
+          onLostPointerCapture={() => endSizing(true)}
         />
       )}
 

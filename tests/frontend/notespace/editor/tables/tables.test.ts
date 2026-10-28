@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { unmark } from '../../../../../src/frontend/notespace/editor/comments/comments';
 import {
-  borderNear, cellRange, columnElements, hasMergedCells, headerIntoHead, hydrateTables, insertColumn, insertRow, isFitToWidth, mergeCells, MIN_COLUMN_WIDTH, MIN_ROW_HEIGHT,
+  borderNear, cellRange, columnElements, columnResizeChange, hasMergedCells, headerIntoHead, hydrateTables, insertColumn, insertRow, isFitToWidth, measureColumns, mergeCells, MIN_COLUMN_WIDTH, MIN_ROW_HEIGHT,
   moveColumn, moveRow, removeColumn, removeRow, repeatsHeader, resizeColumn, setColumnWidth, setFitToWidth, setHeaders, setRepeatHeader, setRowHeight,
-  tableGrid, tableHeaders, unmergeCell
+  rowHeightLimit, rowMinHeight, tableGrid, tableHeaders, tableWidthLimit, unmergeCell
 } from '../../../../../src/frontend/notespace/editor/tables/tables';
 
 /* A table built from rows of text; the first row is a header row when header is true. */
@@ -231,6 +231,47 @@ function sized(widths: number[]) {
 const storedWidths = (element: HTMLTableElement) => columnElements(element).map(col => Number(col.dataset.width));
 
 describe('column widths and row heights', () => {
+  it('measures initial column widths without modifying a table during preview', () => {
+    const element = table([['a', 'b'], ['c', 'd']]);
+    Array.from(element.querySelectorAll('th, td')).forEach((cell, index) => {
+      const width = index % 2 ? 80 : 120;
+      const left = index % 2 ? 120 : 0;
+      Object.defineProperty(cell, 'getBoundingClientRect', {
+        configurable: true, value: () => ({ left, top: 0, right: left + width, bottom: 30, width, height: 30 })
+      });
+    });
+    const before = element.outerHTML;
+    expect(measureColumns(element)).toEqual([120, 80]);
+    expect(element.outerHTML).toBe(before);
+    expect(element.querySelector('colgroup')).toBeNull();
+  });
+
+  it('clamps column guide positions to the same limits as committed sizes', () => {
+    const element = sized([100, 200, 300]);
+    expect(columnResizeChange(element, 0, [100, 200, 300], -500)).toBe(MIN_COLUMN_WIDTH - 100);
+    expect(columnResizeChange(element, 0, [100, 200, 300], 500)).toBe(200 - MIN_COLUMN_WIDTH);
+    expect(columnResizeChange(element, 2, [100, 200, 300], 500)).toBe(500);
+    setFitToWidth(element, false);
+    expect(columnResizeChange(element, 0, [100, 200, 300], 500)).toBe(500);
+    expect(columnResizeChange(element, 0, [100, 200, 300], -500)).toBe(MIN_COLUMN_WIDTH - 100);
+  });
+
+  it('measures how short a row can be dragged without changing it', () => {
+    const element = table([['a'], ['b']]);
+    const row = element.rows[1];
+    Object.defineProperty(row, 'getBoundingClientRect', {
+      configurable: true, value: () => ({ height: row.style.height ? Number.parseFloat(row.style.height) : 45 })
+    });
+    expect(rowMinHeight(row)).toBe(45);
+    setRowHeight(row, 120);
+    const before = element.outerHTML;
+    expect(rowMinHeight(row)).toBe(45);
+    expect(rowMinHeight(row, 1.5)).toBe(30);
+    expect(element.outerHTML).toBe(before);
+    Object.defineProperty(row, 'getBoundingClientRect', { configurable: true, value: () => ({ height: 10 }) });
+    expect(rowMinHeight(row)).toBe(MIN_ROW_HEIGHT);
+  });
+
   it('with Fit to width on, moves a border between two columns and keeps the total', () => {
     const element = sized([100, 200, 300]);
     resizeColumn(element, 0, [100, 200, 300], 50);
@@ -333,5 +374,137 @@ describe('resize borders', () => {
     expect(borderNear(element, 100, 15, 4)?.cell).toBe(found[0]);
     expect(borderNear(element, 100, 1140, 4)?.cell).toBe(found[1]);
     expect(borderNear(element, 100, 600, 4)).toBeNull();
+  });
+});
+
+
+/* =========================
+   Resize Limits
+   ========================= */
+
+/* jsdom has no layout. Give the editor elements screen rectangles so the tests check the */
+/* same content-edge measurements as the actual browser, without depending on a window size. */
+function box(element: Element, left: number, top: number, width: number, height: number) {
+  element.getBoundingClientRect = () => ({
+    x: left, y: top, left, top, right: left + width, bottom: top + height, width, height,
+    toJSON: () => ({})
+  }) as DOMRect;
+}
+
+describe('table resize limits', () => {
+  it('stops a page-width table at its content margin but still redistributes internal widths', () => {
+    const frame = document.createElement('div');
+    frame.className = 'editor-width is-paginated';
+    frame.style.padding = '96px';
+    const editor = frame.appendChild(document.createElement('div'));
+    editor.className = 'note-editable';
+    const element = editor.appendChild(table([['A', 'B']]));
+    document.body.append(frame);
+    box(frame, 100, 0, 794, 1123);
+    box(editor, 196, 0, 602, 931);
+    box(element, 196, 0, 602, 80);
+
+    expect(tableWidthLimit(element)).toBe(602);
+    expect(columnResizeChange(element, 1, [300, 302], 100)).toBe(0);
+    expect(columnResizeChange(element, 1, [300, 302], -24)).toBe(-24);
+    expect(columnResizeChange(element, 0, [300, 302], 100)).toBe(100);
+
+    element.classList.add('fit-content');
+    expect(columnResizeChange(element, 0, [250, 250], 200)).toBe(102);
+    expect(columnResizeChange(element, 1, [250, 250], 200)).toBe(102);
+    frame.remove();
+  });
+
+  it('uses the pageless editor column, including block padding, rather than the window', () => {
+    const frame = document.createElement('div');
+    frame.className = 'editor-width';
+    const block = frame.appendChild(document.createElement('div'));
+    block.className = 'editable-block';
+    block.style.paddingRight = '12px';
+    const content = block.appendChild(document.createElement('div'));
+    content.className = 'block-content';
+    const element = content.appendChild(table([['A', 'B']]));
+    element.classList.add('fit-content');
+    document.body.append(frame);
+    box(frame, 100, 0, 700, 700);
+    box(block, 100, 0, 700, 700);
+    box(content, 124, 0, 664, 700);
+    box(element, 124, 0, 500, 70);
+
+    expect(tableWidthLimit(element)).toBe(664);
+    expect(columnResizeChange(element, 1, [250, 250], 300)).toBe(164);
+    frame.remove();
+  });
+
+  it('allows shrinking, but not further expansion, when a table already overflows', () => {
+    const frame = document.createElement('div');
+    frame.className = 'editor-width';
+    const element = frame.appendChild(table([['A', 'B']]));
+    element.classList.add('fit-content');
+    document.body.append(frame);
+    box(frame, 0, 0, 500, 300);
+    box(element, 0, 0, 540, 60);
+    expect(columnResizeChange(element, 1, [270, 270], 70)).toBe(0);
+    expect(columnResizeChange(element, 1, [270, 270], -70)).toBe(-70);
+    frame.remove();
+  });
+
+  it('limits a row to a full page, not the room remaining on its current page', () => {
+    const frame = document.createElement('div');
+    frame.className = 'editor-width is-paginated';
+    frame.style.padding = '96px';
+    const sheet = frame.appendChild(document.createElement('div'));
+    sheet.className = 'page-sheet';
+    sheet.style.height = '1123px';
+    const element = frame.appendChild(table([['Header'], ['Data']]));
+    document.body.append(frame);
+    box(element.rows[0], 0, 0, 600, 70);
+    box(element.rows[1], 0, 70, 600, 80);
+    expect(rowHeightLimit(element.rows[1])).toBe(931);
+    element.classList.add('repeat-header');
+    expect(rowHeightLimit(element.rows[1])).toBe(861);
+    frame.remove();
+  });
+
+  it('shares available page height between rows connected by a vertical merge', () => {
+    const frame = document.createElement('div');
+    frame.className = 'editor-width is-paginated';
+    frame.style.padding = '96px';
+    const sheet = frame.appendChild(document.createElement('div'));
+    sheet.className = 'page-sheet';
+    sheet.style.height = '1123px';
+    const element = frame.appendChild(table([['A', 'B'], ['C', 'D'], ['E', 'F']], false));
+    element.rows[0].cells[0].rowSpan = 2;
+    element.rows[1].cells[0].remove();
+    document.body.append(frame);
+    box(element.rows[0], 0, 0, 600, 120);
+    box(element.rows[1], 0, 120, 600, 100);
+    box(element.rows[2], 0, 220, 600, 90);
+
+    expect(rowHeightLimit(element.rows[1])).toBe(811);
+    expect(rowHeightLimit(element.rows[2])).toBe(931);
+    frame.remove();
+  });
+
+  it('keeps room on later pages when the repeated header row itself is made taller', () => {
+    const frame = document.createElement('div');
+    frame.className = 'editor-width is-paginated';
+    frame.style.padding = '96px';
+    const sheet = frame.appendChild(document.createElement('div'));
+    sheet.className = 'page-sheet';
+    sheet.style.height = '1123px';
+    const element = frame.appendChild(table([['Header'], ['Short'], ['Tall'], ['Short']]));
+    element.classList.add('repeat-header');
+    document.body.append(frame);
+    [70, 80, 300, 90].reduce((top, height, index) => { box(element.rows[index], 0, top, 600, height); return top + height; }, 0);
+    expect(rowHeightLimit(element.rows[0])).toBe(631);
+    element.classList.remove('repeat-header');
+    expect(rowHeightLimit(element.rows[0])).toBe(931);
+    frame.remove();
+  });
+
+  it('does not put a page-height limit on rows in Pageless mode', () => {
+    const element = table([['A']]);
+    expect(rowHeightLimit(element.rows[0])).toBe(Infinity);
   });
 });

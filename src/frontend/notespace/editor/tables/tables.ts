@@ -211,9 +211,20 @@ export function setRowHeight(row: HTMLTableRowElement, height: number) {
   return size;
 }
 
-/* How wide each column is on screen now, at 100% zoom. A column only covered by merged cells */
-/* shares their width. */
-function measureColumns(table: HTMLTableElement) {
+/* The smallest a row can be dragged to, at 100% zoom: a row is never shorter than its text, nor */
+/* than the smallest height. Its stored height is taken off for a moment to measure the text, */
+/* which is never painted. */
+export function rowMinHeight(row: HTMLTableRowElement, scale = 1) {
+  const style = row.getAttribute('style');
+  if (row.style.height) row.style.height = '';
+  const text = row.getBoundingClientRect().height / scale;
+  if (style !== null) row.setAttribute('style', style);
+  return Math.max(MIN_ROW_HEIGHT, text);
+}
+
+/* How wide each column is on screen now, at 100% zoom, without changing the table. A column only */
+/* covered by merged cells shares their width. */
+export function measureColumns(table: HTMLTableElement) {
   const { grid, places, width } = tableGrid(table);
   const { scale } = zoomed(table);
   return Array.from({ length: width }, (_, column) => {
@@ -239,12 +250,100 @@ export function ensureColumns(table: HTMLTableElement) {
   return widths.map((width, index) => setColumnWidth(cols[index], width));
 }
 
+/* How wide a table can get (at 100% zoom), from its left edge to the right edge of the note's */
+/* text: a paginated note's page margin, or a pageless note's column and any block padding. With */
+/* nothing laid out around it (a table not in a note), it has no limit. */
+export function tableWidthLimit(table: HTMLTableElement) {
+  const { rect, scale } = zoomed(table);
+  let right = Infinity;
+  for (let parent = table.parentElement; parent; parent = parent.parentElement) {
+    if (!parent.matches('.note-editable, .block-content, .editable-block, .editor-width')) continue;
+    const bounds = parent.getBoundingClientRect();
+    if (bounds.width > 0 && bounds.right > rect.left) {
+      const padding = parseFloat(getComputedStyle(parent).paddingRight) || 0;
+      right = Math.min(right, (bounds.right - rect.left) / scale - padding);
+    }
+    if (parent.classList.contains('editor-width')) break;
+  }
+  return Math.max(0, right);
+}
+
+/* The first and last rows held together with a row by cells merged down; a paginated note */
+/* moves them to another page as one. */
+function rowGroup(table: HTMLTableElement, index: number) {
+  const spans = Array.from(tableGrid(table).places.values()).map(place => [place.row, place.row + place.rows - 1]);
+  let first = index;
+  let last = index;
+  for (let grown = true; grown;) {
+    grown = false;
+    spans.forEach(([top, bottom]) => {
+      if (top > last || bottom < first || (top >= first && bottom <= last)) return;
+      first = Math.min(first, top);
+      last = Math.max(last, bottom);
+      grown = true;
+    });
+  }
+  return [first, last];
+}
+
+/* How tall a row can get in a paginated note (at 100% zoom): it may move to another page, but it */
+/* must fit on one, between the margins, with the rest of its merged rows. On later pages a */
+/* repeated header row sits above it, so it needs that room too; and the header row itself leaves */
+/* room for the tallest group of rows below it. Rounded down, as heights are stored in whole */
+/* pixels and rounding up could leave the rows a pixel too tall for any page. A pageless note has */
+/* no limit. */
+export function rowHeightLimit(row: HTMLTableRowElement, scale = 1) {
+  const table = row.closest('table');
+  const frame = table?.closest<HTMLElement>('.editor-width.is-paginated');
+  const sheet = frame?.querySelector<HTMLElement>('.page-sheet');
+  if (!table || !frame || !sheet) return Infinity;
+  const style = getComputedStyle(frame);
+  const page = (parseFloat(sheet.style.height) || sheet.getBoundingClientRect().height / scale)
+    - (parseFloat(style.paddingTop) || 0) - (parseFloat(style.paddingBottom) || 0);
+  if (page <= 0) return Infinity;
+
+  const rows = Array.from(table.rows);
+  const height = (from: number, to: number) => rows.slice(from, to + 1).reduce((sum, other) => sum + other.getBoundingClientRect().height / scale, 0);
+  const [first, last] = rowGroup(table, row.rowIndex);
+  const others = height(first, last) - row.getBoundingClientRect().height / scale;
+  const header = rows[0];
+  const repeated = repeatsHeader(table) && header && Array.from(header.cells).every(cell => cell.tagName === 'TH');
+  let room = page;
+  if (repeated && first > 0) room -= header.getBoundingClientRect().height / scale;
+  if (repeated && first === 0) {
+    let tallest = 0;
+    for (let index = last + 1; index < rows.length;) {
+      const [, end] = rowGroup(table, index);
+      tallest = Math.max(tallest, height(index, end));
+      index = end + 1;
+    }
+    room -= tallest;
+  }
+  return Math.max(MIN_ROW_HEIGHT, Math.floor(room - others));
+}
+
+/* How far a column's right border can move: the column never gets narrower than the smallest */
+/* width. With Fit to width on, a border between two columns trades width with the next one, */
+/* which never gets narrower than the smallest either; any other border cannot take the table */
+/* past the note's text edge (tableWidthLimit), though a table already wider can still shrink. */
+/* Both the line shown while dragging and the size set on release use this, so the line never */
+/* promises a size the table cannot take. */
+export function columnResizeChange(table: HTMLTableElement, column: number, widths: number[], change: number) {
+  if (widths[column] === undefined) return 0;
+  const low = MIN_COLUMN_WIDTH - widths[column];
+  const next = isFitToWidth(table) && widths[column + 1] !== undefined;
+  const room = Math.max(0, tableWidthLimit(table) - widths.reduce((sum, width) => sum + width, 0));
+  const high = next ? widths[column + 1] - MIN_COLUMN_WIDTH : room;
+  return Math.min(Math.max(change, low), Math.max(low, high));
+}
+
 /* Move the border on the right of a column. With Fit to width on, the next column gives or takes */
 /* the same amount, so the table keeps the width of the page. Dragging the table's right edge turns */
 /* Fit to width off, because the table then needs its own width. */
 export function resizeColumn(table: HTMLTableElement, column: number, startWidths: number[], change: number) {
   const cols = columnElements(table);
   if (!cols[column]) return;
+  change = columnResizeChange(table, column, startWidths, change);
   if (isFitToWidth(table) && cols[column + 1]) {
     const pair = startWidths[column] + startWidths[column + 1];
     const left = Math.min(Math.max(startWidths[column] + change, MIN_COLUMN_WIDTH), pair - MIN_COLUMN_WIDTH);
