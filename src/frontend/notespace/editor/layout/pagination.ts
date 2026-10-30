@@ -1,4 +1,5 @@
 import { useLayoutEffect, useRef, useState, type RefObject } from 'react';
+import { getPreferences } from '../../../app/preferences';
 import type { PageSize } from '../../../../shared/types/note';
 import { useSessionValue, type EditorSession } from '../session';
 import { tableGrid } from '../tables/tables';
@@ -122,7 +123,7 @@ export function revealOriginalHeader(row: HTMLTableRowElement) {
   const bar = scroller.querySelector<HTMLElement>('.page-bar');
   const visibleTop = Math.max(top, bar?.getBoundingClientRect().bottom ?? top) + 16;
   const target = Math.max(0, scroller.scrollTop + row.getBoundingClientRect().top - visibleTop);
-  const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+  const reducedMotion = getPreferences().reduceAnimations || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
   scroller.scrollTo({ top: target, behavior: reducedMotion ? 'instant' : 'smooth' });
 }
 

@@ -117,6 +117,7 @@ function DocumentEditor({ noteId, tabId, history, view, active, onClose, onOpenN
   useCategories();
   const { zoom, hideHeaderWhileTyping, drawing: drawingSettings } = usePreferences();
   const [panel, setPanel] = useState<Panel>(null);
+  const [phoneContents, setPhoneContents] = useState(false);
   const [switching, setSwitching] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
@@ -486,9 +487,10 @@ function DocumentEditor({ noteId, tabId, history, view, active, onClose, onOpenN
           }}
           phoneActions={(
             <>
-              <button type="button" className="option-tile" onClick={() => togglePanel('toc')}>
+              <button type="button" className="option-tile" aria-expanded={phoneContents} aria-controls={`${panelId}-phone-toc`} onClick={() => setPhoneContents(value => !value)}>
                 <Icon name="list" size={16} /> Contents
               </button>
+              <TableOfContents id={`${panelId}-phone-toc`} session={session} content={note.content} open={phoneContents} inline onClose={() => setPanel(null)} />
               {drawingSettings.enabled && (
                 <button type="button" className={`option-tile ${drawing ? 'selected' : ''}`} aria-pressed={drawing} disabled={locked} onClick={() => { setPanel(null); toggleDrawing(); }}>
                   <Icon name="pencil" size={16} /> {drawing ? 'Stop drawing' : 'Draw'}

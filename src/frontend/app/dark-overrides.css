@@ -265,6 +265,11 @@
   background: var(--accent-soft);
 }
 
+/* Keep the breadcrumb's locked indicator green in dark mode. */
+[data-theme="dark"] .lock-status .page-locked:not(.is-open) {
+  color: #68d391;
+}
+
 /* The default blue accent's text in dark mode is a chosen soft blue (#9fb0ff) rather than the */
 /* generated one: at least 5.6:1 on every dark surface. Other accents keep the generated text. */
 :root[data-theme="dark"][data-accent="blue"],

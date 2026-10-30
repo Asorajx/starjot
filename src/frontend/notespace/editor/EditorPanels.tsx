@@ -20,12 +20,14 @@ type TableOfContentsProps = {
   content: string;
   open: boolean;
   onClose: () => void;
+  inline?: boolean;
 };
 
 /* Scroll the note's pane to the top, a heading (by its position in the note), or the end of the */
 /* note. Settings decides whether it slides smoothly or jumps straight there. */
 function jumpTo(session: EditorSession, target: 'top' | 'bottom' | number) {
-  const behavior: ScrollBehavior = getPreferences().contentsScroll === 'instant' ? 'instant' : 'smooth';
+  const preferences = getPreferences();
+  const behavior: ScrollBehavior = preferences.reduceAnimations || preferences.contentsScroll === 'instant' || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth';
   const body = session.body();
   if (target === 'top') {
     session.scroller()?.scrollTo({ top: 0, behavior });
@@ -57,7 +59,21 @@ const MAX_DEPTH = 4;
 /* The outline is generated from the headings in the note's saved content, each indented under */
 /* the heading it belongs to. A heading inside a tab block is named with its tab, such as */
 /* "Setup › Install". */
-export function TableOfContents({ id, session, content, open, onClose }: TableOfContentsProps) {
+export function TableOfContents({ id, session, content, open, onClose, inline = false }: TableOfContentsProps) {
+  const [visible, setVisible] = useState(open);
+  useEffect(() => {
+    if (open) {
+      setVisible(true);
+      return;
+    }
+    if (!inline || getPreferences().reduceAnimations || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      setVisible(false);
+      return;
+    }
+    const timer = window.setTimeout(() => setVisible(false), 180);
+    return () => window.clearTimeout(timer);
+  }, [inline, open]);
+
   const headings = useMemo(() => {
     const template = document.createElement('template');
     template.innerHTML = content;
@@ -76,7 +92,7 @@ export function TableOfContents({ id, session, content, open, onClose }: TableOf
   };
 
   return (
-    <section className="editor-flyout editor-toc-flyout" id={id} aria-label="Table of contents" hidden={!open}>
+    <section className={`editor-flyout editor-toc-flyout ${inline ? 'is-inline' : ''} ${inline && visible && !open ? 'is-collapsing' : ''}`} id={id} aria-label="Table of contents" aria-hidden={!open} hidden={inline ? !visible : !open}>
       <div className="flyout-heading">
         <strong>Table of contents</strong>
         <button type="button" className="flyout-close" aria-label="Close table of contents" onClick={onClose}><Icon name="x" size={17} /></button>
@@ -99,7 +115,7 @@ export function TableOfContents({ id, session, content, open, onClose }: TableOf
         )}
         <button type="button" className="outline-item" onClick={() => go('bottom')}>Bottom of note</button>
       </nav>
-      <div className="flyout-footnote"><Icon name="info" size={14} /> The outline is generated from headings in this note.</div>
+      {!inline && <div className="flyout-footnote"><Icon name="info" size={14} /> The outline is generated from headings in this note.</div>}
     </section>
   );
 }
@@ -166,6 +182,19 @@ export function NoteSettings({
 }: NoteSettingsProps) {
   /* "Copied" shows until the panel is closed. */
   const [copied, setCopied] = useState(false);
+  const [visible, setVisible] = useState(open);
+  useEffect(() => {
+    if (open) {
+      setVisible(true);
+      return;
+    }
+    if (!window.matchMedia('(max-width: 700px)').matches || getPreferences().reduceAnimations || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      setVisible(false);
+      return;
+    }
+    const timer = window.setTimeout(() => setVisible(false), 200);
+    return () => window.clearTimeout(timer);
+  }, [open]);
   useEffect(() => {
     if (!open) setCopied(false);
   }, [open]);
@@ -175,7 +204,7 @@ export function NoteSettings({
     : `A stack holds up to ${STACK_LIMIT} tabs.`;
 
   return (
-    <section className="editor-flyout note-settings-flyout" id={id} aria-label="Note settings" hidden={!open}>
+    <section className={`editor-flyout note-settings-flyout ${!open && visible ? 'is-closing' : ''}`} id={id} aria-label="Note settings" aria-hidden={!open} hidden={!visible}>
       <div className="flyout-heading">
         <strong>Note settings</strong>
         <button type="button" className="flyout-close" aria-label="Close note settings" onClick={onClose}><Icon name="x" size={17} /></button>
@@ -187,7 +216,7 @@ export function NoteSettings({
       <div className="option-grid note-settings-actions">
         <button
           type="button"
-          className={`option-tile ${note.pinned ? 'selected' : ''}`}
+          className={`option-tile note-star-action ${note.pinned ? 'selected' : ''}`}
           aria-pressed={note.pinned}
           data-tooltip="Starred notes are listed first on Notespace Home and in the sidebar."
           data-tooltip-align="start"
@@ -198,7 +227,7 @@ export function NoteSettings({
         </button>
         <button
           type="button"
-          className={`option-tile ${note.locked ? 'selected' : ''}`}
+          className={`option-tile note-lock-action ${note.locked ? 'selected' : ''}`}
           aria-pressed={note.locked}
           data-tooltip="A locked note can be read, selected and commented on, but not changed."
           data-tooltip-align="end"

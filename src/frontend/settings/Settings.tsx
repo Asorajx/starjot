@@ -14,6 +14,7 @@ import { openTrash } from '../notespace/trash';
 import { Switch } from '../components/Switch';
 import { useEscape } from '../lib/useDismiss';
 import { useFocusTrap } from '../lib/useFocusTrap';
+import { useSwipeDown } from '../lib/useSwipeDown';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { downloadFile } from '../lib/files';
 import { damagedCopies, readDamagedCopy, removeDamagedCopy } from '../../backend/storage/damagedCopies';
@@ -214,7 +215,7 @@ const SETTING_GROUPS: { heading: string; tabs: SettingsTab[] }[] = [
 
 /* One setting: its name and what it does on the left, its control on the right. Settings that */
 /* do not work yet are marked "Preview". */
-function SettingInfo({ title, description }: { title: ReactNode; description: string }) {
+function SettingInfo({ title, description }: { title: string; description: string }) {
   const [open, setOpen] = useState(false);
   const infoRef = useRef<HTMLSpanElement>(null);
   const tooltipRef = useRef<HTMLSpanElement>(null);
@@ -245,12 +246,12 @@ function SettingInfo({ title, description }: { title: ReactNode; description: st
   );
 }
 
-function Row({ title, description, preview = false, children }: { title: ReactNode; description?: string; preview?: boolean; children: ReactNode }) {
+function Row({ title, description, infoLabel, preview = false, children }: { title: ReactNode; description?: string; infoLabel?: string; preview?: boolean; children: ReactNode }) {
   return (
     <div className={`setting-row ${preview ? 'is-preview' : ''}`}>
       <div className="setting-row-text">
         <strong>{title}{preview && <span className="preview-tag">Preview</span>}</strong>
-        {description && <SettingInfo title={title} description={description} />}
+        {description && <SettingInfo title={infoLabel ?? (typeof title === 'string' ? title : 'this setting')} description={description} />}
       </div>
       <div className="setting-value">{children}</div>
     </div>
@@ -361,7 +362,7 @@ function Heading({ title, subtitle }: { title: string; subtitle?: string }) {
    ========================= */
 
 function SettingsSectionContent({ section }: { section: SettingsSection }) {
-  const { theme, accent, density, startScreen, onStartup, spaces, sidebar, newNotes, openNotesIn, focusNewTabs, openNewSubNotes, noteColorsInLists, contentsScroll, hideHeaderWhileTyping, tips, spellcheck, typingShortcuts, drawing } = usePreferences();
+  const { theme, accent, density, startScreen, onStartup, spaces, sidebar, newNotes, openNotesIn, focusNewTabs, openNewSubNotes, noteColorsInLists, contentsScroll, hideHeaderWhileTyping, tips, reduceAnimations, spellcheck, typingShortcuts, drawing } = usePreferences();
   const categories = useCategories();
   const set = (changes: Partial<Preferences>) => updatePreferences(changes);
 
@@ -397,6 +398,9 @@ function SettingsSectionContent({ section }: { section: SettingsSection }) {
         <Group title="Help">
           <Row title="Show helpful tips" description="Keyboard shortcuts in button tooltips, the shortcut badge in the search box, and hints in empty lists.">
             <Switch label="Show helpful tips" on={tips} onChange={on => set({ tips: on })} />
+          </Row>
+          <Row title="Reduce animations" description="Minimize interface animations and transitions throughout Starjot.">
+            <Switch label="Reduce animations" on={reduceAnimations} onChange={on => set({ reduceAnimations: on })} />
           </Row>
         </Group>
       </>
@@ -467,6 +471,7 @@ function SettingsSectionContent({ section }: { section: SettingsSection }) {
               <Row
                 key={screen.id}
                 title={<><span className="setting-icon"><Icon name={screen.icon} size={19} /></span> {screen.label}</>}
+                infoLabel={screen.label}
                 description={last ? `${descriptions[screen.id]} At least one space stays on.` : descriptions[screen.id]}
               >
                 <Switch label={screen.label} on={spaces[screen.id]} disabled={last} onChange={on => set({ spaces: { ...spaces, [screen.id]: on } })} />
@@ -713,6 +718,7 @@ function SettingsSectionContent({ section }: { section: SettingsSection }) {
 /* closes it; the keyboard stays inside while it is open. On phones it fills the screen, and the */
 /* sections form a scrollable tab bar on phones. */
 export function Settings({ section, onSectionChange, onClose, focus = null, onFocused }: SettingsProps) {
+  const swipeDown = useSwipeDown(onClose);
   const { spaces } = usePreferences();
   const groups = SETTING_GROUPS.filter(group => spaces.notes || group.heading !== 'Notespace');
   const tabs = groups.flatMap(group => group.tabs);
@@ -749,7 +755,7 @@ export function Settings({ section, onSectionChange, onClose, focus = null, onFo
 
   return (
     <div className="dialog-backdrop settings-backdrop" onMouseDown={event => event.target === event.currentTarget && onClose()}>
-      <div className="settings-window" ref={windowRef} role="dialog" aria-modal="true" aria-labelledby="settings-title">
+      <div className="settings-window" ref={windowRef} role="dialog" aria-modal="true" aria-labelledby="settings-title" {...swipeDown}>
         <nav className="settings-nav" aria-label="Settings sections">
           <h2 id="settings-title" className="settings-title">Settings</h2>
           <input className="settings-search" type="search" aria-label="Search settings" placeholder="Search settings" value={query} onChange={event => setQuery(event.target.value)} />

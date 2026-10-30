@@ -16,6 +16,15 @@ function openApp() {
    ========================= */
 
 describe('preferences', () => {
+  it('remembers reduced animations and applies them to the interface', async () => {
+    const preferences = await openApp();
+    expect(preferences.getPreferences().reduceAnimations).toBe(false);
+    preferences.updatePreferences({ reduceAnimations: true });
+    expect(document.documentElement.dataset.reduceAnimations).toBe('on');
+    vi.resetModules();
+    expect((await openApp()).getPreferences().reduceAnimations).toBe(true);
+  });
+
   it('zooms in steps of 10% and stays between 50% and 200%', async () => {
     const preferences = await openApp();
     const zoom = () => JSON.parse(localStorage.getItem('starjot-preferences-v1') ?? '{}').zoom;

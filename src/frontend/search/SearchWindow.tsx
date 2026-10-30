@@ -5,6 +5,7 @@ import { opensNewTab } from '../lib/clicks';
 import { usePreferences, type Spaces } from '../app/preferences';
 import { useEscape } from '../lib/useDismiss';
 import { useFocusTrap } from '../lib/useFocusTrap';
+import { useSwipeDown } from '../lib/useSwipeDown';
 import { cleanHtml, htmlToText } from '../notespace/sanitize';
 import { starredNotes } from '../notespace/NoteList';
 import { ancestorsOf, categoryName, getNote, noteIcon, noteTitle, useCategories, useNotes } from '../notespace/store';
@@ -272,6 +273,7 @@ function PreviewPane({ entry }: { entry: SearchEntry | null }) {
 /* Enter in a new tab), and Escape closes. Opened from a tab group's +, everything opens in a new */
 /* tab. */
 export function SearchWindow({ initialQuery, inNewTab, onClose, onOpenNote, onOpenCategory, onOpenBoardView, onCreateNote }: SearchWindowProps) {
+  const swipeDown = useSwipeDown(onClose);
   const [query, setQuery] = useState(initialQuery);
   const [titleOnly, setTitleOnly] = useState(false);
   const [scope, setScope] = useState('all');
@@ -362,7 +364,7 @@ export function SearchWindow({ initialQuery, inNewTab, onClose, onOpenNote, onOp
 
   return (
     <div className="search-backdrop" onMouseDown={event => event.target === event.currentTarget && onClose()}>
-      <div ref={windowRef} className="search-window" role="dialog" aria-modal="true" aria-label={inNewTab ? 'Open in a new tab' : 'Search'}>
+      <div ref={windowRef} className="search-window" role="dialog" aria-modal="true" aria-label={inNewTab ? 'Open in a new tab' : 'Search'} {...swipeDown}>
         <div className="search-head">
           <Icon name="search" size={20} />
           <input

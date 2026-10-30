@@ -237,23 +237,26 @@
     height: 100%;
     border: 0;
     border-radius: 0;
+    animation: mobile-settings-slide-up 220ms ease-out;
   }
 
-  /* The row stops short of the close button. The line below the row is drawn on the content */
-  /* instead, so it still runs the full width. */
-  /* Nothing is clipped here, and the row sits above the content, so the section menu opens over */
-  /* the page. */
+  @keyframes mobile-settings-slide-up {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+  }
+
+  /* The search leaves space for Close; the section bar can use the full width below it. */
   .settings-nav {
     position: relative;
     z-index: 2;
     display: block;
     overflow: hidden;
-    margin-right: 56px;
     padding: 8px;
     border-right: 0;
   }
 
   .settings-search {
+    width: calc(100% - 48px);
     margin-bottom: 8px;
   }
 
@@ -289,12 +292,12 @@
     border-top: 1px solid var(--line);
   }
 
-  /* The close button stays at the end of the row, beside the dropdown. */
+  /* The close button stays beside the search field. */
   .settings-close {
     position: fixed;
     top: 8px;
     right: 8px;
-    z-index: 1;
+    z-index: 3;
     width: 40px;
     height: 40px;
     background: var(--paper);
@@ -317,6 +320,11 @@
   .setting-row {
     align-items: flex-start;
     gap: 12px;
+  }
+
+  /* Switches stay beside their labels, including when the label wraps. */
+  .setting-row:has(.setting-switch) {
+    align-items: center;
   }
 
   .setting-row-text {
@@ -358,9 +366,22 @@
   .setting-value {
     margin-top: 4px;
   }
+
+  .setting-row:has(.setting-switch) {
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .setting-row:has(.setting-switch) .setting-value {
+    margin-top: 0;
+  }
 }
 
 @media (prefers-reduced-motion:reduce) {
+  .settings-window {
+    animation: none;
+  }
+
   *,
   *::before,
   *::after {

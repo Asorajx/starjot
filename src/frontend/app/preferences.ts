@@ -119,6 +119,9 @@ export type Preferences = {
   /* Helpful tips: shortcuts in tooltips and the search box, and hints in empty lists. */
   tips: boolean;
 
+  /* Reduce interface motion independently of the operating system setting. */
+  reduceAnimations: boolean;
+
   /* The browser's spelling check in notes, and Markdown shortcuts and "--" while typing. */
   spellcheck: boolean;
   typingShortcuts: boolean;
@@ -237,7 +240,7 @@ function loadTimelineColumns(saved: unknown): TimelineColumns {
 /* Light mode is the default; once a theme is chosen in Settings it is remembered between visits. */
 function load(): Preferences {
   const defaults: Preferences = {
-    theme: 'system', accent: 'blue', density: 'comfortable', startScreen: 'start', onStartup: 'continue', spaces: loadSpaces(null), sidebar: loadSidebar(null), newNotes: loadNewNotes(null), openNotesIn: 'current', focusNewTabs: false, openNewSubNotes: true, zoom: 1, sidebarCollapsed: false, contentsScroll: 'smooth', notesSort: 'edited', notesView: 'list', timelineColumns: loadTimelineColumns(null), noteColorsInLists: true, hideHeaderWhileTyping: true, hiddenDetails: [], tips: true, spellcheck: true, typingShortcuts: true, shortcuts: {}, drawing: loadDrawing(null),
+    theme: 'system', accent: 'blue', density: 'comfortable', startScreen: 'start', onStartup: 'continue', spaces: loadSpaces(null), sidebar: loadSidebar(null), newNotes: loadNewNotes(null), openNotesIn: 'current', focusNewTabs: false, openNewSubNotes: true, zoom: 1, sidebarCollapsed: false, contentsScroll: 'smooth', notesSort: 'edited', notesView: 'list', timelineColumns: loadTimelineColumns(null), noteColorsInLists: true, hideHeaderWhileTyping: true, hiddenDetails: [], tips: true, reduceAnimations: false, spellcheck: true, typingShortcuts: true, shortcuts: {}, drawing: loadDrawing(null),
     exportSettings: normalizeExportSettings(null),
     recentColors: []
   };
@@ -264,6 +267,7 @@ function load(): Preferences {
     hideHeaderWhileTyping: saved.hideHeaderWhileTyping !== false,
     hiddenDetails: Array.isArray(saved.hiddenDetails) ? DETAIL_ROWS.filter(row => (saved.hiddenDetails as unknown[]).includes(row)) : [],
     tips: saved.tips !== false,
+    reduceAnimations: saved.reduceAnimations === true,
     spellcheck: saved.spellcheck !== false,
     typingShortcuts: saved.typingShortcuts !== false,
     shortcuts: loadShortcuts(saved.shortcuts),
@@ -309,6 +313,7 @@ export function applyTheme() {
   document.documentElement.dataset.theme = shownTheme();
   document.documentElement.dataset.accent = preferences.accent;
   document.documentElement.dataset.tips = preferences.tips ? 'on' : 'off';
+  document.documentElement.dataset.reduceAnimations = preferences.reduceAnimations ? 'on' : 'off';
   document.documentElement.dataset.density = preferences.density;
 }
 
