@@ -4,6 +4,7 @@
 
 /* Icons are built from local SVG paths, so no icon package is required. */
 const PATHS = {
+  'sticky': '<path d="M7 3H4v18h3M17 3h3v18h-3M9 8h6M9 12h6M9 16h6"/>',
   'panels-top-left': '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 9v12"/>',
   'book-open': '<path d="M12 7v14M3 18V5a2 2 0 0 1 2-2h4a3 3 0 0 1 3 3 3 3 0 0 1 3-3h4a2 2 0 0 1 2 2v13a2 2 0 0 1-2 2h-4a3 3 0 0 0-3 1 3 3 0 0 0-3-1H5a2 2 0 0 1-2-2Z"/>',
   'layout-dashboard': '<rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/>',

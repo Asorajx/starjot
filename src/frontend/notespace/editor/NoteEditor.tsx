@@ -147,7 +147,6 @@ function DocumentEditor({ noteId, tabId, history, view, active, onClose, onOpenN
   /* One editing session per note in a tab: undo history, Sticky state and editor actions. It is */
   /* kept while another tab is shown (see sessions.ts), so undo still works on coming back. */
   const session = useMemo(() => sessionFor(tabId, noteId), [tabId, noteId]);
-  const sticky = useSessionValue(session, snapshot => snapshot.sticky);
   const revision = useSessionValue(session, snapshot => snapshot.revision);
 
   /* Show edits made to this note in another pane. */
@@ -414,9 +413,6 @@ function DocumentEditor({ noteId, tabId, history, view, active, onClose, onOpenN
     setDrawingMode(!drawing);
   }
 
-  /* Undo, redo and Sticky keep the editor's selection by ignoring the mouse press itself. */
-  const keepSelection = (event: ReactMouseEvent) => event.preventDefault();
-
   return (
     <div ref={wrapRef} className={`editor-wrap ${locked ? 'is-locked' : ''} ${geometry ? 'is-paginated' : ''} ${drawing ? 'is-drawing' : ''} ${smallText ? 'is-small-text' : ''} ${fullWidth ? 'is-full-width' : ''} ${note.color ? 'has-color' : ''}`}>
       {/* The note's colour, as a strip under the tab bar that stays while scrolling and typing. */}
@@ -430,20 +426,6 @@ function DocumentEditor({ noteId, tabId, history, view, active, onClose, onOpenN
         <SaveStatus />
 
         <UndoRedoButtons session={session} locked={locked} />
-
-        {/* Turns red ("Unstick") when the selection is inside one sticky group. */}
-        <button
-          type="button"
-          className={`page-bar-button page-bar-wide note-sticky-button ${sticky === 'unstick' ? 'is-unstick' : ''}`}
-          aria-pressed={sticky === 'unstick'}
-          data-tooltip={sticky === 'unstick' ? 'Unstick' : 'Sticky'}
-          aria-label={sticky === 'unstick' ? 'Unstick the selected group' : 'Sticky: keep the selected content together'}
-          disabled={sticky === 'none' || locked}
-          onMouseDown={keepSelection}
-          onClick={() => session.toggleSticky()}
-        >
-          <Icon name="link" size={17} />
-        </button>
 
         {drawingSettings.enabled && (
           <button
@@ -512,9 +494,6 @@ function DocumentEditor({ noteId, tabId, history, view, active, onClose, onOpenN
                   <Icon name="pencil" size={16} /> {drawing ? 'Stop drawing' : 'Draw'}
                 </button>
               )}
-              <button type="button" className="option-tile" disabled={sticky === 'none' || locked} onClick={() => session.toggleSticky()}>
-                <Icon name="link" size={16} /> {sticky === 'unstick' ? 'Unstick' : 'Sticky'}
-              </button>
             </>
           )}
         />

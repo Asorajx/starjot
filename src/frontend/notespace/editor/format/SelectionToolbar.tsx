@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent, type 
 import { RECENT_COLORS, getPreferences, updatePreferences, usePreferences } from '../../../app/preferences';
 import { Icon, type IconName } from '../../../components/Icon';
 import { COLOR_NAMES, applyColor, colorAt, type ColorClass, type ColorKind, type ColorName } from './colors';
-import type { EditorSession } from '../session';
+import { useSessionValue, type EditorSession } from '../session';
 import { useEscape } from '../../../lib/useDismiss';
 import { changeLinesType, LINE_TYPES, linesInRange, typeOfLine, type LineType } from './lineTypes';
 import { elementOf } from '../../../lib/nodes';
@@ -226,6 +226,7 @@ function rememberColor(color: ColorClass) {
 /* the selection already has shows as on. */
 /* It uses fixed positioning, so it lines up with the selection at any note zoom level. */
 export function SelectionToolbar({ session, locked }: SelectionToolbarProps) {
+  const sticky = useSessionValue(session, snapshot => snapshot.sticky);
   const [anchor, setAnchor] = useState<Anchor | null>(null);
   const [mode, setMode] = useState<Mode>('buttons');
   const [value, setValue] = useState('');
@@ -629,6 +630,21 @@ export function SelectionToolbar({ session, locked }: SelectionToolbarProps) {
               <Icon name="copy" size={15} />
             </button>
           )}
+          <button
+            type="button"
+            className={`selection-tool note-sticky-button ${sticky === 'unstick' ? 'is-unstick' : ''}`}
+            aria-label={sticky === 'unstick' ? 'Unstick the selected group' : 'Sticky: keep selected lines together'}
+            aria-pressed={sticky === 'unstick'}
+            data-tooltip={sticky === 'unstick' ? 'Unstick' : 'Sticky'}
+            disabled={sticky === 'none'}
+            onMouseDown={keepSelection}
+            onClick={() => {
+              restoreSelection();
+              session.toggleSticky();
+            }}
+          >
+            <Icon name="sticky" size={15} />
+          </button>
         </div>
       )}
       {mode === 'buttons' && (

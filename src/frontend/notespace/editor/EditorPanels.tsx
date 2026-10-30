@@ -140,7 +140,7 @@ type NoteSettingsProps = {
   onExport: () => void;
   onDelete: () => void;
 
-  /* On phones, the note's buttons that leave the top bar there (Contents, Draw, Sticky). */
+  /* On phones, the note's buttons that leave the top bar there (Contents, Draw). */
   phoneActions?: ReactNode;
 };
 

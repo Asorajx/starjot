@@ -1266,7 +1266,7 @@
     font-size: 20px;
   }
 
-  /* Phones keep the bar to one row: Forward, Contents, Draw and Sticky move into Note settings */
+  /* Phones keep the bar to one row: Forward, Contents and Draw move into Note settings */
   /* (its first row there), leaving Back, the breadcrumb, Undo, Redo and Note settings. */
   .page-bar-forward,
   .page-bar-wide {
