@@ -44,6 +44,8 @@ describe('keyboard shortcuts', () => {
   it('refuses keys used for typing or kept by the computer, and finds keys another shortcut has', () => {
     expect(checkCombo('K', 'search')).toMatchObject({ kind: 'refused' });
     expect(checkCombo('Ctrl+B', 'search')).toMatchObject({ kind: 'refused' });
+    expect(checkCombo('Ctrl+[', 'search')).toMatchObject({ kind: 'refused' });
+    expect(checkCombo('Ctrl+]', 'search')).toMatchObject({ kind: 'refused' });
     expect(checkCombo('Alt+Tab', 'search')).toMatchObject({ kind: 'refused' });
     expect(checkCombo('Ctrl+Enter', 'search')).toMatchObject({ kind: 'refused' });
     expect(checkCombo('Ctrl+Shift+Q', 'switcher')).toMatchObject({ kind: 'refused' });

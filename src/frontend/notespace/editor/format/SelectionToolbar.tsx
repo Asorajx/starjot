@@ -15,6 +15,7 @@ import { isLinkShortcut } from '../../../app/shortcuts';
 import { blockWords, linkableBlock, linkIdOf } from '../links/blockLinks';
 import { getOffset, setOffset } from '../text/caret';
 import { indentList } from '../text/blockKeys';
+import { changeLineIndent, indentLineAt, lineIndent, MAX_INDENT } from '../text/indent';
 import { insertImageFiles } from '../images/images';
 import { useMediaQuery } from '../../../lib/useMediaQuery';
 import { UndoRedoButtons } from '../noteParts';
@@ -422,9 +423,10 @@ export function SelectionToolbar({ session, locked, active = true }: SelectionTo
   /* their kind when they all share one. */
   const body = session.body();
   const caretLine = mobile && body && caretRange.current ? lineAtCaret(caretRange.current.startContainer, body) : null;
-  const listItem = mobile && caretRange.current ? elementOf(caretRange.current.startContainer)?.closest<HTMLLIElement>('li') : null;
-  const listRoot = listItem?.closest<HTMLElement>('.block-content') ?? body;
-  const canIndent = Boolean(listItem && listRoot && listRoot.contains(listItem) && savedRange.current && listRoot.contains(savedRange.current.startContainer) && listRoot.contains(savedRange.current.endContainer));
+  const indentRange = mobile ? caretRange.current : savedRange.current;
+  const indentLine = body && indentRange ? indentLineAt(indentRange.startContainer, body) : null;
+  const indentRoot = indentLine?.closest<HTMLElement>('.block-content') ?? body;
+  const canIndent = Boolean(indentLine && indentRoot && savedRange.current && indentRoot.contains(savedRange.current.startContainer) && indentRoot.contains(savedRange.current.endContainer));
   const lines = mobile ? (caretLine && !locked ? [caretLine] : null) : anchor && !locked && body && savedRange.current ? linesInRange(savedRange.current, body) : null;
   const lineKinds = new Set(lines?.map(typeOfLine));
   const lineKind = lineKinds.size === 1 ? [...lineKinds][0] : null;
@@ -514,12 +516,14 @@ export function SelectionToolbar({ session, locked, active = true }: SelectionTo
     setFormatted(count => count + 1);
   }
 
-  /* List indentation follows the same rules and undo behavior as Tab and Shift + Tab. */
+  /* List items nest; other lines move without changing their format. */
   function changeIndent(out: boolean) {
-    if (!canIndent || !listRoot) return;
+    if (!canIndent || !indentRoot || !indentLine) return;
     restoreSelection();
-    const result = indentList(listRoot, out);
-    if (!result || result.kind === 'blocked') return;
+    if (indentLine.tagName === 'LI') {
+      const result = indentList(indentRoot, out);
+      if (!result || result.kind === 'blocked') return;
+    } else if (!changeLineIndent(indentLine, out)) return;
     session.checkpoint();
     session.commit();
     setFormatted(count => count + 1);
@@ -741,13 +745,9 @@ export function SelectionToolbar({ session, locked, active = true }: SelectionTo
           )}
           {mobile ? renderSticky() : renderLink()}
           {mobile && <span className="mobile-tool-divider" aria-hidden="true" />}
-          {mobile && (
-            <>
-              <button type="button" className="selection-tool" aria-label="Decrease list indent" data-tooltip="Decrease list indent" disabled={!canIndent} onMouseDown={keepSelection} onClick={() => changeIndent(true)}><Icon name="indent-decrease" size={17} /></button>
-              <button type="button" className="selection-tool" aria-label="Increase list indent" data-tooltip="Increase list indent" disabled={!canIndent} onMouseDown={keepSelection} onClick={() => changeIndent(false)}><Icon name="indent-increase" size={17} /></button>
-              <span className="mobile-tool-divider" aria-hidden="true" />
-            </>
-          )}
+          <button type="button" className="selection-tool" aria-label="Decrease indent" data-tooltip="Decrease indent" data-shortcut="Shift + Tab" disabled={!canIndent || Boolean(indentLine && indentLine.tagName !== 'LI' && lineIndent(indentLine) === 0)} onMouseDown={keepSelection} onClick={() => changeIndent(true)}><Icon name="indent-decrease" size={17} /></button>
+          <button type="button" className="selection-tool" aria-label="Increase indent" data-tooltip="Increase indent" data-shortcut="Tab" disabled={!canIndent || Boolean(indentLine && indentLine.tagName !== 'LI' && lineIndent(indentLine) === MAX_INDENT)} onMouseDown={keepSelection} onClick={() => changeIndent(false)}><Icon name="indent-increase" size={17} /></button>
+          {mobile && <span className="mobile-tool-divider" aria-hidden="true" />}
           {!locked && (
             <button
               type="button"

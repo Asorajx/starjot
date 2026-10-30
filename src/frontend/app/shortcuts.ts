@@ -43,7 +43,7 @@ export const FIXED_SHORTCUTS: { action: string; group: ShortcutGroup; keys: stri
   { action: 'Bold, italic and underline', group: 'In a note', keys: ['Ctrl+B', 'Ctrl+I', 'Ctrl+U'] },
   { action: 'Add a link to the selected words, or edit the link at the caret', group: 'In a note', keys: ['Ctrl+K'] },
   { action: 'Open or close a toggle', group: 'In a note', keys: ['Ctrl+Enter'] },
-  { action: 'Indent or outdent a list item', group: 'In a note', keys: ['Tab', 'Shift+Tab'] }
+  { action: 'Increase or decrease indent', group: 'In a note', keys: ['Tab', 'Shift+Tab', 'Ctrl+]', 'Ctrl+['] }
 ];
 
 /* Keys that cannot be given to a shortcut, and why: the computer or the browser keeps them, or */
@@ -61,6 +61,8 @@ const TAKEN: Record<string, string> = {
   'Ctrl+C': 'Ctrl + C is Copy.',
   'Ctrl+X': 'Ctrl + X is Cut.',
   'Ctrl+V': 'Ctrl + V is Paste.',
+  'Ctrl+]': 'Ctrl + ] increases indentation in a note.',
+  'Ctrl+[': 'Ctrl + [ decreases indentation in a note.',
   'Ctrl+Shift+Q': 'Ctrl + Shift + Q quits Chrome and Edge.'
 };
 

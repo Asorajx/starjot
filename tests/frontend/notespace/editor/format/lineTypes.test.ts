@@ -29,6 +29,13 @@ function change(html: string, type: LineType) {
   return body.innerHTML;
 }
 
+it('keeps indentation when changing between text, headings and code', () => {
+  expect(change('<p data-indent="2">[Words]</p>', 'h2')).toBe('<h2 data-indent="2">Words</h2>');
+  expect(change('<h2 data-indent="2">[Words]</h2>', 'text')).toBe('<p data-indent="2">Words</p>');
+  expect(change('<p data-indent="2">[Words]</p>', 'code')).toContain('<pre data-indent="2">');
+  expect(change('<pre data-indent="2"><code>[Words]</code></pre>', 'text')).toBe('<p data-indent="2">Words</p>');
+});
+
 
 /* =========================
    Finding Lines

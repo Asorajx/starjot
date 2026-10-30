@@ -255,6 +255,32 @@ describe('table and toggle keys', () => {
    ========================= */
 
 describe('headings and lists', () => {
+  it('saves only valid text indentation levels', () => {
+    expect(cleanHtml('<p data-indent="2">Text</p><h2 data-indent="4">Heading</h2><pre data-indent="1">Code</pre>')).toContain('<p data-indent="2">Text</p><h2 data-indent="4">Heading</h2><pre data-indent="1">Code</pre>');
+    expect(cleanHtml('<p data-indent="5">Text</p><p data-indent="-1">More</p><span data-indent="1">Inline</span>')).not.toContain('data-indent');
+  });
+  it('indents an ordinary paragraph with Tab and outdents with Shift + Tab', () => {
+    const body = editor('<p>Words</p>');
+    placeCaret(body.querySelector('p')!.firstChild!, 2);
+    const event = press('Tab');
+    expect(handleBlockKeys(event, body)).toEqual({ kind: 'changed' });
+    expect(event.defaultPrevented).toBe(true);
+    expect(body.querySelector('p')?.getAttribute('data-indent')).toBe('1');
+    expect(handleBlockKeys(press('Tab', true), body)).toEqual({ kind: 'changed' });
+    expect(body.querySelector('p')?.hasAttribute('data-indent')).toBe(false);
+  });
+  it.each(['p', 'h2', 'pre'])('indents a %s with the bracket shortcut without moving the caret', tag => {
+    const body = editor(`<${tag}>Words</${tag}>`);
+    const line = body.firstElementChild as HTMLElement;
+    const text = line.firstChild as Text;
+    placeCaret(text, 2);
+    expect(handleBlockKeys(press(']', false, true), body)).toEqual({ kind: 'changed' });
+    expect(line.getAttribute('data-indent')).toBe('1');
+    expect(window.getSelection()?.anchorNode).toBe(text);
+    expect(window.getSelection()?.anchorOffset).toBe(2);
+    expect(handleBlockKeys(press('[', false, true), body)).toEqual({ kind: 'changed' });
+    expect(line.hasAttribute('data-indent')).toBe(false);
+  });
   it('Backspace at the start of a heading turns it into normal text, keeping its words', () => {
     const body = editor('<p>Above</p><h3>Plan <strong>now</strong></h3>');
     placeCaret(body.querySelector('h3')?.firstChild as Node, 0);

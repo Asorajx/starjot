@@ -110,6 +110,8 @@ function putInPlace(line: HTMLElement, element: HTMLElement) {
 /* below it otherwise. Returns the element holding its words. */
 function changeLine(line: HTMLElement, type: LineType) {
   const { element, text } = buildLine(type);
+  const indent = line.getAttribute('data-indent');
+  if (indent && !LIST_TYPES.includes(type)) text.setAttribute('data-indent', indent);
   const nested = Array.from(line.children).filter(isList);
   const keepsNested = LIST_TYPES.includes(type);
   Array.from(line.childNodes).forEach(child => {
@@ -129,6 +131,8 @@ function linesOfCode(pre: HTMLElement, type: LineType) {
   const rows = (pre.textContent ?? '').replace(/\n$/, '').split('\n');
   const made = rows.map(row => {
     const { element, text } = buildLine(type);
+    const indent = pre.getAttribute('data-indent');
+    if (indent && !LIST_TYPES.includes(type)) text.setAttribute('data-indent', indent);
     text.replaceChildren(row ? document.createTextNode(row) : document.createElement('br'));
     return { element, text };
   });
@@ -156,6 +160,8 @@ export function changeLinesType(lines: HTMLElement[], type: LineType, root: HTML
   if (type === 'code') {
     if (lines.length === 1 && lines[0].tagName === 'PRE') return { first: lines[0], last: lines[0] };
     const { element, text } = buildLine('code');
+    const indent = lines.length === 1 ? lines[0].getAttribute('data-indent') : null;
+    if (indent) element.setAttribute('data-indent', indent);
     text.textContent = lines.map(line => (line.tagName === 'PRE' ? (line.textContent ?? '').replace(/\n$/, '') : childText(line))).join('\n');
     putInPlace(lines[0], element);
     lines.slice(1).forEach(remove);

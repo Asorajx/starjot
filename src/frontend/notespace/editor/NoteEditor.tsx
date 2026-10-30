@@ -253,8 +253,7 @@ function DocumentEditor({ noteId, tabId, history, view, active, onClose, onOpenN
       const key = event.key.toLowerCase();
       const command = (event.ctrlKey || event.metaKey) && !event.altKey;
 
-      /* Escape closes an open panel first, then leaves drawing mode, then returns to the Notespace */
-      /* home page. */
+      /* Escape closes an open panel first, then leaves drawing mode before leaving the note. */
       if (event.key === 'Escape') {
         event.preventDefault();
         if (panel) setPanel(null);

@@ -104,6 +104,12 @@
   margin: 0 0 16px;
 }
 
+/* Indentation follows the note's text size and stays usable in narrow columns. */
+:is(.article-body, .block-content) :is(p, h1, h2, h3, h4, h5, h6, pre)[data-indent="1"] { margin-left: min(1.5em, 6%); }
+:is(.article-body, .block-content) :is(p, h1, h2, h3, h4, h5, h6, pre)[data-indent="2"] { margin-left: min(3em, 12%); }
+:is(.article-body, .block-content) :is(p, h1, h2, h3, h4, h5, h6, pre)[data-indent="3"] { margin-left: min(4.5em, 18%); }
+:is(.article-body, .block-content) :is(p, h1, h2, h3, h4, h5, h6, pre)[data-indent="4"] { margin-left: min(6em, 24%); }
+
 .article-body ul,
 .block-content ul {
   padding-left: 24px;

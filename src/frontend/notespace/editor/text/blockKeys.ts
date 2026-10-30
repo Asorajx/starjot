@@ -3,6 +3,7 @@ import { getRange, setRange } from './caret';
 import { caretAtEdge, caretElement, closestAtCaret, emptyParagraph, isEmptyContent, placeCaret } from './dom';
 import { joinLineOfToggle, toggleBody, withBreak, type LineChange } from './lines';
 import { tabKeys } from './tabs';
+import { changeLineIndent, indentLineAt } from './indent';
 
 
 /* =========================
@@ -506,6 +507,22 @@ function listIndentKeys(event: KeyboardEvent, root: HTMLElement): KeyResult | nu
   return indentList(root, event.shiftKey || stepOut, stepOut);
 }
 
+/* Tab and Ctrl/Cmd + brackets change a text line's indent. Lists and table cells handle Tab first. */
+function textIndentKeys(event: KeyboardEvent, root: HTMLElement): KeyResult | null {
+  const tab = event.key === 'Tab' && !event.ctrlKey && !event.metaKey && !event.altKey;
+  const brackets = (event.ctrlKey || event.metaKey) && !event.altKey && !event.shiftKey && (event.key === '[' || event.key === ']');
+  if (!tab && !brackets) return null;
+  const node = window.getSelection()?.focusNode;
+  const line = node ? indentLineAt(node, root) : null;
+  if (!line) return null;
+  const selection = window.getSelection();
+  if (!selection?.rangeCount || !root.contains(selection.getRangeAt(0).commonAncestorContainer)) return null;
+  event.preventDefault();
+  const out = tab ? event.shiftKey : event.key === '[';
+  if (line.tagName === 'LI') return indentList(root, out) ?? { kind: 'blocked' };
+  return changeLineIndent(line, out) ? { kind: 'changed' } : { kind: 'blocked' };
+}
+
 /* Enter in a checklist item moves the text after the caret into a new, unticked item below (the */
 /* browser would copy the tick). Enter in an empty item leaves the list, like other lists. */
 function splitChecklistItem(event: KeyboardEvent, item: HTMLLIElement): KeyResult {
@@ -529,5 +546,5 @@ export function handleBlockKeys(event: KeyboardEvent, root: HTMLElement): KeyRes
   leaveCommentMark(event);
   const cell = closestAtCaret<HTMLTableCellElement>('td, th');
   if (cell && root.contains(cell)) return cellKeys(event, cell);
-  return enterTableKeys(event) ?? headingKeys(event, root) ?? tabKeys(event) ?? toggleKeys(event) ?? listIndentKeys(event, root) ?? listKeys(event, root);
+  return enterTableKeys(event) ?? headingKeys(event, root) ?? tabKeys(event) ?? toggleKeys(event) ?? listIndentKeys(event, root) ?? textIndentKeys(event, root) ?? listKeys(event, root);
 }

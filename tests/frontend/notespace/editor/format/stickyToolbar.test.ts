@@ -123,7 +123,7 @@ it.each([false, true])('indents list items from the mobile toolbar with undo and
     window.getSelection()?.collapse(session.body()!.querySelectorAll('li')[1].firstChild!, 2);
     document.dispatchEvent(new Event('selectionchange'));
   });
-  const increase = document.querySelector<HTMLButtonElement>('[aria-label="Increase list indent"]')!;
+  const increase = document.querySelector<HTMLButtonElement>('[aria-label="Increase indent"]')!;
   expect(increase.disabled).toBe(false);
   act(() => increase.click());
   const indented = getNote(note.id)!.content;
@@ -136,7 +136,7 @@ it.each([false, true])('indents list items from the mobile toolbar with undo and
     window.getSelection()?.collapse(session.body()!.querySelectorAll('li')[1].firstChild!, 2);
     document.dispatchEvent(new Event('selectionchange'));
   });
-  act(() => document.querySelector<HTMLButtonElement>('[aria-label="Decrease list indent"]')!.click());
+  act(() => document.querySelector<HTMLButtonElement>('[aria-label="Decrease indent"]')!.click());
   expect(getNote(note.id)!.content).toBe(list);
 });
 
@@ -158,6 +158,49 @@ it.each([false, true])('keeps the desktop caret in a bullet after Tab (structure
   expect(window.getSelection()?.anchorNode).toBe(text);
   expect(window.getSelection()?.anchorOffset).toBe(0);
   expect(getNote(note.id)!.content).toContain('<li>First<ul><li>Second</li></ul></li>');
+});
+
+it.each([false, true])('indents a mobile text line and saves it with undo and redo (structured: %s)', structured => {
+  vi.stubGlobal('matchMedia', () => ({ matches: true, addEventListener() {}, removeEventListener() {} }));
+  mount(structured);
+  act(() => {
+    window.getSelection()?.collapseToEnd();
+    document.dispatchEvent(new Event('selectionchange'));
+  });
+  const increase = document.querySelector<HTMLButtonElement>('[aria-label="Increase indent"]')!;
+  for (let level = 1; level <= 4; level += 1) {
+    act(() => increase.click());
+    expect(getNote(session.noteId)!.content).toContain(`<p data-indent="${level}">Keep these words together</p>`);
+  }
+  expect(increase.disabled).toBe(true);
+  act(() => session.undo());
+  expect(getNote(session.noteId)!.content).toContain('data-indent="3"');
+  act(() => session.redo());
+  expect(getNote(session.noteId)!.content).toContain('data-indent="4"');
+});
+
+it.each([false, true])('indents selected desktop text with the toolbar (structured: %s)', structured => {
+  mount(structured);
+  act(() => document.querySelector<HTMLButtonElement>('[aria-label="Increase indent"]')!.click());
+  expect(getNote(session.noteId)!.content).toContain('<p data-indent="1">Keep these words together</p>');
+  expect(window.getSelection()?.toString()).toBe('these words');
+  act(() => document.querySelector<HTMLButtonElement>('[aria-label="Decrease indent"]')!.click());
+  expect(getNote(session.noteId)!.content).toBe(content);
+});
+
+it.each([false, true])('uses Tab to indent a text line and keeps its caret (structured: %s)', structured => {
+  mount(structured);
+  const text = session.body()!.querySelectorAll('p')[1].firstChild!;
+  act(() => {
+    window.getSelection()?.collapse(text, 2);
+    document.dispatchEvent(new Event('selectionchange'));
+    text.parentElement!.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true }));
+  });
+  expect(getNote(session.noteId)!.content).toContain('<p data-indent="1">Keep these words together</p>');
+  expect(window.getSelection()?.anchorNode).toBe(text);
+  expect(window.getSelection()?.anchorOffset).toBe(2);
+  act(() => session.undo());
+  expect(getNote(session.noteId)!.content).toBe(content);
 });
 
 it('updates mobile format indicators when the caret moves', () => {
@@ -231,3 +274,4 @@ it.each([false, true])('closes line choices when clicking outside (mobile: %s)',
   act(() => document.body.dispatchEvent(new Event('pointerdown', { bubbles: true })));
   expect(document.querySelector('[aria-label="Turn into"]')).toBeNull();
 });
+

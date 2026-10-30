@@ -2,6 +2,7 @@ import { isColorClass } from './editor/format/colors';
 import { safeImageAttributes } from './editor/images/images';
 import { TAB_TITLE_LENGTH } from './editor/text/tabs';
 import { BOX_ID, boxCoordinate, boxWidth } from './canvas/boxes';
+import { MAX_INDENT } from './editor/text/indent';
 import { dropRepeatedLinkIds, LINK_ID } from './editor/links/blockLinks';
 
 
@@ -41,6 +42,8 @@ export function safeHref(href: string | null) {
 /* table column widths, row heights and page breaks, how many rows and columns a merged table cell */
 /* covers, comment ids, and tab names. */
 function copyAttributes(node: Element, copy: Element) {
+  const indent = node.getAttribute('data-indent');
+  if (/^(P|H[1-6]|PRE)$/.test(node.tagName) && indent && /^[1-9]\d*$/.test(indent) && Number(indent) <= MAX_INDENT) copy.setAttribute('data-indent', indent);
   /* An image keeps only its id, its width in pixels and where it sits on its line; a pinned */
   /* drawing keeps its strokes, its own size and how far it is moved instead of an id. */
   if (node.tagName === 'SPAN' && node.classList.contains('image-block')) {
