@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode, type RefObject } from 'react';
 import { getPreferences } from '../../app/preferences';
 import { STACK_LIMIT } from '../../app/noteTabs';
 import { Switch } from '../../components/Switch';
@@ -6,6 +6,8 @@ import { Icon, type IconName } from '../../components/Icon';
 import { NoteColorPicker } from '../NoteColors';
 import { setPinned } from '../store';
 import { showTabOf, tabPathOf } from './text/tabs';
+import { useFocusTrap } from '../../lib/useFocusTrap';
+import { useMediaQuery } from '../../lib/useMediaQuery';
 import type { EditorSession } from './session';
 import type { Note, NoteMode, PageLayout, PageSize } from '../../../shared/types/note';
 
@@ -99,7 +101,7 @@ export function TableOfContents({ id, session, content, open, onClose, inline = 
       </div>
       <nav className="note-toc-links" aria-label="Headings in this note">
         <button type="button" className="outline-item outline-item--active" onClick={() => go('top')}>Top of note</button>
-        {headings.length ? headings.map((heading, index) => (
+        {headings.map((heading, index) => (
           <button
             key={index}
             type="button"
@@ -110,12 +112,9 @@ export function TableOfContents({ id, session, content, open, onClose, inline = 
             {heading.tabs.length > 0 && <span className="outline-tab">{heading.tabs.join(' › ')} › </span>}
             {heading.text || `Heading ${index + 1}`}
           </button>
-        )) : (
-          <p className="toc-empty">Add headings to your document to see them here. Type # then Space for a heading, or - then Space for a list.</p>
-        )}
+        ))}
         <button type="button" className="outline-item" onClick={() => go('bottom')}>Bottom of note</button>
       </nav>
-      {!inline && <div className="flyout-footnote"><Icon name="info" size={14} /> The outline is generated from headings in this note.</div>}
     </section>
   );
 }
@@ -177,11 +176,39 @@ const SPLITS: { id: 'right' | 'down'; title: string; tooltip: string; icon: Icon
   { id: 'down', title: 'Split down', tooltip: 'Open a second group of tabs below this one, showing this note again.', icon: 'split-down' }
 ];
 
+/* Keep keyboard and screen-reader navigation inside the mobile sheet while it is open. */
+function MobileSheetFocus({ sheetRef }: { sheetRef: RefObject<HTMLElement | null> }) {
+  useFocusTrap(sheetRef, '.flyout-close');
+  useEffect(() => {
+    const sheet = sheetRef.current;
+    if (!sheet) return;
+    const hidden: { element: Element; previous: string | null }[] = [];
+    let current: Element | null = sheet;
+    while (current?.parentElement) {
+      const parent: Element = current.parentElement;
+      Array.from(parent.children).forEach(sibling => {
+        if (sibling === current) return;
+        hidden.push({ element: sibling, previous: sibling.getAttribute('aria-hidden') });
+        sibling.setAttribute('aria-hidden', 'true');
+      });
+      if (parent.classList.contains('app-shell')) break;
+      current = parent;
+    }
+    return () => hidden.forEach(({ element, previous }) => {
+      if (previous === null) element.removeAttribute('aria-hidden');
+      else element.setAttribute('aria-hidden', previous);
+    });
+  }, [sheetRef]);
+  return null;
+}
+
 export function NoteSettings({
   id, note, open, zoom, view, onClose, onModeChange, onStickyIndicatorChange, onZoom, onLockChange, onPageChange, onCopyLink, onExport, onDelete, phoneActions
 }: NoteSettingsProps) {
   /* "Copied" shows until the panel is closed. */
   const [copied, setCopied] = useState(false);
+  const sheetRef = useRef<HTMLElement>(null);
+  const mobile = useMediaQuery('(max-width: 700px)');
   const [visible, setVisible] = useState(open);
   useEffect(() => {
     if (open) {
@@ -204,7 +231,8 @@ export function NoteSettings({
     : `A stack holds up to ${STACK_LIMIT} tabs.`;
 
   return (
-    <section className={`editor-flyout note-settings-flyout ${!open && visible ? 'is-closing' : ''}`} id={id} aria-label="Note settings" aria-hidden={!open} hidden={!visible}>
+    <section ref={sheetRef} className={`editor-flyout note-settings-flyout ${!open && visible ? 'is-closing' : ''}`} id={id} aria-label="Note settings" role={mobile ? 'dialog' : undefined} aria-modal={mobile && open ? true : undefined} aria-hidden={!open} hidden={!visible}>
+      {mobile && open && visible && <MobileSheetFocus sheetRef={sheetRef} />}
       <div className="flyout-heading">
         <strong>Note settings</strong>
         <button type="button" className="flyout-close" aria-label="Close note settings" onClick={onClose}><Icon name="x" size={17} /></button>

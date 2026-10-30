@@ -443,24 +443,23 @@ function nestedList(item: Element, like: Element) {
 /* Shift + Tab moves them out one level, after the item they were in, taking the items below */
 /* them along as their own nested items. The first item of a list cannot go deeper, and a top-level item */
 /* cannot come out (Backspace does that); either way the key does nothing, so focus stays in the */
-/* note. Moving items loses the selection, so it is put back by its place in the text. */
+/* note. Moving items loses the selection, so its endpoints are saved before they move. */
 /* Enter on an empty item of a nested list moves it out one level too, so pressing Enter on */
 /* empty items steps out of a list one level at a time (from the top level it leaves the list). */
-function listIndentKeys(event: KeyboardEvent, root: HTMLElement): KeyResult | null {
-  if ((event.key !== 'Tab' && event.key !== 'Enter') || event.altKey || event.ctrlKey || event.metaKey) return null;
+export function indentList(root: HTMLElement, out: boolean, stepOut = false): KeyResult | null {
   const item = closestAtCaret<HTMLLIElement>('li');
   const list = item?.parentElement;
-  const range = window.getSelection()?.getRangeAt(0);
+  const selection = window.getSelection();
+  const range = selection?.rangeCount ? selection.getRangeAt(0) : null;
   if (!item || !list || !range || !root.contains(item) || !list.matches('ul, ol')) return null;
-  const stepOut = event.key === 'Enter' && !event.shiftKey && range.collapsed && isEmptyContent(item) && list.parentElement?.tagName === 'LI';
-  if (event.key === 'Enter' && !stepOut) return null;
-  event.preventDefault();
   const items = Array.from(list.children).filter(child => child === item || range.intersectsNode(child));
   const first = items[0];
   const last = items[items.length - 1];
   const caret = getRange(root);
+  const start = { node: range.startContainer, offset: range.startOffset };
+  const end = { node: range.endContainer, offset: range.endOffset };
 
-  if (event.key === 'Tab' && !event.shiftKey) {
+  if (!out) {
     const above = first.previousElementSibling;
     if (!above) return { kind: 'blocked' };
     const deeper = nestedList(above, list);
@@ -481,8 +480,30 @@ function listIndentKeys(event: KeyboardEvent, root: HTMLElement): KeyResult | nu
     if (!list.childElementCount) list.remove();
   }
   if (stepOut) placeCaret(item);
-  else if (caret) setRange(root, caret.start, caret.end);
+  else if (root.contains(start.node) && root.contains(end.node)) {
+    /* Keeping the original nodes avoids confusing the start of an item with the end of the one above. */
+    item.closest<HTMLElement>('[contenteditable="true"]')?.focus({ preventScroll: true });
+    const restored = document.createRange();
+    const limit = (point: { node: Node; offset: number }) => Math.min(point.offset, point.node.nodeType === Node.TEXT_NODE ? (point.node as Text).length : point.node.childNodes.length);
+    restored.setStart(start.node, limit(start));
+    restored.setEnd(end.node, limit(end));
+    selection?.removeAllRanges();
+    selection?.addRange(restored);
+  } else if (caret) setRange(root, caret.start, caret.end);
   return { kind: 'changed' };
+}
+
+function listIndentKeys(event: KeyboardEvent, root: HTMLElement): KeyResult | null {
+  if ((event.key !== 'Tab' && event.key !== 'Enter') || event.altKey || event.ctrlKey || event.metaKey) return null;
+  const item = closestAtCaret<HTMLLIElement>('li');
+  const list = item?.parentElement;
+  const selection = window.getSelection();
+  const range = selection?.rangeCount ? selection.getRangeAt(0) : null;
+  if (!item || !list || !range || !root.contains(item) || !list.matches('ul, ol')) return null;
+  const stepOut = event.key === 'Enter' && !event.shiftKey && range.collapsed && isEmptyContent(item) && list.parentElement?.tagName === 'LI';
+  if (event.key === 'Enter' && !stepOut) return null;
+  event.preventDefault();
+  return indentList(root, event.shiftKey || stepOut, stepOut);
 }
 
 /* Enter in a checklist item moves the text after the caret into a new, unticked item below (the */

@@ -276,6 +276,33 @@ describe('headings and lists', () => {
     expect(body.innerHTML).toBe('<ul><li>A<ul><li>A1</li><li>B</li></ul></li><li>C</li></ul>');
   });
 
+  it.each([0, 1, 3])('keeps the caret in the indented item at offset %s', offset => {
+    const body = editor('<ul><li>First</li><li>Two</li></ul>');
+    body.setAttribute('data-note-editable', '');
+    const text = body.querySelectorAll('li')[1].firstChild as Text;
+    placeCaret(text, offset);
+    handleBlockKeys(press('Tab'), body);
+    expect(window.getSelection()?.anchorNode).toBe(text);
+    expect(window.getSelection()?.anchorOffset).toBe(offset);
+    handleBlockKeys(press('Tab', true), body);
+    expect(window.getSelection()?.anchorNode).toBe(text);
+    expect(window.getSelection()?.anchorOffset).toBe(offset);
+  });
+
+  it('keeps selected text in the item when indenting', () => {
+    const body = editor('<ul><li>First</li><li>Second</li></ul>');
+    body.setAttribute('data-note-editable', '');
+    const text = body.querySelectorAll('li')[1].firstChild as Text;
+    const range = document.createRange();
+    range.setStart(text, 1);
+    range.setEnd(text, 4);
+    window.getSelection()?.removeAllRanges();
+    window.getSelection()?.addRange(range);
+    handleBlockKeys(press('Tab'), body);
+    expect(window.getSelection()?.toString()).toBe('eco');
+    expect(window.getSelection()?.anchorNode).toBe(text);
+  });
+
   it('Tab moves only that line: its own nested items stay at their depth', () => {
     const body = editor('<ul><li>A</li><li>B<ul><li>B1</li><li>B2</li></ul></li><li>C</li></ul>');
     placeCaret(body.querySelectorAll('li')[1].firstChild as Node, 0);

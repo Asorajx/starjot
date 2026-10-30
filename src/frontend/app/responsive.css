@@ -322,7 +322,7 @@
     box-sizing: border-box;
     flex-direction: row;
     align-items: center;
-    gap: 4px;
+    gap: 0;
     padding: 4px 8px;
     border-radius: 0;
     background: #fff;
@@ -346,6 +346,14 @@
   .selection-toolbar.is-mobile .selection-tool,
   .selection-toolbar.is-mobile .page-bar-button {
     flex: none;
+  }
+
+  .selection-toolbar.is-mobile .selection-tool {
+    box-sizing: border-box;
+    width: 40px;
+    min-width: 40px;
+    height: 44px;
+    padding: 0;
   }
 
   .selection-toolbar.is-mobile .selection-tool svg,
@@ -402,7 +410,8 @@
   }
 
   .selection-toolbar.is-mobile .selection-comment-button {
-    width: auto;
+    justify-content: center;
+    width: 40px;
     border: 0;
     white-space: nowrap;
   }
@@ -413,6 +422,10 @@
 
   .selection-toolbar.is-mobile .selection-kind-row {
     flex: none;
+  }
+
+  .selection-toolbar.is-mobile .selection-kind.is-button {
+    justify-content: center;
   }
 
   .selection-toolbar.is-mobile .selection-types,

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { version } from '../../../package.json';
 import { BrandMark } from '../components/BrandMark';
 import { Dropdown } from '../components/Dropdown';
@@ -726,13 +726,34 @@ export function Settings({ section, onSectionChange, onClose, focus = null, onFo
   const windowRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLElement>(null);
   const [query, setQuery] = useState('');
+  const [hasResults, setHasResults] = useState(true);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const term = query.trim().toLowerCase();
-    contentRef.current?.querySelectorAll<HTMLElement>('[data-search-section]').forEach(section => {
-      section.hidden = Boolean(term) && !section.textContent?.toLowerCase().includes(term);
+    let found = false;
+    contentRef.current?.querySelectorAll<HTMLElement>('[data-search-section]').forEach(sectionElement => {
+      const sectionName = sectionElement.dataset.searchSection ?? '';
+      const sectionMatch = sectionName.toLowerCase().includes(term);
+      let sectionHasMatch = sectionMatch;
+      sectionElement.querySelectorAll<HTMLElement>('.settings-group').forEach(group => {
+        const heading = group.querySelector(':scope > .settings-group-title')?.textContent?.toLowerCase() ?? '';
+        const groupMatch = sectionMatch || heading.includes(term);
+        const rows = group.querySelectorAll<HTMLElement>('.setting-row, .shortcut-editor');
+        let groupHasMatch = groupMatch;
+        rows.forEach(row => {
+          const matches = groupMatch || (row.textContent ?? '').toLowerCase().includes(term);
+          row.hidden = !matches;
+          if (matches) groupHasMatch = true;
+        });
+        if (!rows.length && (group.textContent ?? '').toLowerCase().includes(term)) groupHasMatch = true;
+        group.hidden = !groupHasMatch;
+        if (groupHasMatch) sectionHasMatch = true;
+      });
+      sectionElement.hidden = !sectionHasMatch;
+      if (sectionHasMatch) found = true;
     });
-  }, [query, groups.length]);
+    setHasResults(!term || found);
+  });
 
   useEscape(true, onClose);
   useFocusTrap(windowRef, '.settings-nav-item.active');
@@ -767,8 +788,8 @@ export function Settings({ section, onSectionChange, onClose, focus = null, onFo
                 <button
                   key={tab.id}
                   type="button"
-                  className={`settings-nav-item ${current.id === tab.id ? 'active' : ''}`}
-                  aria-current={current.id === tab.id ? 'true' : undefined}
+                  className={`settings-nav-item ${!query.trim() && current.id === tab.id ? 'active' : ''}`}
+                  aria-current={!query.trim() && current.id === tab.id ? 'true' : undefined}
                   onClick={() => { setQuery(''); onSectionChange(tab.id); }}
                 >
                   <Icon name={tab.icon} size={17} /> {tab.label}
@@ -778,15 +799,16 @@ export function Settings({ section, onSectionChange, onClose, focus = null, onFo
           ))}
           </div>
         </nav>
-        <section className="settings-content" ref={contentRef} aria-label={`${current.label} settings`}>
+        <section className="settings-content" ref={contentRef} aria-label={query.trim() ? 'Settings search results' : `${current.label} settings`}>
           <button type="button" className="window-control settings-close" aria-label="Close settings" data-tooltip="Close" data-shortcut="Esc" data-tooltip-align="end" onClick={onClose}>
             <Icon name="x" size={18} />
           </button>
           {query.trim() ? tabs.map(tab => (
-            <div key={tab.id} data-search-section>
+            <div key={tab.id} data-search-section={tab.label}>
               <SettingsSectionContent section={tab.id} />
             </div>
           )) : <SettingsSectionContent section={current.id} />}
+          {query.trim() && !hasResults && <p role="status">No settings found. Try another search.</p>}
         </section>
       </div>
     </div>

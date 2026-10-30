@@ -1,4 +1,5 @@
-import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent, type MouseEvent } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type ChangeEvent, type KeyboardEvent, type MouseEvent } from 'react';
+import { createPortal } from 'react-dom';
 import { RECENT_COLORS, getPreferences, updatePreferences, usePreferences } from '../../../app/preferences';
 import { Icon, type IconName } from '../../../components/Icon';
 import { COLOR_NAMES, applyColor, colorAt, type ColorClass, type ColorKind, type ColorName } from './colors';
@@ -12,6 +13,9 @@ import { copyPageLink, linkSelection, setLinkTarget, unwrapLink, type LinkTarget
 import { LinkPicker } from '../links/LinkPicker';
 import { isLinkShortcut } from '../../../app/shortcuts';
 import { blockWords, linkableBlock, linkIdOf } from '../links/blockLinks';
+import { getOffset, setOffset } from '../text/caret';
+import { indentList } from '../text/blockKeys';
+import { insertImageFiles } from '../images/images';
 import { useMediaQuery } from '../../../lib/useMediaQuery';
 import { UndoRedoButtons } from '../noteParts';
 
@@ -125,6 +129,14 @@ const KINDS: [string, string][] = [
 
 const LINES = 'p, h1, h2, h3, h4, h5, h6, li, pre, td, th';
 
+/* The mobile line menu changes only the line where the selection ends. */
+function lineAtCaret(node: Node, root: Element): HTMLElement | null {
+  const element = elementOf(node);
+  if (element?.closest('td, th, .toggle-summary, [contenteditable="false"]')) return null;
+  const line = element?.closest<HTMLElement>('p, h1, h2, h3, h4, h5, li, pre');
+  return line && root.contains(line) ? line : null;
+}
+
 function kindOf(node: Node, root: Element) {
   const element = elementOf(node);
   const found = KINDS.find(([selector]) => {
@@ -233,6 +245,7 @@ export function SelectionToolbar({ session, locked, active = true }: SelectionTo
   const mobile = useMediaQuery('(max-width: 700px)');
   const [bottom, setBottom] = useState(65);
   const [anchor, setAnchor] = useState<Anchor | null>(null);
+  const [caretKind, setCaretKind] = useState<string | null>(null);
   const [mode, setMode] = useState<Mode>('buttons');
   const [value, setValue] = useState('');
 
@@ -242,10 +255,15 @@ export function SelectionToolbar({ session, locked, active = true }: SelectionTo
 
   /* The selection is remembered, because typing a link or comment moves focus into this bar. */
   const savedRange = useRef<Range | null>(null);
+  const caretRange = useRef<Range | null>(null);
+  const imageInput = useRef<HTMLInputElement>(null);
+  const imageRange = useRef<Range | null>(null);
   const modeRef = useRef(mode);
   modeRef.current = mode;
   const lockedRef = useRef(locked);
   lockedRef.current = locked;
+  const mobileRef = useRef(mobile);
+  mobileRef.current = mobile;
 
   /* Bumped after a format is applied, so the buttons show the new state straight away. */
   const [, setFormatted] = useState(0);
@@ -283,6 +301,22 @@ export function SelectionToolbar({ session, locked, active = true }: SelectionTo
       const selection = window.getSelection();
       const body = session.body();
       const range = selection?.rangeCount ? selection.getRangeAt(0) : null;
+      if (mobileRef.current && body && selection?.focusNode && body.contains(selection.focusNode)) {
+        const caret = document.createRange();
+        caret.setStart(selection.focusNode, selection.focusOffset);
+        caret.collapse(true);
+        caretRange.current = caret;
+      } else {
+        caretRange.current = null;
+      }
+      if (mobileRef.current && body && range?.collapsed && body.contains(range.startContainer)) {
+        savedRange.current = range.cloneRange();
+        setCaretKind(kindOf(range.startContainer, body));
+        setFormatted(count => count + 1);
+        setAnchor(null);
+        return;
+      }
+      setCaretKind(mobileRef.current && body && selection?.focusNode && body.contains(selection.focusNode) ? kindOf(selection.focusNode, body) : null);
       if (!body || !range || range.collapsed || !body.contains(range.commonAncestorContainer) || !range.toString().trim()) {
         setAnchor(null);
         return;
@@ -298,6 +332,13 @@ export function SelectionToolbar({ session, locked, active = true }: SelectionTo
       modeRef.current = 'buttons';
       setMode('buttons');
       setValue('');
+    }
+
+    /* A click or tap outside the toolbar closes the line-type choices. */
+    function handlePointerDown(event: PointerEvent) {
+      if (!typesOpenRef.current || barRef.current?.contains(event.target as Node) || typesRef.current?.contains(event.target as Node)) return;
+      window.clearTimeout(hoverTimer.current);
+      setTypesOpen(null);
     }
 
     /* Ctrl + K with words selected in the note (not inside one link, which LinkTools edits) opens */
@@ -319,11 +360,13 @@ export function SelectionToolbar({ session, locked, active = true }: SelectionTo
     const scroller = session.scroller();
     document.addEventListener('selectionchange', update);
     document.addEventListener('mousedown', handleMouseDown);
+    document.addEventListener('pointerdown', handlePointerDown);
     window.addEventListener('keydown', handleKeyDown, true);
     scroller?.addEventListener('scroll', update);
     return () => {
       document.removeEventListener('selectionchange', update);
       document.removeEventListener('mousedown', handleMouseDown);
+      document.removeEventListener('pointerdown', handlePointerDown);
       window.removeEventListener('keydown', handleKeyDown, true);
       scroller?.removeEventListener('scroll', update);
     };
@@ -378,7 +421,11 @@ export function SelectionToolbar({ session, locked, active = true }: SelectionTo
   /* The selected lines whose kind can be changed (none in a table cell or a toggle's title), and */
   /* their kind when they all share one. */
   const body = session.body();
-  const lines = anchor && !locked && body && savedRange.current ? linesInRange(savedRange.current, body) : null;
+  const caretLine = mobile && body && caretRange.current ? lineAtCaret(caretRange.current.startContainer, body) : null;
+  const listItem = mobile && caretRange.current ? elementOf(caretRange.current.startContainer)?.closest<HTMLLIElement>('li') : null;
+  const listRoot = listItem?.closest<HTMLElement>('.block-content') ?? body;
+  const canIndent = Boolean(listItem && listRoot && listRoot.contains(listItem) && savedRange.current && listRoot.contains(savedRange.current.startContainer) && listRoot.contains(savedRange.current.endContainer));
+  const lines = mobile ? (caretLine && !locked ? [caretLine] : null) : anchor && !locked && body && savedRange.current ? linesInRange(savedRange.current, body) : null;
   const lineKinds = new Set(lines?.map(typeOfLine));
   const lineKind = lineKinds.size === 1 ? [...lineKinds][0] : null;
   const linkNode = savedRange.current?.commonAncestorContainer;
@@ -460,27 +507,63 @@ export function SelectionToolbar({ session, locked, active = true }: SelectionTo
   }
 
   function format(command: string) {
+    if (mobile && caretKind) restoreSelection();
     session.checkpoint();
     document.execCommand(command);
     session.commit();
     setFormatted(count => count + 1);
   }
 
+  /* List indentation follows the same rules and undo behavior as Tab and Shift + Tab. */
+  function changeIndent(out: boolean) {
+    if (!canIndent || !listRoot) return;
+    restoreSelection();
+    const result = indentList(listRoot, out);
+    if (!result || result.kind === 'blocked') return;
+    session.checkpoint();
+    session.commit();
+    setFormatted(count => count + 1);
+  }
+
+  /* Save the selection before the file picker takes focus away from the note. */
+  function chooseImage() {
+    imageRange.current = savedRange.current?.cloneRange() ?? null;
+    imageInput.current?.click();
+  }
+
+  function addImages(event: ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(event.currentTarget.files ?? []).filter(file => file.type.startsWith('image/'));
+    const range = imageRange.current;
+    event.currentTarget.value = '';
+    imageRange.current = null;
+    if (!range || !files.length) return;
+    void insertImageFiles(session, files, range).catch(() => showToast({ kind: 'error', title: 'Could not add image', description: 'Please try another image.' }));
+  }
+
   /* Turn the selected lines into another kind (one undo step), then select their words again */
   /* so the bar stays on them (in Block mode the block is redrawn, leaving the caret at the end). */
   function changeType(type: LineType) {
-    const range = savedRange.current;
+    const range = mobile ? caretRange.current : savedRange.current;
     const root = session.body();
     window.clearTimeout(hoverTimer.current);
     setTypesOpen(null);
     if (!range || !root) return;
-    restoreSelection();
-    const found = linesInRange(range, root);
+    if (mobile) {
+      const selection = window.getSelection();
+      selection?.removeAllRanges();
+      selection?.addRange(range);
+    } else restoreSelection();
+    const caretOffset = mobile ? getOffset(root) : null;
+    const found = mobile ? (lineAtCaret(range.startContainer, root) ? [lineAtCaret(range.startContainer, root) as HTMLElement] : null) : linesInRange(range, root);
     if (!found) return;
     session.checkpoint();
     const { first, last } = changeLinesType(found, type, root);
     session.linesChanged(last, true);
     requestAnimationFrame(() => {
+      if (mobile && caretOffset !== null) {
+        setOffset(session.body(), caretOffset);
+        return;
+      }
       if (!first.isConnected || !last.isConnected) return;
       const words = document.createRange();
       words.setStart(first, 0);
@@ -561,8 +644,9 @@ export function SelectionToolbar({ session, locked, active = true }: SelectionTo
 
   /* The Turn into list, beside the bar. */
   function renderTypes() {
+    const box = mobile ? kindRef.current?.getBoundingClientRect() : null;
     return (
-      <div className={`page-menu selection-types is-${typesSide}`} role="menu" aria-label="Turn into" ref={typesRef} onKeyDown={handleTypesKey}>
+      <div className={`page-menu selection-types is-${typesSide}`} role="menu" aria-label="Turn into" ref={typesRef} onKeyDown={handleTypesKey} style={box ? { position: 'fixed', top: 'auto', bottom: window.innerHeight - box.top + 4, left: Math.max(8, Math.min(box.left, window.innerWidth - 208)), right: 'auto', zIndex: 80 } : undefined}>
         {LINE_TYPES.map(type => (
           <button
             key={type.id}
@@ -578,6 +662,31 @@ export function SelectionToolbar({ session, locked, active = true }: SelectionTo
             {type.id === lineKind && <Icon name="check" size={14} className="dropdown-check" />}
           </button>
         ))}
+      </div>
+    );
+  }
+
+  function renderKind() {
+    if (!lines || !(anchor || caretKind)) {
+      return mobile ? <button type="button" className="selection-kind is-button selection-tool" disabled aria-label={caretKind ? `${caretKind}: text format unavailable` : 'Text format'}><Icon name="arrows-rotate" size={17} /></button> : <span className="selection-kind">{anchor?.kind ?? 'Text'}</span>;
+    }
+    return (
+      <div className="selection-kind-row" onMouseEnter={() => hoverKind(true)} onMouseLeave={() => hoverKind(false)}>
+        <button
+          ref={kindRef}
+          type="button"
+          className={`selection-kind is-button ${mobile ? 'selection-tool' : ''} ${typesOpen ? 'is-open' : ''}`}
+          aria-haspopup="menu"
+          aria-expanded={Boolean(typesOpen)}
+          aria-label={`${mobile ? caretKind : anchor?.kind}: turn into another kind of line`}
+          onMouseDown={keepSelection}
+          onClick={() => openTypes('keys')}
+          onKeyDown={handleKindKey}
+        >
+          {!mobile && <span>{anchor?.kind}</span>}
+          <Icon name={mobile ? 'arrows-rotate' : 'chevron-right'} size={mobile ? 17 : 14} />
+        </button>
+        {typesOpen && (mobile ? createPortal(renderTypes(), document.body) : renderTypes())}
       </div>
     );
   }
@@ -601,31 +710,12 @@ export function SelectionToolbar({ session, locked, active = true }: SelectionTo
   return (
     <div ref={barRef} className={`selection-toolbar ${mobile ? 'is-mobile' : ''}`} role="toolbar" aria-label="Text tools" style={mobile ? { bottom } : { top: position.top, left: position.left }}>
       {mobile && !locked && <UndoRedoButtons session={session} locked={locked} />}
-      {(anchor || mobile) && mode === 'buttons' && (lines && anchor
-        ? (
-          <div className="selection-kind-row" onMouseEnter={() => hoverKind(true)} onMouseLeave={() => hoverKind(false)}>
-            <button
-              ref={kindRef}
-              type="button"
-              className={`selection-kind is-button ${typesOpen ? 'is-open' : ''}`}
-              aria-haspopup="menu"
-              aria-expanded={Boolean(typesOpen)}
-              aria-label={`${anchor.kind}: turn into another kind of line`}
-              onMouseDown={keepSelection}
-              onClick={() => openTypes('keys')}
-              onKeyDown={handleKindKey}
-            >
-              <span>{anchor.kind}</span>
-              <Icon name="chevron-right" size={14} />
-            </button>
-            {typesOpen && renderTypes()}
-          </div>
-        )
-        : <span className="selection-kind">{anchor?.kind ?? 'Text'}</span>)}
+      {!mobile && anchor && mode === 'buttons' && renderKind()}
       {(anchor || mobile) && mode === 'buttons' && !locked && (
-        <div className="selection-toolbar-row">
+        <div className="selection-toolbar-row" onScroll={() => { if (mobile && typesOpen) setTypesOpen(null); }}>
+          {mobile && renderKind()}
           {!locked && FORMATS.map(item => {
-            const on = Boolean(anchor && formatIsOn(item.command));
+            const on = Boolean((anchor || caretKind) && formatIsOn(item.command));
             return (
               <button
                 key={item.command}
@@ -633,7 +723,7 @@ export function SelectionToolbar({ session, locked, active = true }: SelectionTo
                 className={`selection-tool selection-format ${on ? 'is-active' : ''}`}
                 aria-label={item.label}
                 aria-pressed={on}
-                disabled={!anchor}
+                disabled={!anchor && !caretKind}
                 data-tooltip={item.label}
                 data-shortcut={item.shortcut}
                 onMouseDown={keepSelection}
@@ -651,6 +741,13 @@ export function SelectionToolbar({ session, locked, active = true }: SelectionTo
           )}
           {mobile ? renderSticky() : renderLink()}
           {mobile && <span className="mobile-tool-divider" aria-hidden="true" />}
+          {mobile && (
+            <>
+              <button type="button" className="selection-tool" aria-label="Decrease list indent" data-tooltip="Decrease list indent" disabled={!canIndent} onMouseDown={keepSelection} onClick={() => changeIndent(true)}><Icon name="indent-decrease" size={17} /></button>
+              <button type="button" className="selection-tool" aria-label="Increase list indent" data-tooltip="Increase list indent" disabled={!canIndent} onMouseDown={keepSelection} onClick={() => changeIndent(false)}><Icon name="indent-increase" size={17} /></button>
+              <span className="mobile-tool-divider" aria-hidden="true" />
+            </>
+          )}
           {!locked && (
             <button
               type="button"
@@ -666,6 +763,11 @@ export function SelectionToolbar({ session, locked, active = true }: SelectionTo
           )}
           {mobile ? renderLink() : renderSticky()}
           {mobile && (
+            <button type="button" className="selection-tool" aria-label="Insert image" data-tooltip="Insert image" disabled={!anchor && !caretKind} onMouseDown={keepSelection} onClick={chooseImage}>
+              <Icon name="image" size={17} />
+            </button>
+          )}
+          {mobile && (
             <button type="button" className="selection-tool selection-comment-button" aria-label="Comment" disabled={!anchor} onMouseDown={keepSelection} onClick={() => setMode('comment')}>
               <Icon name="message-square" size={15} />
               <span>Comment</span>
@@ -673,6 +775,7 @@ export function SelectionToolbar({ session, locked, active = true }: SelectionTo
           )}
         </div>
       )}
+      {mobile && <input ref={imageInput} type="file" accept="image/*" multiple hidden onChange={addImages} />}
       {(anchor || mobile) && mode === 'buttons' && (!mobile || locked) && (
         <button type="button" className="selection-tool selection-comment-button" aria-label="Comment" disabled={!anchor} onMouseDown={keepSelection} onClick={() => setMode('comment')}>
           <Icon name="message-square" size={15} />
@@ -681,10 +784,13 @@ export function SelectionToolbar({ session, locked, active = true }: SelectionTo
       )}
 
       {mode === 'color' && savedRange.current && (
-        <ColorPalette
-          current={{ text: colorAt(savedRange.current, 'text'), bg: colorAt(savedRange.current, 'bg') }}
-          onPick={applyTextColor}
-        />
+        <>
+          {mobile && <button type="button" className="selection-tool" aria-label="Back to text tools" onMouseDown={keepSelection} onClick={() => { restoreSelection(); setMode('buttons'); }}><Icon name="arrow-left" size={17} /></button>}
+          <ColorPalette
+            current={{ text: colorAt(savedRange.current, 'text'), bg: colorAt(savedRange.current, 'bg') }}
+            onPick={applyTextColor}
+          />
+        </>
       )}
 
       {mode === 'link' && (

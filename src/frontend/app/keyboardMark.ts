@@ -8,7 +8,7 @@
 export function startKeyboardMark() {
   const root = document.documentElement;
   document.addEventListener('keydown', event => {
-    if (event.key === 'Tab') root.setAttribute('data-keyboard', '');
-  }, true);
+    if (event.key === 'Tab' && !event.defaultPrevented) root.setAttribute('data-keyboard', '');
+  });
   document.addEventListener('pointerdown', () => root.removeAttribute('data-keyboard'), { capture: true, passive: true });
 }

@@ -713,24 +713,6 @@
   font-weight: 500;
 }
 
-.toc-empty {
-  margin: 8px 4px;
-  color: #5b6d84;
-  font-size: 12px;
-  line-height: 1.7;
-}
-
-.flyout-footnote {
-  display: flex;
-  gap: 8px;
-  margin-top: 24px;
-  padding-top: 16px;
-  border-top: 1px solid #edf1f7;
-  color: #596d89;
-  font-size: 12px;
-  line-height: 1.6;
-}
-
 /* Sections in a side panel sit closer together than on a full screen, so more fits without scrolling. */
 .editor-flyout .side-setting--border {
   margin-top: 16px;

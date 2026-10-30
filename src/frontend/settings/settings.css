@@ -93,6 +93,10 @@
   padding: 32px 48px;
 }
 
+.settings-content [hidden] {
+  display: none;
+}
+
 .settings-close {
   position: absolute;
   top: 16px;

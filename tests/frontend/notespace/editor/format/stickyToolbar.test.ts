@@ -98,12 +98,136 @@ it('shows mobile undo and redo alongside selected text tools', () => {
   expect(toolbar?.querySelector('[aria-label="Undo"]')).not.toBeNull();
   expect(toolbar?.querySelector('[aria-label="Redo"]')).not.toBeNull();
   expect(toolbar?.querySelector('.note-sticky-button')).not.toBeNull();
+  expect(toolbar?.querySelector('.selection-toolbar-row .selection-kind.is-button')).not.toBeNull();
 
   act(() => {
     window.getSelection()?.collapseToEnd();
     document.dispatchEvent(new Event('selectionchange'));
   });
-  expect(toolbar?.querySelector<HTMLButtonElement>('[aria-label="Bold"]')?.disabled).toBe(true);
+  expect(toolbar?.querySelector<HTMLButtonElement>('[aria-label="Bold"]')?.disabled).toBe(false);
   expect(toolbar?.querySelector<HTMLButtonElement>('[aria-label="Comment"]')?.disabled).toBe(true);
   expect(toolbar?.querySelector('[aria-label="Undo"]')).not.toBeNull();
+});
+
+it.each([false, true])('indents list items from the mobile toolbar with undo and redo (structured: %s)', structured => {
+  vi.stubGlobal('matchMedia', () => ({ matches: true, addEventListener() {}, removeEventListener() {} }));
+  const list = '<ul><li>One</li><li>Two</li></ul>';
+  const note = createNote();
+  updateNote(note.id, { content: list });
+  session = new EditorSession(note.id, list);
+  act(() => root.render(createElement(Fragment, null,
+    createElement(structured ? StructuredEditor : ContinuousEditor, { session, content: list, locked: false }),
+    createElement(SelectionToolbar, { session, locked: false })
+  )));
+  act(() => {
+    window.getSelection()?.collapse(session.body()!.querySelectorAll('li')[1].firstChild!, 2);
+    document.dispatchEvent(new Event('selectionchange'));
+  });
+  const increase = document.querySelector<HTMLButtonElement>('[aria-label="Increase list indent"]')!;
+  expect(increase.disabled).toBe(false);
+  act(() => increase.click());
+  const indented = getNote(note.id)!.content;
+  expect(indented).toContain('<li>One<ul><li>Two</li></ul></li>');
+  act(() => session.undo());
+  expect(getNote(note.id)!.content).toBe(list);
+  act(() => session.redo());
+  expect(getNote(note.id)!.content).toBe(indented);
+  act(() => {
+    window.getSelection()?.collapse(session.body()!.querySelectorAll('li')[1].firstChild!, 2);
+    document.dispatchEvent(new Event('selectionchange'));
+  });
+  act(() => document.querySelector<HTMLButtonElement>('[aria-label="Decrease list indent"]')!.click());
+  expect(getNote(note.id)!.content).toBe(list);
+});
+
+it.each([false, true])('keeps the desktop caret in a bullet after Tab (structured: %s)', structured => {
+  const list = '<ul><li>First</li><li>Second</li></ul>';
+  const note = createNote();
+  updateNote(note.id, { content: list });
+  session = new EditorSession(note.id, list);
+  act(() => root.render(createElement(Fragment, null,
+    createElement(structured ? StructuredEditor : ContinuousEditor, { session, content: list, locked: false }),
+    createElement(SelectionToolbar, { session, locked: false })
+  )));
+  const text = session.body()!.querySelectorAll('li')[1].firstChild!;
+  act(() => {
+    window.getSelection()?.collapse(text, 0);
+    document.dispatchEvent(new Event('selectionchange'));
+    text.parentElement!.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true }));
+  });
+  expect(window.getSelection()?.anchorNode).toBe(text);
+  expect(window.getSelection()?.anchorOffset).toBe(0);
+  expect(getNote(note.id)!.content).toContain('<li>First<ul><li>Second</li></ul></li>');
+});
+
+it('updates mobile format indicators when the caret moves', () => {
+  vi.stubGlobal('matchMedia', () => ({ matches: true, addEventListener() {}, removeEventListener() {} }));
+  const original = Object.getOwnPropertyDescriptor(document, 'queryCommandState');
+  Object.defineProperty(document, 'queryCommandState', {
+    configurable: true,
+    value: (command: string) => command === 'bold' && (window.getSelection()?.anchorOffset ?? 0) < 10
+  });
+  try {
+    mount(false);
+    const bold = document.querySelector<HTMLButtonElement>('[aria-label="Bold"]')!;
+    const text = session.body()!.querySelectorAll('p')[1].firstChild!;
+    act(() => {
+      window.getSelection()?.collapse(text, 5);
+      document.dispatchEvent(new Event('selectionchange'));
+    });
+    expect(bold.getAttribute('aria-pressed')).toBe('true');
+    act(() => {
+      window.getSelection()?.collapse(text, 15);
+      document.dispatchEvent(new Event('selectionchange'));
+    });
+    expect(bold.getAttribute('aria-pressed')).toBe('false');
+  } finally {
+    if (original) Object.defineProperty(document, 'queryCommandState', original);
+    else Reflect.deleteProperty(document, 'queryCommandState');
+  }
+});
+
+it.each([false, true])('changes only the caret line on mobile (structured: %s)', structured => {
+  vi.stubGlobal('matchMedia', () => ({ matches: true, addEventListener() {}, removeEventListener() {} }));
+  mount(structured);
+  const paragraphs = session.body()!.querySelectorAll('p');
+  act(() => {
+    window.getSelection()!.setBaseAndExtent(paragraphs[0].firstChild!, 2, paragraphs[1].firstChild!, 5);
+    document.dispatchEvent(new Event('selectionchange'));
+  });
+  const button = hostButton('turn into another kind of line');
+  expect(button.disabled).toBe(false);
+  act(() => button.click());
+  const heading = [...document.querySelectorAll<HTMLButtonElement>('[role="menuitemradio"]')].find(item => item.textContent?.includes('Heading 2'))!;
+  act(() => heading.click());
+  expect(getNote(session.noteId)!.content).toBe('<p>Before</p><h2>Keep these words together</h2><p>After</p>');
+  act(() => session.undo());
+  expect(getNote(session.noteId)!.content).toBe(content);
+});
+
+it.each([false, true])('opens the mobile line menu with a collapsed caret (structured: %s)', structured => {
+  vi.stubGlobal('matchMedia', () => ({ matches: true, addEventListener() {}, removeEventListener() {} }));
+  mount(structured);
+  const text = session.body()!.querySelectorAll('p')[1].firstChild!;
+  act(() => {
+    window.getSelection()!.collapse(text, 5);
+    document.dispatchEvent(new Event('selectionchange'));
+  });
+  act(() => hostButton('turn into another kind of line').click());
+  const heading = [...document.querySelectorAll<HTMLButtonElement>('[role="menuitemradio"]')].find(item => item.textContent?.includes('Heading 2'))!;
+  act(() => heading.click());
+  expect(getNote(session.noteId)!.content).toBe('<p>Before</p><h2>Keep these words together</h2><p>After</p>');
+});
+
+function hostButton(label: string) {
+  return [...document.querySelectorAll<HTMLButtonElement>('button')].find(button => button.getAttribute('aria-label')?.includes(label))!;
+}
+
+it.each([false, true])('closes line choices when clicking outside (mobile: %s)', mobile => {
+  vi.stubGlobal('matchMedia', () => ({ matches: mobile, addEventListener() {}, removeEventListener() {} }));
+  mount(false);
+  act(() => hostButton('turn into another kind of line').click());
+  expect(document.querySelector('[aria-label="Turn into"]')).not.toBeNull();
+  act(() => document.body.dispatchEvent(new Event('pointerdown', { bubbles: true })));
+  expect(document.querySelector('[aria-label="Turn into"]')).toBeNull();
 });
