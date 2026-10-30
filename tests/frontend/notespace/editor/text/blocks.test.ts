@@ -103,7 +103,7 @@ describe('slash command lines', () => {
   });
 
   it('moves the caret out of a page link before Enter, so the link is never split or copied', () => {
-    const body = editor('<p>See <a class="page-link" data-page="atlas">Atlas</a> now</p>');
+    const body = editor('<p>See <a class="page-link" data-page="welcome">Atlas</a> now</p>');
     const link = body.querySelector('a') as HTMLElement;
     placeCaret(link.firstChild as Node, 3);
     expect(handleBlockKeys(press('Enter'), body)).toBeNull();
@@ -513,18 +513,18 @@ describe('page block width', () => {
 
 describe('page mentions', () => {
   it('are stored empty, holding only the page id', () => {
-    const mention = createPageMention('atlas');
-    expect(cleanHtml(`<p>See ${mention.outerHTML}</p>`)).toBe('<p>See <span class="page-mention" data-page="atlas"></span></p>');
-    expect(cleanHtml('<span class="page-mention" data-page="atlas" contenteditable="false"><span>Old title</span></span>'))
-      .toBe('<span class="page-mention" data-page="atlas"></span>');
+    const mention = createPageMention('welcome');
+    expect(cleanHtml(`<p>See ${mention.outerHTML}</p>`)).toBe('<p>See <span class="page-mention" data-page="welcome"></span></p>');
+    expect(cleanHtml('<span class="page-mention" data-page="welcome" contenteditable="false"><span>Old title</span></span>'))
+      .toBe('<span class="page-mention" data-page="welcome"></span>');
   });
 
   it("show the page's icon and current title as text that cannot be edited", () => {
-    const body = editor(`<p>${createPageMention('atlas').outerHTML}${createPageMention('gone').outerHTML}</p>`);
+    const body = editor(`<p>${createPageMention('welcome').outerHTML}${createPageMention('gone').outerHTML}</p>`);
     hydratePages(body);
     const [found, missing] = Array.from(body.querySelectorAll<HTMLElement>('.page-mention'));
     expect(found.contentEditable).toBe('false');
-    expect(found.querySelector('.page-mention-title')?.textContent).toBe('Project Atlas — Research brief');
+    expect(found.querySelector('.page-mention-title')?.textContent).toBe('Welcome to Starjot');
     expect(missing.classList.contains('is-missing')).toBe(true);
     expect(missing.textContent).toBe('Note not found');
   });

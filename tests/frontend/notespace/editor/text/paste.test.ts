@@ -57,8 +57,8 @@ describe('pastedMarkdown', () => {
   });
 
   it('turns a page address into a link to that page, named after it', () => {
-    expect(markdown('http://localhost:5173/#note=atlas')).toBe('<p><a class="page-link" data-page="atlas">Project Atlas — Research brief</a></p>');
-    expect(markdown('[the brief](http://localhost:5173/#note=atlas)')).toBe('<p><a class="page-link" data-page="atlas">the brief</a></p>');
+    expect(markdown('http://localhost:5173/#note=welcome')).toBe('<p><a class="page-link" data-page="welcome">Welcome to Starjot</a></p>');
+    expect(markdown('[the brief](http://localhost:5173/#note=welcome)')).toBe('<p><a class="page-link" data-page="welcome">the brief</a></p>');
   });
 
   it('keeps links that could run script as plain text', () => {
@@ -278,8 +278,8 @@ describe('pasting an address over selected words', () => {
 
   it('links to a note or a block from its copied address, and keeps the words\' formatting', () => {
     const body = selected('<p>See [<strong>the plan</strong>]</p>');
-    expect(linkSelectionToPasted(body, 'http://localhost:5173/#note=atlas&block=labc1234')).toBe(true);
-    expect(linked(body)).toBe('<p>See <a class="page-link" data-page="atlas" data-link-id="labc1234"><strong>the plan</strong></a></p>');
+    expect(linkSelectionToPasted(body, 'http://localhost:5173/#note=welcome&block=labc1234')).toBe(true);
+    expect(linked(body)).toBe('<p>See <a class="page-link" data-page="welcome" data-link-id="labc1234"><strong>the plan</strong></a></p>');
   });
 
   it('links to the address itself for a note this browser does not have', () => {

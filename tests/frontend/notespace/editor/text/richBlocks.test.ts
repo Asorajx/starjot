@@ -23,12 +23,12 @@ function holder(html: string) {
 describe('page blocks', () => {
   it('shows the title of the page they point to, and their saved width', () => {
     const line = holder('<p>See </p>');
-    const block = createPageBlock('atlas');
+    const block = createPageBlock('welcome');
     block.dataset.width = '40';
     line.querySelector('p')?.appendChild(block);
     hydratePages(line);
 
-    expect(block.querySelector('strong')?.textContent).toBe('Project Atlas — Research brief');
+    expect(block.querySelector('strong')?.textContent).toBe('Welcome to Starjot');
     expect(block.contentEditable).toBe('false');
     expect(block.style.width).toBe('40%');
     expect(block.querySelectorAll('[data-size-option]')).toHaveLength(3);
@@ -43,7 +43,7 @@ describe('page blocks', () => {
   });
 
   it('does not redraw a block that has not changed', () => {
-    const line = holder('<p><span class="page-block" data-page="atlas"></span></p>');
+    const line = holder('<p><span class="page-block" data-page="welcome"></span></p>');
     hydratePages(line);
     const title = line.querySelector('strong');
     hydratePages(line);
@@ -79,12 +79,12 @@ describe('more slash command lines', () => {
 describe('table comments', () => {
   it('marks the whole table and stores the comment with the note', () => {
     const body = holder('<table><tbody><tr><td>A</td></tr></tbody></table>');
-    const session = new EditorSession('atlas', body.innerHTML);
-    const before = getNote('atlas')?.comments.length ?? 0;
+    const session = new EditorSession('welcome', body.innerHTML);
+    const before = getNote('welcome')?.comments.length ?? 0;
     const table = body.querySelector('table') as HTMLElement;
 
     session.addComment(table, '  Check the totals  ');
-    const comments = getNote('atlas')?.comments ?? [];
+    const comments = getNote('welcome')?.comments ?? [];
     expect(comments).toHaveLength(before + 1);
     expect(comments[comments.length - 1].text).toBe('Check the totals');
     expect(table.dataset.comment).toBe(comments[comments.length - 1].id);
@@ -92,7 +92,7 @@ describe('table comments', () => {
 
   it('ignores an empty comment', () => {
     const body = holder('<table><tbody><tr><td>A</td></tr></tbody></table>');
-    const session = new EditorSession('atlas', body.innerHTML);
+    const session = new EditorSession('welcome', body.innerHTML);
     const table = body.querySelector('table') as HTMLElement;
     session.addComment(table, '   ');
     expect(table.hasAttribute('data-comment')).toBe(false);
@@ -117,7 +117,7 @@ function deletion(inputType: string, start: [Node, number], end: [Node, number])
 
 describe('protecting page blocks', () => {
   it('keeps page blocks when a selection across lines is deleted', () => {
-    const body = holder('<p>One</p><p>Two <span class="page-block" data-page="atlas"></span> three</p><p>Four</p>');
+    const body = holder('<p>One</p><p>Two <span class="page-block" data-page="welcome"></span> three</p><p>Four</p>');
     const range = document.createRange();
     range.setStart(body.querySelector('p')?.firstChild as Node, 1);
     range.setEnd(body.querySelectorAll('p')[2].firstChild as Node, 2);
@@ -126,7 +126,7 @@ describe('protecting page blocks', () => {
   });
 
   it('puts typed text before the kept page blocks', () => {
-    const body = holder('<p>Say <span class="page-block" data-page="atlas"></span> bye</p>');
+    const body = holder('<p>Say <span class="page-block" data-page="welcome"></span> bye</p>');
     const range = document.createRange();
     range.selectNodeContents(body.querySelector('p') as Node);
     deleteKeepingPages(range, body, 'Hi');
@@ -142,7 +142,7 @@ describe('protecting page blocks', () => {
   });
 
   it('steps over a page block instead of deleting it', () => {
-    const body = holder('<p>A<span class="page-block" data-page="atlas"></span>B</p>');
+    const body = holder('<p>A<span class="page-block" data-page="welcome"></span>B</p>');
     const line = body.querySelector('p') as HTMLElement;
     const caret = document.createRange();
     caret.setStart(line, 2);
@@ -189,22 +189,23 @@ describe('comments', () => {
     const body = holder('<p>Alpha beta</p>');
     body.className = 'note-body';
     body.dataset.noteEditable = '';
-    updateNote('weekly', { content: body.innerHTML });
-    const session = new EditorSession('weekly', body.innerHTML);
+    const note = createNote();
+    updateNote(note.id, { content: body.innerHTML });
+    const session = new EditorSession(note.id, body.innerHTML);
     session.setBody(body);
     session.setAdapter({ commit: () => session.save(body.innerHTML), toggleSticky: () => undefined, selectAll: () => undefined, linesChanged: () => undefined });
     const range = document.createRange();
     range.selectNodeContents(body.querySelector('p') as Node);
     session.addComment(range, 'Look again');
-    const id = getNote('weekly')?.comments.at(-1)?.id as string;
+    const id = getNote(note.id)?.comments.at(-1)?.id as string;
 
     session.removeComment(id);
-    expect(getNote('weekly')?.comments.some(comment => comment.id === id)).toBe(false);
+    expect(getNote(note.id)?.comments.some(comment => comment.id === id)).toBe(false);
     session.undo();
-    expect(getNote('weekly')?.comments.find(comment => comment.id === id)?.text).toBe('Look again');
-    expect(getNote('weekly')?.content).toContain(`data-comment="${id}"`);
+    expect(getNote(note.id)?.comments.find(comment => comment.id === id)?.text).toBe('Look again');
+    expect(getNote(note.id)?.content).toContain(`data-comment="${id}"`);
     session.undo();
-    expect(getNote('weekly')?.comments.some(comment => comment.id === id)).toBe(false);
+    expect(getNote(note.id)?.comments.some(comment => comment.id === id)).toBe(false);
   });
 
   it('types outside a comment at its start or end, but inside it in the middle', () => {

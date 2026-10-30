@@ -43,20 +43,30 @@ describe('note store', () => {
     expect(store.createNote()).toMatchObject({ mode: 'blocks', layout: 'paginated', pageSize: 'letter' });
   });
 
-  it('starts with the sample notes', async () => {
+  it('starts with one welcome note', async () => {
     const store = await openApp();
-    expect(store.getNote('atlas')?.title).toBe('Project Atlas — Research brief');
+    expect(store.getNotes()).toHaveLength(1);
+    expect(store.getNote('welcome')?.title).toBe('Welcome to Starjot');
+    expect(store.getNote('welcome')?.content).toContain('<strong>bold</strong>');
+    expect(store.getNote('welcome')?.content).toContain('<ul class="checklist">');
+  });
+
+  it('keeps existing notes when the welcome note is introduced', async () => {
+    localStorage.setItem('starjot-notespace-v1', JSON.stringify({ notes: [{ id: 'atlas', title: 'My edited note', content: '<p>My work</p>' }] }));
+    const store = await openApp();
+    expect(store.getNote('atlas')).toMatchObject({ title: 'My edited note', content: '<p>My work</p>' });
+    expect(store.getNote('welcome')?.title).toBe('Welcome to Starjot');
   });
 
   it('keeps Small text and Full width per note, off for notes saved before they existed', async () => {
     let store = await openApp();
-    expect(store.getNote('atlas')).toMatchObject({ smallText: false, fullWidth: false });
+    expect(store.getNote('welcome')).toMatchObject({ smallText: false, fullWidth: false });
     const note = store.createNote();
     store.updateNote(note.id, { smallText: true, fullWidth: true });
     vi.resetModules();
     store = await openApp();
     expect(store.getNote(note.id)).toMatchObject({ smallText: true, fullWidth: true });
-    expect(store.getNote('atlas')).toMatchObject({ smallText: false, fullWidth: false });
+    expect(store.getNote('welcome')).toMatchObject({ smallText: false, fullWidth: false });
   });
 
   it('creates, cleans and saves a note so it is still there after reopening', async () => {
@@ -84,7 +94,7 @@ describe('note store', () => {
     vi.resetModules();
     store = await openApp();
     expect(store.getNote(canvas.id)?.kind).toBe('canvas');
-    expect(store.getNotes().find(note => note.id === 'atlas')?.kind).toBe('document');
+    expect(store.getNotes().find(note => note.id === 'welcome')?.kind).toBe('document');
   });
 
   it('shows the dots on a canvas unless they are turned off, and remembers the choice', async () => {
@@ -100,12 +110,12 @@ describe('note store', () => {
 
   it('keeps a deleted sample note deleted after reopening', async () => {
     let store = await openApp();
-    store.deleteNote('atlas');
-    expect(store.getNote('atlas')).toBeUndefined();
+    store.deleteNote('welcome');
+    expect(store.getNote('welcome')).toBeUndefined();
 
     vi.resetModules();
     store = await openApp();
-    expect(store.getNote('atlas')).toBeUndefined();
+    expect(store.getNote('welcome')).toBeUndefined();
   });
 
   it('pins and unpins a note without changing when it was last edited', async () => {
@@ -123,24 +133,24 @@ describe('note store', () => {
     localStorage.setItem('starjot-notespace-v1', JSON.stringify({ notes: [{ id: 'old', title: 'Old', accent: 'mint', color: 'gold' }] }));
     let store = await openApp();
     expect(store.getNote('old')?.color).toBe('');
-    expect(store.getNote('atlas')?.color).toBe('');
-    const editedAt = store.getNote('atlas')?.updatedAt;
-    store.setNoteColor('atlas', 'green');
-    expect(store.getNote('atlas')).toMatchObject({ color: 'green', updatedAt: editedAt });
+    expect(store.getNote('welcome')?.color).toBe('');
+    const editedAt = store.getNote('welcome')?.updatedAt;
+    store.setNoteColor('welcome', 'green');
+    expect(store.getNote('welcome')).toMatchObject({ color: 'green', updatedAt: editedAt });
     vi.resetModules();
     store = await openApp();
-    expect(store.getNote('atlas')?.color).toBe('green');
-    store.setNoteColor('atlas', 'gold' as never);
-    expect(store.getNote('atlas')?.color).toBe('');
+    expect(store.getNote('welcome')?.color).toBe('green');
+    store.setNoteColor('welcome', 'gold' as never);
+    expect(store.getNote('welcome')?.color).toBe('');
   });
 
   it('remembers when a note was opened without changing when it was edited', async () => {
     const store = await openApp();
-    const editedAt = store.getNote('atlas')?.updatedAt;
-    expect(store.getNote('atlas')?.openedAt).toBeNull();
-    store.markOpened('atlas');
-    expect(store.getNote('atlas')?.openedAt).not.toBeNull();
-    expect(store.getNote('atlas')?.updatedAt).toBe(editedAt);
+    const editedAt = store.getNote('welcome')?.updatedAt;
+    expect(store.getNote('welcome')?.openedAt).toBeNull();
+    store.markOpened('welcome');
+    expect(store.getNote('welcome')?.openedAt).not.toBeNull();
+    expect(store.getNote('welcome')?.updatedAt).toBe(editedAt);
   });
 
   it('labels a note edited just now', async () => {
@@ -329,14 +339,14 @@ describe('sub-pages', () => {
     localStorage.setItem('starjot-notespace-v1', JSON.stringify({
       version: 1,
       deleted: [],
-      notes: [page('orphan', 'gone'), page('loop-a', 'loop-b'), page('loop-b', 'loop-a'), page('kept', 'atlas')]
+      notes: [page('orphan', 'gone'), page('loop-a', 'loop-b'), page('loop-b', 'loop-a'), page('kept', 'welcome')]
     }));
     const store = await openApp();
 
     expect(store.getNote('orphan')?.parentId).toBe('');
     expect(store.getNote('loop-a')?.parentId).toBe('');
     expect(store.getNote('loop-b')?.parentId).toBe('');
-    expect(store.getNote('kept')?.parentId).toBe('atlas');
+    expect(store.getNote('kept')?.parentId).toBe('welcome');
   });
 });
 
@@ -417,7 +427,7 @@ describe('drawings', () => {
     vi.resetModules();
     store = await openApp();
     expect(store.getNote(note.id)?.drawing).toEqual([{ tool: 'pen', color: '#e5484d', size: 3, points: [1, 2, 3, 4] }]);
-    expect(store.getNote('atlas')?.drawing).toEqual([]);
+    expect(store.getNote('welcome')?.drawing).toEqual([]);
   });
 });
 
@@ -471,23 +481,23 @@ describe('trash', () => {
 
   it('keeps Trash after reopening, brings back deleted samples, and forgets deletions after 30 days', async () => {
     let store = await openApp();
-    const entry = store.deleteNote('atlas')!;
+    const entry = store.deleteNote('welcome')!;
     vi.resetModules();
     store = await openApp();
     expect(store.getTrash().map(item => item.id)).toEqual([entry]);
     store.restoreFromTrash(entry);
     vi.resetModules();
     store = await openApp();
-    expect(store.getNote('atlas')).toBeDefined();
+    expect(store.getNote('welcome')).toBeDefined();
 
-    store.deleteNote('atlas');
+    store.deleteNote('welcome');
     const saved = JSON.parse(localStorage.getItem('starjot-notespace-v1')!);
     saved.trash[0].deletedAt = new Date(Date.now() - 31 * 24 * 60 * 60 * 1000).toISOString();
     localStorage.setItem('starjot-notespace-v1', JSON.stringify(saved));
     vi.resetModules();
     store = await openApp();
     expect(store.getTrash()).toHaveLength(0);
-    expect(store.getNote('atlas')).toBeUndefined();
+    expect(store.getNote('welcome')).toBeUndefined();
   });
 
   it('deletes for good one deletion, or everything in Trash', async () => {
