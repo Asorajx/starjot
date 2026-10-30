@@ -4,10 +4,12 @@ import { Icon, type IconName } from '../../../components/Icon';
 import { emptyParagraph, placeCaret } from '../text/dom';
 import { useSessionValue, type EditorSession } from '../session';
 import {
-  borderNear, cellRange, cellsInRange, columnResizeChange, ensureColumns, hasMergedCells, insertColumn, insertRow, isFitToWidth, measureColumns, mergeCells, moveColumn, moveRow, removeColumn,
-  removeRow, repeatsHeader, resizeColumn, rowHeightLimit, rowMinHeight, setFitToWidth, setHeaders, setRepeatHeader, setRowHeight, tableGrid, tableHeaders, unmergeCell, MIN_COLUMN_WIDTH, type BorderHit, type CellRange
+  borderNear, canMoveRow, cellRange, cellsInRange, columnResizeChange, ensureColumns, hasMergedCells, insertColumn, insertRow, isFitToWidth, measureColumns, mergeCells, moveColumn, moveRow, removeColumn,
+  removeRow, repeatsHeader, resizeColumn, rowGroup, rowHeightLimit, rowMinHeight, setFitToWidth, setHeaders, setRepeatHeader, setRowHeight, tableGrid, tableHeaders, unmergeCell, MIN_COLUMN_WIDTH, type BorderHit, type CellRange
 } from './tables';
 import { cellAt, tableSlice, tableText } from './tableClipboard';
+import { BREAK_CLASS, setSplitsAcrossPages, splitsAcrossPages } from '../layout/rowBreaks';
+import { ROW_SPLITTING_ENABLED } from '../layout/rowBreakFeature';
 import { writeClipboard } from '../text/clipboard';
 import { cleanHtml } from '../../sanitize';
 
@@ -22,7 +24,7 @@ type Part = 'table' | 'row' | 'column';
 type Pick = { table: HTMLTableElement; part: Part; index: number };
 
 /* The cell under the pointer, which decides which row and column grips are shown. */
-type Hover = { table: HTMLTableElement; row: number; column: number };
+type Hover = { table: HTMLTableElement; row: number; column: number; piece: number };
 
 /* A row or column being dragged from position "from" to position "to". */
 type Drag = { part: 'row' | 'column'; table: HTMLTableElement; from: number; to: number };
@@ -95,17 +97,38 @@ function inView(style: CSSProperties, of: Element): CSSProperties {
 /* into the space it reserves below it. */
 function pageStretches(table: HTMLTableElement): Stretch[] {
   const { top, bottom } = table.getBoundingClientRect();
-  if (!table.classList.contains('page-table-expanded')) return [{ top, bottom }];
+  if (!table.classList.contains('page-table-expanded') && !table.querySelector(`.${BREAK_CLASS}`)) return [{ top, bottom }];
   const header = table.rows[0];
   const copied = repeatsHeader(table) && header && Array.from(header.cells).every(cell => cell.tagName === 'TH') ? header.getBoundingClientRect().height : 0;
   const stretches: Stretch[] = [];
-  Array.from(table.rows).forEach(row => {
-    const box = row.getBoundingClientRect();
+  Array.from(table.rows).forEach(row => rowPieces(row).forEach((piece, index) => {
     const last = stretches[stretches.length - 1];
-    if (last && box.top - last.bottom < 2) last.bottom = Math.max(last.bottom, box.bottom);
-    else stretches.push({ top: last ? box.top - copied : box.top, bottom: box.bottom });
-  });
+    if (last && index === 0 && piece.top - last.bottom < 2) last.bottom = Math.max(last.bottom, piece.bottom);
+    else stretches.push({ top: last ? piece.top - copied : piece.top, bottom: piece.bottom });
+  }));
   return stretches.length ? stretches : [{ top, bottom }];
+}
+
+/* A row's pieces on each page: one, or, for a row split across pages (see rowBreaks.ts), one */
+/* per page, cut where its cells' spacers are. The cells break at different heights (their lines */
+/* differ), so a piece ends where the longest cell's text on that page does. */
+function rowPieces(row: HTMLTableRowElement): Stretch[] {
+  const box = row.getBoundingClientRect();
+  const cuts = new Map<number, Stretch>();
+  row.querySelectorAll(`.${BREAK_CLASS}`).forEach(spacer => {
+    const { top: from, bottom: to } = spacer.getBoundingClientRect();
+    const key = Math.round(to);
+    const cut = cuts.get(key);
+    cuts.set(key, { top: Math.max(cut?.top ?? from, from), bottom: to });
+  });
+  const pieces: Stretch[] = [];
+  let start = box.top;
+  [...cuts.values()].sort((one, other) => one.top - other.top).forEach(cut => {
+    pieces.push({ top: start, bottom: cut.top });
+    start = cut.bottom;
+  });
+  pieces.push({ top: start, bottom: box.bottom });
+  return pieces;
 }
 
 /* A table's screen area, taking in the rows moved onto later pages. */
@@ -262,6 +285,9 @@ export function TableTools({ session, locked }: TableToolsProps) {
   const redraw = () => setTick(tick => tick + 1);
 
   const press = useRef<Press | null>(null);
+
+  /* A row or column being dragged, as of now (the state lags a render behind). */
+  const dragNow = useRef<Drag | null>(null);
   const anchorBack = useRef(0);
 
   /* The border drag as of now (the state lags a render behind), the pointer's last spot, the */
@@ -314,8 +340,11 @@ export function TableTools({ session, locked }: TableToolsProps) {
 
       if (cell && table && body()?.contains(table)) {
         const place = tableGrid(table).places.get(cell);
-        const next = { table, row: place?.row ?? 0, column: place?.column ?? 0 };
-        setHover(current => (current?.table === next.table && current.row === next.row && current.column === next.column ? current : next));
+        const row = place?.row ?? 0;
+        const pieces = rowPieces(table.rows[row]);
+        const piece = Math.max(0, pieces.findIndex(part => event.clientY <= part.bottom));
+        const next = { table, row, column: place?.column ?? 0, piece };
+        setHover(current => (current?.table === next.table && current.row === next.row && current.column === next.column && current.piece === next.piece ? current : next));
         return;
       }
       setHover(current => {
@@ -608,19 +637,19 @@ export function TableTools({ session, locked }: TableToolsProps) {
 
   function menuItems({ table, part, index }: Pick): MenuItem[] {
     const headers = tableHeaders(table);
-    const rows = table.rows.length;
     const columns = tableGrid(table).width;
     const remove = () => removePart({ table, part, index });
 
-    /* Rows and columns cannot be moved while the table has merged cells. */
+    /* Columns cannot be moved while the table has merged cells; rows as canMoveRow allows. */
     const merged = hasMergedCells(table);
 
     if (part === 'row') {
       return [
         { label: 'Insert above', icon: 'plus', run: () => { change(() => insertRow(table, index, 'above')); setPick({ table, part, index: index + 1 }); } },
         { label: 'Insert below', icon: 'plus', run: () => change(() => insertRow(table, index, 'below')) },
-        { label: 'Move up', icon: 'arrow-up', disabled: merged || index === 0, run: () => { change(() => moveRow(table, index, index - 1)); setPick({ table, part, index: index - 1 }); } },
-        { label: 'Move down', icon: 'arrow-down', disabled: merged || index === rows - 1, run: () => { change(() => moveRow(table, index, index + 1)); setPick({ table, part, index: index + 1 }); } },
+        { label: 'Move up', icon: 'arrow-up', disabled: !canMoveRow(table, index, index - 1), run: () => { change(() => moveRow(table, index, index - 1)); setPick({ table, part, index: index - 1 }); } },
+        { label: 'Move down', icon: 'arrow-down', disabled: !canMoveRow(table, index, index + 1), run: () => { change(() => moveRow(table, index, index + 1)); setPick({ table, part, index: index + 1 }); } },
+        ...(ROW_SPLITTING_ENABLED ? [{ label: 'Allow row to break across pages', checked: splitsAcrossPages(table.rows[index]), disabled: rowGroup(table, index)[0] !== rowGroup(table, index)[1] || Boolean(table.closest('.sticky-group')) || (index === 0 && headers.row), run: () => change(() => setSplitsAcrossPages(table.rows[index], !splitsAcrossPages(table.rows[index]))) }] : []),
         { label: 'Delete row', icon: 'trash', danger: true, run: remove }
       ];
     }
@@ -657,28 +686,80 @@ export function TableTools({ session, locked }: TableToolsProps) {
     press.current = { part, table, index, x: event.clientX, y: event.clientY };
   }
 
-  /* A table with merged cells cannot have its rows or columns moved, so its grips only open the menu. */
+  /* Whether a row or column can be dragged at all: a column not while the table has merged cells, */
+  /* a row not while a cell merged down joins it to others. Such grips only open the menu. */
+  function canDrag({ part, table, index }: Press) {
+    if (part === 'column') return !hasMergedCells(table);
+    const [first, last] = rowGroup(table, index);
+    return first === last;
+  }
+
   function movePress(event: ReactPointerEvent<HTMLButtonElement>) {
     const current = press.current;
-    if (!current || hasMergedCells(current.table)) return;
-    if (!drag && Math.hypot(event.clientX - current.x, event.clientY - current.y) < DRAG_DISTANCE) return;
-    const to = dropIndex(current.table, current.part, event.clientX, event.clientY);
-    setDrag({ part: current.part, table: current.table, from: current.index, to });
+    if (!current || !canDrag(current)) return;
+    pointerAt.current = { x: event.clientX, y: event.clientY };
+    if (!dragNow.current && Math.hypot(event.clientX - current.x, event.clientY - current.y) < DRAG_DISTANCE) return;
+    if (!dragNow.current) {
+      lastFrame.current = 0;
+      edgeCarry.current = 0;
+      cancelAnimationFrame(edgeFrame.current);
+      edgeFrame.current = requestAnimationFrame(scrollWhileMoving);
+    }
+    aimDrag(current);
+  }
+
+  /* Where the dragged row or column would go, from the pointer's last spot. */
+  function aimDrag(current: Press) {
+    const to = dropIndex(current.table, current.part, pointerAt.current.x, pointerAt.current.y);
+    const previous = dragNow.current;
+    if (previous && previous.to === to) return;
+    dragNow.current = { part: current.part, table: current.table, from: current.index, to };
+    setDrag(dragNow.current);
+  }
+
+  /* While a grip is dragged near an edge of the note, the note scrolls that way (up or down for a */
+  /* row, sideways for a column), so a row can be taken to another page; whenever it has scrolled, */
+  /* here or with the wheel, the place it would go is worked out again. */
+  function scrollWhileMoving(now: number) {
+    const current = press.current;
+    const scroller = session.scroller();
+    if (!current || !dragNow.current || !scroller || !current.table.isConnected) return;
+    const elapsed = lastFrame.current ? now - lastFrame.current : 16;
+    lastFrame.current = now;
+    const row = current.part === 'row';
+    const box = scroller.getBoundingClientRect();
+    const area = row ? visibleArea(current.table) : { top: box.left, bottom: box.right };
+    edgeCarry.current += edgeScrollStep(row ? pointerAt.current.y : pointerAt.current.x, area.top, area.bottom, elapsed);
+    const step = Math.trunc(edgeCarry.current);
+    edgeCarry.current -= step;
+    if (step && row) scroller.scrollTop += step;
+    else if (step) scroller.scrollLeft += step;
+    aimDrag(current);
+    edgeFrame.current = requestAnimationFrame(scrollWhileMoving);
   }
 
   function endPress() {
     const current = press.current;
     press.current = null;
+    cancelAnimationFrame(edgeFrame.current);
+    const moved = dragNow.current;
+    dragNow.current = null;
     if (!current) return;
-    if (!drag) {
+    if (!moved) {
       choose({ table: current.table, part: current.part, index: current.index });
       return;
     }
-    const { table, part, from, to } = drag;
+    const { table, part, from, to } = moved;
     setDrag(null);
-    if (from !== to) change(() => (part === 'row' ? moveRow(table, from, to) : moveColumn(table, from, to)));
+    if (from !== to) {
+      change(() => (part === 'row' ? moveRow(table, from, to) : moveColumn(table, from, to)));
+      session.layOutPages?.();
+    }
     setPick(null);
   }
+
+  /* A row can only land where canMoveRow allows; elsewhere no line is shown and nothing moves. */
+  const dropAllowed = (current: Drag) => current.to !== current.from && (current.part === 'column' || canMoveRow(current.table, current.from, current.to));
 
   if (locked) return null;
 
@@ -754,6 +835,18 @@ export function TableTools({ session, locked }: TableToolsProps) {
   const whole = boxOf(table);
   const structured = Boolean(table.closest('.block-content'));
   const rowBox = shownHover && shownHover.table === table ? partBox(table, 'row', shownHover.row) : null;
+
+  /* A split row's centre can be in a page margin. Put its grip beside the visible piece */
+  /* under the pointer, and use that same piece for the column grip and row menu. */
+  if (rowBox && shownHover) {
+    const pieces = rowPieces(table.rows[shownHover.row]);
+    const piece = pieces[shownHover.piece];
+    if (pieces.length > 1 && piece) {
+      const area = visibleArea(table);
+      rowBox.top = Math.max(piece.top, area.top);
+      rowBox.height = Math.max(0, Math.min(piece.bottom, area.bottom) - rowBox.top);
+    }
+  }
   const columnBox = shownHover && shownHover.table === table ? partBox(table, 'column', shownHover.column) : null;
   const pickBox = shownPick ? partBox(shownPick.table, shownPick.part, shownPick.part === 'table' ? 0 : shownPick.index) : null;
   const dragBox = drag ? partBox(drag.table, drag.part, drag.from) : null;
@@ -767,14 +860,15 @@ export function TableTools({ session, locked }: TableToolsProps) {
   let menuLeft = 0;
   if (shownPick && pickBox) {
     if (shownPick.part === 'row') {
-      menuTop = pickBox.top + pickBox.height / 2 + 14;
+      const anchor = rowBox && shownHover?.row === shownPick.index ? rowBox : pickBox;
+      menuTop = anchor.top + anchor.height / 2 + 14;
       menuLeft = whole.left + 8;
     } else if (shownPick.part === 'column') {
       menuTop = whole.top + 12;
       menuLeft = pickBox.left + pickBox.width / 2 - 10;
     } else {
       menuTop = whole.top + 30;
-      menuLeft = whole.left - 30;
+      menuLeft = whole.left - 42;
     }
   }
   const menuAbove = menuTop + 300 > window.innerHeight && menuTop > 300;
@@ -789,7 +883,7 @@ export function TableTools({ session, locked }: TableToolsProps) {
         <button
           type="button"
           className="table-tools table-grip"
-          style={inView({ top: whole.top + 2, left: whole.left - 30 }, table)}
+          style={inView({ top: whole.top + 2, left: whole.left - 42 }, table)}
           aria-label="Select table"
           onMouseDown={event => event.preventDefault()}
           onClick={() => choose({ table, part: 'table', index: 0 })}
@@ -803,7 +897,7 @@ export function TableTools({ session, locked }: TableToolsProps) {
         <button
           type="button"
           className="table-tools table-line-grip is-row"
-          style={inView({ top: rowBox.top + rowBox.height / 2 - 11, left: whole.left - 7 }, table)}
+          style={inView({ top: rowBox.top + rowBox.height / 2 - 14, left: whole.left - 15 }, table)}
           aria-label="Row options (drag to move)"
           onPointerDown={event => grip(event, 'row', shownHover.row)}
           onPointerMove={movePress}
@@ -817,7 +911,7 @@ export function TableTools({ session, locked }: TableToolsProps) {
         <button
           type="button"
           className="table-tools table-line-grip is-column"
-          style={inView({ top: columnTop - 7, left: columnBox.left + columnBox.width / 2 - 11 }, table)}
+          style={inView({ top: columnTop - 15, left: columnBox.left + columnBox.width / 2 - 14 }, table)}
           aria-label="Column options (drag to move)"
           onPointerDown={event => grip(event, 'column', shownHover.column)}
           onPointerMove={movePress}
@@ -831,7 +925,7 @@ export function TableTools({ session, locked }: TableToolsProps) {
       {dragBox && drag && outlineStyles(dragBox, drag.table).map((style, index) => (
         <div key={index} className="table-tools table-pick" style={style} />
       ))}
-      {drag && dropBox && drag.to !== drag.from && (
+      {drag && dropBox && dropAllowed(drag) && (
         <div
           className={`table-tools table-drop is-${drag.part}`}
           style={drag.part === 'row'

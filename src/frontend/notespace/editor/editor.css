@@ -961,6 +961,14 @@
   .editor-width.is-paginated table .page-first-column {
     border-left-width: 1px;
   }
+
+  /* The space that moves a split row's text to the next page (see rowBreaks.ts). It sits in the */
+  /* page gap, which covers it; a click there reaches the cell. */
+  .page-cell-break {
+    display: block;
+    pointer-events: none;
+    user-select: none;
+  }
 }
 
 /* A narrow pane keeps just enough room for the block controls. A paginated note's pages carry */

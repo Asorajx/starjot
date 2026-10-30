@@ -38,8 +38,8 @@ export function safeHref(href: string | null) {
 }
 
 /* Copy the few attributes Notespace uses: link addresses, linked page ids, page block sizes and widths, */
-/* table column widths and row heights, how many rows and columns a merged table cell covers, comment */
-/* ids, and tab names. */
+/* table column widths, row heights and page breaks, how many rows and columns a merged table cell */
+/* covers, comment ids, and tab names. */
 function copyAttributes(node: Element, copy: Element) {
   /* An image keeps only its id, its width in pixels and where it sits on its line; a pinned */
   /* drawing keeps its strokes, its own size and how far it is moved instead of an id. */
@@ -70,6 +70,9 @@ function copyAttributes(node: Element, copy: Element) {
   if (Number.isInteger(columnWidth) && columnWidth >= 24 && columnWidth <= 4000) copy.setAttribute('data-width', String(columnWidth));
   const height = node.tagName === 'TR' ? Number(node.getAttribute('data-height')) : 0;
   if (Number.isInteger(height) && height >= 20 && height <= 4000) copy.setAttribute('data-height', String(height));
+
+  /* A row allowed to break across pages (see rowBreaks.ts). */
+  if (node.tagName === 'TR' && node.getAttribute('data-split') === 'true') copy.setAttribute('data-split', 'true');
   ['colspan', 'rowspan'].forEach(name => {
     const span = Number(node.getAttribute(name));
     if ((node.tagName === 'TD' || node.tagName === 'TH') && Number.isInteger(span) && span > 1 && span <= 50) copy.setAttribute(name, String(span));
@@ -110,8 +113,9 @@ function cleanNode(node: Node): Node | null {
   if (node.nodeType === Node.TEXT_NODE) return document.createTextNode(node.textContent ?? '');
   if (!(node instanceof Element) || DROPPED_TAGS.has(node.tagName)) return null;
 
-  /* A tab block's strip of tab names is drawn when shown, so it is never stored. */
-  if (node.classList.contains('tab-strip')) return null;
+  /* A tab block's strip of tab names is drawn when shown, and a table row's page-break spacers */
+  /* (see rowBreaks.ts) are put in when the note is shown on pages, so neither is stored. */
+  if (node.classList.contains('tab-strip') || node.classList.contains('page-cell-break')) return null;
   if (node.tagName === 'DIV' && node.classList.contains('page-block')) return upgradePageBlock(node);
 
   /* A page block's title and buttons, an image's picture and a reminder's time are drawn when shown, so only the empty block is stored. */

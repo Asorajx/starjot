@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { unmark } from '../../../../../src/frontend/notespace/editor/comments/comments';
 import {
-  borderNear, cellRange, columnElements, columnResizeChange, hasMergedCells, headerIntoHead, hydrateTables, insertColumn, insertRow, isFitToWidth, measureColumns, mergeCells, MIN_COLUMN_WIDTH, MIN_ROW_HEIGHT,
+  borderNear, canMoveRow, cellRange, columnElements, columnResizeChange, hasMergedCells, headerIntoHead, hydrateTables, insertColumn, insertRow, isFitToWidth, measureColumns, mergeCells, MIN_COLUMN_WIDTH, MIN_ROW_HEIGHT,
   moveColumn, moveRow, removeColumn, removeRow, repeatsHeader, resizeColumn, setColumnWidth, setFitToWidth, setHeaders, setRepeatHeader, setRowHeight,
   rowHeightLimit, rowMinHeight, tableGrid, tableHeaders, tableWidthLimit, unmergeCell
 } from '../../../../../src/frontend/notespace/editor/tables/tables';
@@ -196,13 +196,29 @@ describe('merged cells', () => {
     expect(spans(element)).toEqual(['a1b1a2b2(1x1) c2(1x1)', 'b3(1x1) c3(1x1)']);
   });
 
-  it('does not move rows or columns while the table has merged cells', () => {
+  it('moves rows past cells merged across, but not columns', () => {
     const element = grid3();
     mergeCells(element, { top: 0, bottom: 0, left: 0, right: 1 });
     const before = spans(element);
-    moveRow(element, 2, 0);
     moveColumn(element, 0, 1);
     expect(spans(element)).toEqual(before);
+    expect(canMoveRow(element, 2, 0)).toBe(true);
+    moveRow(element, 2, 0);
+    expect(spans(element)).toEqual([before[2], before[0], before[1]]);
+  });
+
+  it('keeps rows joined by a cell merged down together, and nothing lands between them', () => {
+    const element = grid3();
+    mergeCells(element, { top: 0, bottom: 1, left: 0, right: 0 });
+    const before = spans(element);
+    expect(canMoveRow(element, 0, 2)).toBe(false);
+    expect(canMoveRow(element, 1, 2)).toBe(false);
+    expect(canMoveRow(element, 2, 1)).toBe(false);
+    moveRow(element, 2, 1);
+    expect(spans(element)).toEqual(before);
+    expect(canMoveRow(element, 2, 0)).toBe(true);
+    moveRow(element, 2, 0);
+    expect(spans(element)).toEqual([before[2], before[0], before[1]]);
   });
 
   it('keeps a merged header cell a header, and keeps its size when headers change', () => {
@@ -462,6 +478,10 @@ describe('table resize limits', () => {
     box(element.rows[1], 0, 70, 600, 80);
     expect(rowHeightLimit(element.rows[1])).toBe(931);
     element.classList.add('repeat-header');
+    expect(rowHeightLimit(element.rows[1])).toBe(861);
+
+    /* A saved experimental flag must not bypass the resize limit in a normal build. */
+    element.rows[1].dataset.split = 'true';
     expect(rowHeightLimit(element.rows[1])).toBe(861);
     frame.remove();
   });

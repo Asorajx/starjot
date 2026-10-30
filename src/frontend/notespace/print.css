@@ -80,6 +80,20 @@
     break-inside: avoid;
   }
 
+  /* A row allowed to break across pages (see rowBreaks.ts) is split by the browser where a page */
+  /* ends, outside sticky groups; the spacers that split it on screen are not printed. */
+  tr[data-split="true"] {
+    break-inside: var(--table-row-break, avoid);
+  }
+
+  .sticky-group tr[data-split="true"] {
+    break-inside: avoid;
+  }
+
+  .page-cell-break {
+    display: none !important;
+  }
+
   /* A table's <thead> (its header row, with Repeat header row on) is printed again at the top of */
   /* every page the table continues on. */
   thead {

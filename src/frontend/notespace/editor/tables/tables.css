@@ -46,7 +46,8 @@
   min-width: 96px;
 }
 
-/* The grip beside a table in continuous mode, and the grips on the edge of a row or column. */
+/* The grip beside a table in continuous mode, and the grips on the edge of a row or column. They */
+/* stay quiet (no border or background) until hovered or focused, while their targets stay large. */
 .table-grip,
 .table-line-grip {
   position: fixed;
@@ -54,50 +55,128 @@
   display: grid;
   place-items: center;
   padding: 0;
-  border: 1px solid #dfe7f3;
-  border-radius: 4px;
-  background: #ffffff;
-  color: #5e6d84;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: #8490a2;
   cursor: pointer;
+  touch-action: none;
+  transition: background-color 120ms ease, color 120ms ease;
 }
 
 .table-grip {
-  width: 24px;
-  height: 26px;
-  border-color: transparent;
-  background: transparent;
+  width: 26px;
+  height: 28px;
 }
 
-.table-grip:hover {
-  background: var(--accent-soft);
-  color: var(--accent-text);
-}
-
-/* Row grips sit across the table's left edge and column grips across its top edge. */
+/* Row grips sit just outside the table's left edge and column grips above its top edge, reaching */
+/* 7px into the cells, so the larger target never covers the start of a cell's text (TableTools */
+/* places them; the table's own grip sits further left, clear of the first row's grip). */
 .table-line-grip {
-  width: 14px;
-  height: 22px;
+  width: 22px;
+  height: 28px;
   cursor: grab;
-  touch-action: none;
 }
 
 .table-line-grip.is-column {
+  width: 28px;
+  height: 22px;
+}
+
+/* What a row or column grip shows sits on the table's border, not in the middle of its target: */
+/* TableTools places the target 15px outside the border and 7px inside, so the border is 4px from */
+/* its centre. At rest it is a short line on the border beside the row or column; when the grip is */
+/* hovered or focused the line widens into a tinted pill with the dots, still on the border. */
+.table-line-grip {
+  --to-border: translateX(4px);
+}
+
+.table-line-grip.is-column {
+  --to-border: translateY(4px);
+}
+
+.table-line-grip::before {
+  content: '';
+  position: absolute;
+  width: 3px;
+  height: 22px;
+  border-radius: 999px;
+  background: currentColor;
+  opacity: .65;
+  transform: var(--to-border);
+  pointer-events: none;
+  transition: width 120ms ease, height 120ms ease, opacity 120ms ease, background-color 120ms ease;
+}
+
+.table-line-grip.is-column::before {
   width: 22px;
-  height: 14px;
+  height: 3px;
+}
+
+.table-line-grip .icon {
+  position: relative;
+  opacity: 0;
+  transform: var(--to-border);
+  transition: opacity 120ms ease;
 }
 
 .table-line-grip.is-column .icon {
-  transform: rotate(90deg);
+  transform: var(--to-border) rotate(90deg);
 }
 
-.table-line-grip:hover,
-.table-line-grip:active {
-  border-color: var(--accent-line);
+.table-line-grip:hover::before,
+.table-line-grip:focus-visible::before,
+.table-line-grip:active::before {
+  width: 16px;
+  height: 24px;
+  background: color-mix(in srgb, currentColor 14%, transparent);
+  opacity: 1;
+}
+
+.table-line-grip.is-column:hover::before,
+.table-line-grip.is-column:focus-visible::before,
+.table-line-grip.is-column:active::before {
+  width: 24px;
+  height: 16px;
+}
+
+.table-grip:hover {
+  background: color-mix(in srgb, currentColor 9%, transparent);
+  color: #526176;
+}
+
+.table-line-grip:hover {
+  color: #526176;
+}
+
+.table-grip:focus-visible,
+.table-line-grip:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
   color: var(--accent-text);
+}
+
+.table-line-grip:hover .icon,
+.table-line-grip:focus-visible .icon {
+  opacity: 1;
 }
 
 .table-line-grip:active {
   cursor: grabbing;
+  color: var(--accent-text);
+}
+
+.table-line-grip:active::before {
+  background: var(--accent-soft);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .table-grip,
+  .table-line-grip,
+  .table-line-grip .icon,
+  .table-line-grip::before {
+    transition: none;
+  }
 }
 
 /* The selected (or dragged) table, row or column. */

@@ -236,12 +236,13 @@ function prefixSelector(selector) {
   }).join(',\n');
 }
 
-/* Colour properties whose value is a theme variable (such as var(--accent)) or a colour keyword */
-/* (transparent, inherit, currentColor). Such values already suit both themes, but are copied as */
+/* Colour properties whose value is a theme variable (such as var(--accent)), a colour keyword */
+/* (transparent, inherit, currentColor) or a mix of those (color-mix with no colour of its own, as */
+/* the colours are caught above). Such values already suit both themes, but are copied as */
 /* they are, so the dark rules keep the light styles' order: a selected item's accent then still */
 /* wins over the converted colours of the plain item before it, as it does in the light theme. */
 const COLOR_PROPERTY = /^(color|background(-color)?|border(-top|-right|-bottom|-left)?(-color)?|outline(-color)?|fill|stroke|text-decoration-color|caret-color)$/;
-const THEMED_VALUE = /var\(--|^(transparent|inherit|currentColor)$/i;
+const THEMED_VALUE = /var\(--|^(transparent|inherit|currentColor)$|^color-mix\(/i;
 
 /* Return only the colour declarations of a rule, converted; null when the rule sets no colours. */
 function convertRule(selector, body) {

@@ -1,4 +1,5 @@
 import { zoomed } from '../../../lib/geometry';
+import { ROW_SPLITTING_ENABLED } from '../layout/rowBreakFeature';
 
 
 /* =========================
@@ -270,7 +271,7 @@ export function tableWidthLimit(table: HTMLTableElement) {
 
 /* The first and last rows held together with a row by cells merged down; a paginated note */
 /* moves them to another page as one. */
-function rowGroup(table: HTMLTableElement, index: number) {
+export function rowGroup(table: HTMLTableElement, index: number) {
   const spans = Array.from(tableGrid(table).places.values()).map(place => [place.row, place.row + place.rows - 1]);
   let first = index;
   let last = index;
@@ -305,6 +306,9 @@ export function rowHeightLimit(row: HTMLTableRowElement, scale = 1) {
   const rows = Array.from(table.rows);
   const height = (from: number, to: number) => rows.slice(from, to + 1).reduce((sum, other) => sum + other.getBoundingClientRect().height / scale, 0);
   const [first, last] = rowGroup(table, row.rowIndex);
+
+  /* A row allowed to break across pages (see rowBreaks.ts) continues on the next page instead. */
+  if (ROW_SPLITTING_ENABLED && first === last && first > 0 && !table.closest('.sticky-group') && row.dataset.split === 'true') return Infinity;
   const others = height(first, last) - row.getBoundingClientRect().height / scale;
   const header = rows[0];
   const repeated = repeatsHeader(table) && header && Array.from(header.cells).every(cell => cell.tagName === 'TH');
@@ -375,6 +379,16 @@ export function hydrateTables(root: Element | null) {
     });
     table.querySelectorAll<HTMLTableRowElement>('tr[data-height]').forEach(row => {
       row.style.height = `${Number(row.dataset.height)}px`;
+    });
+    Array.from(table.rows).forEach((row, index) => {
+      if (!ROW_SPLITTING_ENABLED || row.dataset.split !== 'true') {
+        row.style.removeProperty('--table-row-break');
+        return;
+      }
+      const [first, last] = rowGroup(table, index);
+      const allowed = first === last
+        && !table.closest('.sticky-group') && !(index === 0 && tableHeaders(table).row);
+      row.style.setProperty('--table-row-break', allowed ? 'auto' : 'avoid');
     });
     updateTableWidth(table);
   });
@@ -489,12 +503,24 @@ export function removeColumn(table: HTMLTableElement, index: number) {
   return Boolean(table.querySelector('th, td'));
 }
 
-/* Move a row so it ends up at position "to"; the other rows shift to make room. */
-/* Rows and columns cannot be moved while the table has merged cells, because a merged cell */
-/* would have to be cut in two. */
+/* Whether a row can move to position "to". A row joined to others by a cell merged down cannot */
+/* move (the cell would be cut in two), nor can a row land between the rows such a cell joins. */
+/* Cells merged across do not matter, as whole rows move. */
+export function canMoveRow(table: HTMLTableElement, from: number, to: number) {
+  const count = table.rows.length;
+  if (from === to || from < 0 || to < 0 || from >= count || to >= count) return false;
+  const [first, last] = rowGroup(table, from);
+  if (first !== from || last !== from) return false;
+  const [top, bottom] = rowGroup(table, to);
+  return to < from ? top === to : bottom === to;
+}
+
+/* Move a row so it ends up at position "to"; the other rows shift to make room (see canMoveRow). */
+/* Columns cannot be moved while the table has merged cells, as a merged cell would have to be */
+/* cut in two and the cells of a row no longer line up with the columns. */
 export function moveRow(table: HTMLTableElement, from: number, to: number) {
   const rows = Array.from(table.rows);
-  if (from === to || !rows[from] || !rows[to] || hasMergedCells(table)) return;
+  if (!canMoveRow(table, from, to)) return;
   const headers = tableHeaders(table);
   if (to < from) rows[to].before(rows[from]);
   else rows[to].after(rows[from]);

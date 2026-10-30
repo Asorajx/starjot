@@ -64,7 +64,7 @@ describe('long tables in Paginated view', () => {
       at(row, 450 + index * 38, 38);
       return row;
     });
-    return { frame, body, table, rows };
+    return { frame, body, table, rows, at };
   }
 
   it('moves whole table rows across page boundaries and draws repeated headers separately', () => {
@@ -118,10 +118,80 @@ describe('long tables in Paginated view', () => {
     }
   });
 
+  /* 1000px ends in the gap after its page; 1015px ends just inside the next page's top margin. */
+  it.each([1000, 1015])('starts a row %ipx tall (taller than a page) at the top of a page, and leaves the gap it runs across uncovered', tall => {
+    const { frame, body, table, rows, at } = longTable(true);
+    rows.forEach((row, index) => {
+      if (index < 40) return;
+      const top = 450 + index * 38 + (index > 40 ? tall - 38 : 0);
+      const height = index === 40 ? tall : 38;
+      at(row, top, height);
+      Array.from(row.cells).forEach((cell, column) => at(cell, top, height, 96 + column * 300, 300));
+    });
+    at(table, 450, 70 * 38 + tall - 38);
+    const geometry = pageGeometry('a4', false);
+    const step = pageStep(geometry);
+    const pages = layOutPages(frame, body, geometry);
+
+    /* It starts below the repeated header at the top of a page, later than where it was. */
+    const shiftOf = (row: HTMLTableRowElement) => parseFloat(row.style.getPropertyValue('--table-row-shift')) || 0;
+    const top = 450 + 40 * 38 + shiftOf(rows[40]);
+    expect(shiftOf(rows[40])).toBeGreaterThan(0);
+    expect(top - Math.floor(top / step) * step).toBeCloseTo(geometry.margin + 38);
+
+    /* The row after it starts the next page's text, below that page's repeated header. */
+    const next = top + tall + shiftOf(rows[41]) - shiftOf(rows[40]);
+    expect(next - Math.floor(next / step) * step).toBeCloseTo(geometry.margin + 38);
+
+    /* KNOWN DEFECT: The old renderer leaves this gap uncovered. That exposes the */
+    /* editable row's text in the grey inter-page gutter (see the UX report). */
+    /* Keep this characterization assertion until true row continuation lands. */
+    expect(frame.querySelectorAll('.page-gap-mask')).toHaveLength(pages - 2);
+    const headerTops = Array.from(frame.querySelectorAll<HTMLElement>('.page-repeat-header')).map(copy => parseFloat(copy.style.top));
+    expect(headerTops.some(copyTop => copyTop > top && copyTop < top + tall)).toBe(false);
+    expect(table.rows).toHaveLength(70);
+  });
+
+  /* A browser-level follow-up must verify that text is neither drawn in the page gutter */
+  /* nor clipped, and can be edited across page boundaries. Mask-only fixes fail that check. */
+  it('keeps the original oversized row editable and intact after layout and cleanup', () => {
+    const { frame, body, table, rows, at } = longTable(false);
+    const target = rows[40];
+    const original = target.cells[0].textContent;
+    const height = 1250;
+    rows.forEach((row, index) => {
+      if (index < 40) return;
+      const top = 450 + index * 38 + (index > 40 ? height - 38 : 0);
+      const rowHeight = index === 40 ? height : 38;
+      at(row, top, rowHeight);
+      Array.from(row.cells).forEach((cell, column) => at(cell, top, rowHeight, 96 + column * 300, 300));
+    });
+    at(table, 450, 70 * 38 + height - 38);
+    layOutPages(frame, body, pageGeometry('a4', false));
+    expect(table.rows[40]).toBe(target);
+    expect(target.cells[0].textContent).toBe(original);
+    expect(table.rows).toHaveLength(70);
+    clearPages(frame);
+    expect(table.rows[40]).toBe(target);
+    expect(target.cells[0].textContent).toBe(original);
+    expect(frame.querySelector('.page-preview-overlays')?.childElementCount).toBe(0);
+  });
+
   it('moves long tables even when repeat header is switched off', () => {
     const { frame, body, table } = longTable(false);
     layOutPages(frame, body, pageGeometry('a4', false));
     expect(table.querySelector('.page-table-row')).not.toBeNull();
     expect(frame.querySelector('.page-repeat-header')).toBeNull();
+  });
+
+  it('keeps saved experimental row choices inert in a normal build', () => {
+    const original = longTable(true);
+    const optedIn = longTable(true);
+    Array.from(optedIn.table.rows).forEach(row => { row.dataset.split = 'true'; });
+    const paper = pageGeometry('a4', false);
+    expect(layOutPages(optedIn.frame, optedIn.body, paper)).toBe(layOutPages(original.frame, original.body, paper));
+    expect(Array.from(optedIn.table.rows).map(row => row.style.cssText)).toEqual(Array.from(original.table.rows).map(row => row.style.cssText));
+    expect(optedIn.table.querySelector('.page-cell-break')).toBeNull();
+    expect(optedIn.table.rows[1].dataset.split).toBe('true');
   });
 });
