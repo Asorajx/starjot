@@ -8,7 +8,6 @@ import { updatePreferences, usePreferences, type NotesSort } from '../app/prefer
 import { NoteTable, NoteTile, NotesViewSwitch, sortNotes, starredNotes } from './NoteList';
 import { useNoteMenu } from './NoteMenu';
 import { useImport } from './import/useImport';
-import { openTrash } from './trash';
 import {
   addCategory, canAddCategory, categoryName, removeCategory, renameCategory, useCategories, useNotes
 } from './store';
@@ -175,10 +174,6 @@ export function NotesHome({ filter, onFilterChange, onOpen, onOpenInNewTab, onOp
       <header className="page-intro">
         <h1>Notespace</h1>
         <div className="notes-home-actions">
-          {/* Phones have no sidebar, so Trash is here too (hidden on wider screens). */}
-          <button className="btn btn-secondary notes-home-trash" type="button" aria-label="Trash" data-tooltip="Trash" onClick={() => openTrash()}>
-            <Icon name="trash" size={16} />
-          </button>
           <button
             className="btn btn-secondary"
             type="button"

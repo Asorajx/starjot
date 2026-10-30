@@ -11,7 +11,6 @@ import {
 } from '../app/shortcuts';
 import { TRASH_DAYS, useCategories, useTrash } from '../notespace/store';
 import { openTrash } from '../notespace/trash';
-import { useMediaQuery } from '../lib/useMediaQuery';
 import { Switch } from '../components/Switch';
 import { useEscape } from '../lib/useDismiss';
 import { useFocusTrap } from '../lib/useFocusTrap';
@@ -215,12 +214,43 @@ const SETTING_GROUPS: { heading: string; tabs: SettingsTab[] }[] = [
 
 /* One setting: its name and what it does on the left, its control on the right. Settings that */
 /* do not work yet are marked "Preview". */
-function Row({ title, description, preview = false, children }: { title: ReactNode; description: string; preview?: boolean; children: ReactNode }) {
+function SettingInfo({ title, description }: { title: ReactNode; description: string }) {
+  const [open, setOpen] = useState(false);
+  const infoRef = useRef<HTMLSpanElement>(null);
+  const tooltipRef = useRef<HTMLSpanElement>(null);
+
+  /* Keep the tooltip next to its button while fitting it inside the phone screen. */
+  function positionTooltip() {
+    if (!window.matchMedia('(max-width: 700px)').matches) return;
+    window.requestAnimationFrame(() => {
+      const button = infoRef.current?.getBoundingClientRect();
+      const tooltip = tooltipRef.current;
+      if (!button || !tooltip) return;
+      const box = tooltip.getBoundingClientRect();
+      const left = Math.max(8, Math.min(button.left, window.innerWidth - box.width - 8));
+      const below = button.bottom + 6;
+      const top = below + box.height <= window.innerHeight - 8 ? below : Math.max(8, button.top - box.height - 6);
+      tooltip.style.left = `${left}px`;
+      tooltip.style.top = `${top}px`;
+    });
+  }
+
+  return (
+    <span ref={infoRef} className={`setting-info ${open ? 'is-open' : ''}`} onMouseEnter={positionTooltip}>
+      <button type="button" aria-label={`Information about ${title}`} aria-expanded={open} onFocus={positionTooltip} onClick={() => { setOpen(!open); positionTooltip(); }} onBlur={() => setOpen(false)}>
+        <Icon name="info" size={15} />
+      </button>
+      <span ref={tooltipRef} className="setting-info-text" role="tooltip">{description}</span>
+    </span>
+  );
+}
+
+function Row({ title, description, preview = false, children }: { title: ReactNode; description?: string; preview?: boolean; children: ReactNode }) {
   return (
     <div className={`setting-row ${preview ? 'is-preview' : ''}`}>
       <div className="setting-row-text">
         <strong>{title}{preview && <span className="preview-tag">Preview</span>}</strong>
-        <p>{description}</p>
+        {description && <SettingInfo title={title} description={description} />}
       </div>
       <div className="setting-value">{children}</div>
     </div>
@@ -354,7 +384,7 @@ function SettingsSectionContent({ section }: { section: SettingsSection }) {
               onChange={value => set({ onStartup: value })}
             />
           </Row>
-          <Row title="Start screen" description="Where Starjot opens the first time, or every time when starting fresh.">
+          <Row title="Start screen">
             <Dropdown
               label="Start screen"
               value={startOptions.some(option => option.value === startScreen) ? startScreen : 'start'}
@@ -378,7 +408,7 @@ function SettingsSectionContent({ section }: { section: SettingsSection }) {
       <>
         <Heading title="Appearance" />
         <Group title="Theme">
-          <Row title="Theme" description="Light, dark, or System to follow your computer. The moon or sun at the bottom of the sidebar switches between light and dark too.">
+          <Row title="Theme">
             <Segmented
               label="Theme"
               value={theme}
@@ -392,7 +422,7 @@ function SettingsSectionContent({ section }: { section: SettingsSection }) {
           </Row>
         </Group>
         <Group title="Layout and colour">
-          <Row title="Interface density" description="How much room the sidebar, tabs, lists and menus take. Notes' text stays the same.">
+          <Row title="Interface density">
             <Segmented
               label="Interface density"
               value={density}
@@ -400,7 +430,7 @@ function SettingsSectionContent({ section }: { section: SettingsSection }) {
               onChange={value => set({ density: value })}
             />
           </Row>
-          <Row title="Accent colour" description={`Buttons, links, selections and focus outlines. Now: ${ACCENT_NAMES[accent]}.`}>
+          <Row title="Accent colour" description="Buttons, links, selections and focus outlines.">
             <div className="accent-options" role="radiogroup" aria-label="Accent colour">
               {ACCENTS.map(option => (
                 <button
@@ -455,13 +485,13 @@ function SettingsSectionContent({ section }: { section: SettingsSection }) {
         <Heading title="Sidebar" />
         {spaces.notes && (
           <Group title="Notespace">
-            <Row title="Starred" description="List your starred notes in the sidebar.">
+            <Row title="Starred">
               <Switch label="Starred notes in the sidebar" on={sidebar.starred} onChange={on => set({ sidebar: { ...sidebar, starred: on } })} />
             </Row>
-            <Row title="Recent" description="List the notes you opened lately in the sidebar.">
+            <Row title="Recent">
               <Switch label="Recent notes in the sidebar" on={sidebar.recent} onChange={on => set({ sidebar: { ...sidebar, recent: on } })} />
             </Row>
-            <Row title="Categories" description="List categories in the sidebar, to open their pages in one click. Choose which ones below.">
+            <Row title="Categories">
               <Switch label="Categories in the sidebar" on={sidebar.categories} onChange={on => set({ sidebar: { ...sidebar, categories: on } })} />
             </Row>
             {sidebar.categories && (
@@ -575,7 +605,7 @@ function SettingsSectionContent({ section }: { section: SettingsSection }) {
       <>
         <Heading title="Typing" />
         <Group title="Typing shortcuts">
-          <Row title="Typing shortcuts" description="Turn the shortcuts below on or off. Turned off, notes keep exactly what you type. Type / for the command menu either way.">
+          <Row title="Typing shortcuts">
             <Switch label="Typing shortcuts" on={typingShortcuts} onChange={on => set({ typingShortcuts: on })} />
           </Row>
         </Group>
@@ -665,9 +695,9 @@ function SettingsSectionContent({ section }: { section: SettingsSection }) {
         <div><h3>Starjot</h3><p>A calmer place to think and get things done.</p></div>
       </div>
       <Group title="Application">
-        <Row title="Version" description="The version of Starjot you are using."><span className="fake-text">{version}</span></Row>
-        <Row title="Build" description="Runs in the browser; a Windows app is planned."><span className="fake-text">Browser preview</span></Row>
-        <Row title="Design system" description="The shared look used across Starjot."><span className="fake-text">Light and dark · {ACCENT_NAMES[accent]} accent</span></Row>
+        <Row title="Version"><span className="fake-text">{version}</span></Row>
+        <Row title="Build"><span className="fake-text">Browser preview</span></Row>
+        <Row title="Design system"><span className="fake-text">Light and dark · {ACCENT_NAMES[accent]} accent</span></Row>
       </Group>
     </>
   );
@@ -681,7 +711,7 @@ function SettingsSectionContent({ section }: { section: SettingsSection }) {
 /* Settings opens as a panel in the middle of the window, over whatever is open, with its menu on */
 /* the left and the chosen section on the right. Escape, the close button or a click outside */
 /* closes it; the keyboard stays inside while it is open. On phones it fills the screen, and the */
-/* menu becomes a dropdown at the top, so nothing scrolls sideways. */
+/* sections form a scrollable tab bar on phones. */
 export function Settings({ section, onSectionChange, onClose, focus = null, onFocused }: SettingsProps) {
   const { spaces } = usePreferences();
   const groups = SETTING_GROUPS.filter(group => spaces.notes || group.heading !== 'Notespace');
@@ -689,7 +719,14 @@ export function Settings({ section, onSectionChange, onClose, focus = null, onFo
   const current = tabs.find(tab => tab.id === section) ?? tabs[0];
   const windowRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLElement>(null);
-  const phone = useMediaQuery('(max-width: 700px)');
+  const [query, setQuery] = useState('');
+
+  useEffect(() => {
+    const term = query.trim().toLowerCase();
+    contentRef.current?.querySelectorAll<HTMLElement>('[data-search-section]').forEach(section => {
+      section.hidden = Boolean(term) && !section.textContent?.toLowerCase().includes(term);
+    });
+  }, [query, groups.length]);
 
   useEscape(true, onClose);
   useFocusTrap(windowRef, '.settings-nav-item.active');
@@ -715,15 +752,9 @@ export function Settings({ section, onSectionChange, onClose, focus = null, onFo
       <div className="settings-window" ref={windowRef} role="dialog" aria-modal="true" aria-labelledby="settings-title">
         <nav className="settings-nav" aria-label="Settings sections">
           <h2 id="settings-title" className="settings-title">Settings</h2>
-          {phone && (
-            <Dropdown
-              label="Settings section"
-              value={current.id}
-              options={groups.flatMap(group => group.tabs.map((tab, at) => ({ value: tab.id, label: tab.label, icon: tab.icon, heading: at ? undefined : group.heading })))}
-              onChange={onSectionChange}
-            />
-          )}
-          {!phone && groups.map(group => (
+          <input className="settings-search" type="search" aria-label="Search settings" placeholder="Search settings" value={query} onChange={event => setQuery(event.target.value)} />
+          <div className="settings-nav-list">
+          {groups.map(group => (
             <div key={group.heading} className="settings-nav-group">
               <div className="settings-nav-heading">{group.heading}</div>
               {group.tabs.map(tab => (
@@ -732,19 +763,24 @@ export function Settings({ section, onSectionChange, onClose, focus = null, onFo
                   type="button"
                   className={`settings-nav-item ${current.id === tab.id ? 'active' : ''}`}
                   aria-current={current.id === tab.id ? 'true' : undefined}
-                  onClick={() => onSectionChange(tab.id)}
+                  onClick={() => { setQuery(''); onSectionChange(tab.id); }}
                 >
                   <Icon name={tab.icon} size={17} /> {tab.label}
                 </button>
               ))}
             </div>
           ))}
+          </div>
         </nav>
         <section className="settings-content" ref={contentRef} aria-label={`${current.label} settings`}>
           <button type="button" className="window-control settings-close" aria-label="Close settings" data-tooltip="Close" data-shortcut="Esc" data-tooltip-align="end" onClick={onClose}>
             <Icon name="x" size={18} />
           </button>
-          <SettingsSectionContent section={current.id} />
+          {query.trim() ? tabs.map(tab => (
+            <div key={tab.id} data-search-section>
+              <SettingsSectionContent section={tab.id} />
+            </div>
+          )) : <SettingsSectionContent section={current.id} />}
         </section>
       </div>
     </div>

@@ -157,7 +157,16 @@
     height: 33px;
     padding: 0 12px;
     font-size: 14px;
-    margin-top: 24px;
+    margin-top: 0;
+  }
+
+  .notes-home .page-intro {
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .notes-home-actions {
+    margin-left: auto;
   }
 
   .section-heading h2 {
@@ -237,12 +246,38 @@
   .settings-nav {
     position: relative;
     z-index: 2;
-    display: flex;
-    align-items: center;
-    overflow: visible;
+    display: block;
+    overflow: hidden;
     margin-right: 56px;
     padding: 8px;
     border-right: 0;
+  }
+
+  .settings-search {
+    margin-bottom: 8px;
+  }
+
+  .settings-nav-list {
+    display: flex;
+    overflow-x: auto;
+  }
+
+  .settings-nav-group {
+    display: flex;
+    flex: none;
+  }
+
+  .settings-nav-group + .settings-nav-group {
+    margin-top: 0;
+  }
+
+  .settings-nav-heading {
+    display: none;
+  }
+
+  .settings-nav-item {
+    width: auto;
+    white-space: nowrap;
   }
 
   .settings-title {
@@ -286,6 +321,15 @@
 
   .setting-row-text {
     flex: 1;
+  }
+
+  /* The tooltip is positioned beside its button and kept inside the phone screen. */
+  .setting-info-text {
+    position: fixed;
+    width: min(280px, calc(100vw - 16px));
+    max-height: calc(100dvh - 16px);
+    box-sizing: border-box;
+    overflow-y: auto;
   }
 
   .setting-value {
