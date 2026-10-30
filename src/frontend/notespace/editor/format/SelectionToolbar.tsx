@@ -12,10 +12,13 @@ import { copyPageLink, linkSelection, setLinkTarget, unwrapLink, type LinkTarget
 import { LinkPicker } from '../links/LinkPicker';
 import { isLinkShortcut } from '../../../app/shortcuts';
 import { blockWords, linkableBlock, linkIdOf } from '../links/blockLinks';
+import { useMediaQuery } from '../../../lib/useMediaQuery';
+import { UndoRedoButtons } from '../noteParts';
 
 type SelectionToolbarProps = {
   session: EditorSession;
   locked: boolean;
+  active?: boolean;
 };
 
 type Box = { top: number; bottom: number; left: number; right: number };
@@ -225,8 +228,10 @@ function rememberColor(color: ColorClass) {
 /* to turn the selected lines into another kind), then formatting, links and comments. A format */
 /* the selection already has shows as on. */
 /* It uses fixed positioning, so it lines up with the selection at any note zoom level. */
-export function SelectionToolbar({ session, locked }: SelectionToolbarProps) {
+export function SelectionToolbar({ session, locked, active = true }: SelectionToolbarProps) {
   const sticky = useSessionValue(session, snapshot => snapshot.sticky);
+  const mobile = useMediaQuery('(max-width: 700px)');
+  const [bottom, setBottom] = useState(65);
   const [anchor, setAnchor] = useState<Anchor | null>(null);
   const [mode, setMode] = useState<Mode>('buttons');
   const [value, setValue] = useState('');
@@ -251,6 +256,25 @@ export function SelectionToolbar({ session, locked }: SelectionToolbarProps) {
   const typesOpenRef = useRef<TypesOpen>(null);
   typesOpenRef.current = typesOpen;
   const hoverTimer = useRef<number | undefined>(undefined);
+
+  /* Follow the visible viewport when the phone's keyboard changes its height. */
+  useEffect(() => {
+    if (!mobile) return;
+    const viewport = window.visualViewport;
+    function updateBottom() {
+      const covered = viewport ? Math.max(0, window.innerHeight - viewport.height - viewport.offsetTop) : 0;
+      setBottom(covered > 150 ? covered : 65);
+    }
+    updateBottom();
+    viewport?.addEventListener('resize', updateBottom);
+    viewport?.addEventListener('scroll', updateBottom);
+    window.addEventListener('resize', updateBottom);
+    return () => {
+      viewport?.removeEventListener('resize', updateBottom);
+      viewport?.removeEventListener('scroll', updateBottom);
+      window.removeEventListener('resize', updateBottom);
+    };
+  }, [mobile]);
 
   useEffect(() => {
     /* Show the bar for a non-empty selection inside the note; hide it otherwise. */
@@ -347,17 +371,18 @@ export function SelectionToolbar({ session, locked }: SelectionToolbarProps) {
     setSize(current => (current.width === width && current.height === height ? current : { width, height }));
   });
 
-  if (!anchor) return null;
-  const position = placeToolbar(anchor, size, { width: window.innerWidth, height: window.innerHeight });
+  if (mobile && !active) return null;
+  if (!anchor && !(mobile && active && !locked)) return null;
+  const position = anchor ? placeToolbar(anchor, size, { width: window.innerWidth, height: window.innerHeight }) : { top: 0, left: 0 };
 
   /* The selected lines whose kind can be changed (none in a table cell or a toggle's title), and */
   /* their kind when they all share one. */
   const body = session.body();
-  const lines = !locked && body && savedRange.current ? linesInRange(savedRange.current, body) : null;
+  const lines = anchor && !locked && body && savedRange.current ? linesInRange(savedRange.current, body) : null;
   const lineKinds = new Set(lines?.map(typeOfLine));
   const lineKind = lineKinds.size === 1 ? [...lineKinds][0] : null;
   const linkNode = savedRange.current?.commonAncestorContainer;
-  const inLink = Boolean(elementOf(linkNode)?.closest(LINK));
+  const inLink = Boolean(anchor && elementOf(linkNode)?.closest(LINK));
 
   /* Put the remembered selection back, so a command applies to the text that was selected. */
   function restoreSelection() {
@@ -557,9 +582,26 @@ export function SelectionToolbar({ session, locked }: SelectionToolbarProps) {
     );
   }
 
+  function renderLink() {
+    return (
+      <button type="button" className={`selection-tool ${inLink ? 'is-active' : ''}`} aria-label={inLink ? 'Remove link' : 'Add link'} aria-pressed={inLink} disabled={!anchor} data-tooltip={inLink ? 'Remove link' : 'Link'} onMouseDown={keepSelection} onClick={startLink}>
+        <Icon name="link" size={15} />
+      </button>
+    );
+  }
+
+  function renderSticky() {
+    return (
+      <button type="button" className={`selection-tool note-sticky-button ${sticky === 'unstick' ? 'is-unstick' : ''}`} aria-label={sticky === 'unstick' ? 'Unstick the selected group' : 'Sticky: keep selected lines together'} aria-pressed={sticky === 'unstick'} data-tooltip={sticky === 'unstick' ? 'Unstick' : 'Sticky'} disabled={!anchor || sticky === 'none'} onMouseDown={keepSelection} onClick={() => { restoreSelection(); session.toggleSticky(); }}>
+        <Icon name="sticky" size={15} />
+      </button>
+    );
+  }
+
   return (
-    <div ref={barRef} className="selection-toolbar" role="toolbar" aria-label="Format selected text" style={{ top: position.top, left: position.left }}>
-      {mode === 'buttons' && (lines
+    <div ref={barRef} className={`selection-toolbar ${mobile ? 'is-mobile' : ''}`} role="toolbar" aria-label="Text tools" style={mobile ? { bottom } : { top: position.top, left: position.left }}>
+      {mobile && !locked && <UndoRedoButtons session={session} locked={locked} />}
+      {(anchor || mobile) && mode === 'buttons' && (lines && anchor
         ? (
           <div className="selection-kind-row" onMouseEnter={() => hoverKind(true)} onMouseLeave={() => hoverKind(false)}>
             <button
@@ -579,23 +621,19 @@ export function SelectionToolbar({ session, locked }: SelectionToolbarProps) {
             {typesOpen && renderTypes()}
           </div>
         )
-        : <span className="selection-kind">{anchor.kind}</span>)}
-      {mode === 'buttons' && !locked && (
+        : <span className="selection-kind">{anchor?.kind ?? 'Text'}</span>)}
+      {(anchor || mobile) && mode === 'buttons' && !locked && (
         <div className="selection-toolbar-row">
-          {!locked && (
-            <button type="button" className="selection-tool selection-color" aria-label="Text and background colour" data-tooltip="Colour" onMouseDown={keepSelection} onClick={() => setMode('color')}>
-              A
-            </button>
-          )}
           {!locked && FORMATS.map(item => {
-            const on = formatIsOn(item.command);
+            const on = Boolean(anchor && formatIsOn(item.command));
             return (
               <button
                 key={item.command}
                 type="button"
-                className={`selection-tool ${on ? 'is-active' : ''}`}
+                className={`selection-tool selection-format ${on ? 'is-active' : ''}`}
                 aria-label={item.label}
                 aria-pressed={on}
+                disabled={!anchor}
                 data-tooltip={item.label}
                 data-shortcut={item.shortcut}
                 onMouseDown={keepSelection}
@@ -605,24 +643,20 @@ export function SelectionToolbar({ session, locked }: SelectionToolbarProps) {
               </button>
             );
           })}
+          {mobile && <span className="mobile-tool-divider" aria-hidden="true" />}
           {!locked && (
-            <button
-              type="button"
-              className={`selection-tool ${inLink ? 'is-active' : ''}`}
-              aria-label={inLink ? 'Remove link' : 'Add link'}
-              aria-pressed={inLink}
-              data-tooltip={inLink ? 'Remove link' : 'Link'}
-              onMouseDown={keepSelection}
-              onClick={startLink}
-            >
-              <Icon name="link" size={15} />
+            <button type="button" className="selection-tool selection-color" aria-label="Text and background colour" data-tooltip="Colour" disabled={!anchor} onMouseDown={keepSelection} onClick={() => setMode('color')}>
+              A
             </button>
           )}
+          {mobile ? renderSticky() : renderLink()}
+          {mobile && <span className="mobile-tool-divider" aria-hidden="true" />}
           {!locked && (
             <button
               type="button"
-              className="selection-tool"
+              className="selection-tool selection-copy-link"
               aria-label="Copy link to block"
+              disabled={!anchor}
               data-tooltip="Copy link to block"
               onMouseDown={keepSelection}
               onClick={copyBlockLink}
@@ -630,25 +664,17 @@ export function SelectionToolbar({ session, locked }: SelectionToolbarProps) {
               <Icon name="copy" size={15} />
             </button>
           )}
-          <button
-            type="button"
-            className={`selection-tool note-sticky-button ${sticky === 'unstick' ? 'is-unstick' : ''}`}
-            aria-label={sticky === 'unstick' ? 'Unstick the selected group' : 'Sticky: keep selected lines together'}
-            aria-pressed={sticky === 'unstick'}
-            data-tooltip={sticky === 'unstick' ? 'Unstick' : 'Sticky'}
-            disabled={sticky === 'none'}
-            onMouseDown={keepSelection}
-            onClick={() => {
-              restoreSelection();
-              session.toggleSticky();
-            }}
-          >
-            <Icon name="sticky" size={15} />
-          </button>
+          {mobile ? renderLink() : renderSticky()}
+          {mobile && (
+            <button type="button" className="selection-tool selection-comment-button" aria-label="Comment" disabled={!anchor} onMouseDown={keepSelection} onClick={() => setMode('comment')}>
+              <Icon name="message-square" size={15} />
+              <span>Comment</span>
+            </button>
+          )}
         </div>
       )}
-      {mode === 'buttons' && (
-        <button type="button" className="selection-tool selection-comment-button" onMouseDown={keepSelection} onClick={() => setMode('comment')}>
+      {(anchor || mobile) && mode === 'buttons' && (!mobile || locked) && (
+        <button type="button" className="selection-tool selection-comment-button" aria-label="Comment" disabled={!anchor} onMouseDown={keepSelection} onClick={() => setMode('comment')}>
           <Icon name="message-square" size={15} />
           <span>Comment</span>
         </button>

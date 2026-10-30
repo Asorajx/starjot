@@ -312,6 +312,125 @@
     gap: 0;
   }
 
+  /* The mobile text bar sits above navigation, or above the on-screen keyboard. */
+  .selection-toolbar.is-mobile {
+    top: auto;
+    z-index: 25;
+    left: 0;
+    right: 0;
+    width: 100%;
+    box-sizing: border-box;
+    flex-direction: row;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    border-radius: 0;
+    background: #fff;
+    box-shadow: none;
+    transform: none;
+  }
+
+  [data-theme="dark"] .selection-toolbar.is-mobile {
+    background: var(--dark-page);
+  }
+
+  .selection-toolbar.is-mobile .selection-toolbar-row {
+    flex: 1;
+    min-width: 0;
+    overflow-x: auto;
+    padding: 0;
+    border: 0;
+    scrollbar-width: none;
+  }
+
+  .selection-toolbar.is-mobile .selection-tool,
+  .selection-toolbar.is-mobile .page-bar-button {
+    flex: none;
+  }
+
+  .selection-toolbar.is-mobile .selection-tool svg,
+  .selection-toolbar.is-mobile .page-bar-button svg {
+    width: 17px;
+    height: 17px;
+  }
+
+  .selection-toolbar.is-mobile .mobile-tool-divider {
+    flex: none;
+    width: 1px;
+    height: 20px;
+    margin: 0 4px;
+    background: var(--line);
+  }
+
+  .selection-toolbar.is-mobile > .page-bar-group {
+    gap: 0;
+    padding-right: 4px;
+    border-right: 1px solid var(--line);
+  }
+
+  .selection-toolbar.is-mobile .page-bar-group .page-bar-button {
+    width: 34px;
+    min-width: 34px;
+    min-height: 44px;
+  }
+
+  .selection-toolbar.is-mobile .selection-format.is-active,
+  [data-theme="dark"] .selection-toolbar.is-mobile .selection-format.is-active {
+    position: relative;
+    background: transparent;
+    box-shadow: none;
+    color: var(--accent-text);
+  }
+
+  .selection-toolbar.is-mobile .selection-format.is-active::after {
+    content: "";
+    position: absolute;
+    bottom: 3px;
+    width: 16px;
+    height: 2px;
+    border-radius: 2px;
+    background: currentColor;
+  }
+
+  .selection-toolbar.is-mobile .page-bar-group .page-bar-button:hover,
+  .selection-toolbar.is-mobile .page-bar-group .page-bar-button:active {
+    background: transparent;
+  }
+
+  .selection-toolbar.is-mobile .selection-toolbar-row::-webkit-scrollbar {
+    display: none;
+  }
+
+  .selection-toolbar.is-mobile .selection-comment-button {
+    width: auto;
+    border: 0;
+    white-space: nowrap;
+  }
+
+  .selection-toolbar.is-mobile .selection-comment-button span {
+    display: none;
+  }
+
+  .selection-toolbar.is-mobile .selection-kind-row {
+    flex: none;
+  }
+
+  .selection-toolbar.is-mobile .selection-types,
+  .selection-toolbar.is-mobile .selection-types.is-below {
+    top: auto;
+    bottom: calc(100% + 4px);
+    left: 0;
+    right: auto;
+  }
+
+  .editor-wrap:has(.selection-toolbar.is-mobile .page-bar-group) > .page-bar > .page-bar-group[aria-label="Undo and redo"] {
+    display: none;
+  }
+
+  .main-scroll:has(.selection-toolbar.is-mobile) {
+    padding-bottom: 120px;
+  }
+
   .settings-panel-subtitle {
     margin-bottom: 24px;
     line-height: 1.6;

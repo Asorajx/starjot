@@ -560,7 +560,7 @@ function DocumentEditor({ noteId, tabId, history, view, active, onClose, onOpenN
         </main>
       </div>
 
-      <SelectionToolbar session={session} locked={locked} />
+      <SelectionToolbar session={session} locked={locked} active={active && !drawing} />
       <SlashMenu session={session} noteId={note.id} locked={locked} onOpenNewPage={onOpenNewPage} />
       <BlockWidgets session={session} locked={locked} onOpenNote={onOpenNote} onOpenNoteInNewTab={onOpenNoteInNewTab} />
       <LinkTools session={session} locked={locked} onOpenNote={onOpenNote} onOpenNoteInNewTab={onOpenNoteInNewTab} />

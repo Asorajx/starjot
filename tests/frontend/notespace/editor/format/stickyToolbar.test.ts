@@ -15,6 +15,7 @@ const originalRects = Object.getOwnPropertyDescriptor(Range.prototype, 'getClien
 
 beforeEach(() => {
   vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
+  vi.stubGlobal('matchMedia', () => ({ matches: false, addEventListener() {}, removeEventListener() {} }));
 
   /* jsdom has no text layout; the toolbar only needs a stable selection rectangle. */
   const box = new DOMRect(100, 100, 100, 20);
@@ -88,4 +89,21 @@ describe.each([false, true])('Sticky toolbar (structured: %s)', structured => {
     mount(structured, true);
     expect(document.querySelector('.note-sticky-button')).toBeNull();
   });
+});
+
+it('shows mobile undo and redo alongside selected text tools', () => {
+  vi.stubGlobal('matchMedia', () => ({ matches: true, addEventListener() {}, removeEventListener() {} }));
+  mount(false);
+  const toolbar = document.querySelector('.selection-toolbar.is-mobile');
+  expect(toolbar?.querySelector('[aria-label="Undo"]')).not.toBeNull();
+  expect(toolbar?.querySelector('[aria-label="Redo"]')).not.toBeNull();
+  expect(toolbar?.querySelector('.note-sticky-button')).not.toBeNull();
+
+  act(() => {
+    window.getSelection()?.collapseToEnd();
+    document.dispatchEvent(new Event('selectionchange'));
+  });
+  expect(toolbar?.querySelector<HTMLButtonElement>('[aria-label="Bold"]')?.disabled).toBe(true);
+  expect(toolbar?.querySelector<HTMLButtonElement>('[aria-label="Comment"]')?.disabled).toBe(true);
+  expect(toolbar?.querySelector('[aria-label="Undo"]')).not.toBeNull();
 });
