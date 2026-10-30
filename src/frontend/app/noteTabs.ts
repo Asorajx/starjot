@@ -225,6 +225,21 @@ export function addTab(workspace: Workspace, groupId: string, tab: NoteTab, afte
   return selectTab(changeGroup(workspace, groupId, () => ({ ...group, tabs })), groupId, tab.id);
 }
 
+/* Imported files always get their own tabs, with the first file selected. A full stack becomes */
+/* a normal tab strip so importing never replaces an existing tab or loses an imported file. */
+export function addImportedTabs(workspace: Workspace, ids: string[]): Workspace {
+  if (!ids.length) return workspace;
+  const group = focusedGroup(workspace);
+  const added = ids.map(id => newTab({ kind: 'note', id }));
+  const index = group.tabs.indexOf(activeTab(group)) + 1;
+  const next = changeGroup(workspace, group.id, current => ({
+    ...current,
+    stacked: current.stacked && current.tabs.length + added.length <= STACK_LIMIT,
+    tabs: [...current.tabs.slice(0, index), ...added, ...current.tabs.slice(index)]
+  }));
+  return selectTab(next, group.id, added[0].id);
+}
+
 /* Add a tab without showing it (a note opened in the background), after the tab afterId (or */
 /* the active tab when it is gone), so several opened in a row keep their order, as in a browser. */
 export function addBackgroundTab(workspace: Workspace, groupId: string, tab: NoteTab, afterId: string): Workspace {

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from 'react';
 import { Icon, type IconName } from '../../../components/Icon';
 import { imageUrl, loadImage } from '../../imageStore';
-import { DRAWING_WRAPS, IMAGE_ALIGNS, MIN_IMAGE_WIDTH, drawingFile, drawingInk, drawingWrap, imageAlign, imageFiles, insertImageFiles, setImageAlign, setImageWidth, type ImageAlign } from './images';
+import { DRAWING_WRAPS, IMAGE_ALIGNS, MIN_IMAGE_WIDTH, drawingFile, drawingInk, drawingWrap, imageAlign, imageFiles, insertImageFiles, onlyImageFiles, setImageAlign, setImageWidth, type ImageAlign } from './images';
 import { getPreferences } from '../../../app/preferences';
 import { anchoredBox, detachDrawing, moveDrawing } from '../drawing/anchoring';
 import type { DrawingWrap } from './images';
@@ -231,8 +231,8 @@ export function ImageTools({ session, locked }: ImageToolsProps) {
       }
     }
 
-    /* Files dragged over the note may be dropped into it; other drags are left alone. */
-    const fileDrag = (event: DragEvent) => Boolean(event.dataTransfer?.types.includes('Files')) && !latest.current.locked
+    /* Only image files belong inside the note. Document imports must reach the app's handler. */
+    const fileDrag = (event: DragEvent) => onlyImageFiles(event.dataTransfer) && !latest.current.locked
       && Boolean(body()?.contains(event.target as Node));
 
     function handleDragOver(event: DragEvent) {

@@ -205,6 +205,15 @@ export function imageFiles(data: DataTransfer | null) {
   return Array.from(data?.files ?? []).filter(file => file.type.startsWith('image/'));
 }
 
+/* During dragover the browser hides file contents but exposes item types. Only image-only */
+/* drops belong to the editor; mixed drops must reach the importer so no document is lost. */
+export function onlyImageFiles(data: DataTransfer | null) {
+  const files = Array.from(data?.files ?? []);
+  if (files.length) return files.every(file => file.type.startsWith('image/'));
+  const items = Array.from(data?.items ?? []).filter(item => item.kind === 'file');
+  return items.length > 0 && items.every(item => item.type.startsWith('image/'));
+}
+
 /* An image's own width in pixels, read from the file. */
 function naturalWidth(file: Blob) {
   return new Promise<number>(resolve => {

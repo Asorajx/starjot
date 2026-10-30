@@ -34,6 +34,8 @@ import { screenLabel, type ScreenId } from './screens';
 import { addressOf, blockInAddress, parseAddress } from './address';
 import { revealWhenShown } from '../notespace/editor/links/blockLinks';
 import { readWorkspace, writeWorkspace } from '../../backend/storage/workspaceStorage';
+import { useImport } from '../notespace/import/useImport';
+import { addImportedTabs } from './noteTabs';
 
 
 /* =========================
@@ -396,6 +398,14 @@ export function App() {
 
   /* Ctrl + click or double-click on a page link opens the page in a new tab. */
   const openNoteInNewTab = (id: string) => openInNewTab({ kind: 'note', id });
+
+  /* File drops anywhere in the viewport import new notes instead of navigating the browser */
+  /* away from the app or inserting the file into the current document. */
+  const importer = useImport(id => openInNewTab({ kind: 'note', id }, true), ids => {
+    flushSave();
+    setScreenId('notes');
+    changeTabs(current => addImportedTabs(current, ids));
+  });
 
   /* Closed tabs, newest last, so Ctrl + Shift + T can bring them back like a browser. */
   const closedTabs = useRef<ClosedTab[]>([]);
@@ -867,7 +877,12 @@ export function App() {
   }
 
   return (
-    <div className={`app-shell ${screenId === 'notes' ? 'app-shell--notespace' : ''} ${docked ? '' : 'sidebar-floating'} ${popup ? 'sidebar-open' : ''}`}>
+    <div
+      className={`app-shell ${screenId === 'notes' ? 'app-shell--notespace' : ''} ${docked ? '' : 'sidebar-floating'} ${popup ? 'sidebar-open' : ''}`}
+      onDragOverCapture={importer.dropProps.onDragOver}
+      onDragLeaveCapture={importer.dropProps.onDragLeave}
+      onDropCapture={importer.dropProps.onDrop}
+    >
       {!docked && <div className="sidebar-hover-zone" aria-hidden="true" onMouseEnter={startPopup} onMouseLeave={cancelPopupTimer} />}
       {/* The first thing the keyboard reaches: it skips the sidebar and goes to the page. */}
       <button type="button" className="skip-link" onClick={() => document.getElementById('main-content')?.focus()}>Skip to content</button>
@@ -925,6 +940,7 @@ export function App() {
         />
       )}
       <TrashPopup />
+      {importer.elements}
       <Toaster />
       {spaces.notes && <ReminderWatcher onOpenNote={openNote} />}
     </div>

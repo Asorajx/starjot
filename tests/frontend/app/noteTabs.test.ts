@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { addImportedTabs } from '../../../src/frontend/app/noteTabs';
 import {
   activeTab, addBackgroundTab, addTab, closeTab, currentPlace, cycleTab, focusedGroup, goTo, isOpenInStack, moveTab, newTab, newWorkspace, reopenLastClosed, reopenTab, restoreWorkspace, continueIdsAfter, selectTab, updateTab,
   splitWithTab, splitWorkspace, stackGroup, step, stepPlace, unsplit, type Place, type Workspace
@@ -7,6 +8,30 @@ import {
 const home: Place = { kind: 'home' };
 const note = (id: string): Place => ({ kind: 'note', id });
 const everything = () => true;
+
+describe('imported file tabs', () => {
+  it('opens every file in order and focuses the first without replacing the current note', () => {
+    const before = newWorkspace(note('existing'));
+    const after = addImportedTabs(before, ['first', 'second']);
+    const group = focusedGroup(after);
+    expect(group.tabs.map(currentPlace)).toEqual([note('existing'), note('first'), note('second')]);
+    expect(currentPlace(activeTab(group))).toEqual(note('first'));
+    expect(focusedGroup(before).tabs).toHaveLength(1);
+  });
+
+  it('opens a large batch without losing tabs to the stack limit', () => {
+    const before = stackGroup(newWorkspace(note('existing')));
+    const after = addImportedTabs(before, ['a', 'b', 'c', 'd', 'e', 'f']);
+    expect(focusedGroup(after).stacked).toBe(false);
+    expect(focusedGroup(after).tabs).toHaveLength(focusedGroup(before).tabs.length + 6);
+    expect(currentPlace(activeTab(focusedGroup(after)))).toEqual(note('a'));
+  });
+
+  it('leaves the workspace alone when no file could be imported', () => {
+    const before = newWorkspace(home);
+    expect(addImportedTabs(before, [])).toBe(before);
+  });
+});
 
 
 /* =========================

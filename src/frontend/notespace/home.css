@@ -293,6 +293,12 @@
   text-align: center;
 }
 
+/* The app-wide file target stays over the viewport, including scrolled notes and sidebars. */
+.app-shell > .import-drop {
+  position: fixed;
+  z-index: 110;
+}
+
 /* Note cards fill the row: as many 220px-wide columns as fit. */
 .note-tiles {
   display: grid;
