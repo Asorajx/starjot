@@ -158,10 +158,11 @@
   display: flex;
   align-items: center;
   gap: 14px;
-  padding: 12px 14px;
+  padding: 16px;
   border: 1px solid var(--line);
-  border-radius: 14px;
-  background: var(--paper);
+  border-left: 3px solid var(--accent);
+  border-radius: 8px;
+  background: var(--accent-faint);
   cursor: text;
   transition: border-color 150ms ease, box-shadow 150ms ease;
 }
@@ -203,6 +204,8 @@
 
 .quick-capture-text {
   width: 100%;
+  min-width: 0;
+  max-width: 100%;
   padding: 0;
   border: 0;
   background: transparent;
@@ -218,7 +221,8 @@
 }
 
 .quick-capture-text::placeholder {
-  color: #5e6d84;
+  color: var(--muted);
+  opacity: .8;
 }
 
 /* Closed, it stays one line: a long placeholder is cut off rather than scrolling. */
@@ -285,38 +289,40 @@
 .home-cards {
   display: flex;
   flex-direction: column;
-  gap: 10px;
   margin: 0;
   padding: 0;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
   list-style: none;
 }
 
-/* A note card: its square, then the button that opens it (title, first words, category and */
-/* time), then its star. The whole card lifts a little when pointed at or focused. */
+/* Notes sit in a quieter list so the page's actions stand out. */
 .home-card {
   display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 10px 10px 10px 12px;
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  background: var(--paper);
-  transition: border-color 160ms ease, transform 160ms ease;
+  gap: 12px;
+  min-width: 0;
+  padding: 12px 8px;
+  background: transparent;
+  transition: background-color 160ms ease;
+}
+
+.home-card + .home-card {
+  border-top: 1px solid var(--line);
 }
 
 .home-card:hover,
 .home-card:focus-within {
-  border-color: var(--accent-line);
-  transform: translateY(-1px);
+  background: var(--accent-faint);
 }
 
 .home-note-tile {
   display: grid;
   flex-shrink: 0;
   place-items: center;
-  width: 48px;
-  height: 48px;
-  border-radius: 10px;
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
   background: var(--accent-soft);
   color: var(--accent-text);
 }
@@ -393,7 +399,7 @@
 
 .home-card-star {
   flex-shrink: 0;
-  align-self: flex-start;
+  align-self: center;
 }
 
 
@@ -523,7 +529,7 @@
   width: 100%;
   padding: 12px 14px;
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: 8px;
   background: var(--paper);
   color: inherit;
   font: inherit;
@@ -534,6 +540,7 @@
 
 .home-space:hover {
   border-color: var(--accent-line);
+  background: var(--accent-faint);
 }
 
 .home-space-icon {
@@ -552,11 +559,11 @@
   display: flex;
   flex-shrink: 0;
   align-items: flex-end;
-  gap: 5px;
-  width: 92px;
-  height: 64px;
-  padding: 10px 12px;
-  border-radius: 10px;
+  gap: 3px;
+  width: 48px;
+  height: 48px;
+  padding: 8px;
+  border-radius: 8px;
   background: var(--bg);
 }
 
@@ -621,8 +628,8 @@
   }
 
   .home-note-tile {
-    width: 42px;
-    height: 42px;
+    width: 40px;
+    height: 40px;
   }
 }
 
@@ -642,8 +649,297 @@
     transition: none;
   }
 
-  .home-card:hover,
-  .home-card:focus-within {
+}
+
+
+/* =========================
+   Home Layout
+   ========================= */
+
+.starjot-home-intro {
+  align-items: center;
+  margin-bottom: 30px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--line);
+}
+
+.starjot-home-intro h1 {
+  font-size: clamp(30px, 4vw, 42px);
+  letter-spacing: -1.5px;
+}
+
+.starjot-home-date {
+  display: inline-flex;
+  margin: 0;
+}
+
+.starjot-home-layout {
+  grid-template-columns: minmax(0, 2fr) minmax(240px, 1fr);
+  align-items: start;
+  gap: 20px;
+  margin-top: 0;
+}
+
+.home-main,
+.home-side {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+}
+
+/* Fill the row when Notespace is turned off. */
+.starjot-home-layout > .home-side:first-child {
+  grid-column: 1 / -1;
+}
+
+.home-bento {
+  position: relative;
+  grid-column: span 6;
+  min-width: 0;
+  padding: 24px;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  background: var(--paper);
+  box-shadow: 0 3px 8px rgba(25, 35, 50, .08), 0 1px 2px rgba(25, 35, 50, .05);
+  transition: box-shadow 180ms ease;
+}
+
+/* A small folded corner gives each section the shape of a paper note. */
+.home-bento::after {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 16px;
+  height: 16px;
+  background: linear-gradient(225deg, var(--bg) 49%, color-mix(in srgb, var(--ink) 12%, transparent) 51%, transparent 75%);
+  content: '';
+  pointer-events: none;
+}
+
+.home-bento:focus-within {
+  box-shadow: 0 5px 14px rgba(25, 35, 50, .12);
+}
+
+.home-bento-capture {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.home-bento-notespace,
+.home-bento-boardspace {
+  grid-column: span 6;
+  padding: 16px 0;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  background: transparent;
+  box-shadow: none;
+}
+
+.home-bento-capture::after,
+.home-bento-notespace::after,
+.home-bento-boardspace::after,
+.home-bento-today::after {
+  display: none;
+}
+
+.home-bento-capture:focus-within,
+.home-bento-notespace:focus-within,
+.home-bento-boardspace:focus-within,
+.home-bento-today:focus-within {
+  box-shadow: none;
+}
+
+.home-bento-continue {
+  grid-column: span 8;
+}
+
+.home-bento-today {
+  grid-column: span 4;
+  padding: 23px 24px 24px;
+  border: 0;
+  border-top: 2px solid var(--accent-line);
+  background: transparent;
+  box-shadow: none;
+}
+
+.home-bento .quick-capture {
+  width: 100%;
+  min-width: 0;
+  padding: 12px 0;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.home-bento .quick-capture:focus-within {
+  border-color: var(--accent);
+}
+
+.home-bento .home-space {
+  position: relative;
+  align-items: center;
+  gap: 16px;
+  min-height: 68px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  transition: color 180ms ease;
+}
+
+.home-bento .home-space:hover {
+  background: transparent;
+  color: var(--accent-text);
+}
+
+.home-bento .home-space-icon,
+.home-bento .home-board-picture,
+.quick-capture-icon {
+  transition: transform 200ms ease;
+}
+
+.home-bento .home-space:hover .home-space-icon,
+.quick-capture:focus-within .quick-capture-icon {
+  transform: rotate(-5deg) scale(1.06);
+}
+
+.home-bento .home-space:hover .home-board-picture {
+  transform: translateY(-2px);
+}
+
+.home-bento .home-space-text strong {
+  font-size: 17px;
+}
+
+.home-bento .home-space-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 15px 15px 15px 5px;
+}
+
+/* The work diagram has room to show the balance between statuses. */
+.home-bento .home-space-board {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 24px;
+}
+
+.home-board-heading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.home-bento .home-board-picture {
+  align-self: stretch;
+  gap: 8px;
+  width: 100%;
+  height: 100px;
+  padding: 0 8px;
+  border-radius: 0;
+  background: transparent;
+}
+
+.home-bento .home-space-arrow {
+  margin-left: auto;
+}
+
+.home-bento .home-panel {
+  padding: 8px 0 0;
+  border: 0;
+  background: transparent;
+}
+
+.home-bento .home-empty {
+  padding: 16px 0;
+  border: 0;
+  text-align: left;
+}
+
+/* Compact mode should not add extra padding inside the space shortcuts. */
+[data-density="compact"] .home-bento .home-space {
+  padding: 0;
+}
+
+[data-density="compact"] .home-bento .home-panel {
+  padding: 8px 0 0;
+}
+
+@media (max-width: 700px) {
+  .starjot-home-date {
+    display: none;
+  }
+
+  .starjot-home-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .starjot-home-intro {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .starjot-home-layout {
+    gap: 14px;
+  }
+
+  /* Let the placeholder wrap instead of running past a narrow screen. */
+  .quick-capture:not(.is-open) .quick-capture-text {
+    height: 44px;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .home-bento-notespace,
+  .home-bento-boardspace {
+    padding: 10px 0;
+  }
+
+  .home-main,
+  .home-side {
+    gap: 14px;
+  }
+
+  .home-bento-continue {
+    padding: 16px;
+  }
+
+  .home-bento-today {
+    padding: 15px 16px 16px;
+  }
+
+}
+
+
+@media (prefers-reduced-motion: reduce) {
+  .home-bento,
+  .home-bento .home-space,
+  .home-bento .home-space-icon,
+  .home-bento .home-board-picture,
+  .quick-capture-icon {
+    transition: none;
+  }
+
+  .home-bento .home-space:hover .home-space-icon,
+  .home-bento .home-space:hover .home-board-picture,
+  .quick-capture:focus-within .quick-capture-icon {
     transform: none;
   }
+}
+
+:root[data-reduce-animations="on"] .home-bento .home-space:hover .home-space-icon,
+:root[data-reduce-animations="on"] .home-bento .home-space:hover .home-board-picture,
+:root[data-reduce-animations="on"] .quick-capture:focus-within .quick-capture-icon {
+  transform: none;
 }

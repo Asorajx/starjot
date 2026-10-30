@@ -286,3 +286,16 @@
 [data-theme="dark"] .note-toolbar button:not(.is-on):hover:not(:disabled) {
   color: #e2e4e7;
 }
+
+
+/* The open Home sections do not need the paper note's shadow. */
+[data-theme="dark"] .home-bento-capture,
+[data-theme="dark"] .home-bento-notespace,
+[data-theme="dark"] .home-bento-boardspace,
+[data-theme="dark"] .home-bento-today,
+[data-theme="dark"] .home-bento-capture:focus-within,
+[data-theme="dark"] .home-bento-notespace:focus-within,
+[data-theme="dark"] .home-bento-boardspace:focus-within,
+[data-theme="dark"] .home-bento-today:focus-within {
+  box-shadow: none;
+}

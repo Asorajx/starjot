@@ -281,7 +281,7 @@ const STATUS_ORDER: WorkStatus[] = ['todo', 'progress', 'review', 'done', 'block
 
 /* A tile per space turned on. Boardspace's shows a small picture of the real project: a bar per */
 /* status, as tall as its share of the work, with the counts beside. Notespace's counts notes. */
-function YourSpaces({ showNotes, showBoard, onOpenNotespace, onOpenBoardspace }: { showNotes: boolean; showBoard: boolean } & Pick<StarjotHomeProps, 'onOpenNotespace' | 'onOpenBoardspace'>) {
+function SpaceTile({ space, onOpenNotespace, onOpenBoardspace }: { space: 'notespace' | 'boardspace' } & Pick<StarjotHomeProps, 'onOpenNotespace' | 'onOpenBoardspace'>) {
   const notes = useNotes();
   const board = useBoard();
   const work = projectSummary(board);
@@ -290,28 +290,29 @@ function YourSpaces({ showNotes, showBoard, onOpenNotespace, onOpenBoardspace }:
   const open = work.total - count('done');
 
   return (
-    <section className="home-spaces" aria-labelledby="home-spaces">
-      <h2 id="home-spaces">Your spaces</h2>
-      {showBoard && (
+    <>
+      {space === 'boardspace' && (
         <button type="button" className="home-space home-space-board" onClick={onOpenBoardspace}>
+          <span className="home-board-heading">
+            <span className="home-space-text">
+              <strong>Boardspace</strong>
+              <span>{work.total ? `${plural(work.total, 'item')} · ${open} open` : 'Plan sprints and tasks'}</span>
+              {work.total > 0 && (
+                <span className="home-space-detail">
+                  {STATUS_ORDER.filter(status => count(status)).map(status => `${count(status)} ${WORK_STATUSES[status].toLowerCase()}`).join(' · ')}
+                </span>
+              )}
+            </span>
+            <Icon name="arrow-right" size={16} className="home-space-arrow" />
+          </span>
           <span className="home-board-picture" aria-hidden="true">
             {STATUS_ORDER.map(status => (
               <span key={status} className="home-board-bar" style={{ height: `${Math.max(8, (count(status) / busiest) * 100)}%`, background: `var(--status-${status})`, opacity: count(status) ? 1 : 0.25 }} />
             ))}
           </span>
-          <span className="home-space-text">
-            <strong>Boardspace</strong>
-            <span>{work.total ? `${plural(work.total, 'item')} · ${open} open` : 'Plan sprints and tasks'}</span>
-            {work.total > 0 && (
-              <span className="home-space-detail">
-                {STATUS_ORDER.filter(status => count(status)).map(status => `${count(status)} ${WORK_STATUSES[status].toLowerCase()}`).join(' · ')}
-              </span>
-            )}
-          </span>
-          <Icon name="arrow-right" size={16} className="home-space-arrow" />
         </button>
       )}
-      {showNotes && (
+      {space === 'notespace' && (
         <button type="button" className="home-space" onClick={event => onOpenNotespace(opensNewTab(event))}>
           <span className="home-space-icon" aria-hidden="true"><Icon name="book-open" size={18} /></span>
           <span className="home-space-text">
@@ -321,7 +322,7 @@ function YourSpaces({ showNotes, showBoard, onOpenNotespace, onOpenBoardspace }:
           <Icon name="arrow-right" size={16} className="home-space-arrow" />
         </button>
       )}
-    </section>
+    </>
   );
 }
 
@@ -330,9 +331,7 @@ function YourSpaces({ showNotes, showBoard, onOpenNotespace, onOpenBoardspace }:
    Starjot Home
    ========================= */
 
-/* The app's own home. A greeting (with the date on wide screens), Quick capture, then */
-/* Continue working on the left and Today and Your spaces on the right (one column on narrow */
-/* screens, in that order). A space turned off leaves its parts out. */
+/* Show the enabled spaces and their recent activity on Home. */
 export function StarjotHome({ onOpenNote, onOpenNotespace, onOpenBoardspace, onOpenBoardView }: StarjotHomeProps) {
   const now = useNow(30000);
   const { spaces } = usePreferences();
@@ -346,14 +345,17 @@ export function StarjotHome({ onOpenNote, onOpenNotespace, onOpenBoardspace, onO
           {now.toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' })} · {now.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}
         </p>
       </header>
-
-      {spaces.notes && <QuickCapture onOpenNote={onOpenNote} />}
-
       <div className="starjot-home-layout">
-        {spaces.notes && <ContinueWorking onOpenNote={onOpenNote} onOpenNotespace={onOpenNotespace} />}
+        {spaces.notes && <div className="home-bento home-bento-capture"><QuickCapture onOpenNote={onOpenNote} /></div>}
+        {spaces.notes && (
+          <div className="home-main">
+            <div className="home-bento home-bento-notespace"><SpaceTile space="notespace" onOpenNotespace={onOpenNotespace} onOpenBoardspace={onOpenBoardspace} /></div>
+            <div className="home-bento home-bento-continue"><ContinueWorking onOpenNote={onOpenNote} onOpenNotespace={onOpenNotespace} /></div>
+          </div>
+        )}
         <div className="home-side">
-          <Today now={now} showNotes={spaces.notes} showBoard={spaces.boardspace} onOpenNote={onOpenNote} onOpenBoardView={onOpenBoardView} />
-          <YourSpaces showNotes={spaces.notes} showBoard={spaces.boardspace} onOpenNotespace={onOpenNotespace} onOpenBoardspace={onOpenBoardspace} />
+          {spaces.boardspace && <div className="home-bento home-bento-boardspace"><SpaceTile space="boardspace" onOpenNotespace={onOpenNotespace} onOpenBoardspace={onOpenBoardspace} /></div>}
+          <div className="home-bento home-bento-today"><Today now={now} showNotes={spaces.notes} showBoard={spaces.boardspace} onOpenNote={onOpenNote} onOpenBoardView={onOpenBoardView} /></div>
         </div>
       </div>
     </div>
