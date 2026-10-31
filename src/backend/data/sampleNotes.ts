@@ -12,6 +12,10 @@ export const SAMPLE_NOTES: Partial<Note>[] = [
 
 export const SAMPLE_CONTENT: Record<string, string> = {
   welcome: '<p>Welcome to Starjot, a place for your notes and ideas.</p>'
+    + '<h2>About Starjot</h2>'
+    + '<p>Made by <a href="https://github.com/Asorajx">Asorajx</a>.</p>'
+    + '<p>Repository: <a href="https://github.com/Asorajx/starjot">Starjot on GitHub</a>.</p>'
+    + '<p>Starjot currently runs in your browser without a server backend. Your workspace data is stored locally in this browser.</p>'
     + '<h2>Make a note your own</h2>'
     + '<p>Write freely and use <strong>bold</strong> or <em>italic</em> text to highlight what matters. Headings like this one help organise longer notes.</p>'
     + '<ul><li>Collect ideas in a list.</li><li>Star important notes to find them quickly.</li><li>Link related notes to keep your thoughts connected.</li></ul>'

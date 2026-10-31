@@ -43,12 +43,14 @@ describe('note store', () => {
     expect(store.createNote()).toMatchObject({ mode: 'blocks', layout: 'paginated', pageSize: 'letter' });
   });
 
-  it('starts with one welcome note', async () => {
+  it('starts with a welcome note', async () => {
     const store = await openApp();
     expect(store.getNotes()).toHaveLength(1);
     expect(store.getNote('welcome')?.title).toBe('Welcome to Starjot');
     expect(store.getNote('welcome')?.content).toContain('<strong>bold</strong>');
     expect(store.getNote('welcome')?.content).toContain('<ul class="checklist">');
+    expect(store.getNote('welcome')?.content).toContain('href="https://github.com/Asorajx"');
+    expect(store.getNote('welcome')?.content).toContain('href="https://github.com/Asorajx/starjot"');
   });
 
   it('keeps existing notes when the welcome note is introduced', async () => {
