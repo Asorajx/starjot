@@ -50,8 +50,31 @@
   background: var(--status-done);
 }
 
-/* Continue working on the left, about 1.7 times as wide as Today and Your spaces on the right; */
-/* one column on narrower screens. */
+/* Disclaimer for unfinished prototype. */
+.starjot-home-aside {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  min-width: 0;
+}
+
+/* Disclaimer Icon */
+.home-disclaimer {
+  max-width: 360px;
+  margin: 0;
+  color: #5e6d84;
+  font-size: 13px;
+  line-height: 1.45;
+  text-align: right;
+}
+
+.home-disclaimer .icon {
+  display: inline-block;
+  margin-right: 5px;
+  vertical-align: -2px;
+}
+
 .starjot-home-layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -877,6 +900,21 @@
 @media (max-width: 700px) {
   .starjot-home-date {
     display: none;
+  }
+
+  /* The disclaimer goes under the greeting, reading from the left. */
+  .starjot-home-intro {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .starjot-home-aside {
+    align-items: flex-start;
+  }
+
+  .home-disclaimer {
+    max-width: none;
+    text-align: left;
   }
 
   .starjot-home-layout {

@@ -4,6 +4,7 @@ import { placeLabel } from '../notespace/PageBar';
 import { getNote, noteIcon, useCategories, useNotes } from '../notespace/store';
 import { useDismiss } from '../lib/useDismiss';
 import { shortcutLabel } from './shortcuts';
+import { spaceTitle } from './screens';
 import { useMediaQuery } from '../lib/useMediaQuery';
 import { canAddTab, currentPlace, STACK_LIMIT, type NoteTab, type Place, type TabGroup } from './noteTabs';
 
@@ -36,14 +37,15 @@ function startTabDrag(event: DragEvent, groupId: string, tabId: string) {
    Window Bar
    ========================= */
 
-/* The browser tab is named after the focused page, and follows it when the page is renamed. */
+/* The browser tab is named after the focused page, and follows it when the page is renamed: */
+/* Home and Notespace as spaces ("Starjot Home (Prototype)"), a note or category by its title. */
 export function DocumentTitle({ place }: { place: Place }) {
   /* Re-render when notes or categories are renamed, so the title stays current. */
   useNotes();
   useCategories();
-  const pageName = placeLabel(place);
+  const pageName = place.kind === 'start' || place.kind === 'home' ? spaceTitle(placeLabel(place)) : placeLabel(place);
   useEffect(() => {
-    document.title = `${pageName} — Starjot`;
+    document.title = pageName;
   }, [pageName]);
   return null;
 }

@@ -340,10 +340,16 @@ export function StarjotHome({ onOpenNote, onOpenNotespace, onOpenBoardspace, onO
     <div className="content-pad starjot-home">
       <header className="starjot-home-intro">
         <h1>{greeting(now)} <span className="home-star" aria-hidden="true">✦</span></h1>
-        <p className="starjot-home-date">
-          <span className="home-date-dot" aria-hidden="true" />
-          {now.toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' })} · {now.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}
-        </p>
+        <div className="starjot-home-aside">
+          <p className="home-disclaimer" role="note">
+            <Icon name="info" size={14} />
+            <span>This project was created as a personal experiment and remains unfinished. Some features may be incomplete or behave unexpectedly. Future updates are not guaranteed.</span>
+          </p>
+          <p className="starjot-home-date">
+            <span className="home-date-dot" aria-hidden="true" />
+            {now.toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' })} · {now.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}
+          </p>
+        </div>
       </header>
       <div className="starjot-home-layout">
         {spaces.notes && <div className="home-bento home-bento-capture"><QuickCapture onOpenNote={onOpenNote} /></div>}

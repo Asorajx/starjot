@@ -30,7 +30,7 @@ import {
   type Place, type TabGroup, type Workspace
 } from './noteTabs';
 import { DocumentTitle, StackSpine, TAB_DRAG_TYPE, TabSwitcher, WindowBar } from './WindowBar';
-import { screenLabel, type ScreenId } from './screens';
+import { screenLabel, spaceTitle, type ScreenId } from './screens';
 import { addressOf, blockInAddress, parseAddress } from './address';
 import { revealWhenShown } from '../notespace/editor/links/blockLinks';
 import { readWorkspace, writeWorkspace } from '../../backend/storage/workspaceStorage';
@@ -539,7 +539,7 @@ export function App() {
 
   /* In Notespace, DocumentTitle names the browser tab after the focused page instead. */
   useEffect(() => {
-    if (screenId !== 'notes') document.title = `${screenLabel(screenId)} — Starjot`;
+    if (screenId !== 'notes') document.title = spaceTitle(screenLabel(screenId));
   }, [screenId]);
 
   /* The short delays stop the sidebar from popping up when the pointer only passes by, and hover */

@@ -28,3 +28,9 @@ export function enabledScreens(spaces: Record<ScreenId, boolean>) {
 export function screenLabel(id: ScreenId) {
   return SCREENS.find(screen => screen.id === id)?.label ?? id;
 }
+
+/* The browser tab's title for Home and the spaces, such as "Starjot Home (Prototype)". A note or */
+/* category is named only by its own title. */
+export function spaceTitle(name: string) {
+  return `Starjot ${name} (Prototype)`;
+}
