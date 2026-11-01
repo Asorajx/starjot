@@ -83,4 +83,14 @@ describe('sprints for new and moved work', () => {
     expect(datesInSprint({ start: '2026-10-28', end: '2026-11-04' }, sprint2)).toEqual({ start: '2026-10-28', end: '2026-11-04' });
     expect(datesInSprint({ start: '2026-10-19', end: '2026-10-19' }, sprint2)).toEqual({ start: '2026-10-19', end: '2026-10-19' });
   });
+
+  /* The editor passes all its fields; spreading anything more than the dates back over them */
+  /* undid the sprint just chosen (a task in the backlog could not be moved into a sprint). */
+  it('gives back only the dates, whatever else it is given', () => {
+    const sprint2 = PROJECT.sprints[1];
+    const fields = { name: 'Task', sprintId: '', start: '2026-10-28', end: '2026-11-04' };
+    const chosen = { ...fields, sprintId: sprint2.id, ...datesInSprint(fields, sprint2) };
+    expect(chosen.sprintId).toBe(sprint2.id);
+    expect(datesInSprint({ ...fields, start: '2026-09-01', end: '2026-09-03' }, sprint2)).toEqual({ start: '2026-10-19', end: '2026-10-21' });
+  });
 });

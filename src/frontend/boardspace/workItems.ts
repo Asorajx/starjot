@@ -115,12 +115,13 @@ export function sprintForNewWork(project: BoardProject, day = today()) {
 
 /* Dates for work moved into a sprint. Dates that share at least a day with the sprint stay as */
 /* they are; dates wholly outside it move to start with the sprint, keeping their length but */
-/* never running past the sprint's end. */
+/* never running past the sprint's end. Only the two dates come back, even when given more (the */
+/* editor passes all its fields, and the rest would undo the sprint just chosen). */
 export function datesInSprint(dates: { start: string; end: string }, sprint: Sprint) {
   const start = parseDay(dates.start);
   const end = parseDay(dates.end);
   const sprintStart = parseDay(sprint.start);
-  if (!start || !end || !sprintStart || (dates.start <= sprint.end && dates.end >= sprint.start)) return dates;
+  if (!start || !end || !sprintStart || (dates.start <= sprint.end && dates.end >= sprint.start)) return { start: dates.start, end: dates.end };
   const moved = isoDay(addDays(sprintStart, Math.max(0, daysBetween(start, end))));
   return { start: sprint.start, end: moved > sprint.end ? sprint.end : moved };
 }
